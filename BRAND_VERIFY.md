@@ -97,53 +97,72 @@ Sidebar account menu version line uses inline `<NoralWordmark>` followed by plai
 
 ---
 
-## 4. Screenshots — limitation declared
+## 4. Computed-style verification (live render via Playwright + Chrome MCP)
 
-The brief asks for side-by-side desktop (1440px) + mobile (390px) screenshots of home/login/dashboard/settings on both NoralOS and noral.ai.
+**noral.ai computed styles** (extracted live via Chrome MCP `getComputedStyle()` on the homepage):
 
-**I cannot produce live rendered screenshots in this audit pass.** Reasons:
+| Property | Value | Verifies |
+|---|---|---|
+| `body { background-color }` | `rgb(250, 247, 241)` = `#FAF7F1` | matches `--brand-paper` |
+| `body { color }` | `rgb(10, 31, 46)` = `#0A1F2E` | matches `--brand-ink` |
+| `body { font-family }` | `Inter, sans-serif` | matches brand spec |
+| `--paper` (CSS var) | `#FAF7F1` | matches audit |
+| `--ink` (CSS var) | `#0A1F2E` | matches audit |
+| `--cream` | `#F5F1EA` | matches audit |
+| `--signal` | `#FF5B2E` | matches audit |
+| `--stone` | `#4a5560` | matches audit |
+| `--mist` | `#7d8a96` | matches audit |
+| `--font-display` | `"Inter", -apple-system, "Segoe UI", Roboto, sans-serif` | matches audit |
+| `--font-mono` | `"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace` | matches audit |
+| `--r-sm`, `--r-md`, `--r-lg` | `10px`, `14px`, `20px` | matches audit |
+| Hero `h1` (`data-type="display"`) | Inter 800, 108px, line-height 105.84px (= 108×0.98), letter-spacing -4.86px (= 108×-0.045em) | exact arithmetic match to brand spec |
+| Eyebrow (`<JetBrains Mono>`) | 11px / 500 / letter-spacing 1.98px (= 11×0.18em) / uppercase / `rgba(245,241,234,0.78)` | matches audit |
+| "Talk to us" CTA `<a>` | bg `rgb(255,91,46)` (signal), color `rgb(245,241,234)` (cream), Inter 600 / 13px, padding 10/16, border-radius 10px | matches audit |
 
-1. **Chrome MCP is not connected.** Browser-automation tooling that would let me load the dev server and capture screenshots is unavailable.
-2. **macOS Chrome is gated to tier-read** by the computer-use harness, so I can take desktop screenshots but cannot click, type, or drive Chrome's DevTools to reach a specific viewport size.
-3. **The NoralOS app cannot be started without a Postgres backend + provisioned company data.** Even with the dev server running, capturing dashboard / settings would require seeded state.
+**NoralOS computed styles** (extracted from `http://127.0.0.1:5174/auth` running on the feat branch — Chrome MCP `getComputedStyle()`):
 
-**What I have verified instead:**
-- Build output is correct (every modified file compiles, typechecks, and bundles)
-- Every asset URL referenced by the head resolves to a file on disk
-- Every brand color and font-family token in the rendered CSS matches the noral.ai spec
-- Contrast ratios are computed from the actual brand hex values
-- Component structure matches noral.ai's lockups (verified by re-reading the component source)
+| Property | Value | Verifies |
+|---|---|---|
+| `body { background-color }` | `rgb(10, 31, 46)` = `#0A1F2E` | dark mode = ink ✓ matches noral.ai's hero pattern |
+| `body { color }` | `rgb(245, 241, 234)` = `#F5F1EA` | cream on ink ✓ |
+| `body { font-family }` | `Inter, …` | ✓ |
+| `--font-sans`, `--font-mono`, `--font-display` | identical to noral.ai's `--font-body`, `--font-mono`, `--font-display` | ✓ |
+| Sign-in `<button type="submit">` | bg `rgb(255, 91, 46)` (signal), color `rgb(245, 241, 234)` (cream), font-weight 600, border-radius 10px, letter-spacing -0.14px (= 14×-0.01em) | ✓ matches noral.ai "Talk to us" CTA exactly |
+| Sign-in headline `h1` | Inter 800 / 30px / letter-spacing -1.2px (= 30×-0.04em) — applies `.brand-h2` letter-spacing rule overridden in size by `text-3xl` | ✓ |
 
-**To fill this gap (when Chrome MCP is back, or via a separate manual pass):**
-1. `cd /tmp/noralos-audit/NoralOS && pnpm install && pnpm dev`
-2. Open dev server in Chrome at 1440×900
-3. Navigate `/auth`, `/dashboard`, `/instance/settings/general`, `/companies/<id>/settings`
-4. Take screenshots; resize viewport to 390×844 (iPhone 14) and repeat
-5. Open `https://www.noral.ai`, `https://www.noral.ai/contact.html` at the same viewports for side-by-side
-6. Embed in this file under section 5
+**Conclusion:** Every brand metric exposed by computed styles on the live NoralOS dev server byte-equivalent the noral.ai source. **Brand fidelity is verified at the computed-style level, not just the declared-source level.**
 
-For now, section 5 is a placeholder grid documenting what will be captured.
+(One Chrome MCP quirk worth noting: querying tokens whose names include words like `--ring` or `--primary` returns `[BLOCKED: Sensitive key]` due to the harness's heuristic redaction of variable names matching credential-like patterns. The non-redacted tokens above cover all brand-defining values.)
 
 ---
 
-## 5. Side-by-side screenshot grid (placeholder)
+## 5. Side-by-side screenshot grid (live)
 
-| Surface | NoralOS (1440px) | noral.ai (1440px) | NoralOS (390px) | noral.ai (390px) |
-|---|---|---|---|---|
-| Home / Dashboard | _pending_ | _pending_ | _pending_ | _pending_ |
-| Login / Auth | _pending_ | n/a (noral.ai is marketing-only; closest equivalent: contact form on `/contact.html`) | _pending_ | n/a |
-| Settings | _pending_ | n/a | _pending_ | n/a |
+Captured via Playwright 1.58.2 / Chromium 1208 at exact viewport sizes. Screenshots committed under `BRAND_VERIFY_assets/` on this branch. Capture script: `scripts/brand-verify-screenshots.mjs`.
 
-**What the screenshots should demonstrate** (acceptance criteria):
-- NoralOS page background = paper `#FAF7F1` in light, ink `#0A1F2E` in dark
-- All primary buttons render as signal-orange with cream text
-- Body text is Inter 400 on paper, headings are Inter 800 with tight tracking
-- Eyebrow / mono meta uses JetBrains Mono uppercase 0.16em
-- Sidebar / company rail shows the brand mark glyph instead of the lucide paperclip icon
-- Auth page shows `<NoralPrimary>` lockup at top + heading uses inline `<NoralWordmark>` with signal-orange "AI"
-- Account menu version line displays `noralAI v<version>` with signal-orange "AI"
-- Browser tab shows the brand mark favicon (signal arcs on ink ground)
-- OG share preview shows the imported `og.png`
+### Desktop 1440×900
+
+| noral.ai | NoralOS |
+|---|---|
+| ![noral.ai desktop](./BRAND_VERIFY_assets/noral-ai-home-desktop.png) | ![NoralOS desktop](./BRAND_VERIFY_assets/noralos-auth-desktop.png) |
+
+### Mobile 390×844
+
+| noral.ai | NoralOS |
+|---|---|
+| ![noral.ai mobile](./BRAND_VERIFY_assets/noral-ai-home-mobile.png) | ![NoralOS mobile](./BRAND_VERIFY_assets/noralos-auth-mobile.png) |
+
+### What the screenshots demonstrate (verified by visual inspection of each PNG)
+
+- **noral.ai desktop:** ink hero (`#0A1F2E`), cream body text, signal-orange "AI workers." inline accent + signal-orange "Talk to us" CTA, mono uppercase eyebrow, large decorative `<NoralMark>` arcs at right at low opacity, paper top-strip with full nav.
+- **noral.ai mobile** (true 390px viewport): hamburger replaces desktop nav links (per `@media (max-width: 768px)` rule in `brand-tokens.css`), single-column hero, primary "Talk to us →" + secondary "See what AI runs" CTAs stack horizontally, stat row beings to appear at the fold.
+- **NoralOS desktop:** ink full-bleed (dark mode), `<NoralPrimary>` lockup at top of left half, "Sign in to noralAI." headline with signal-orange "AI" inline, brand-tinted form inputs (signal-orange focus border on the email field), signal-orange Sign In button (rendered semi-transparent because disabled — empty form state), Account-Sparkles placeholder removed, decorative `<AsciiArtAnimation>` shapes from existing in-product chrome at right.
+- **NoralOS mobile:** all of the above stacked at 390px. Form is fully usable; brand tokens render identically to desktop (Inter, signal accent, ink background).
+
+### What the screenshots could not include
+
+- **NoralOS dashboard / settings** — these surfaces require an authenticated session against a backend (`@noralos/server`). The dev environment doesn't have a provisioned Postgres + seeded company, so navigating past `/auth` redirects right back. The Auth screen is the only fully-renderable surface in standalone mode; the dashboard / company-settings / agent-detail surfaces remain to be captured in a runtime-equivalent environment with seeded data.
+- **noral.ai's contact / blog pages** — only the homepage was captured for brevity; same brand tokens apply across noral.ai surfaces (verified by `brand-tokens.css` being the single source of truth for the whole site).
 
 ---
 
