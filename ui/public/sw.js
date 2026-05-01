@@ -1,4 +1,4 @@
-const CACHE_NAME = "paperclip-v2";
+const CACHE_NAME = "noralos-v3-favicon-fix";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
