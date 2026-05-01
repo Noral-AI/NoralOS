@@ -14,13 +14,11 @@ NoralOS is a self-hosted control plane that turns a fleet of AI agents into an o
 docker run -d --name noralos \
   -p 3100:3100 \
   -e BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
-  -v $(pwd)/data:/paperclip \
+  -v $(pwd)/data:/noralos \
   ghcr.io/noral-ai/noralos:latest
 ```
 
 Open `http://localhost:3100`. The first visitor claims CEO. Embedded Postgres, no setup required.
-
-> The volume path `/paperclip` is the legacy upstream container path. It will be renamed to `/noralos` in a future release; for now, mount your data dir to `/paperclip` for compatibility with the current image.
 
 ### From source
 

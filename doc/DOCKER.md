@@ -31,9 +31,9 @@ docker build -t paperclip-local . && \
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e NORALOS_HOME=/paperclip \
+  -e NORALOS_HOME=/noralos \
   -e BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 
@@ -134,10 +134,10 @@ If you want local adapter runs inside the container, pass API keys when starting
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e NORALOS_HOME=/paperclip \
+  -e NORALOS_HOME=/noralos \
   -e OPENAI_API_KEY=... \
   -e ANTHROPIC_API_KEY=... \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 
@@ -175,12 +175,12 @@ The `docker/quadlet/` directory contains unit files to run NoralOS + PostgreSQL 
 3. Create a secrets env file (keep out of version control):
 
    ```sh
-   cat > ~/.config/containers/systemd/paperclip.env <<EOL
+   cat > ~/.config/containers/systemd/noralos.env <<EOL
    BETTER_AUTH_SECRET=$(openssl rand -hex 32)
    POSTGRES_USER=paperclip
    POSTGRES_PASSWORD=paperclip
    POSTGRES_DB=paperclip
-   DATABASE_URL=postgres://paperclip:paperclip@127.0.0.1:5432/paperclip
+   DATABASE_URL=postgres://noralos:paperclip@127.0.0.1:5432/noralos
    # OPENAI_API_KEY=sk-...
    # ANTHROPIC_API_KEY=sk-...
    EOL
@@ -189,7 +189,7 @@ The `docker/quadlet/` directory contains unit files to run NoralOS + PostgreSQL 
 4. Create the data directory and start:
 
    ```sh
-   mkdir -p ~/.local/share/paperclip
+   mkdir -p ~/.local/share/noralos
    systemctl --user daemon-reload
    systemctl --user start paperclip-pod
    ```
@@ -209,7 +209,7 @@ systemctl --user stop paperclip-pod      # Stop all
 - **First boot**: Unlike Docker Compose's `condition: service_healthy`, Quadlet's `After=` only waits for the DB unit to *start*, not for PostgreSQL to be ready. On a cold first boot you may see one or two restart attempts in `journalctl --user -u paperclip` while PostgreSQL initialises — this is expected and resolves automatically via `Restart=on-failure`.
 - Containers in a pod share `localhost`, so NoralOS reaches Postgres at `127.0.0.1:5432`.
 - PostgreSQL data persists in the `paperclip-pgdata` named volume.
-- Paperclip data persists at `~/.local/share/paperclip`.
+- Paperclip data persists at `~/.local/share/noralos`.
 - For rootful quadlet deployment, remove `%h` prefixes and use absolute paths.
 
 ## Onboard Smoke Test (Ubuntu + npm only)
@@ -233,7 +233,7 @@ Useful overrides:
 ```sh
 HOST_PORT=3200 PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
 NORALOS_DEPLOYMENT_MODE=authenticated NORALOS_DEPLOYMENT_EXPOSURE=private ./scripts/docker-onboard-smoke.sh
-SMOKE_DETACH=true SMOKE_METADATA_FILE=/tmp/paperclip-smoke.env PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+SMOKE_DETACH=true SMOKE_METADATA_FILE=/tmp/noralos-smoke.env PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Notes:
@@ -251,4 +251,4 @@ Notes:
 ## General Notes
 
 - The `docker-entrypoint.sh` adjusts the container `node` user UID/GID at startup to match the values passed via `USER_UID`/`USER_GID`, avoiding permission issues on bind-mounted volumes.
-- Paperclip data persists via Docker volumes/bind mounts (compose) or at `~/.local/share/paperclip` (quadlet).
+- Paperclip data persists via Docker volumes/bind mounts (compose) or at `~/.local/share/noralos` (quadlet).

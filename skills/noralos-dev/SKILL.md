@@ -132,7 +132,7 @@ If `git remote -v` shows only `paperclipai/paperclip` remotes (no user fork), fa
 The canonical remote that points at `paperclipai/paperclip` may be named `origin` **or** `upstream` depending on how the user set up the repo. Detect it the same way as in the "Detect a fork remote" step, then fetch and push from/with that remote so the sync works under either convention:
 
 ```bash
-UPSTREAM_REMOTE=$(git remote -v | awk '/paperclipai\/paperclip.*\(fetch\)/{print $1; exit}')
+UPSTREAM_REMOTE=$(git remote -v | awk '/paperclipai\/noralos.*\(fetch\)/{print $1; exit}')
 git fetch "$UPSTREAM_REMOTE"
 git push <fork-remote> "${UPSTREAM_REMOTE}/master:master"
 ```
@@ -173,7 +173,7 @@ These rules exist because agents have caused real damage by improvising around C
 1. **CLI is the only interface to worktrees and databases.** All worktree and database operations MUST go through `npx paperclipai` / `pnpm paperclipai` commands. You MUST NOT:
    - Run `pg_dump`, `pg_restore`, `psql`, `createdb`, `dropdb`, or any raw postgres commands
    - Manually set `DATABASE_URL` to point a worktree server at another instance's database
-   - Run `rm -rf` on any `.paperclip/`, `.paperclip-worktrees/`, or `db/` directory
+   - Run `rm -rf` on any `.noralos/`, `.paperclip-worktrees/`, or `db/` directory
    - Directly manipulate embedded postgres data directories
    - Kill postgres processes by PID
 

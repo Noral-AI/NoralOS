@@ -300,7 +300,7 @@ describe("company portability", () => {
           repo: "paperclip",
           ref: "0123456789abcdef0123456789abcdef01234567",
           trackingRef: "master",
-          repoSkillDir: "skills/paperclip",
+          repoSkillDir: "skills/noralos",
         },
       },
       {
@@ -802,7 +802,7 @@ describe("company portability", () => {
             projectId: "project-1",
             name: "Main Repo",
             sourceType: "git_repo",
-            cwd: "/Users/dotta/paperclip",
+            cwd: "/Users/dotta/noralos",
             repoUrl: "https://github.com/paperclipai/paperclip.git",
             repoRef: "main",
             defaultRef: "main",
@@ -825,7 +825,7 @@ describe("company portability", () => {
             projectId: "project-1",
             name: "Local Scratch",
             sourceType: "local_path",
-            cwd: "/tmp/paperclip-local",
+            cwd: "/tmp/noralos-local",
             repoUrl: null,
             repoRef: null,
             defaultRef: null,
@@ -879,7 +879,7 @@ describe("company portability", () => {
     expect(extension).toContain('repoUrl: "https://github.com/paperclipai/paperclip.git"');
     expect(extension).toContain('defaultProjectWorkspaceKey: "main-repo"');
     expect(extension).toContain('projectWorkspaceKey: "main-repo"');
-    expect(extension).not.toContain("/Users/dotta/paperclip");
+    expect(extension).not.toContain("/Users/dotta/noralos");
     expect(extension).not.toContain("workspace-1");
     expect(exported.warnings).toContain("Project launch workspace Local Scratch was omitted from export because it does not have a portable repoUrl.");
 

@@ -460,9 +460,9 @@ create_and_approve_gateway_join() {
 persist_claimed_key_artifacts() {
   local claim_json="$1"
   local workspace_dir="${OPENCLAW_CONFIG_DIR%/}/workspace"
-  local skill_dir="${OPENCLAW_CONFIG_DIR%/}/skills/paperclip"
-  local claimed_file="${workspace_dir}/paperclip-claimed-api-key.json"
-  local claimed_raw_file="${workspace_dir}/paperclip-claimed-api-key.raw.json"
+  local skill_dir="${OPENCLAW_CONFIG_DIR%/}/skills/noralos"
+  local claimed_file="${workspace_dir}/noralos-claimed-api-key.json"
+  local claimed_raw_file="${workspace_dir}/noralos-claimed-api-key.raw.json"
 
   mkdir -p "$workspace_dir" "$skill_dir"
   local token
@@ -480,12 +480,12 @@ persist_claimed_key_artifacts() {
   container="$(detect_openclaw_container || true)"
   if [[ -n "$container" ]]; then
     docker exec "$container" sh -lc "mkdir -p /home/node/.openclaw/workspace" >/dev/null 2>&1 || true
-    docker cp "$claimed_file" "${container}:/home/node/.openclaw/workspace/paperclip-claimed-api-key.json" >/dev/null 2>&1 || true
-    docker exec "$container" sh -lc "chmod 644 /home/node/.openclaw/workspace/paperclip-claimed-api-key.json" >/dev/null 2>&1 || true
+    docker cp "$claimed_file" "${container}:/home/node/.openclaw/workspace/noralos-claimed-api-key.json" >/dev/null 2>&1 || true
+    docker exec "$container" sh -lc "chmod 644 /home/node/.openclaw/workspace/noralos-claimed-api-key.json" >/dev/null 2>&1 || true
   fi
 
   if [[ "$AUTO_INSTALL_SKILL" == "1" ]]; then
-    api_request "GET" "/skills/paperclip"
+    api_request "GET" "/skills/noralos"
     assert_status "200"
     {
       echo "NORALOS_API_URL=${NORALOS_API_URL_FOR_OPENCLAW}"

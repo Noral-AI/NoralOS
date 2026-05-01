@@ -69,7 +69,7 @@ function resolveConnectionString(config: PartialConfig | null): string {
   }
 
   const port = resolveEmbeddedPort(config);
-  return `postgres://paperclip:paperclip@127.0.0.1:${port}/paperclip`;
+  return `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`;
 }
 
 function resolveDefaultBackupDir(): string {

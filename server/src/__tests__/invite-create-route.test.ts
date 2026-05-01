@@ -132,6 +132,6 @@ describe("POST /companies/:companyId/invites", () => {
     expect(res.status).toBe(201);
     expect(res.body.companyName).toBe("Acme Robotics");
     expect(res.body.invitePath).toMatch(/^\/invite\/pcp_invite_/);
-    expect(res.body.inviteUrl).toMatch(/^https:\/\/paperclip\.example\/invite\/pcp_invite_/);
+    expect(res.body.inviteUrl).toMatch(/^https:\/\/noralos\.example\/invite\/pcp_invite_/);
   });
 });

@@ -128,7 +128,7 @@ function resolveWorktreeRuntimeContext(
     nonEmpty(persistedEnv.NORALOS_HOME) ??
       nonEmpty(env.NORALOS_HOME) ??
       nonEmpty(env.NORALOS_WORKTREES_DIR) ??
-      "~/.paperclip-worktrees",
+      "~/.noralos-worktrees",
   );
   const instanceRoot = path.resolve(homeDir, "instances", instanceId);
 

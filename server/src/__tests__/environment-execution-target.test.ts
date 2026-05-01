@@ -60,8 +60,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
   });
 
   it("prefers an explicit Paperclip API URL from lease metadata for sandbox targets", async () => {
-    process.env.NORALOS_API_URL = "https://paperclip.example.test";
-    process.env.NORALOS_RUNTIME_API_URL = "http://paperclip.example.test:3200";
+    process.env.NORALOS_API_URL = "https://noralos.example.test";
+    process.env.NORALOS_RUNTIME_API_URL = "http://noralos.example.test:3200";
     mockResolveEnvironmentDriverConfigForRuntime.mockResolvedValue({
       driver: "sandbox",
       config: {
@@ -84,7 +84,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       },
       leaseId: "lease-1",
       leaseMetadata: {
-        paperclipApiUrl: "https://paperclip.example.test",
+        paperclipApiUrl: "https://noralos.example.test",
       },
       lease: null,
       environmentRuntime: null,
@@ -93,7 +93,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "sandbox",
-      paperclipApiUrl: "https://paperclip.example.test",
+      paperclipApiUrl: "https://noralos.example.test",
       paperclipTransport: "direct",
     });
   });

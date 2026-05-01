@@ -91,7 +91,7 @@ generate_bootstrap_invite_url() {
       -e NORALOS_DEPLOYMENT_MODE="$NORALOS_DEPLOYMENT_MODE" \
       -e NORALOS_DEPLOYMENT_EXPOSURE="$NORALOS_DEPLOYMENT_EXPOSURE" \
       -e NORALOS_PUBLIC_URL="$NORALOS_PUBLIC_URL" \
-      -e NORALOS_HOME="/paperclip" \
+      -e NORALOS_HOME="/noralos" \
       "$CONTAINER_NAME" bash -lc \
       'timeout 20s npx --yes "paperclipai@${PAPERCLIPAI_VERSION}" auth bootstrap-ceo --data-dir "$NORALOS_HOME" --base-url "$NORALOS_PUBLIC_URL"' \
       2>&1
@@ -267,7 +267,7 @@ docker run -d --rm \
   -e NORALOS_DEPLOYMENT_MODE="$NORALOS_DEPLOYMENT_MODE" \
   -e NORALOS_DEPLOYMENT_EXPOSURE="$NORALOS_DEPLOYMENT_EXPOSURE" \
   -e NORALOS_PUBLIC_URL="$NORALOS_PUBLIC_URL" \
-  -v "$DATA_DIR:/paperclip" \
+  -v "$DATA_DIR:/noralos" \
   "$IMAGE_NAME" >/dev/null
 
 if [[ "$SMOKE_DETACH" != "true" ]]; then
@@ -275,7 +275,7 @@ if [[ "$SMOKE_DETACH" != "true" ]]; then
   LOG_PID=$!
 fi
 
-TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/paperclip-onboard-smoke.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/noralos-onboard-smoke.XXXXXX")"
 COOKIE_JAR="$TMP_DIR/cookies.txt"
 
 if ! wait_for_http "$NORALOS_PUBLIC_URL/api/health" 90 1; then

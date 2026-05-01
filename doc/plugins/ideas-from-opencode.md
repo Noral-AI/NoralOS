@@ -309,7 +309,7 @@ The comparable unit is:
 
 - instance-installed plugin package
 
-NoralOS should not auto-load arbitrary code from a workspace repo like `.paperclip/plugins` or project directories.
+NoralOS should not auto-load arbitrary code from a workspace repo like `.noralos/plugins` or project directories.
 
 ## 3. Arbitrary mutation hooks on core business decisions
 

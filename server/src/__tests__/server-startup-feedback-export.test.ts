@@ -63,20 +63,20 @@ function buildTestConfig(overrides: Record<string, unknown> = {}) {
     authPublicBaseUrl: undefined,
     authDisableSignUp: false,
     databaseMode: "postgres",
-    databaseUrl: "postgres://paperclip:paperclip@127.0.0.1:5432/paperclip",
-    embeddedPostgresDataDir: "/tmp/paperclip-test-db",
+    databaseUrl: "postgres://noralos:paperclip@127.0.0.1:5432/noralos",
+    embeddedPostgresDataDir: "/tmp/noralos-test-db",
     embeddedPostgresPort: 54329,
     databaseBackupEnabled: false,
     databaseBackupIntervalMinutes: 60,
     databaseBackupRetentionDays: 30,
-    databaseBackupDir: "/tmp/paperclip-test-backups",
+    databaseBackupDir: "/tmp/noralos-test-backups",
     serveUi: false,
     uiDevMiddleware: false,
     secretsProvider: "local_encrypted",
     secretsStrictMode: false,
-    secretsMasterKeyFilePath: "/tmp/paperclip-master.key",
+    secretsMasterKeyFilePath: "/tmp/noralos-master.key",
     storageProvider: "local_disk",
-    storageLocalDiskBaseDir: "/tmp/paperclip-storage",
+    storageLocalDiskBaseDir: "/tmp/noralos-storage",
     storageS3Bucket: "paperclip-test",
     storageS3Region: "us-east-1",
     storageS3Endpoint: undefined,
@@ -330,14 +330,14 @@ describe("startServer NORALOS_API_URL handling", () => {
     loadConfigMock.mockReturnValueOnce(buildTestConfig({
       port: 3100,
       authBaseUrlMode: "explicit",
-      authPublicBaseUrl: "https://paperclip.example",
+      authPublicBaseUrl: "https://noralos.example",
     }));
     detectPortMock.mockResolvedValueOnce(3110);
 
     const started = await startServer();
 
     expect(started.listenPort).toBe(3110);
-    expect(started.apiUrl).toBe("https://paperclip.example");
-    expect(process.env.NORALOS_RUNTIME_API_URL).toBe("https://paperclip.example");
+    expect(started.apiUrl).toBe("https://noralos.example");
+    expect(process.env.NORALOS_RUNTIME_API_URL).toBe("https://noralos.example");
   });
 });

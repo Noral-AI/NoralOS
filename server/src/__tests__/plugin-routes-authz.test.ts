@@ -299,7 +299,7 @@ describe.sequential("scoped plugin API routes", () => {
     );
 
     const res = await request(app)
-      .get("/api/plugins/paperclip.example/api/smoke")
+      .get("/api/plugins/noralos.example/api/smoke")
       .query({ companyId: "company-1" });
 
     expect(res.status).toBe(202);

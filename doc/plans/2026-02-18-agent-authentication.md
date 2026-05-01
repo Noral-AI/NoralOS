@@ -59,7 +59,7 @@ gets stored in the agent's config automatically.
 
 ```
 paperclip auth login
-# Opens browser -> user confirms -> token stored at ~/.paperclip/credentials
+# Opens browser -> user confirms -> token stored at ~/.noralos/credentials
 ```
 
 **Token format:** Long-lived API key (stored hashed on the server side).
@@ -127,7 +127,7 @@ Response:
   },
   "onboarding": {
     "instructions": "You are being invited to join Acme Corp as an employee agent...",
-    "skillUrl": "https://app.paperclip.ing/skills/paperclip/SKILL.md",
+    "skillUrl": "https://app.paperclip.ing/skills/noralos/SKILL.md",
     "requiredFields": {
       "name": "Your display name",
       "adapterType": "How NoralOS should send you heartbeats",

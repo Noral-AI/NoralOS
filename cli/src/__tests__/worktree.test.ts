@@ -193,13 +193,13 @@ describe("worktree helpers", () => {
   it("rewrites auth URLs only when they already include a port", () => {
     expect(rewriteLocalUrlPort("http://127.0.0.1:3100", 3110)).toBe("http://127.0.0.1:3110/");
     expect(rewriteLocalUrlPort("http://my-host.ts.net:3100", 3110)).toBe("http://my-host.ts.net:3110/");
-    expect(rewriteLocalUrlPort("https://paperclip.example", 3110)).toBe("https://paperclip.example");
+    expect(rewriteLocalUrlPort("https://noralos.example", 3110)).toBe("https://noralos.example");
   });
 
   it("builds isolated config and env paths for a worktree", () => {
     const paths = resolveWorktreeLocalPaths({
-      cwd: "/tmp/paperclip-feature",
-      homeDir: "/tmp/paperclip-worktrees",
+      cwd: "/tmp/noralos-feature",
+      homeDir: "/tmp/noralos-worktrees",
       instanceId: "feature-worktree-support",
     });
     const config = buildWorktreeConfig({
@@ -211,20 +211,20 @@ describe("worktree helpers", () => {
     });
 
     expect(config.database.embeddedPostgresDataDir).toBe(
-      path.resolve("/tmp/paperclip-worktrees", "instances", "feature-worktree-support", "db"),
+      path.resolve("/tmp/noralos-worktrees", "instances", "feature-worktree-support", "db"),
     );
     expect(config.database.embeddedPostgresPort).toBe(54339);
     expect(config.server.port).toBe(3110);
     expect(config.auth.publicBaseUrl).toBe("http://127.0.0.1:3110/");
     expect(config.storage.localDisk.baseDir).toBe(
-      path.resolve("/tmp/paperclip-worktrees", "instances", "feature-worktree-support", "data", "storage"),
+      path.resolve("/tmp/noralos-worktrees", "instances", "feature-worktree-support", "data", "storage"),
     );
 
     const env = buildWorktreeEnvEntries(paths, {
       name: "feature-worktree-support",
       color: "#3abf7a",
     });
-    expect(env.NORALOS_HOME).toBe(path.resolve("/tmp/paperclip-worktrees"));
+    expect(env.NORALOS_HOME).toBe(path.resolve("/tmp/noralos-worktrees"));
     expect(env.NORALOS_INSTANCE_ID).toBe("feature-worktree-support");
     expect(env.NORALOS_IN_WORKTREE).toBe("true");
     expect(env.NORALOS_WORKTREE_NAME).toBe("feature-worktree-support");
@@ -587,7 +587,7 @@ describe("worktree helpers", () => {
         await targetPg.start();
         try {
           const targetDb = createDb(
-            `postgres://paperclip:paperclip@127.0.0.1:${targetConfig.database.embeddedPostgresPort}/paperclip`,
+            `postgres://noralos:paperclip@127.0.0.1:${targetConfig.database.embeddedPostgresPort}/noralos`,
           );
           const seededUsers = await targetDb.select().from(authUsers);
           expect(seededUsers.some((row) => row.email === "existing@paperclip.ing")).toBe(true);
@@ -764,7 +764,7 @@ describe("worktree helpers", () => {
       fs.writeFileSync(
         envPath,
         [
-          "NORALOS_HOME=/tmp/paperclip-worktrees",
+          "NORALOS_HOME=/tmp/noralos-worktrees",
           "NORALOS_INSTANCE_ID=pap-1132-chat",
         ].join("\n"),
         "utf8",
@@ -776,7 +776,7 @@ describe("worktree helpers", () => {
         }),
       ).toMatchObject({
         cwd: worktreeRoot,
-        homeDir: "/tmp/paperclip-worktrees",
+        homeDir: "/tmp/noralos-worktrees",
         instanceId: "pap-1132-chat",
       });
     } finally {
@@ -968,26 +968,26 @@ describe("worktree helpers", () => {
   it("rebinds same-repo workspace paths onto the current worktree root", () => {
     expect(
       rebindWorkspaceCwd({
-        sourceRepoRoot: "/Users/example/paperclip",
-        targetRepoRoot: "/Users/example/paperclip-pr-432",
-        workspaceCwd: "/Users/example/paperclip",
+        sourceRepoRoot: "/Users/example/noralos",
+        targetRepoRoot: "/Users/example/noralos-pr-432",
+        workspaceCwd: "/Users/example/noralos",
       }),
-    ).toBe("/Users/example/paperclip-pr-432");
+    ).toBe("/Users/example/noralos-pr-432");
 
     expect(
       rebindWorkspaceCwd({
-        sourceRepoRoot: "/Users/example/paperclip",
-        targetRepoRoot: "/Users/example/paperclip-pr-432",
-        workspaceCwd: "/Users/example/paperclip/packages/db",
+        sourceRepoRoot: "/Users/example/noralos",
+        targetRepoRoot: "/Users/example/noralos-pr-432",
+        workspaceCwd: "/Users/example/noralos/packages/db",
       }),
-    ).toBe("/Users/example/paperclip-pr-432/packages/db");
+    ).toBe("/Users/example/noralos-pr-432/packages/db");
   });
 
   it("does not rebind paths outside the source repo root", () => {
     expect(
       rebindWorkspaceCwd({
-        sourceRepoRoot: "/Users/example/paperclip",
-        targetRepoRoot: "/Users/example/paperclip-pr-432",
+        sourceRepoRoot: "/Users/example/noralos",
+        targetRepoRoot: "/Users/example/noralos-pr-432",
         workspaceCwd: "/Users/example/other-project",
       }),
     ).toBeNull();

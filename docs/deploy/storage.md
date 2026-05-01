@@ -10,7 +10,7 @@ NoralOS stores uploaded files (issue attachments, images) using a configurable s
 Files are stored at:
 
 ```
-~/.paperclip/instances/default/data/storage
+~/.noralos/instances/default/data/storage
 ```
 
 No configuration required. Suitable for local development and single-machine deployments.
@@ -35,5 +35,5 @@ pnpm paperclipai configure --section storage
 Storage configuration is stored in the instance config file:
 
 ```
-~/.paperclip/instances/default/config.json
+~/.noralos/instances/default/config.json
 ```

@@ -36,7 +36,7 @@ Outside this repo, the scaffold snapshots `@paperclipai/plugin-sdk` from your lo
 ```bash
 node packages/plugins/create-paperclip-plugin/dist/index.js @acme/my-plugin \
   --output /absolute/path/to/plugins \
-  --sdk-path /absolute/path/to/paperclip/packages/plugins/sdk
+  --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
 ```
 
 That gives you an outside-repo local development path before the SDK is published to npm.

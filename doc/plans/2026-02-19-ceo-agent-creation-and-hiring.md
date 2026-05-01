@@ -301,7 +301,7 @@ Skill responsibilities:
 - Execute hire API flow
 - Handle revision loop with board comments
 
-Also update `skills/paperclip/SKILL.md` to reference this skill for hiring workflows.
+Also update `skills/noralos/SKILL.md` to reference this skill for hiring workflows.
 
 ## 9. Enforcement and Invariants
 

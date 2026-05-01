@@ -28,7 +28,7 @@ Add a single storage subsystem for NoralOS that supports:
 
 ## Key Decisions
 
-- Default local path is under instance root: `~/.paperclip/instances/<instanceId>/data/storage`.
+- Default local path is under instance root: `~/.noralos/instances/<instanceId>/data/storage`.
 - Object bytes live in storage provider; metadata lives in Postgres.
 - `assets` is generic metadata table; `issue_attachments` links assets to issues/comments.
 - S3 credentials come from runtime environment/default AWS provider chain, not DB rows.

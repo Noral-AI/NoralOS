@@ -21,8 +21,8 @@ if [[ ! -d "$worktree_cwd" ]]; then
 fi
 
 source_config_path="${NORALOS_CONFIG:-}"
-if [[ -z "$source_config_path" && ( -e "$base_cwd/.paperclip/config.json" || -L "$base_cwd/.paperclip/config.json" ) ]]; then
-  source_config_path="$base_cwd/.paperclip/config.json"
+if [[ -z "$source_config_path" && ( -e "$base_cwd/.noralos/config.json" || -L "$base_cwd/.noralos/config.json" ) ]]; then
+  source_config_path="$base_cwd/.noralos/config.json"
 fi
 if [[ -z "$source_config_path" ]]; then
   source_config_path="$paperclip_home/instances/$paperclip_instance_id/config.json"
@@ -200,7 +200,7 @@ async function main() {
   const paperclipDir = process.env.NORALOS_DIR;
   const sourceConfigPath = process.env.SOURCE_CONFIG_PATH;
   const sourceEnvPath = process.env.SOURCE_ENV_PATH;
-  const worktreeHome = path.resolve(expandHomePrefix(nonEmpty(process.env.NORALOS_WORKTREES_DIR) ?? "~/.paperclip-worktrees"));
+  const worktreeHome = path.resolve(expandHomePrefix(nonEmpty(process.env.NORALOS_WORKTREES_DIR) ?? "~/.noralos-worktrees"));
   const instanceId = sanitizeInstanceId(worktreeName);
   const instanceRoot = path.resolve(worktreeHome, "instances", instanceId);
   const configPath = path.resolve(paperclipDir, "config.json");
@@ -351,7 +351,7 @@ list_base_node_modules_paths() {
       -type d \
       -name node_modules \
       ! -path './.git/*' \
-      ! -path './.paperclip/*' \
+      ! -path './.noralos/*' \
       | sed 's#^\./##'
 }
 if [[ -f "$worktree_cwd/package.json" && -f "$worktree_cwd/pnpm-lock.yaml" ]]; then

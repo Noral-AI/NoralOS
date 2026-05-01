@@ -60,14 +60,14 @@ This returns a repository object for the private fork. Save the `full_name` and 
 Clone it and set up your workspace:
 
 ```
-# Clone the private fork somewhere outside ~/paperclip
+# Clone the private fork somewhere outside ~/noralos
 git clone <clone_url_from_response> ~/security-patch-{{ghsaId}}
 cd ~/security-patch-{{ghsaId}}
 git checkout -b security-fix
 
 ```
 
-**Do not edit `~/paperclip`** — the dev server is running off the `~/paperclip` master branch and we don't want to touch it. All work happens in the private fork clone.
+**Do not edit `~/noralos`** — the dev server is running off the `~/noralos` master branch and we don't want to touch it. All work happens in the private fork clone.
 
 **TIPS:**
 
@@ -182,7 +182,7 @@ Publishing the advisory simultaneously:
 ### 6c. Cut a release immediately after merge
 
 ```
-cd ~/paperclip
+cd ~/noralos
 git pull origin master
 
 gh release create v{{patchedVersion}} \

@@ -51,7 +51,7 @@ const ignoredDirectoryNames = new Set([
 ]);
 
 const ignoredRelativePaths = new Set([
-  ".paperclip/dev-server-status.json",
+  ".noralos/dev-server-status.json",
 ]);
 
 const tailscaleAuthFlagNames = new Set([

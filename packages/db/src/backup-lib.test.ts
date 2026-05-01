@@ -130,7 +130,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           backupEngine: "javascript",
         });
 
-        expect(result.backupFile).toMatch(/paperclip-test-.*\.sql\.gz$/);
+        expect(result.backupFile).toMatch(/noralos-test-.*\.sql\.gz$/);
         expect(result.sizeBytes).toBeGreaterThan(0);
         expect(fs.existsSync(result.backupFile)).toBe(true);
 

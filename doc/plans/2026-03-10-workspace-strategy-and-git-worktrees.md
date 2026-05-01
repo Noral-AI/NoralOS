@@ -818,7 +818,7 @@ Long-lived repo anchor.
 
 Examples:
 
-- `./paperclip`
+- `./noralos`
 - repo URL and base ref
 - primary checkout for a project
 
@@ -873,7 +873,7 @@ Or:
     "type": "git_worktree",
     "baseRef": "origin/main",
     "branchTemplate": "{{issue.identifier}}-{{slug}}",
-    "worktreeParentDir": ".paperclip/instances/default/worktrees/projects/{{project.id}}",
+    "worktreeParentDir": ".noralos/instances/default/worktrees/projects/{{project.id}}",
     "cleanupPolicy": "on_merged",
     "startDevServer": true,
     "devServerCommand": "pnpm dev",

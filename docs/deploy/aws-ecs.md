@@ -34,7 +34,7 @@ aws ecr create-repository \
 ## 2. Build and Push Docker Image
 
 ```bash
-cd /path/to/paperclip
+cd /path/to/noralos
 
 # Authenticate Docker to ECR
 aws ecr get-login-password --region $AWS_REGION \
@@ -46,10 +46,10 @@ docker build -t paperclip-server .
 
 # Tag and push
 docker tag paperclip-server:latest \
-  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/paperclip-server:latest
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/noralos-server:latest
 
 docker push \
-  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/paperclip-server:latest
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/noralos-server:latest
 ```
 
 ## 3. Networking (VPC, Subnets, Security Groups)
@@ -163,7 +163,7 @@ RDS_ENDPOINT=$(aws rds describe-db-instances \
   --db-instance-identifier paperclip-db \
   --query 'DBInstances[0].Endpoint.Address' --output text)
 
-DATABASE_URL="postgresql://paperclip:${DB_PASSWORD}@${RDS_ENDPOINT}:5432/paperclip"
+DATABASE_URL="postgresql://noralos:${DB_PASSWORD}@${RDS_ENDPOINT}:5432/noralos"
 ```
 
 ## 5. Create EFS Filesystem
@@ -264,7 +264,7 @@ aws iam create-role \
 ```bash
 aws ecs create-cluster --cluster-name paperclip
 
-aws logs create-log-group --log-group-name /ecs/paperclip
+aws logs create-log-group --log-group-name /ecs/noralos
 ```
 
 Register the task definition using the template at `docker/ecs-task-definition.json`. Before registering, replace the placeholder values:
@@ -274,10 +274,10 @@ sed -e "s|<ACCOUNT_ID>|$AWS_ACCOUNT_ID|g" \
     -e "s|<REGION>|$AWS_REGION|g" \
     -e "s|<EFS_ID>|$EFS_ID|g" \
     -e "s|<DOMAIN>|$NORALOS_DOMAIN|g" \
-    docker/ecs-task-definition.json > /tmp/paperclip-task-def.json
+    docker/ecs-task-definition.json > /tmp/noralos-task-def.json
 
 aws ecs register-task-definition \
-  --cli-input-json file:///tmp/paperclip-task-def.json
+  --cli-input-json file:///tmp/noralos-task-def.json
 ```
 
 ## 9. ALB and TLS Certificate
@@ -397,7 +397,7 @@ aws ecs describe-tasks --cluster paperclip --tasks $TASK_ARN \
   --query 'tasks[0].{status:lastStatus,health:healthStatus}'
 
 # Check logs
-aws logs tail /ecs/paperclip --since 10m --follow
+aws logs tail /ecs/noralos --since 10m --follow
 
 # Hit the health endpoint
 curl -sf https://$NORALOS_DOMAIN/api/health
@@ -434,9 +434,9 @@ Build, push, and force a new deployment:
 # Build and push new image
 docker build -t paperclip-server .
 docker tag paperclip-server:latest \
-  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/paperclip-server:latest
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/noralos-server:latest
 docker push \
-  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/paperclip-server:latest
+  $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/noralos-server:latest
 
 # Roll out
 aws ecs update-service \
@@ -559,7 +559,7 @@ aws iam delete-role --role-name paperclip-ecs-execution
 aws iam delete-role --role-name paperclip-ecs-task
 
 # 9. Log group
-aws logs delete-log-group --log-group-name /ecs/paperclip
+aws logs delete-log-group --log-group-name /ecs/noralos
 ```
 
 ## Cost Reference

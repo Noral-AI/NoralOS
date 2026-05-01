@@ -649,7 +649,7 @@ export function CompanyEnvironments() {
                   <input
                     className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
                     type="text"
-                    placeholder="/Users/paperclip/workspace"
+                    placeholder="/Users/noralos/workspace"
                     value={environmentForm.sshRemoteWorkspacePath}
                     onChange={(e) =>
                       setEnvironmentForm((current) => ({ ...current, sshRemoteWorkspacePath: e.target.value }))}

@@ -193,9 +193,9 @@ async function openConfiguredDb(configPath: string): Promise<{
         config.database.embeddedPostgresDataDir,
         config.database.embeddedPostgresPort,
       );
-      const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${embeddedHandle.port}/postgres`;
+      const adminConnectionString = `postgres://noralos:paperclip@127.0.0.1:${embeddedHandle.port}/postgres`;
       await ensurePostgresDatabase(adminConnectionString, "paperclip");
-      const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${embeddedHandle.port}/paperclip`;
+      const connectionString = `postgres://noralos:paperclip@127.0.0.1:${embeddedHandle.port}/noralos`;
       await applyPendingMigrations(connectionString);
       const db = createDb(connectionString) as ClosableDb;
       return {
@@ -256,9 +256,9 @@ export async function disableAllRoutinesInConfig(
         config.database.embeddedPostgresDataDir,
         config.database.embeddedPostgresPort,
       );
-      const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${embeddedHandle.port}/postgres`;
+      const adminConnectionString = `postgres://noralos:paperclip@127.0.0.1:${embeddedHandle.port}/postgres`;
       await ensurePostgresDatabase(adminConnectionString, "paperclip");
-      const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${embeddedHandle.port}/paperclip`;
+      const connectionString = `postgres://noralos:paperclip@127.0.0.1:${embeddedHandle.port}/noralos`;
       await applyPendingMigrations(connectionString);
       db = createDb(connectionString) as ClosableDb;
     } else {
@@ -337,7 +337,7 @@ export function registerRoutineCommands(program: Command): void {
     .command("disable-all")
     .description("Pause all non-archived routines in the configured local instance for one company")
     .option("-c, --config <path>", "Path to config file")
-    .option("-d, --data-dir <path>", "NoralOS data directory root (isolates state from ~/.paperclip)")
+    .option("-d, --data-dir <path>", "NoralOS data directory root (isolates state from ~/.noralos)")
     .option("-C, --company-id <id>", "Company ID")
     .option("--json", "Output raw JSON")
     .action(async (opts: RoutinesDisableAllOptions) => {

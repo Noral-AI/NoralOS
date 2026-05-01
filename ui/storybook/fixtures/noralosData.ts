@@ -20,9 +20,9 @@ import type { LiveRunForIssue } from "@/api/heartbeats";
 
 const now = new Date("2026-04-20T12:00:00.000Z");
 const recent = (minutesAgo: number) => new Date(now.getTime() - minutesAgo * 60_000);
-const storybookRepoRoot = "~/paperclip";
-const storybookWorkspaceRoot = `${storybookRepoRoot}/.paperclip/workspaces`;
-const storybookWorktreeRoot = `${storybookRepoRoot}/.paperclip/worktrees`;
+const storybookRepoRoot = "~/noralos";
+const storybookWorkspaceRoot = `${storybookRepoRoot}/.noralos/workspaces`;
+const storybookWorktreeRoot = `${storybookRepoRoot}/.noralos/worktrees`;
 
 export const storybookCompanies: Company[] = [
   {
@@ -434,7 +434,7 @@ export const storybookProjectWorkspaces: Project["workspaces"] = [
         command: "pnpm docs:dev",
         cwd: null,
         port: 4173,
-        url: "https://paperclip-docs-preview.vercel.app",
+        url: "https://noralos-docs-preview.vercel.app",
         healthStatus: "unknown",
         lastUsedAt: recent(48),
         startedAt: recent(72),
@@ -613,7 +613,7 @@ function createProject(overrides: Partial<Project> = {}): Project {
       defaultRef: "master",
       repoName: "paperclip",
       localFolder: storybookRepoRoot,
-      managedFolder: ".paperclip/worktrees/storybook",
+      managedFolder: ".noralos/worktrees/storybook",
       effectiveLocalFolder: storybookRepoRoot,
       origin: "local_folder",
     },

@@ -28,7 +28,7 @@ import { cliVersion } from "./version.js";
 
 const program = new Command();
 const DATA_DIR_OPTION_HELP =
-  "NoralOS data directory root (isolates state from ~/.paperclip)";
+  "NoralOS data directory root (isolates state from ~/.noralos)";
 
 program
   .name("paperclipai")
