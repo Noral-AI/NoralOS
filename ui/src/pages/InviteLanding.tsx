@@ -4,6 +4,7 @@ import { AGENT_ADAPTER_TYPES } from "@noralos/shared";
 import type { AgentAdapterType, JoinRequest } from "@noralos/shared";
 import { Button } from "@/components/ui/button";
 import { CompanyPatternIcon } from "@/components/CompanyPatternIcon";
+import { NoralWordmark } from "@/components/brand/NoralLogo";
 import { useCompany } from "@/context/CompanyContext";
 import { Link, useNavigate, useParams } from "@/lib/router";
 import { accessApi } from "../api/access";
@@ -550,11 +551,15 @@ export function InviteLandingPage() {
                 className="h-16 w-16 rounded-none border border-zinc-800"
               />
               <div className="min-w-0">
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                  You&apos;ve been invited to join NoralOS
+                <p className="brand-eyebrow text-zinc-500">
+                  You&apos;ve been invited to join <NoralWordmark inkColor="currentColor" />
                 </p>
-                <h1 className="mt-2 text-2xl font-semibold">
-                  {invite.inviteType === "bootstrap_ceo" ? "Set up NoralOS" : `Join ${companyDisplayName}`}
+                <h1 className="mt-2 text-2xl font-semibold tracking-[-0.025em]">
+                  {invite.inviteType === "bootstrap_ceo" ? (
+                    <>Set up <NoralWordmark inkColor="currentColor" />.</>
+                  ) : (
+                    `Join ${companyDisplayName}`
+                  )}
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-300">
                   {showsAgentForm

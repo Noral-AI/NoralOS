@@ -36,82 +36,117 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+
+  /* Brand-derived font tokens (noral.ai) */
+  --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand-derived radius scale (noral.ai brand-tokens.css) */
+  --radius-sm: 0.625rem;   /* 10px — buttons, inputs */
+  --radius-md: 0.875rem;   /* 14px — cards default */
+  --radius-lg: 1.25rem;    /* 20px — surface cards */
+  --radius-xl: 1.75rem;    /* 28px — large surfaces */
 }
 
 :root {
   color-scheme: light;
-  --radius: 0;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+
+  /* ==========================================================
+   * Brand palette — sourced verbatim from noral.ai brand-tokens.css
+   * Ink #0A1F2E · Cream #F5F1EA · Paper #FAF7F1 · Signal #FF5B2E
+   * ========================================================== */
+  --brand-ink:           #0A1F2E;
+  --brand-ink-2:         #122a3c;
+  --brand-cream:         #F5F1EA;
+  --brand-paper:         #FAF7F1;
+  --brand-sand:          #ECE6DA;
+  --brand-signal:        #FF5B2E;
+  --brand-signal-soft:   #ff8b65;
+  --brand-signal-quiet:  #ffd4c2;
+  --brand-stone:         #4a5560;
+  --brand-mist:          #7d8a96;
+  --brand-rule:          rgba(10, 31, 46, 0.10);
+  --brand-rule-strong:   rgba(10, 31, 46, 0.20);
+  --brand-success:       #5dd28a;
+
+  /* shadcn surface tokens, remapped to the brand */
+  --radius: 0.875rem;                                 /* 14px — md */
+  --background: var(--brand-paper);
+  --foreground: var(--brand-ink);
+  --card: var(--brand-paper);
+  --card-foreground: var(--brand-ink);
+  --popover: var(--brand-paper);
+  --popover-foreground: var(--brand-ink);
+  --primary: var(--brand-signal);
+  --primary-foreground: var(--brand-cream);
+  --secondary: var(--brand-cream);
+  --secondary-foreground: var(--brand-ink);
+  --muted: var(--brand-sand);
+  --muted-foreground: var(--brand-mist);
+  --accent: var(--brand-signal);
+  --accent-foreground: var(--brand-cream);
+  --destructive: oklch(0.577 0.245 27.325);           /* shadcn default — brand has no error red, see Deviations */
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: var(--brand-rule);
+  --input: var(--brand-rule);
+  --ring: var(--brand-signal);
+
+  /* Charts: shadcn defaults retained — brand has no multi-hue dataviz palette, see Deviations */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --sidebar: var(--brand-paper);
+  --sidebar-foreground: var(--brand-ink);
+  --sidebar-primary: var(--brand-signal);
+  --sidebar-primary-foreground: var(--brand-cream);
+  --sidebar-accent: var(--brand-cream);
+  --sidebar-accent-foreground: var(--brand-ink);
+  --sidebar-border: var(--brand-rule);
+  --sidebar-ring: var(--brand-signal);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Dark theme uses ink-on-cream — matches noral.ai's hero/footer "dark sections"
+   * (which use INK background + CREAM foreground, never a fully separate dark palette). */
+  --background: var(--brand-ink);
+  --foreground: var(--brand-cream);
+  --card: var(--brand-ink-2);
+  --card-foreground: var(--brand-cream);
+  --popover: var(--brand-ink-2);
+  --popover-foreground: var(--brand-cream);
+  --primary: var(--brand-signal);
+  --primary-foreground: var(--brand-cream);
+  --secondary: rgba(245, 241, 234, 0.08);
+  --secondary-foreground: var(--brand-cream);
+  --muted: rgba(245, 241, 234, 0.06);
+  --muted-foreground: rgba(245, 241, 234, 0.78);
+  --accent: var(--brand-signal);
+  --accent-foreground: var(--brand-cream);
   --destructive: oklch(0.637 0.237 25.331);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --border: rgba(245, 241, 234, 0.10);
+  --input: rgba(245, 241, 234, 0.10);
+  --ring: var(--brand-signal);
+
+  /* Charts: shadcn dark defaults retained — see Deviations */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.145 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+
+  --sidebar: var(--brand-ink);
+  --sidebar-foreground: var(--brand-cream);
+  --sidebar-primary: var(--brand-signal);
+  --sidebar-primary-foreground: var(--brand-cream);
+  --sidebar-accent: rgba(245, 241, 234, 0.08);
+  --sidebar-accent-foreground: var(--brand-cream);
+  --sidebar-border: rgba(245, 241, 234, 0.10);
+  --sidebar-ring: var(--brand-signal);
 }
 
 @layer base {
@@ -126,11 +161,51 @@
     @apply bg-background text-foreground antialiased;
     height: 100%;
     overflow: hidden;
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+  code, pre, kbd, samp {
+    font-family: var(--font-mono);
   }
   h1,
   h2,
   h3 {
     text-wrap: balance;
+  }
+}
+
+/* ==========================================================
+ * Brand type-role utilities — sourced from noral.ai
+ * site/Primitives.jsx (Display / H2 / Lede / Eyebrow specs)
+ * ========================================================== */
+@layer components {
+  .brand-display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 4.5rem;       /* 72px */
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+  }
+  .brand-h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 3rem;          /* 48px */
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+  }
+  .brand-lede {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: 1.125rem;      /* 18px */
+    line-height: 1.55;
+  }
+  .brand-eyebrow {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.6875rem;     /* 11px */
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brand-mist);
   }
   /* Prevent double-tap-to-zoom on interactive elements for mobile */
   a,
