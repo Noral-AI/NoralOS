@@ -5,23 +5,19 @@
 #   - includes a Watchtower service that polls GHCR every 5 min for new
 #     images and restarts the server container when one lands
 #
-# Required env vars:
-#   BETTER_AUTH_SECRET          random 32-byte secret, see .env.example
+# Required env vars (read from .env in the same directory as this file):
+#   BETTER_AUTH_SECRET          random 32-byte secret
 #   NORALOS_PUBLIC_URL          https://agent.noral.ai (no trailing slash)
 #   POSTGRES_PASSWORD           random secret for the in-cluster Postgres
-#   GITHUB_TOKEN_FOR_GHCR       (optional) GHCR pull token if the image
-#                               is private. Not needed if the image is
-#                               public.
 #
 # Deploy flow on the VPS:
-#   1. cd /opt/noralos  (or wherever this compose file lives)
-#   2. docker compose -f docker-compose.production.yml pull
-#   3. docker compose -f docker-compose.production.yml up -d
-#   Watchtower then keeps `server` up to date automatically.
+#   1. cd /opt/noralos
+#   2. docker compose pull
+#   3. docker compose up -d
 #
 # Image tag pinning:
-#   Default uses :latest. To pin to a specific release, override
-#   NORALOS_IMAGE_TAG in your environment (e.g. v2026.428.0).
+#   Default uses :latest. To pin to a specific release, set NORALOS_IMAGE_TAG
+#   in .env (e.g. NORALOS_IMAGE_TAG=v2026.428.0 or NORALOS_IMAGE_TAG=sha-a84522b).
 
 services:
   db:
@@ -38,6 +34,8 @@ services:
       retries: 30
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - noralos
     restart: unless-stopped
     labels:
       # Watchtower: don't auto-update Postgres. Major version bumps need
@@ -63,6 +61,8 @@ services:
       # legacy deploys that already have data persisted under that name.
       # Mount path changed to /noralos in Phase 4 of the rebrand.
       - paperclip-data:/noralos
+    networks:
+      - noralos
     depends_on:
       db:
         condition: service_healthy
@@ -73,24 +73,36 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
-      start_period: 60s
+      start_period: 90s
     restart: unless-stopped
     labels:
       # Watchtower: pull new images and restart on label match.
       com.centurylinklabs.watchtower.enable: "true"
 
   watchtower:
-    image: containrrr/watchtower:latest
+    # Pinned to 1.7.1 — :latest has shipped clients that fail against
+    # bleeding-edge Docker daemons (e.g. Ubuntu 25.10's docker package
+    # rejects API 1.25). 1.7.1 negotiates 1.41+ which works on every
+    # daemon released in the past 5+ years.
+    image: containrrr/watchtower:1.7.1
     container_name: noralos-watchtower
     volumes:
       # Required: lets Watchtower issue Docker commands (pull, stop, start).
       - /var/run/docker.sock:/var/run/docker.sock
-      # Optional: lets Watchtower read GHCR auth from the host's docker
-      # config (created by `docker login ghcr.io …` on the VPS). Required
-      # if the image is private; harmless if public. Adjust the path if
-      # your VPS's docker config lives elsewhere.
-      - ${HOME:-/root}/.docker/config.json:/config.json:ro
+      # NOTE: the previous version of this file bind-mounted
+      # ${HOME}/.docker/config.json:/config.json:ro for private GHCR auth.
+      # That mount is removed because (a) the GHCR package is public so
+      # no auth is needed, and (b) Docker silently creates a *directory*
+      # at the source path when the file doesn't exist, which then can't
+      # be parsed as JSON. If you switch the GHCR package back to private,
+      # add the mount back AND make sure the source is a real file:
+      #   echo '{}' > /root/.docker/config.json
+      #   chmod 600 /root/.docker/config.json
+      #   docker login ghcr.io -u <user> --password-stdin <<< "$YOUR_PAT"
     environment:
+      # Force a modern Docker API version for the SDK negotiation. Defends
+      # against host daemons that have dropped support for older API levels.
+      DOCKER_API_VERSION: "1.45"
       # Only watch containers explicitly opted in via the
       # com.centurylinklabs.watchtower.enable=true label.
       WATCHTOWER_LABEL_ENABLE: "true"
@@ -99,14 +111,22 @@ services:
       WATCHTOWER_POLL_INTERVAL: "300"
       # Remove old images after a successful pull-and-restart.
       WATCHTOWER_CLEANUP: "true"
-      # Don't include containers from non-matching networks.
-      WATCHTOWER_INCLUDE_RESTARTING: "true"
       # Optional: notification webhook (Slack/Discord/email). Off by default.
       # WATCHTOWER_NOTIFICATION_URL: "..."
+    networks:
+      - noralos
     restart: unless-stopped
     labels:
       # Watchtower should not try to update itself in a running cycle.
       com.centurylinklabs.watchtower.enable: "false"
+
+# Explicit network. Avoids a class of bug where the project's default
+# network collides with a stale one from a previous deploy and breaks
+# embedded DNS for service names like `db`.
+networks:
+  noralos:
+    name: noralos
+    driver: bridge
 
 volumes:
   pgdata:
