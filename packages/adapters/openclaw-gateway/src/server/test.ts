@@ -296,7 +296,7 @@ export async function testEnvironment(
           code: "openclaw_gateway_probe_failed",
           level: "warn",
           message: "Gateway probe failed.",
-          hint: "Verify network reachability and gateway URL from the Paperclip server host.",
+          hint: "Verify network reachability and gateway URL from the NoralOS server host.",
         });
       }
     } catch (err) {

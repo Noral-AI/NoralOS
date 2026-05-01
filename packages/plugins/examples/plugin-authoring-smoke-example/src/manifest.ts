@@ -5,7 +5,7 @@ const manifest: PaperclipPluginManifestV1 = {
   apiVersion: 1,
   version: "0.1.0",
   displayName: "Plugin Authoring Smoke Example",
-  description: "A Paperclip plugin",
+  description: "A NoralOS plugin",
   author: "Plugin Author",
   categories: ["connector"],
   capabilities: [

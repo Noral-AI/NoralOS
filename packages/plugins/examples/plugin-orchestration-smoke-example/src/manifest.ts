@@ -5,8 +5,8 @@ const manifest: PaperclipPluginManifestV1 = {
   apiVersion: 1,
   version: "0.1.0",
   displayName: "Plugin Orchestration Smoke Example",
-  description: "First-party smoke plugin that exercises Paperclip orchestration-grade plugin APIs.",
-  author: "Paperclip",
+  description: "First-party smoke plugin that exercises NoralOS orchestration-grade plugin APIs.",
+  author: "NoralOS",
   categories: ["automation", "ui"],
   capabilities: [
     "api.routes.register",

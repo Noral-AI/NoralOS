@@ -9,8 +9,8 @@ const manifest: PaperclipPluginManifestV1 = {
   version: PLUGIN_VERSION,
   displayName: "E2B Sandbox Provider",
   description:
-    "First-party sandbox provider plugin that provisions E2B cloud sandboxes as Paperclip execution environments.",
-  author: "Paperclip",
+    "First-party sandbox provider plugin that provisions E2B cloud sandboxes as NoralOS execution environments.",
+  author: "NoralOS",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: {
@@ -35,7 +35,7 @@ const manifest: PaperclipPluginManifestV1 = {
             type: "string",
             format: "secret-ref",
             description:
-              "Environment-specific E2B API key. Paste a key or an existing Paperclip secret reference; saved environments store pasted values as company secrets. Falls back to E2B_API_KEY if omitted.",
+              "Environment-specific E2B API key. Paste a key or an existing NoralOS secret reference; saved environments store pasted values as company secrets. Falls back to E2B_API_KEY if omitted.",
           },
           timeoutMs: {
             type: "number",

@@ -121,7 +121,7 @@ function resolveDefaultPaperclipApiUrl(): string {
   const runtimeHost = resolveHostForUrl(
     process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
-  // 3100 matches the default Paperclip dev server port when the runtime does not provide one.
+  // 3100 matches the default NoralOS dev server port when the runtime does not provide one.
   const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
   return `http://${runtimeHost}:${runtimePort}`;
 }
@@ -711,7 +711,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
   const onLog = input.onLog ?? (async () => {});
   const hostApiToken = input.hostApiToken?.trim() ?? "";
   if (hostApiToken.length === 0) {
-    throw new Error("Sandbox bridge mode requires a host-side Paperclip API token.");
+    throw new Error("Sandbox bridge mode requires a host-side NoralOS API token.");
   }
 
   const runtimeRootDir =

@@ -1102,7 +1102,7 @@ function KitchenSinkTopRow({ context }: { context: PluginPageProps["context"] })
             {pluginPagePath(context.companyPrefix)}
           </a>
         </Section>
-        <Section title="Paperclip Animation">
+        <Section title="NoralOS Animation">
           <div style={mutedTextStyle}>
             This is the same Paperclip ASCII treatment used in onboarding, copied into the example plugin so the package stays self-contained.
           </div>
@@ -1552,7 +1552,7 @@ function KitchenSinkConsole({ context }: { context: { companyId: string | null; 
         <JsonBlock value={overview.data?.runtimeLaunchers ?? []} />
       </Section>
 
-      <Section title="Paperclip Domain APIs">
+      <Section title="NoralOS Domain APIs">
         <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <PaginatedDomainCard
             title="Companies"

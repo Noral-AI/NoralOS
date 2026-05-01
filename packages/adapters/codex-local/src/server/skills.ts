@@ -26,7 +26,7 @@ async function buildCodexSkillSnapshot(
     managed: true,
     state: desiredSet.has(entry.key) ? "configured" : "available",
     origin: entry.required ? "paperclip_required" : "company_managed",
-    originLabel: entry.required ? "Required by Paperclip" : "Managed by Paperclip",
+    originLabel: entry.required ? "Required by NoralOS" : "Managed by NoralOS",
     readOnly: false,
     sourcePath: entry.source,
     targetPath: null,
@@ -40,7 +40,7 @@ async function buildCodexSkillSnapshot(
 
   for (const desiredSkill of desiredSkills) {
     if (availableByKey.has(desiredSkill)) continue;
-    warnings.push(`Desired skill "${desiredSkill}" is not available from the Paperclip skills directory.`);
+    warnings.push(`Desired skill "${desiredSkill}" is not available from the NoralOS skills directory.`);
     entries.push({
       key: desiredSkill,
       runtimeName: null,
@@ -52,7 +52,7 @@ async function buildCodexSkillSnapshot(
       readOnly: false,
       sourcePath: null,
       targetPath: null,
-      detail: "Paperclip cannot find this skill in the local runtime skills directory.",
+      detail: "NoralOS cannot find this skill in the local runtime skills directory.",
     });
   }
 

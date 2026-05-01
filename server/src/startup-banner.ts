@@ -135,18 +135,18 @@ export function printStartupBanner(opts: StartupBannerOptions): void {
     : color("disabled", "yellow");
 
   const art = [
-    color("███╗   ██╗ ██████╗ ██████╗  █████╗ ██╗     ", "cyan"),
-    color("████╗  ██║██╔═══██╗██╔══██╗██╔══██╗██║     ", "cyan"),
-    color("██╔██╗ ██║██║   ██║██████╔╝███████║██║     ", "cyan"),
-    color("██║╚██╗██║██║   ██║██╔══██╗██╔══██║██║     ", "cyan"),
-    color("██║ ╚████║╚██████╔╝██║  ██║██║  ██║███████╗", "cyan"),
-    color("╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝", "cyan"),
+    color("███╗   ██╗ ██████╗ ██████╗  █████╗ ██╗      ██████╗ ███████╗", "cyan"),
+    color("████╗  ██║██╔═══██╗██╔══██╗██╔══██╗██║     ██╔═══██╗██╔════╝", "cyan"),
+    color("██╔██╗ ██║██║   ██║██████╔╝███████║██║     ██║   ██║███████╗", "cyan"),
+    color("██║╚██╗██║██║   ██║██╔══██╗██╔══██║██║     ██║   ██║╚════██║", "cyan"),
+    color("██║ ╚████║╚██████╔╝██║  ██║██║  ██║███████╗╚██████╔╝███████║", "cyan"),
+    color("╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝", "cyan"),
   ];
 
   const lines = [
     "",
     ...art,
-    color("  ───────────────────────────────────────────────────────", "blue"),
+    color("  ─────────────────────────────────────────────────────────────", "blue"),
     row("Mode", `${dbMode}  |  ${uiMode}`),
     row("Deploy", `${opts.deploymentMode} (${opts.deploymentExposure})`),
     row("Bind", `${opts.bind} ${color(`(${opts.host})`, "dim")}`),
@@ -167,9 +167,9 @@ export function printStartupBanner(opts: StartupBannerOptions): void {
     row("Backup Dir", opts.databaseBackupDir),
     row("Config", configPath),
     agentJwtSecret.status === "warn"
-      ? color("  ───────────────────────────────────────────────────────", "yellow")
+      ? color("  ─────────────────────────────────────────────────────────────", "yellow")
       : null,
-    color("  ───────────────────────────────────────────────────────", "blue"),
+    color("  ─────────────────────────────────────────────────────────────", "blue"),
     "",
   ];
 

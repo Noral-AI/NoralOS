@@ -1,6 +1,6 @@
 # @paperclipai/create-paperclip-plugin
 
-Scaffolding tool for creating new Paperclip plugins.
+Scaffolding tool for creating new NoralOS plugins.
 
 ```bash
 npx @paperclipai/create-paperclip-plugin my-plugin
@@ -13,7 +13,7 @@ npx @paperclipai/create-paperclip-plugin @acme/my-plugin \
   --template connector \
   --category connector \
   --display-name "Acme Connector" \
-  --description "Syncs Acme data into Paperclip" \
+  --description "Syncs Acme data into NoralOS" \
   --author "Acme Inc"
 ```
 

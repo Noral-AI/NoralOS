@@ -73,7 +73,7 @@ function renderPaperclipEnvNote(env: Record<string, string>): string {
     .sort();
   if (paperclipKeys.length === 0) return "";
   return [
-    "Paperclip runtime note:",
+    "NoralOS runtime note:",
     `The following PAPERCLIP_* environment variables are available in this run: ${paperclipKeys.join(", ")}`,
     "Do not assume these variables are missing without checking your shell environment.",
     "",
@@ -84,8 +84,8 @@ function renderPaperclipEnvNote(env: Record<string, string>): string {
 function renderApiAccessNote(env: Record<string, string>): string {
   if (!hasNonEmptyEnvValue(env, "PAPERCLIP_API_URL") || !hasNonEmptyEnvValue(env, "PAPERCLIP_API_KEY")) return "";
   return [
-    "Paperclip API access note:",
-    "Use run_shell_command with curl to make Paperclip API requests.",
+    "NoralOS API access note:",
+    "Use run_shell_command with curl to make NoralOS API requests.",
     "GET example:",
     `  run_shell_command({ command: "curl -s -H \\"Authorization: Bearer $PAPERCLIP_API_KEY\\" \\"$PAPERCLIP_API_URL/api/agents/me\\"" })`,
     "POST/PATCH example:",

@@ -9,8 +9,8 @@ const manifest: PaperclipPluginManifestV1 = {
   version: PLUGIN_VERSION,
   displayName: "Fake Sandbox Provider",
   description:
-    "First-party deterministic sandbox provider plugin for exercising Paperclip provider-plugin integration without external infrastructure.",
-  author: "Paperclip",
+    "First-party deterministic sandbox provider plugin for exercising NoralOS provider-plugin integration without external infrastructure.",
+  author: "NoralOS",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: {

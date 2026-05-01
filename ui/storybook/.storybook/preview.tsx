@@ -274,7 +274,7 @@ const preview: Preview = {
   ],
   globalTypes: {
     theme: {
-      description: "Paperclip color mode",
+      description: "NoralOS color mode",
       defaultValue: "dark",
       toolbar: {
         title: "Theme",

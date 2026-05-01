@@ -45,7 +45,7 @@ async function buildOpenCodeSkillSnapshot(config: Record<string, unknown>): Prom
     installedDetail: "Installed in the shared Claude/OpenCode skills home.",
     missingDetail: "Configured but not currently linked into the shared Claude/OpenCode skills home.",
     externalConflictDetail: "Skill name is occupied by an external installation in the shared skills home.",
-    externalDetail: "Installed outside Paperclip management in the shared skills home.",
+    externalDetail: "Installed outside NoralOS management in the shared skills home.",
     warnings: [
       "OpenCode currently uses the shared Claude skills home (~/.claude/skills).",
     ],

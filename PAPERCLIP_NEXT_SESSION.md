@@ -91,7 +91,7 @@ After this audit was authored, Quentin directed a Maximum-tier rebrand: everythi
 
 ## 3 questions for Quentin to answer before Phase 1 starts
 
-1. **Open Issue #1 — does Paperclip actually ship a "7-category skill security scan"?**
+1. **Open Issue #1 — does NoralOS actually ship a "7-category skill security scan"?**
    Static audit found only `plugin-capability-validator.ts` (a manifest-time + runtime capability gate for plugins) and `scanProjectWorkspaces` (project-skill discovery). No 7-category threat scanner. Is the framing in `_HANDOFF.md` and `_FINAL_INSTALL_LIST.md` based on a doc / marketing claim that doesn't match the code? If so, the rejected-list reasoning needs revision.
 
 2. **Open Issue #2 — Phase 4 output-filter approach?**

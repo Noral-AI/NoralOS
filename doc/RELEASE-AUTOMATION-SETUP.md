@@ -1,6 +1,6 @@
 # Release Automation Setup
 
-This document covers the GitHub and npm setup required for the current Paperclip release model:
+This document covers the GitHub and npm setup required for the current NoralOS release model:
 
 - automatic canaries from `master`
 - manual stable promotion from a chosen source ref
@@ -29,7 +29,7 @@ Required files:
 
 ## 2. Configure npm Trusted Publishing
 
-Do this for every public package that Paperclip publishes.
+Do this for every public package that NoralOS publishes.
 
 At minimum that includes:
 
@@ -83,7 +83,7 @@ Only after that should you remove old token-based access.
 After trusted publishing works:
 
 1. revoke any repository or organization `NPM_TOKEN` secrets used for publish
-2. revoke any personal automation token that used to publish Paperclip
+2. revoke any personal automation token that used to publish NoralOS
 3. if npm offers a package-level setting to restrict publishing to trusted publishers, enable it
 
 Goal:

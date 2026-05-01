@@ -44,7 +44,7 @@ async function buildPiSkillSnapshot(config: Record<string, unknown>): Promise<Ad
     locationLabel: "~/.pi/agent/skills",
     missingDetail: "Configured but not currently linked into the Pi skills home.",
     externalConflictDetail: "Skill name is occupied by an external installation.",
-    externalDetail: "Installed outside Paperclip management.",
+    externalDetail: "Installed outside NoralOS management.",
   });
 }
 

@@ -2,7 +2,7 @@
 
 Use this workflow when you want Codex or Claude to inspect a pull request that you do not want touching your host machine directly.
 
-This is intentionally separate from the normal Paperclip dev image.
+This is intentionally separate from the normal NoralOS dev image.
 
 ## What this container isolates
 
@@ -87,7 +87,7 @@ Or with Claude:
 claude
 ```
 
-## Preview the Paperclip app from the PR
+## Preview the NoralOS app from the PR
 
 Only do this when you intentionally want to execute the PR's code inside the container.
 

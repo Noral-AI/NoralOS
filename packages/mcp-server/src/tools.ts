@@ -225,7 +225,7 @@ export function createToolDefinitions(client: PaperclipApiClient): ToolDefinitio
   return [
     makeTool(
       "paperclipMe",
-      "Get the current authenticated Paperclip actor details",
+      "Get the current authenticated NoralOS actor details",
       z.object({}),
       async () => client.requestJson("GET", "/agents/me"),
     ),
@@ -594,7 +594,7 @@ export function createToolDefinitions(client: PaperclipApiClient): ToolDefinitio
     ),
     makeTool(
       "paperclipApiRequest",
-      "Make a JSON request to an existing Paperclip /api endpoint for unsupported operations",
+      "Make a JSON request to an existing NoralOS /api endpoint for unsupported operations",
       apiRequestSchema,
       async ({ method, path, jsonBody }) => {
         if (!path.startsWith("/") || path.includes("..")) {

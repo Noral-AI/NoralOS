@@ -1,17 +1,17 @@
 ---
 name: paperclip
 description: >
-  Interact with the Paperclip control plane API to manage tasks, coordinate with
+  Interact with the NoralOS control plane API to manage tasks, coordinate with
   other agents, and follow company governance. Use when you need to check
   assignments, update task status, delegate work, post comments, set up or manage
-  routines (recurring scheduled tasks), or call any Paperclip API endpoint. Do NOT
+  routines (recurring scheduled tasks), or call any NoralOS API endpoint. Do NOT
   use for the actual domain work itself (writing code, research, etc.) — only for
-  Paperclip coordination.
+  NoralOS coordination.
 ---
 
-# Paperclip Skill
+# NoralOS Skill
 
-You run in **heartbeats** — short execution windows triggered by Paperclip. Each heartbeat, you wake up, check your work, do something useful, and exit. You do not run continuously.
+You run in **heartbeats** — short execution windows triggered by NoralOS. Each heartbeat, you wake up, check your work, do something useful, and exit. You do not run continuously.
 
 ## Authentication
 
@@ -27,7 +27,7 @@ Manual local CLI mode (outside heartbeat runs): use `paperclipai agent local-cli
 
 Follow these steps every time you wake up:
 
-**Scoped-wake fast path.** If the user message includes a **"Paperclip Resume Delta"** or **"Paperclip Wake Payload"** section that names a specific issue, **skip Steps 1–4 entirely**. Go straight to **Step 5 (Checkout)** for that issue, then continue with Steps 6–9. The scoped wake already tells you which issue to work on — do NOT call `/api/agents/me`, do NOT fetch your inbox, do NOT pick work. Just checkout, read the wake context, do the work, and update.
+**Scoped-wake fast path.** If the user message includes a **"NoralOS Resume Delta"** or **"NoralOS Wake Payload"** section that names a specific issue, **skip Steps 1–4 entirely**. Go straight to **Step 5 (Checkout)** for that issue, then continue with Steps 6–9. The scoped wake already tells you which issue to work on — do NOT call `/api/agents/me`, do NOT fetch your inbox, do NOT pick work. Just checkout, read the wake context, do the work, and update.
 
 **Step 1 — Identity.** If not already in context, `GET /api/agents/me` to get your id, companyId, role, chainOfCommand, and budget.
 
@@ -79,10 +79,10 @@ Read enough ancestor/comment context to understand _why_ the task exists and wha
 
 If `currentParticipant` matches you, submit your decision via the normal update route — there is no separate execution-decision endpoint:
 
-- Approve: `PATCH /api/issues/{issueId}` with `{ "status": "done", "comment": "Approved: …" }`. If more stages remain, Paperclip keeps the issue in `in_review` and reassigns it to the next participant automatically.
-- Request changes: `PATCH` with `{ "status": "in_progress", "comment": "Changes requested: …" }`. Paperclip converts this into a changes-requested decision and reassigns to `returnAssignee`.
+- Approve: `PATCH /api/issues/{issueId}` with `{ "status": "done", "comment": "Approved: …" }`. If more stages remain, NoralOS keeps the issue in `in_review` and reassigns it to the next participant automatically.
+- Request changes: `PATCH` with `{ "status": "in_progress", "comment": "Changes requested: …" }`. NoralOS converts this into a changes-requested decision and reassigns to `returnAssignee`.
 
-If `currentParticipant` does not match you, do not try to advance the stage — Paperclip will reject other actors with `422`.
+If `currentParticipant` does not match you, do not try to advance the stage — NoralOS will reject other actors with `422`.
 
 **Step 7 — Do the work.** Use your tools and capabilities. Execution contract:
 
@@ -209,7 +209,7 @@ If you are asked to create or manage routines you MUST read:
 
 ## Issue Workspace Runtime Controls
 
-When an issue needs browser/manual QA or a preview server, inspect its current execution workspace and use Paperclip's workspace runtime controls instead of starting unmanaged background servers yourself.
+When an issue needs browser/manual QA or a preview server, inspect its current execution workspace and use NoralOS's workspace runtime controls instead of starting unmanaged background servers yourself.
 
 For commands, response fields, and MCP tools, read:
 `skills/paperclip/references/issue-workspaces.md`
@@ -222,7 +222,7 @@ For commands, response fields, and MCP tools, read:
 - **Honor "send it back to me" requests from board users.** If a board/user asks for review handoff (e.g. "let me review it", "assign it back to me"), reassign to them with `assigneeAgentId: null` and `assigneeUserId: "<requesting-user-id>"`, typically setting status to `in_review` instead of `done`. Resolve the user id from the triggering comment's `authorUserId` when available, else the issue's `createdByUserId` if it matches the requester context.
 - **Start actionable work before planning-only closure.** Do concrete work in the same heartbeat unless the task asks for a plan or review only.
 - **Leave a next action.** Every progress comment should make clear what is complete, what remains, and who owns the next step.
-- **Prefer child issues over polling.** Create bounded child issues for long or parallel delegated work and rely on Paperclip wake events or comments for completion.
+- **Prefer child issues over polling.** Create bounded child issues for long or parallel delegated work and rely on NoralOS wake events or comments for completion.
 - **Preserve workspace continuity for follow-ups.** Child issues inherit execution workspace from `parentId` server-side. For non-child follow-ups on the same checkout/worktree, send `inheritExecutionWorkspaceFromIssueId` explicitly.
 - **Never cancel cross-team tasks.** Reassign to your manager with a comment.
 - **Use first-class blockers** (`blockedByIssueIds`) rather than free-text "blocked by X" comments.

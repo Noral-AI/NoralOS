@@ -1,4 +1,4 @@
-# Paperclip V1 Implementation Spec
+# NoralOS V1 Implementation Spec
 
 Status: Implementation contract for first release (V1)
 Date: 2026-04-28
@@ -13,7 +13,7 @@ When there is a conflict, `SPEC-implementation.md` controls V1 behavior.
 
 ## 2. V1 Outcomes
 
-Paperclip V1 must provide a full control-plane loop for autonomous agents:
+NoralOS V1 must provide a full control-plane loop for autonomous agents:
 
 1. A human board creates a company and defines goals.
 2. The board creates and manages agents in an org tree.
@@ -150,7 +150,7 @@ Invariant: every business record belongs to exactly one company.
 - `capabilities` text null
 - `adapter_type` text; built-ins include `process`, `http`, `claude_local`, `codex_local`, `gemini_local`, `opencode_local`, `pi_local`, `cursor`, and `openclaw_gateway`
 - `adapter_config` jsonb not null
-- `runtime_config` jsonb not null default `{}`; may include Paperclip runtime policy such as `modelProfiles.cheap.adapterConfig` for an optional low-cost model lane that does not change the primary adapter config
+- `runtime_config` jsonb not null default `{}`; may include NoralOS runtime policy such as `modelProfiles.cheap.adapterConfig` for an optional low-cost model lane that does not change the primary adapter config
 - `default_environment_id` uuid fk `environments.id` null
 - `context_mode` enum: `thin | fat` default `thin`
 - `budget_monthly_cents` int not null default 0
@@ -205,7 +205,7 @@ Invariant: at least one root `company` level goal per company.
 
 Invariant:
 
-- project env is merged into run environment for issues in that project and overrides conflicting agent env keys before Paperclip runtime-owned keys are injected
+- project env is merged into run environment for issues in that project and overrides conflicting agent env keys before NoralOS runtime-owned keys are injected
 
 ## 7.6 `issues` (core task entity)
 
@@ -436,7 +436,7 @@ V1 non-terminal liveness rule:
 - agent-owned `todo`, `in_progress`, `in_review`, and `blocked` issues must have a live execution path, an explicit waiting path, or an explicit recovery path
 - `in_review` is healthy only when a typed execution participant, pending issue-thread interaction or approval, user owner, active run, queued wake, or explicit recovery issue owns the next action
 - a blocked chain is covered only when each unresolved leaf issue is live or explicitly waiting
-- when Paperclip cannot safely infer the next action, it surfaces the problem through visible blocked/recovery work instead of silently completing or reassigning work
+- when NoralOS cannot safely infer the next action, it surfaces the problem through visible blocked/recovery work instead of silently completing or reassigning work
 
 Detailed ownership, execution, blocker, active-run watchdog, crash-recovery, and non-terminal liveness semantics are documented in `doc/execution-semantics.md`.
 
@@ -928,7 +928,7 @@ Export/import behavior in V1:
 - export emits a clean vendor-neutral markdown package plus `.paperclip.yaml`
 - projects and starter tasks are opt-in export content rather than default package content
 - recurring `TASK.md` entries use `recurring: true` in the base package and Paperclip routine fidelity in `.paperclip.yaml`
-- Paperclip imports recurring task packages as routines instead of downgrading them to one-time issues
+- NoralOS imports recurring task packages as routines instead of downgrading them to one-time issues
 - export strips environment-specific paths (`cwd`, local instruction file paths, inline prompt duplication) while preserving portable project repo/workspace metadata such as `repoUrl`, refs, and workspace-policy references keyed in `.paperclip.yaml`
 - export never includes secret values; env inputs are reported as portable declarations instead
 - import supports target modes:

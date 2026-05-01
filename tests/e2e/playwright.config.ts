@@ -35,7 +35,7 @@ export default defineConfig({
     command: `pnpm paperclipai onboard --yes --run`,
     url: `${BASE_URL}/api/health`,
     // Always boot a dedicated throwaway instance for e2e so browser tests
-    // never attach to the developer's active Paperclip home/server.
+    // never attach to the developer's active NoralOS home/server.
     reuseExistingServer: false,
     timeout: 120_000,
     stdout: "pipe",

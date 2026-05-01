@@ -1,6 +1,6 @@
-# NoralAI → Paperclip Migration Plan
+# NoralAI → NoralOS Migration Plan
 
-Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip install. Designed to be run as a series of Claude Code sessions on the VPS where Paperclip lives.
+Working spec for porting NoralAI / ClaudeClaw features onto a forked NoralOS install. Designed to be run as a series of Claude Code sessions on the VPS where NoralOS lives.
 
 **Source repo:** `Noral-OS/` (current ClaudeClaw codebase)
 **Target repo:** Paperclip fork on VPS (`paperclipai/paperclip` lineage)
@@ -11,16 +11,16 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 ## Principles
 
-1. **Port what's worth porting, retire what Paperclip already does.** Paperclip ships task management, cost tracking, agent state, governance, and a dashboard. Don't re-port any of those — migrate the data and delete the code.
-2. **Adapter > rewrite.** Where NoralAI's logic is sound (voice pipeline, message classifier, exfiltration guard), wrap it behind a Paperclip-shaped interface rather than rebuilding.
+1. **Port what's worth porting, retire what NoralOS already does.** NoralOS ships task management, cost tracking, agent state, governance, and a dashboard. Don't re-port any of those — migrate the data and delete the code.
+2. **Adapter > rewrite.** Where NoralAI's logic is sound (voice pipeline, message classifier, exfiltration guard), wrap it behind a NoralOS-shaped interface rather than rebuilding.
 3. **One phase, one commit, one rollback point.** Every phase ends in a working system. No multi-phase half-states on `main`.
-4. **Heartbeats replace event loops.** ClaudeClaw runs on Telegram-driven event handlers. Paperclip runs on scheduled heartbeats + event triggers. Anything reactive in ClaudeClaw becomes either a Paperclip input adapter (event-triggered) or a heartbeat hook (periodic).
+4. **Heartbeats replace event loops.** ClaudeClaw runs on Telegram-driven event handlers. NoralOS runs on scheduled heartbeats + event triggers. Anything reactive in ClaudeClaw becomes either a NoralOS input adapter (event-triggered) or a heartbeat hook (periodic).
 
 ---
 
 ## Phase 0 — Recon (read-only, ~1 session)
 
-**Goal:** map Paperclip's internal structure and replace every `<TBD>` in this document with real file paths.
+**Goal:** map NoralOS's internal structure and replace every `<TBD>` in this document with real file paths.
 
 **Tasks for Claude Code on the VPS:**
 
@@ -47,7 +47,7 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 ## Phase 1 — Telegram input adapter (~1-2 sessions)
 
-**Goal:** Telegram messages arrive at Paperclip and trigger the right agent. Voice/text/photo all work.
+**Goal:** Telegram messages arrive at NoralOS and trigger the right agent. Voice/text/photo all work.
 
 **What to port:**
 - `Noral-OS/src/bot.ts` — message routing logic
@@ -59,9 +59,9 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 1. Build a Paperclip input adapter at `packages/plugins/<noral-telegram>/` (a Paperclip plugin scaffolded from `packages/plugins/create-paperclip-plugin/`, using `@paperclipai/plugin-sdk`; integrates with the runtime adapter registry at `server/src/adapters/registry.ts` per `adapter-plugin.md`) that:
    - Receives Telegram updates via webhook (preferred) or polling
    - Runs the message classifier as middleware
-   - Maps classifier output → Paperclip task assignment for the right agent
+   - Maps classifier output → NoralOS task assignment for the right agent
    - Handles voice messages by routing to the STT skill (Phase 2) before classifying
-2. Port the `[SEND_FILE:...]` / `[SEND_PHOTO:...]` marker parser as an output filter — Paperclip agents return text, the filter strips markers and ships files via Telegram bot API.
+2. Port the `[SEND_FILE:...]` / `[SEND_PHOTO:...]` marker parser as an output filter — NoralOS agents return text, the filter strips markers and ships files via Telegram bot API.
 3. Move `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` config into Paperclip's config layer at `server/src/config.ts` (loads JSON from `PAPERCLIP_CONFIG=/paperclip/instances/<id>/config.json` via `server/src/config-file.ts`; secret material via `server/src/services/secrets.ts` and the `secrets/` directory).
 
 **Tests:**
@@ -70,15 +70,15 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 - Send a voice message → STT transcribes → correct agent receives transcribed task
 - Agent response containing `[SEND_FILE:/tmp/test.pdf|caption]` → file delivered, marker stripped from text
 
-**Exit criteria:** Telegram traffic flows in/out of Paperclip-managed agents end-to-end.
+**Exit criteria:** Telegram traffic flows in/out of NoralOS-managed agents end-to-end.
 
 ---
 
 ## Phase 2 — Voice skills (TTS + STT) (~1 session)
 
-**Goal:** any Paperclip agent can speak (ElevenLabs) or transcribe (Groq Whisper) at runtime via skill injection.
+**Goal:** any NoralOS agent can speak (ElevenLabs) or transcribe (Groq Whisper) at runtime via skill injection.
 
-**Decision:** wrap as ClawHub-format skills, not native Paperclip plugins. Reason: per-agent voice config (comms agent has voice, ops agent silent) without code changes.
+**Decision:** wrap as ClawHub-format skills, not native NoralOS plugins. Reason: per-agent voice config (comms agent has voice, ops agent silent) without code changes.
 
 **What to port:**
 - ElevenLabs integration code from `Noral-OS/src/` (locate via `grep -r ELEVENLABS_API_KEY`)
@@ -91,7 +91,7 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
    - `noralai-tts/` — SKILL.md + script that calls ElevenLabs, writes WAV/MP3 to `~/paperclip-cache/tts/<task-id>.mp3`
    - `noralai-stt/` — SKILL.md + script that calls Groq Whisper on a given audio file, returns transcript text
 2. Each skill follows the ClawHub SKILL.md frontmatter spec (name, slug, description, metadata.runtimeId, capabilities tags).
-3. Register both skills in Paperclip's skill registry at `server/src/services/company-skills.ts` (DB-backed via the `companySkills` table; routes at `server/src/routes/company-skills.ts`; native source types: `github`, `skills_sh`, `url`, `local_path`, `catalog`). Adapter-side runtime sync into per-adapter skill homes (e.g. `~/.claude/skills/`) lives at `packages/adapters/<adapter>/src/server/skills.ts`.
+3. Register both skills in NoralOS's skill registry at `server/src/services/company-skills.ts` (DB-backed via the `companySkills` table; routes at `server/src/routes/company-skills.ts`; native source types: `github`, `skills_sh`, `url`, `local_path`, `catalog`). Adapter-side runtime sync into per-adapter skill homes (e.g. `~/.claude/skills/`) lives at `packages/adapters/<adapter>/src/server/skills.ts`.
 4. Phase 1's input adapter calls the STT skill on inbound voice. Output filter calls the TTS skill when an agent's response should be voiced (per-agent flag in agent config).
 
 **Tests:**
@@ -99,20 +99,20 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 - User sends voice → transcript reaches agent
 - Agent with `voice: false` returns text → user receives text only
 
-**Exit criteria:** voice round-trip works for at least one agent. ElevenLabs + Groq calls observable in Paperclip's cost dashboard.
+**Exit criteria:** voice round-trip works for at least one agent. ElevenLabs + Groq calls observable in NoralOS's cost dashboard.
 
 ---
 
 ## Phase 3 — Memory and consolidation (~2 sessions)
 
-**Goal:** NoralAI's persistent memory survives the move. Either replace Paperclip's PARA layer or wrap it.
+**Goal:** NoralAI's persistent memory survives the move. Either replace NoralOS's PARA layer or wrap it.
 
-**Decision point:** evaluate during Phase 0 whether Paperclip's PARA file-based memory is sufficient for NoralAI's existing patterns (`memories` table, `conversation_log`, `token_usage`, salience scoring, semantic search via embeddings).
+**Decision point:** evaluate during Phase 0 whether NoralOS's PARA file-based memory is sufficient for NoralAI's existing patterns (`memories` table, `conversation_log`, `token_usage`, salience scoring, semantic search via embeddings).
 
 - **If PARA is sufficient:** export NoralAI's SQLite memories as Markdown into the appropriate PARA buckets, retire `Noral-OS/src/memory.ts` and friends.
 - **If PARA is insufficient:** keep NoralAI's SQLite layer, expose it to Paperclip via a memory plugin at `packages/plugins/<noral-memory>/` (scaffolded from `packages/plugins/create-paperclip-plugin/`, using `@paperclipai/plugin-sdk`). Recommended option — embeddings + salience scoring are non-trivial to recreate.
 
-> **Phase 0 finding:** Paperclip does NOT ship a built-in PARA memory layer. Per `doc/memory-landscape.md`, Paperclip is a "control-plane memory surface" for plugin-provided memory providers. PARA is exposed as a single skill (`skills/para-memory-files/SKILL.md`) using `$AGENT_HOME/life/{projects,areas,resources,archives}/<entity>/{summary.md,items.yaml}`. The decision tree above should be re-read as **"use the para-memory-files skill as-is"** vs. **"build a memory plugin"** — there is no built-in PARA layer to keep, and no built-in alternative to wrap.
+> **Phase 0 finding:** NoralOS does NOT ship a built-in PARA memory layer. Per `doc/memory-landscape.md`, NoralOS is a "control-plane memory surface" for plugin-provided memory providers. PARA is exposed as a single skill (`skills/para-memory-files/SKILL.md`) using `$AGENT_HOME/life/{projects,areas,resources,archives}/<entity>/{summary.md,items.yaml}`. The decision tree above should be re-read as **"use the para-memory-files skill as-is"** vs. **"build a memory plugin"** — there is no built-in PARA layer to keep, and no built-in alternative to wrap.
 
 **What to port (insufficient case):**
 - `Noral-OS/src/memory.ts`
@@ -123,9 +123,9 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 **How (insufficient case):**
 
-1. Lift the four memory `.ts` files into a Paperclip plugin module.
-2. Wire the consolidation runner into Paperclip's heartbeat — every N hours, call `memory-consolidate.ts` against the agent's recent activity.
-3. Inject `[Memory context]` into agent prompts via Paperclip's prompt-augmentation hook at `server/src/services/agent-instructions.ts` (managed instruction bundles per agent; default templates seeded from `server/src/onboarding-assets/{ceo,default}/`; defaults loaded by `server/src/services/default-agent-instructions.ts`). Memory context is added to the agent's instruction bundle, not as a runtime output filter.
+1. Lift the four memory `.ts` files into a NoralOS plugin module.
+2. Wire the consolidation runner into NoralOS's heartbeat — every N hours, call `memory-consolidate.ts` against the agent's recent activity.
+3. Inject `[Memory context]` into agent prompts via NoralOS's prompt-augmentation hook at `server/src/services/agent-instructions.ts` (managed instruction bundles per agent; default templates seeded from `server/src/onboarding-assets/{ceo,default}/`; defaults loaded by `server/src/services/default-agent-instructions.ts`). Memory context is added to the agent's instruction bundle, not as a runtime output filter.
 4. Migrate the SQLite DB. The `claudeclaw.db` file moves to `/paperclip/instances/default/data/noralai.db` (Paperclip data root is `PAPERCLIP_HOME=/paperclip` per Dockerfile; default instance dir is `/paperclip/instances/default/`). Same schema, same data.
 
 **Tests:**
@@ -139,7 +139,7 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 ## Phase 4 — Security and classification middleware (~1 session)
 
-**Goal:** Paperclip benefits from NoralAI's existing exfiltration guard and message classifier.
+**Goal:** NoralOS benefits from NoralAI's existing exfiltration guard and message classifier.
 
 **What to port:**
 - `Noral-OS/src/exfiltration-guard.ts`
@@ -148,18 +148,18 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 **How:**
 
-1. Register the exfiltration guard as a Paperclip output filter at **(no native hook exists)**. The plugin SDK (`packages/plugins/sdk/src/index.ts`) exposes events, jobs, data registration, and state — but no `output_filter` / `response.filter` / `postProcess` slot. Three options, decide before implementing:
+1. Register the exfiltration guard as a NoralOS output filter at **(no native hook exists)**. The plugin SDK (`packages/plugins/sdk/src/index.ts`) exposes events, jobs, data registration, and state — but no `output_filter` / `response.filter` / `postProcess` slot. Three options, decide before implementing:
    - **(a)** Per-agent skill that wraps tool/output calls. Not enforced — the agent has to invoke it.
    - **(b)** Heartbeat post-processor that scans `heartbeatRunEvents` payloads after a run completes and redacts/quarantines before the event surfaces. Implementation goes in `server/src/services/heartbeat.ts` near `boundHeartbeatRunEventPayloadForStorage` (line ~829).
    - **(c)** Propose an upstream plugin hook (e.g. `events.beforeRunDeliver`) and contribute it; carry a small fork-side patch until it lands.
 
    Recommended: **(b)** for near-term Phase 4 timing.
-2. Stack it with Paperclip's native approval gates — both layers active. Paperclip handles "this action requires approval"; NoralAI's guard handles "this output looks like data exfiltration."
-3. Message classifier runs as Phase 1 middleware (already wired); promote any classifier-derived metadata (sentiment, urgency, intent) into Paperclip's task metadata for downstream use.
+2. Stack it with NoralOS's native approval gates — both layers active. NoralOS handles "this action requires approval"; NoralAI's guard handles "this output looks like data exfiltration."
+3. Message classifier runs as Phase 1 middleware (already wired); promote any classifier-derived metadata (sentiment, urgency, intent) into NoralOS's task metadata for downstream use.
 
 **Tests:**
 - Agent attempts to output a credential pattern → exfiltration guard blocks
-- Agent attempts a high-stakes action → Paperclip approval gate triggers
+- Agent attempts a high-stakes action → NoralOS approval gate triggers
 - Both pass cleanly when the output is benign
 
 **Exit criteria:** zero regression in security posture. Both guard and approval gate active.
@@ -168,23 +168,23 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 ## Phase 5 — Data migration: mission tasks and cost (~1 session)
 
-**Goal:** retire ClaudeClaw's task and cost code, migrate the historical data into Paperclip's native tables.
+**Goal:** retire ClaudeClaw's task and cost code, migrate the historical data into NoralOS's native tables.
 
 **What to migrate:**
-- `mission_tasks` table → Paperclip's task table: `issues` (Paperclip vocabulary calls tasks "issues"). Service: `server/src/services/issues.ts`. Routes: `server/src/routes/issues.ts`. Companion tables: `issueApprovals`, `issueAttachments`, `issueComments`, `issueDocuments`, `issueLabels`, `issueRelations`, `issueReadStates`, `issueThreadInteractions`, `issueWorkProducts`, `issueInboxArchives`. Lifecycle statuses: `backlog`, `todo`, `in_progress`, `in_review`, `blocked`, `done`, `cancelled`.
-- `token_usage` table → Paperclip's cost / budget tables: `costEvents` (per-event log) plus `budgets` (limits + tracking). Service: `server/src/services/costs.ts` + `server/src/services/budgets.ts`. Routes: `server/src/routes/costs.ts`. `costEvents` columns: `costCents`, `inputTokens`, `cachedInputTokens`, `outputTokens`, `companyId`, `agentId`, `occurredAt`. Billing types: `metered_api`, `subscription_included`, `subscription_overage`.
-- `sessions` table → Paperclip's session table (if shape matches; otherwise drop)
+- `mission_tasks` table → NoralOS's task table: `issues` (NoralOS vocabulary calls tasks "issues"). Service: `server/src/services/issues.ts`. Routes: `server/src/routes/issues.ts`. Companion tables: `issueApprovals`, `issueAttachments`, `issueComments`, `issueDocuments`, `issueLabels`, `issueRelations`, `issueReadStates`, `issueThreadInteractions`, `issueWorkProducts`, `issueInboxArchives`. Lifecycle statuses: `backlog`, `todo`, `in_progress`, `in_review`, `blocked`, `done`, `cancelled`.
+- `token_usage` table → NoralOS's cost / budget tables: `costEvents` (per-event log) plus `budgets` (limits + tracking). Service: `server/src/services/costs.ts` + `server/src/services/budgets.ts`. Routes: `server/src/routes/costs.ts`. `costEvents` columns: `costCents`, `inputTokens`, `cachedInputTokens`, `outputTokens`, `companyId`, `agentId`, `occurredAt`. Billing types: `metered_api`, `subscription_included`, `subscription_overage`.
+- `sessions` table → NoralOS's session table (if shape matches; otherwise drop)
 
 **How:**
 
 1. Write a one-shot migration script `Noral-OS/scripts/migrate-to-paperclip.ts`.
-2. Map columns: `mission_tasks.assigned_agent` → Paperclip's `task.agentId`, `mission_tasks.title` → `task.title`, etc.
+2. Map columns: `mission_tasks.assigned_agent` → NoralOS's `task.agentId`, `mission_tasks.title` → `task.title`, etc.
 3. Run on a backup first. Verify counts, spot-check 10 random records.
-4. Once verified, retire `dist/mission-cli.js` and the matching source. Update CLAUDE.md so any agent reference to mission-cli now uses Paperclip's CLI / API.
+4. Once verified, retire `dist/mission-cli.js` and the matching source. Update CLAUDE.md so any agent reference to mission-cli now uses NoralOS's CLI / API.
 
 **Tests:**
-- Historical task list visible in Paperclip dashboard
-- `convolife` command (or its Paperclip equivalent) returns coherent token counts pulled from the migrated cost data
+- Historical task list visible in NoralOS dashboard
+- `convolife` command (or its NoralOS equivalent) returns coherent token counts pulled from the migrated cost data
 - No orphaned references to old CLI in any CLAUDE.md
 
 **Exit criteria:** old data visible in new system. Old code paths removed.
@@ -193,36 +193,36 @@ Working spec for porting NoralAI / ClaudeClaw features onto a forked Paperclip i
 
 ## Phase 6 — Dashboard parity and extensions (~1-2 sessions, optional)
 
-**Goal:** any custom dashboard panel from NoralAI's `dashboard.ts` that Paperclip lacks gets contributed upstream or added as a Paperclip extension.
+**Goal:** any custom dashboard panel from NoralAI's `dashboard.ts` that NoralOS lacks gets contributed upstream or added as a NoralOS extension.
 
 **What to port:**
-- `Noral-OS/src/dashboard.ts` and `dashboard-html.ts` — identify panels Paperclip's React UI doesn't have
+- `Noral-OS/src/dashboard.ts` and `dashboard-html.ts` — identify panels NoralOS's React UI doesn't have
 
 **How:**
 
-1. List Paperclip's existing dashboard panels (from Phase 0 recon).
+1. List NoralOS's existing dashboard panels (from Phase 0 recon).
 2. Diff against NoralAI's panels. Likely gaps: memory drilldown, conversation log search, per-agent cost charts, exfiltration guard log.
-3. For each gap: add a React component to Paperclip's dashboard at `ui/src/components/` (existing major panels: `IssuesList.tsx`, `IssueDetail.tsx`, `IssueChatThread.tsx`, `IssueRunLedger.tsx`, `Agents.tsx`, `CompanySettings.tsx`, `Routines.tsx`, `PluginSettings.tsx`, `AdapterManager.tsx`) and pages at `ui/src/pages/`. Backend endpoints at `server/src/routes/dashboard.ts` (currently a single `GET /companies/:companyId/dashboard` summary route) backed by `server/src/services/dashboard.ts`.
+3. For each gap: add a React component to NoralOS's dashboard at `ui/src/components/` (existing major panels: `IssuesList.tsx`, `IssueDetail.tsx`, `IssueChatThread.tsx`, `IssueRunLedger.tsx`, `Agents.tsx`, `CompanySettings.tsx`, `Routines.tsx`, `PluginSettings.tsx`, `AdapterManager.tsx`) and pages at `ui/src/pages/`. Backend endpoints at `server/src/routes/dashboard.ts` (currently a single `GET /companies/:companyId/dashboard` summary route) backed by `server/src/services/dashboard.ts`.
 4. Either keep the additions in your fork or open a PR upstream — your call.
 
-**Exit criteria:** dashboard parity. Anything NoralAI showed, Paperclip shows.
+**Exit criteria:** dashboard parity. Anything NoralAI showed, NoralOS shows.
 
 ---
 
 ## Phase 7 — Cutover (~1 session)
 
-**Goal:** flip Telegram traffic from ClaudeClaw to Paperclip with a rollback path.
+**Goal:** flip Telegram traffic from ClaudeClaw to NoralOS with a rollback path.
 
 **How:**
 
-1. Stand up Paperclip alongside ClaudeClaw on the VPS, different ports.
-2. Point a *staging* Telegram bot (different `TELEGRAM_BOT_TOKEN`) at Paperclip. Run for 1-2 days against your real workflows.
-3. Once confidence is high: change DNS / webhook to flip the *production* bot to Paperclip. Keep ClaudeClaw running but idle for 48h as a hot rollback.
+1. Stand up NoralOS alongside ClaudeClaw on the VPS, different ports.
+2. Point a *staging* Telegram bot (different `TELEGRAM_BOT_TOKEN`) at NoralOS. Run for 1-2 days against your real workflows.
+3. Once confidence is high: change DNS / webhook to flip the *production* bot to NoralOS. Keep ClaudeClaw running but idle for 48h as a hot rollback.
 4. After 48h with no rollback events: stop ClaudeClaw's launchd services, archive `Noral-OS/` as `Noral-OS-archive/`, remove from launchd.
 
 **Rollback plan:** flip the webhook back to ClaudeClaw's bot.ts. ClaudeClaw still has all its data (DB never moved, only copied for migration). Zero data loss.
 
-**Exit criteria:** Telegram bot fully on Paperclip. ClaudeClaw retired but recoverable for 48h.
+**Exit criteria:** Telegram bot fully on NoralOS. ClaudeClaw retired but recoverable for 48h.
 
 ---
 
@@ -254,10 +254,10 @@ For Claude Code's grep convenience.
 
 | Risk | Mitigation |
 |---|---|
-| Paperclip's PARA memory model can't represent NoralAI's salience-scored, embedding-indexed memory cleanly | Phase 3 decision point: keep SQLite layer as a plugin |
+| NoralOS's PARA memory model can't represent NoralAI's salience-scored, embedding-indexed memory cleanly | Phase 3 decision point: keep SQLite layer as a plugin |
 | Heartbeat latency makes Telegram feel slow | Phase 1 input adapter triggers tasks via *event* (not heartbeat). Heartbeats only run scheduled/proactive work |
-| Skill install scanner rejects custom voice skills | Sign / whitelist your own publisher key in Paperclip config |
-| ClawHub runtime injection fails inside Paperclip | Skills can be installed locally without registry — use the `local_path` source type in the skill registry (`server/src/services/company-skills.ts`); content is stored in `companySkills.fileInventory` and synced into per-adapter homes (e.g. `~/.claude/skills/`, `~/.codex/skills/`, etc.) by `packages/adapters/<adapter>/src/server/skills.ts`. Top-level platform skills (Paperclip-bundled) live at `skills/` in the repo. |
+| Skill install scanner rejects custom voice skills | Sign / whitelist your own publisher key in NoralOS config |
+| ClawHub runtime injection fails inside NoralOS | Skills can be installed locally without registry — use the `local_path` source type in the skill registry (`server/src/services/company-skills.ts`); content is stored in `companySkills.fileInventory` and synced into per-adapter homes (e.g. `~/.claude/skills/`, `~/.codex/skills/`, etc.) by `packages/adapters/<adapter>/src/server/skills.ts`. Top-level platform skills (NoralOS-bundled) live at `skills/` in the repo. |
 | Token-usage data loses precision in migration | Run migration script on a copy first; spot-check; keep ClaudeClaw DB as cold backup forever |
 
 ---
@@ -272,7 +272,7 @@ Read /path/to/PAPERCLIP_MIGRATION.md.
 Execute Phase <phase> exactly as written. Do not skip the recon step from Phase 0.
 Before writing any code, summarize:
   1. What you're about to change
-  2. Which Paperclip files you'll touch
+  2. Which NoralOS files you'll touch
   3. Which NoralAI files you'll lift from
   4. The test plan for this phase
 

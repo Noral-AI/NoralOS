@@ -136,7 +136,7 @@ export function scaffoldPluginProject(options: ScaffoldPluginOptions): string {
   }
 
   const displayName = options.displayName ?? makeDisplayName(options.pluginName);
-  const description = options.description ?? "A Paperclip plugin";
+  const description = options.description ?? "A NoralOS plugin";
   const author = options.author ?? "Plugin Author";
   const category = options.category ?? (template === "workspace" ? "workspace" : template === "environment" ? "environment" : "connector");
   const manifestId = packageToManifestId(options.pluginName);

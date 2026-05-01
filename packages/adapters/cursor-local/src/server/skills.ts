@@ -44,7 +44,7 @@ async function buildCursorSkillSnapshot(config: Record<string, unknown>): Promis
     locationLabel: "~/.cursor/skills",
     missingDetail: "Configured but not currently linked into the Cursor skills home.",
     externalConflictDetail: "Skill name is occupied by an external installation.",
-    externalDetail: "Installed outside Paperclip management.",
+    externalDetail: "Installed outside NoralOS management.",
   });
 }
 

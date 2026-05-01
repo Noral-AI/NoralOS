@@ -474,7 +474,7 @@ export function productivityReviewService(db: Db, deps?: { enqueueWakeup?: Enque
       ? evidence.usageSamples.map((sample) => `- \`${sample.runId}\`: \`${JSON.stringify(sample.usageJson).slice(0, 500)}\``).join("\n")
       : "- no usage payloads on sampled runs";
     return [
-      "Paperclip detected an unusual productivity/progression pattern on an assigned issue.",
+      "NoralOS detected an unusual productivity/progression pattern on an assigned issue.",
       "",
       "## Source",
       "",

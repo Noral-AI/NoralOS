@@ -11,7 +11,7 @@ Related:
 
 ## 1. Purpose
 
-This document defines the product and UI plan for skill management in Paperclip.
+This document defines the product and UI plan for skill management in NoralOS.
 
 The goal is to make skills understandable and manageable in the website without pretending that all adapters behave the same way.
 
@@ -19,7 +19,7 @@ This plan assumes:
 
 - `SKILL.md` remains Agent Skills compatible
 - `skills.sh` compatibility is a V1 requirement
-- Paperclip company import/export can include skills as package content
+- NoralOS company import/export can include skills as package content
 - adapters may support persistent skill sync, ephemeral skill mounting, read-only skill discovery, or no skill integration at all
 
 ## 2. Current State
@@ -57,8 +57,8 @@ For V1, this plan assumes the following product decisions are already made:
 
 1. Skills are company assets first, agent attachments second.
 2. Package management and adapter sync are different concerns and should not be conflated in one screen.
-3. The UI must always tell the truth about what Paperclip knows:
-   - desired state in Paperclip
+3. The UI must always tell the truth about what NoralOS knows:
+   - desired state in NoralOS
    - actual state reported by the adapter
    - whether the adapter can reconcile the two
 4. Agent Skills compatibility must remain visible in the product model.
@@ -67,7 +67,7 @@ For V1, this plan assumes the following product decisions are already made:
 
 ## 4. User Model
 
-Paperclip should treat skills at two scopes:
+NoralOS should treat skills at two scopes:
 
 ### 4.1 Company skills
 
@@ -78,7 +78,7 @@ Examples:
 - imported from a GitHub repo
 - added from a local folder
 - installed from a `skills.sh`-compatible repo
-- created locally inside Paperclip later
+- created locally inside NoralOS later
 
 These should have:
 
@@ -96,7 +96,7 @@ These are skill attachments for a specific agent.
 Each attachment should have:
 
 - shortname
-- desired state in Paperclip
+- desired state in NoralOS
 - actual state in the adapter when readable
 - sync status
 - origin
@@ -118,7 +118,7 @@ The UI should support these jobs cleanly:
 4. “Attach skills to an agent.”
 5. “See whether the adapter actually has those skills.”
 6. “Reconcile desired vs actual skill state.”
-7. “Understand what Paperclip knows vs what the adapter knows.”
+7. “Understand what NoralOS knows vs what the adapter knows.”
 
 ## 5. Core UI Surfaces
 
@@ -213,7 +213,7 @@ Future:
 
 V1 requirement:
 
-- importing from a `skills.sh`-compatible source should work without requiring a Paperclip-specific package layout
+- importing from a `skills.sh`-compatible source should work without requiring a NoralOS-specific package layout
 
 #### C. Skill detail drawer or page
 
@@ -321,12 +321,12 @@ Each row should support:
 
 Show skills reported by the adapter that are not company-managed.
 
-This matters because Codex and similar adapters may already have local skills that Paperclip did not install.
+This matters because Codex and similar adapters may already have local skills that NoralOS did not install.
 
 These should be clearly marked:
 
 - external
-- not managed by Paperclip
+- not managed by NoralOS
 
 Each external row should support:
 
@@ -369,10 +369,10 @@ Suggested states:
 Definitions:
 
 - `in_sync`: desired and actual match
-- `desired_only`: Paperclip wants it, adapter does not show it yet
-- `external`: adapter has it but Paperclip does not manage it
+- `desired_only`: NoralOS wants it, adapter does not show it yet
+- `external`: adapter has it but NoralOS does not manage it
 - `drifted`: adapter has a conflicting or unexpected version/location
-- `unmanaged`: adapter does not support sync, Paperclip only tracks desired state
+- `unmanaged`: adapter does not support sync, NoralOS only tracks desired state
 - `unknown`: adapter read failed or state cannot be trusted
 
 Suggested badge copy:
@@ -417,7 +417,7 @@ Language:
 Language:
 
 - this adapter does not implement skill sync yet
-- Paperclip can still track desired skills
+- NoralOS can still track desired skills
 - actual adapter state is unavailable
 
 This state should still allow:
@@ -431,7 +431,7 @@ Some adapters may be able to list skills but not mutate them.
 
 Language:
 
-- Paperclip can see adapter skills
+- NoralOS can see adapter skills
 - this adapter does not support applying changes
 - desired state can be tracked, but reconciliation is manual
 
@@ -516,7 +516,7 @@ This plan implies a clean split in backend concepts.
 
 ### 10.1 Company skill records
 
-Paperclip should have a company-scoped skill model or managed package model representing:
+NoralOS should have a company-scoped skill model or managed package model representing:
 
 - identity
 - source
@@ -526,7 +526,7 @@ Paperclip should have a company-scoped skill model or managed package model repr
 
 ### 10.2 Agent skill attachments
 
-Paperclip should separately store:
+NoralOS should separately store:
 
 - agent id
 - skill identity
@@ -710,7 +710,7 @@ Goals:
 2. Treating unsupported adapters as broken rather than unmanaged will make the product feel inconsistent.
 3. Mixing external adapter-discovered skills with company-managed skills without clear labels will erode trust.
 4. If company skill records do not exist, import/export and UI will remain loosely coupled and round-trip fidelity will stay weak.
-5. If agent skill associations are path-based instead of shortname-based, the format will feel too technical and too Paperclip-specific.
+5. If agent skill associations are path-based instead of shortname-based, the format will feel too technical and too NoralOS-specific.
 
 ## 16. Recommendation
 
@@ -726,4 +726,4 @@ The next product step should be:
    - unmanaged
 5. keep agent-to-skill associations shortname-based in `AGENTS.md`
 
-That gives Paperclip one coherent skill story instead of forcing package management, adapter sync, and agent configuration into the same screen.
+That gives NoralOS one coherent skill story instead of forcing package management, adapter sync, and agent configuration into the same screen.

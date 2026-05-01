@@ -747,7 +747,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Agent management stories cover detail, configuration, icon, action, live-run, and config primitive states using extended Paperclip fixtures.",
+          "Agent management stories cover detail, configuration, icon, action, live-run, and config primitive states using extended NoralOS fixtures.",
       },
     },
   },

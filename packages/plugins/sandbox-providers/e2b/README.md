@@ -1,12 +1,12 @@
 # `@paperclipai/plugin-e2b`
 
-Published E2B sandbox provider plugin for Paperclip.
+Published E2B sandbox provider plugin for NoralOS.
 
-This package lives in the Paperclip monorepo, but it is intentionally excluded from the root `pnpm` workspace and shaped to publish and install like a standalone npm package. That means operators can install it from the Plugins page by package name, and the host will fetch its transitive dependencies at install time without adding lockfile churn to the Paperclip repo.
+This package lives in the NoralOS monorepo, but it is intentionally excluded from the root `pnpm` workspace and shaped to publish and install like a standalone npm package. That means operators can install it from the Plugins page by package name, and the host will fetch its transitive dependencies at install time without adding lockfile churn to the NoralOS repo.
 
 ## Install
 
-From a Paperclip instance, install:
+From a NoralOS instance, install:
 
 ```text
 @paperclipai/plugin-e2b
@@ -19,7 +19,7 @@ The host plugin installer runs `npm install` into the managed plugin directory, 
 Configure E2B from `Company Settings -> Environments`, not from the plugin's instance settings page.
 
 - Put the E2B API key on the sandbox environment itself.
-- When you save an environment, Paperclip stores pasted API keys as company secrets.
+- When you save an environment, NoralOS stores pasted API keys as company secrets.
 - `E2B_API_KEY` remains an optional host-level fallback when an environment omits the key.
 
 ## Local development
