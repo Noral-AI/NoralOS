@@ -10,7 +10,7 @@ import {
   getSshEnvLabSupport,
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
-} from "@paperclipai/adapter-utils/ssh";
+} from "@noralos/adapter-utils/ssh";
 import {
   agents,
   companies,
@@ -21,7 +21,7 @@ import {
   environments,
   heartbeatRuns,
   plugins,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -372,7 +372,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         username: sshConfig.username,
         remoteWorkspacePath: sshConfig.remoteWorkspacePath,
         remoteCwd: sshConfig.remoteWorkspacePath,
-        paperclipApiUrl: runtimeApiUrl,
+        noralosApiUrl: runtimeApiUrl,
       });
 
       const released = await runtime.releaseRunLeases(runId);
@@ -448,7 +448,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "paperclip.fake-plugin-sandbox-provider",
-      packageName: "@paperclipai/plugin-fake-sandbox",
+      packageName: "@noralos/noralos-plugin-fake-sandbox",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],

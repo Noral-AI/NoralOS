@@ -5,7 +5,7 @@ import {
   type IssueExecutionWorkspaceSettings,
   type Project,
   type RoutineVariable,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { useQuery } from "@tanstack/react-query";
 import { instanceSettingsApi } from "../api/instanceSettings";
 import { queryKeys } from "../lib/queryKeys";

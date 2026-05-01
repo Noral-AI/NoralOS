@@ -2,7 +2,7 @@ import type {
   AdapterExecutionContext,
   AdapterExecutionResult,
   AdapterRuntimeServiceReport,
-} from "@paperclipai/adapter-utils";
+} from "@noralos/adapter-utils";
 import {
   asNumber,
   asString,
@@ -10,7 +10,7 @@ import {
   parseObject,
   renderPaperclipWakePrompt,
   stringifyPaperclipWakePayload,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import crypto, { randomUUID } from "node:crypto";
 import { WebSocket } from "ws";
 
@@ -337,14 +337,14 @@ function resolveClaimedApiKeyPath(value: unknown): string {
 }
 
 function buildPaperclipEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakePayload): Record<string, string> {
-  const paperclipApiUrlOverride = resolvePaperclipApiUrlOverride(ctx.config.paperclipApiUrl);
+  const noralosApiUrlOverride = resolvePaperclipApiUrlOverride(ctx.config.noralosApiUrl);
   const paperclipEnv: Record<string, string> = {
     ...buildPaperclipEnv(ctx.agent),
     NORALOS_RUN_ID: ctx.runId,
   };
 
-  if (paperclipApiUrlOverride) {
-    paperclipEnv.NORALOS_API_URL = paperclipApiUrlOverride;
+  if (noralosApiUrlOverride) {
+    paperclipEnv.NORALOS_API_URL = noralosApiUrlOverride;
   }
   if (wakePayload.taskId) paperclipEnv.NORALOS_TASK_ID = wakePayload.taskId;
   if (wakePayload.wakeReason) paperclipEnv.NORALOS_WAKE_REASON = wakePayload.wakeReason;

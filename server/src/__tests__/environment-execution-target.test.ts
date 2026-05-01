@@ -84,7 +84,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       },
       leaseId: "lease-1",
       leaseMetadata: {
-        paperclipApiUrl: "https://noralos.example.test",
+        noralosApiUrl: "https://noralos.example.test",
       },
       lease: null,
       environmentRuntime: null,
@@ -93,7 +93,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "sandbox",
-      paperclipApiUrl: "https://noralos.example.test",
+      noralosApiUrl: "https://noralos.example.test",
       paperclipTransport: "direct",
     });
   });

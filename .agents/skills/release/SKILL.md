@@ -88,7 +88,7 @@ Useful commands:
 ```bash
 git tag --list 'v*' --sort=-version:refname | head -1
 git log --oneline --no-merges
-npm view paperclipai@canary version
+npm view noralos@canary version
 ```
 
 ## Step 2 — Draft the Stable Changelog
@@ -135,7 +135,7 @@ Confirm:
 Useful checks:
 
 ```bash
-npm view paperclipai@canary version
+npm view noralos@canary version
 git tag --list 'canary/v*' --sort=-version:refname | head -5
 ```
 
@@ -144,13 +144,13 @@ git tag --list 'canary/v*' --sort=-version:refname | head -5
 Run:
 
 ```bash
-PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+NORALOS_CLI_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 Useful isolated variant:
 
 ```bash
-HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary NORALOS_CLI_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 Confirm:

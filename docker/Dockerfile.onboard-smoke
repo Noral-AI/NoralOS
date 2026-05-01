@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 ARG NODE_MAJOR=20
-ARG PAPERCLIPAI_VERSION=latest
+ARG NORALOS_CLI_VERSION=latest
 ARG HOST_UID=10001
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -14,7 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
   LC_ALL=en_US.UTF-8 \
   NPM_CONFIG_UPDATE_NOTIFIER=false \
   NODE_MAJOR=${NODE_MAJOR} \
-  PAPERCLIPAI_VERSION=${PAPERCLIPAI_VERSION}
+  NORALOS_CLI_VERSION=${NORALOS_CLI_VERSION}
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl gnupg locales \
@@ -26,15 +26,15 @@ RUN apt-get update \
   && apt-get update \
   && apt-get install -y --no-install-recommends nodejs \
   && locale-gen en_US.UTF-8 \
-  && groupadd --gid 10001 paperclip \
-  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 paperclip \
+  && groupadd --gid 10001 noralos \
+  && useradd --create-home --shell /bin/bash --uid "${HOST_UID}" --gid 10001 noralos \
   && mkdir -p /noralos /home/noralos/workspace \
-  && chown -R paperclip:paperclip /noralos /home/noralos \
+  && chown -R noralos:noralos /noralos /home/noralos \
   && rm -rf /var/lib/apt/lists/*
 
 VOLUME ["/noralos"]
 WORKDIR /home/noralos/workspace
 EXPOSE 3100
-USER paperclip
+USER noralos
 
-CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$NORALOS_HOME\"; npx --yes \"paperclipai@${PAPERCLIPAI_VERSION}\" onboard --yes --data-dir \"$NORALOS_HOME\""]
+CMD ["bash", "-lc", "set -euo pipefail; mkdir -p \"$NORALOS_HOME\"; npx --yes \"noralos@${NORALOS_CLI_VERSION}\" onboard --yes --data-dir \"$NORALOS_HOME\""]

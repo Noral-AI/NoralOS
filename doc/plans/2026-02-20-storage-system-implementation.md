@@ -56,7 +56,7 @@ Add a single storage subsystem for NoralOS that supports:
 
 ### Acceptance Criteria
 
-- `paperclipai onboard` writes a valid `storage` config block by default.
+- `noralos onboard` writes a valid `storage` config block by default.
 - `paperclipai configure --section storage` can switch between local and s3 modes.
 - Server startup reads storage config without env-only hacks.
 

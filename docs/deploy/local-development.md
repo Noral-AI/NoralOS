@@ -29,7 +29,7 @@ No Docker or external database required. NoralOS uses embedded PostgreSQL automa
 For a first-time install:
 
 ```sh
-pnpm paperclipai run
+pnpm noralos run
 ```
 
 This does:
@@ -64,7 +64,7 @@ pnpm dev --authenticated-private
 Allow additional private hostnames:
 
 ```sh
-pnpm paperclipai allowed-hostname dotta-macbook-pro
+pnpm noralos allowed-hostname dotta-macbook-pro
 ```
 
 For full setup and troubleshooting, see [Tailscale Private Access](/deploy/tailscale-private-access).
@@ -101,5 +101,5 @@ pnpm dev
 Override with environment variables:
 
 ```sh
-NORALOS_HOME=/custom/path NORALOS_INSTANCE_ID=dev pnpm paperclipai run
+NORALOS_HOME=/custom/path NORALOS_INSTANCE_ID=dev pnpm noralos run
 ```

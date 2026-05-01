@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
+import type { AdapterExecutionContext } from "@noralos/adapter-utils";
 
 const DEFAULT_PAPERCLIP_INSTANCE_ID = "default";
 const SEEDED_SHARED_FILES = [

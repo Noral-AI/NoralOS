@@ -45,11 +45,11 @@ NoralOS supports three deployment configurations, from zero-friction local to in
 Set the mode during onboarding:
 
 ```sh
-pnpm paperclipai onboard
+pnpm noralos onboard
 ```
 
 Or update it later:
 
 ```sh
-pnpm paperclipai configure --section server
+pnpm noralos configure --section server
 ```

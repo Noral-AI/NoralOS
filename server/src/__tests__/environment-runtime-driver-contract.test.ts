@@ -11,7 +11,7 @@ import {
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
   type SshEnvironmentConfig,
-} from "@paperclipai/adapter-utils/ssh";
+} from "@noralos/adapter-utils/ssh";
 import {
   agents,
   companies,
@@ -21,8 +21,8 @@ import {
   environmentLeases,
   environments,
   heartbeatRuns,
-} from "@paperclipai/db";
-import type { Environment } from "@paperclipai/shared";
+} from "@noralos/db";
+import type { Environment } from "@noralos/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -304,7 +304,7 @@ describeEmbeddedPostgres("environment runtime driver contract", () => {
           username: sshConfig.username,
           remoteWorkspacePath: sshConfig.remoteWorkspacePath,
           remoteCwd: sshConfig.remoteWorkspacePath,
-          paperclipApiUrl: runtimeApiUrl,
+          noralosApiUrl: runtimeApiUrl,
         });
       },
       setup: async () => async () => {

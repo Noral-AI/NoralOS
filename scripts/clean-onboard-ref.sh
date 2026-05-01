@@ -83,4 +83,4 @@ env \
   HOST="$NORALOS_HOST" \
   PORT="$NORALOS_PORT" \
   NORALOS_OPEN_ON_LISTEN="$NORALOS_OPEN_ON_LISTEN" \
-  pnpm paperclipai onboard --yes --data-dir "$PC_DATA"
+  pnpm noralos onboard --yes --data-dir "$PC_DATA"

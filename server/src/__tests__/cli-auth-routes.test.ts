@@ -113,7 +113,7 @@ describe.sequential("cli auth routes", () => {
       .post("/api/cli-auth/challenges")
       .send({
         command: "paperclipai company import",
-        clientName: "paperclipai cli",
+        clientName: "noralos cli",
         requestedAccess: "board",
       });
 
@@ -176,7 +176,7 @@ describe.sequential("cli auth routes", () => {
       id: "challenge-1",
       status: "pending",
       command: "paperclipai company import",
-      clientName: "paperclipai cli",
+      clientName: "noralos cli",
       requestedAccess: "board",
       requestedCompanyId: null,
       requestedCompanyName: null,

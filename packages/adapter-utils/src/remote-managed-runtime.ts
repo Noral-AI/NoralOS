@@ -44,7 +44,7 @@ export function buildRemoteExecutionSessionIdentity(spec: SshRemoteExecutionSpec
     port: spec.port,
     username: spec.username,
     remoteCwd: spec.remoteCwd,
-    ...(spec.paperclipApiUrl ? { paperclipApiUrl: spec.paperclipApiUrl } : {}),
+    ...(spec.noralosApiUrl ? { noralosApiUrl: spec.noralosApiUrl } : {}),
   } as const;
 }
 
@@ -59,7 +59,7 @@ export function remoteExecutionSessionMatches(saved: unknown, current: SshRemote
     asNumber(parsedSaved.port) === currentIdentity.port &&
     asString(parsedSaved.username) === currentIdentity.username &&
     asString(parsedSaved.remoteCwd) === currentIdentity.remoteCwd &&
-    asString(parsedSaved.paperclipApiUrl) === asString(currentIdentity.paperclipApiUrl)
+    asString(parsedSaved.noralosApiUrl) === asString(currentIdentity.noralosApiUrl)
   );
 }
 

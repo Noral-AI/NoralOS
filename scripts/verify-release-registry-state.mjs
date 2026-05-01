@@ -116,7 +116,7 @@ export function collectInternalDependencyProblems(manifest, packageDocsByName) {
 
   for (const [sectionName, deps] of sections) {
     for (const [dependencyName, dependencyVersion] of Object.entries(deps)) {
-      if (!dependencyName.startsWith("@paperclipai/")) {
+      if (!dependencyName.startsWith("@noralos/")) {
         continue;
       }
 
@@ -234,7 +234,7 @@ async function main() {
         manifest.peerDependencies ?? {},
       ]) {
         for (const dependencyName of Object.keys(deps)) {
-          if (dependencyName.startsWith("@paperclipai/")) {
+          if (dependencyName.startsWith("@noralos/")) {
             additionalInternalDeps.add(dependencyName);
           }
         }

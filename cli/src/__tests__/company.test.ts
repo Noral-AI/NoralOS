@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CompanyPortabilityPreviewResult } from "@paperclipai/shared";
+import type { CompanyPortabilityPreviewResult } from "@noralos/shared";
 import {
   buildCompanyDashboardUrl,
   buildDefaultImportAdapterOverrides,
@@ -280,7 +280,7 @@ describe("renderCompanyImportPreview", () => {
     };
 
     const rendered = renderCompanyImportPreview(preview, {
-      sourceLabel: "GitHub: https://github.com/paperclipai/companies/demo",
+      sourceLabel: "GitHub: https://github.com/noralos/companies/demo",
       targetLabel: "Imported Co (company-123)",
       infoMessages: ["Using claude-local adapter"],
     });

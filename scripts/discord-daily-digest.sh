@@ -52,7 +52,7 @@ else
     "description": "**${COMMIT_COUNT} commit(s)** merged into \`master\` today:\\n\\n${LINES}",
     "color": 3066993,
     "footer": {
-      "text": "paperclipai/paperclip • master"
+      "text": "noralos/paperclip • master"
     }
   }]
 }

@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { environmentLeases } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
+import { environmentLeases } from "@noralos/db";
 import type {
   Environment,
   EnvironmentLease,
@@ -8,13 +8,13 @@ import type {
   ExecutionWorkspace,
   PluginEnvironmentConfig,
   SandboxEnvironmentConfig,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import type {
   PluginEnvironmentExecuteResult,
   PluginEnvironmentLease,
   PluginEnvironmentRealizeWorkspaceResult,
-} from "@paperclipai/plugin-sdk";
-import { ensureSshWorkspaceReady, findReachablePaperclipApiUrlOverSsh } from "@paperclipai/adapter-utils/ssh";
+} from "@noralos/plugin-sdk";
+import { ensureSshWorkspaceReady, findReachablePaperclipApiUrlOverSsh } from "@noralos/adapter-utils/ssh";
 import { environmentService } from "./environments.js";
 import {
   parseEnvironmentDriverConfig,
@@ -239,11 +239,11 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
           return [];
         }
       })();
-      const paperclipApiUrl = await findReachablePaperclipApiUrlOverSsh({
+      const noralosApiUrl = await findReachablePaperclipApiUrlOverSsh({
         config: parsed.config,
         candidates: candidateUrls,
       });
-      if (!paperclipApiUrl) {
+      if (!noralosApiUrl) {
         throw new Error(
           `SSH environment ${parsed.config.username}@${parsed.config.host} could not reach any NoralOS API candidates.`,
         );
@@ -265,7 +265,7 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
           username: parsed.config.username,
           remoteWorkspacePath: parsed.config.remoteWorkspacePath,
           remoteCwd,
-          paperclipApiUrl,
+          noralosApiUrl,
         },
       });
     },

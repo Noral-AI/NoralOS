@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agentWakeupRequests, agents, heartbeatRuns, issues } from "@paperclipai/db";
-import type { RunLivenessState } from "@paperclipai/shared";
+import type { Db } from "@noralos/db";
+import { agentWakeupRequests, agents, heartbeatRuns, issues } from "@noralos/db";
+import type { RunLivenessState } from "@noralos/shared";
 import { RECOVERY_REASON_KINDS } from "./origins.js";
 
 export const RUN_LIVENESS_CONTINUATION_REASON = RECOVERY_REASON_KINDS.runLivenessContinuation;

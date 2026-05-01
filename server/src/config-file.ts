@@ -1,9 +1,9 @@
 import fs from "node:fs";
-import { paperclipConfigSchema, type PaperclipConfig } from "@paperclipai/shared";
-import { resolvePaperclipConfigPath } from "./paths.js";
+import { paperclipConfigSchema, type NoralosConfig } from "@noralos/shared";
+import { resolveNoralosConfigPath } from "./paths.js";
 
-export function readConfigFile(): PaperclipConfig | null {
-  const configPath = resolvePaperclipConfigPath();
+export function readConfigFile(): NoralosConfig | null {
+  const configPath = resolveNoralosConfigPath();
 
   if (!fs.existsSync(configPath)) return null;
 
