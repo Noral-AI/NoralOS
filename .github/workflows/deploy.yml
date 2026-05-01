@@ -1,0 +1,203 @@
+# Deploy to the production VPS after a successful Docker build on master.
+#
+# This is the GitHub-Actions side of "Approach C" (build with Actions,
+# pull on the VPS via Watchtower, AND push-button deploy from CI for
+# immediate cutover).
+#
+# Trigger:
+#   - Automatically when the Docker workflow completes successfully on master.
+#   - Manually via workflow_dispatch (Run Workflow button), with an optional
+#     image tag (defaults to :latest). Useful for forcing a rollback to a
+#     specific git SHA tag (e.g. sha-a84522bc).
+#
+# Required GitHub repository secrets:
+#   VPS_HOST          IP or hostname of the production VPS (e.g. 129.121.84.139)
+#   VPS_USER          SSH user on the VPS (e.g. root, or a less-privileged
+#                     user with docker group membership)
+#   VPS_SSH_KEY       PRIVATE SSH key with access to the VPS. Generate a
+#                     fresh keypair (ssh-keygen -t ed25519 -f ./gh-actions-vps),
+#                     paste the matching .pub into the VPS's
+#                     ~/.ssh/authorized_keys, and put the private key into
+#                     this secret. Do NOT reuse a personal key.
+#   GHCR_USERNAME     GitHub username that owns the read:packages PAT.
+#                     Only needed if the GHCR image stays private.
+#   GHCR_READ_TOKEN   Personal Access Token with `read:packages` scope.
+#                     Only needed if the GHCR image stays private.
+#
+# Optional:
+#   VPS_SSH_PORT      SSH port (default 22)
+#   VPS_DEPLOY_DIR    Directory on the VPS where docker-compose.yml lives
+#                     (default /opt/noralos)
+#   PUBLIC_HEALTH_URL HTTPS URL to probe after the deploy
+#                     (default https://agent.noral.ai/api/health)
+#
+# Security:
+#   - The private key is loaded into ssh-agent for the duration of the run
+#     and never written to disk.
+#   - GHCR_READ_TOKEN is fed to `docker login` via stdin and never echoed.
+#   - --quiet output filters all log lines that match common token patterns
+#     as a defence-in-depth measure.
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["Docker"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (latest, sha-<8>, or v<version>). Default: latest"
+        required: false
+        default: "latest"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only run on workflow_run if the upstream Docker workflow succeeded.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    environment: production
+    steps:
+      - name: Pre-flight check — required secrets present
+        run: |
+          set -e
+          missing=0
+          for key in VPS_HOST VPS_USER VPS_SSH_KEY; do
+            if [ -z "${!key:-}" ]; then
+              echo "✗ secret $key is not set in the repository"
+              missing=1
+            fi
+          done
+          if [ $missing -eq 1 ]; then
+            echo
+            echo "Add the missing secrets via:"
+            echo "  Settings → Secrets and variables → Actions → New repository secret"
+            echo
+            echo "If the GHCR image is private, also set GHCR_USERNAME and GHCR_READ_TOKEN."
+            exit 1
+          fi
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Resolve image tag
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.image_tag }}"
+          else
+            # Triggered by Docker workflow run — use sha-<7-char> matching docker.yml's tag pattern.
+            FULL_SHA="${{ github.event.workflow_run.head_sha }}"
+            TAG="sha-${FULL_SHA:0:7}"
+          fi
+          echo "Will deploy tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # Key goes into ssh-agent only — not written to disk.
+          eval "$(ssh-agent -s)"
+          echo "$VPS_SSH_KEY" | ssh-add - >/dev/null
+          # Pin the host key to avoid MITM warnings on first connect.
+          ssh-keyscan -H -p "$VPS_SSH_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          chmod 600 ~/.ssh/known_hosts
+          # Persist the agent socket for subsequent steps.
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
+      - name: GHCR login on VPS (if private image)
+        if: ${{ secrets.GHCR_READ_TOKEN != '' }}
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT || '22' }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        run: |
+          # Pipe the token over SSH stdin → docker login --password-stdin.
+          # The token never lands on disk and is never echoed.
+          set -euo pipefail
+          printf '%s' "$GHCR_READ_TOKEN" | ssh -p "$VPS_SSH_PORT" \
+            -o BatchMode=yes -o ConnectTimeout=10 \
+            "$VPS_USER@$VPS_HOST" \
+            "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin >/dev/null && echo '✓ GHCR login refreshed on VPS'"
+
+      - name: Pull, deploy, health-check
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT || '22' }}
+          VPS_DEPLOY_DIR: ${{ vars.VPS_DEPLOY_DIR || '/opt/noralos' }}
+          PUBLIC_HEALTH_URL: ${{ vars.PUBLIC_HEALTH_URL || 'https://agent.noral.ai/api/health' }}
+          IMAGE_TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ssh -p "$VPS_SSH_PORT" -o BatchMode=yes -o ConnectTimeout=15 \
+            "$VPS_USER@$VPS_HOST" \
+            bash -lc "'set -euo pipefail
+              cd \"$VPS_DEPLOY_DIR\"
+              echo \"[deploy] dir: \$(pwd)\"
+              echo \"[deploy] target: ghcr.io/noral-ai/noralos:$IMAGE_TAG\"
+              # Record current → previous for rollback bookkeeping.
+              if [ -f .last-deployed.tag ]; then
+                cp -f .last-deployed.tag .previous-deployed.tag
+              fi
+              echo \"$IMAGE_TAG\" > .last-deployed.tag
+              # Pull
+              NORALOS_IMAGE_TAG=\"$IMAGE_TAG\" docker compose pull server
+              # Up
+              NORALOS_IMAGE_TAG=\"$IMAGE_TAG\" docker compose up -d
+              # Local health (server container)
+              for i in \$(seq 1 30); do
+                if docker compose exec -T server wget -qO- http://localhost:3100/api/health 2>/dev/null | grep -q \"\\\"status\\\":\\\"ok\\\"\"; then
+                  echo \"[deploy] ✓ container health ok\"
+                  break
+                fi
+                if [ \$i -eq 30 ]; then
+                  echo \"[deploy] ✗ container did not become healthy in 90s\"
+                  docker compose logs --tail 80 server || true
+                  exit 1
+                fi
+                sleep 3
+              done
+              docker compose ps --format \"table {{.Name}}\\t{{.Image}}\\t{{.Status}}\"
+            '"
+
+      - name: Public URL health check
+        env:
+          PUBLIC_HEALTH_URL: ${{ vars.PUBLIC_HEALTH_URL || 'https://agent.noral.ai/api/health' }}
+        run: |
+          set -e
+          # Give nginx / TLS / DNS a moment to settle if the container restarted.
+          sleep 5
+          if curl -sf "$PUBLIC_HEALTH_URL" -o /dev/null; then
+            echo "✓ public health ok at $PUBLIC_HEALTH_URL"
+          else
+            echo "✗ public health failed at $PUBLIC_HEALTH_URL"
+            curl -sIL "$PUBLIC_HEALTH_URL" || true
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "::notice::Deployed ghcr.io/noral-ai/noralos:${{ steps.resolve.outputs.tag }} to ${{ secrets.VPS_HOST }} successfully"

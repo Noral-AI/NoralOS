@@ -66,6 +66,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      # Hits the server's /api/health route. NoralOS returns
+      # {"status":"ok",...} when the app is up.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3100/api/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     restart: unless-stopped
     labels:
       # Watchtower: pull new images and restart on label match.
@@ -75,7 +83,13 @@ services:
     image: containrrr/watchtower:latest
     container_name: noralos-watchtower
     volumes:
+      # Required: lets Watchtower issue Docker commands (pull, stop, start).
       - /var/run/docker.sock:/var/run/docker.sock
+      # Optional: lets Watchtower read GHCR auth from the host's docker
+      # config (created by `docker login ghcr.io …` on the VPS). Required
+      # if the image is private; harmless if public. Adjust the path if
+      # your VPS's docker config lives elsewhere.
+      - ${HOME:-/root}/.docker/config.json:/config.json:ro
     environment:
       # Only watch containers explicitly opted in via the
       # com.centurylinklabs.watchtower.enable=true label.

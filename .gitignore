@@ -49,6 +49,24 @@ diagnostics/
 # Doc maintenance cursor
 .doc-review-cursor
 
+# Production deploy — never commit secrets
+.env.production
+.env.local
+.env.*.local
+*.pem
+*.key
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.p12
+*.pfx
+*.crt
+secrets/
+config/secrets.*
+docker-config.json
+.docker/config.json
+
 # Playwright
 tests/e2e/test-results/
 tests/e2e/playwright-report/
