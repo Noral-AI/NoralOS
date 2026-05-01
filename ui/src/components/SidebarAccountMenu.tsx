@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { DeploymentMode } from "@noralos/shared";
 import { Link } from "@/lib/router";
+import { NoralWordmark } from "./brand/NoralLogo";
 import { authApi } from "@/api/auth";
 import { queryKeys } from "@/lib/queryKeys";
 import { useSidebar } from "../context/SidebarContext";
@@ -180,7 +181,11 @@ export function SidebarAccountMenu({
                 </div>
                 <p className="truncate text-sm text-muted-foreground">{secondaryLabel}</p>
                 {version ? (
-                  <p className="mt-1 text-xs text-muted-foreground">NoralOS v{version}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    <NoralWordmark inkColor="currentColor" />
+                    {" v"}
+                    <span className="font-mono">{version}</span>
+                  </p>
                 ) : null}
               </div>
             </div>
