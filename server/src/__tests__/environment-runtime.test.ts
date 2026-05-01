@@ -10,7 +10,7 @@ import {
   getSshEnvLabSupport,
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
-} from "@paperclipai/adapter-utils/ssh";
+} from "@noralos/adapter-utils/ssh";
 import {
   agents,
   companies,
@@ -21,7 +21,7 @@ import {
   environments,
   heartbeatRuns,
   plugins,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -284,7 +284,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         host: "ssh.example.test",
         port: 22,
         username: "ssh-user",
-        remoteWorkspacePath: "/srv/paperclip/workspace",
+        remoteWorkspacePath: "/srv/noralos/workspace",
         privateKey: null,
         knownHosts: null,
         strictHostKeyChecking: true,
@@ -347,8 +347,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       throw new Error("Expected the test health server to listen on a TCP port.");
     }
     const runtimeApiUrl = `http://127.0.0.1:${address.port}`;
-    const previousCandidates = process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
-    process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
+    const previousCandidates = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
+    process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
     const { companyId, environment, runId } = await seedEnvironment({
       driver: "ssh",
       name: "Fixture SSH",
@@ -372,7 +372,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         username: sshConfig.username,
         remoteWorkspacePath: sshConfig.remoteWorkspacePath,
         remoteCwd: sshConfig.remoteWorkspacePath,
-        paperclipApiUrl: runtimeApiUrl,
+        noralosApiUrl: runtimeApiUrl,
       });
 
       const released = await runtime.releaseRunLeases(runId);
@@ -382,9 +382,9 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       expect(released[0]?.lease.status).toBe("released");
     } finally {
       if (previousCandidates === undefined) {
-        delete process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
+        delete process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
       } else {
-        process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
+        process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
       }
       await new Promise<void>((resolve) => healthServer.close(() => resolve()));
     }
@@ -448,7 +448,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "paperclip.fake-plugin-sandbox-provider",
-      packageName: "@paperclipai/plugin-fake-sandbox",
+      packageName: "@noralos/noralos-plugin-fake-sandbox",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -458,7 +458,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Fake Plugin Sandbox Provider",
         description: "Test fake plugin provider",
-        author: "Paperclip",
+        author: "NoralOS",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -594,7 +594,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Secure Sandbox Provider",
         description: "Test schema-driven provider",
-        author: "Paperclip",
+        author: "NoralOS",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -824,7 +824,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Fake Sandbox Provider",
         description: "Test schema-driven provider",
-        author: "Paperclip",
+        author: "NoralOS",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -983,7 +983,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/noralos-environments",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -1132,7 +1132,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/noralos-environments",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],

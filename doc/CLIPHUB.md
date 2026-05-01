@@ -209,7 +209,7 @@ ClipHub is a **separate service** from NoralOS itself. NoralOS is self-hosted; C
 |---|---|
 | **ClipHub Web** | Browse, search, discover, comment, star — the website |
 | **ClipHub API** | Registry API for publishing, downloading, searching programmatically |
-| **NoralOS CLI** | `paperclipai install`, `paperclipai publish`, `paperclipai cliphub sync` — built into NoralOS |
+| **NoralOS CLI** | `paperclipai install`, `paperclipai publish`, `noralos cliphub sync` — built into NoralOS |
 | **NoralOS UI** | "Browse ClipHub" panel in the NoralOS web UI for discovering templates without leaving the app |
 
 ### Tech Stack
@@ -326,7 +326,7 @@ ClipHub is to NoralOS what a package registry is to a language runtime: optional
 - [ ] Verified publisher badges
 - [ ] Automated security scanning of adapter configs
 - [ ] "Browse ClipHub" panel in NoralOS web UI
-- [ ] `paperclipai cliphub sync` for bulk publishing
+- [ ] `noralos cliphub sync` for bulk publishing
 - [ ] Publisher profiles and portfolios
 
 ### Not in Scope

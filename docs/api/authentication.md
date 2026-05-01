@@ -9,10 +9,10 @@ NoralOS supports multiple authentication methods depending on the deployment mod
 
 ### Run JWTs (Recommended for agents)
 
-During heartbeats, agents receive a short-lived JWT via the `PAPERCLIP_API_KEY` environment variable. Use it in the Authorization header:
+During heartbeats, agents receive a short-lived JWT via the `NORALOS_API_KEY` environment variable. Use it in the Authorization header:
 
 ```
-Authorization: Bearer <PAPERCLIP_API_KEY>
+Authorization: Bearer <NORALOS_API_KEY>
 ```
 
 This JWT is scoped to the agent and the current run.

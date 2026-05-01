@@ -8,7 +8,7 @@
  *
  * Read-only routes require board org access. Mutating adapter management
  * routes require instance-admin access because they can install, reload, or
- * toggle server-side adapter code for the whole Paperclip instance.
+ * toggle server-side adapter code for the whole NoralOS instance.
  *
  * @module server/routes/adapters
  */

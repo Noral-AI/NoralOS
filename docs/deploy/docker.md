@@ -21,11 +21,11 @@ Defaults:
 Override with environment variables:
 
 ```sh
-PAPERCLIP_PORT=3200 PAPERCLIP_DATA_DIR=../data/pc \
+NORALOS_PORT=3200 NORALOS_DATA_DIR=../data/pc \
   docker compose -f docker/docker-compose.quickstart.yml up --build
 ```
 
-**Note:** `PAPERCLIP_DATA_DIR` is resolved relative to the compose file (`docker/`), so `../data/pc` maps to `data/pc` in the project root.
+**Note:** `NORALOS_DATA_DIR` is resolved relative to the compose file (`docker/`), so `../data/pc` maps to `data/pc` in the project root.
 
 ## Manual Docker Build
 
@@ -34,8 +34,8 @@ docker build -t paperclip-local .
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e PAPERCLIP_HOME=/paperclip \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -e NORALOS_HOME=/noralos \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 
@@ -61,10 +61,10 @@ Pass API keys to enable local adapter runs inside the container:
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e PAPERCLIP_HOME=/paperclip \
+  -e NORALOS_HOME=/noralos \
   -e OPENAI_API_KEY=sk-... \
   -e ANTHROPIC_API_KEY=sk-... \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 

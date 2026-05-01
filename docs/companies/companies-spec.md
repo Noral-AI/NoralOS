@@ -491,7 +491,7 @@ A compliant exporter should:
 - preserve task descriptions and recurring-task declarations when exporting tasks
 - omit empty/default fields
 - default to the vendor-neutral base package
-- Paperclip exporters should emit `.paperclip.yaml` as a sidecar by default
+- NoralOS exporters should emit `.paperclip.yaml` as a sidecar by default
 - preserve attribution and source references
 - prefer `referenced` over silent vendoring for third-party content
 - preserve `SKILL.md` as-is when exporting compatible skills
@@ -541,7 +541,7 @@ NoralOS can map this spec to its runtime model like this:
   - `SKILL.md` -> imported skill package
   - `sources[]` -> provenance and pinned upstream refs
 - NoralOS extension:
-  - `.paperclip.yaml` -> adapter config, runtime config, env input declarations, permissions, budgets, routine triggers, and other Paperclip-specific fidelity
+  - `.paperclip.yaml` -> adapter config, runtime config, env input declarations, permissions, budgets, routine triggers, and other NoralOS-specific fidelity
 
 Inline NoralOS-only metadata that must live inside a shared markdown file should use:
 

@@ -3,7 +3,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { buildProjectMentionHref, buildSkillMentionHref } from "@paperclipai/shared";
+import { buildProjectMentionHref, buildSkillMentionHref } from "@noralos/shared";
 import {
   computeMentionMenuPosition,
   findClosestAutocompleteAnchor,
@@ -540,12 +540,12 @@ describe("MarkdownEditor", () => {
   });
 
   it("keeps mention queries active across spaces", () => {
-    expect(findMentionMatch("Ping @Paperclip App", "Ping @Paperclip App".length)).toEqual({
+    expect(findMentionMatch("Ping @NoralOS App", "Ping @NoralOS App".length)).toEqual({
       trigger: "mention",
       marker: "@",
-      query: "Paperclip App",
+      query: "NoralOS App",
       atPos: 5,
-      endPos: "Ping @Paperclip App".length,
+      endPos: "Ping @NoralOS App".length,
     });
   });
 
@@ -668,7 +668,7 @@ describe("MarkdownEditor", () => {
             {
               id: "project:project-123",
               kind: "project",
-              name: "Paperclip App",
+              name: "NoralOS App",
               projectId: "project-123",
               projectColor: "#336699",
             },
@@ -697,7 +697,7 @@ describe("MarkdownEditor", () => {
     await flush();
 
     const option = Array.from(document.body.querySelectorAll('button[type="button"]'))
-      .find((node) => node.textContent?.includes("Paperclip App")) as HTMLButtonElement | undefined;
+      .find((node) => node.textContent?.includes("NoralOS App")) as HTMLButtonElement | undefined;
     expect(option).toBeTruthy();
     return { option: option!, root };
   }
@@ -715,7 +715,7 @@ describe("MarkdownEditor", () => {
     });
 
     expect(handleChange).toHaveBeenCalledWith(
-      `[@Paperclip App](${buildProjectMentionHref("project-123", "#336699")}) `,
+      `[@NoralOS App](${buildProjectMentionHref("project-123", "#336699")}) `,
     );
 
     await act(async () => {

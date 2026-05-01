@@ -1,6 +1,6 @@
 import path from "node:path";
 import { CommandExitError, Sandbox, SandboxNotFoundError, TimeoutError } from "e2b";
-import { definePlugin } from "@paperclipai/plugin-sdk";
+import { definePlugin } from "@noralos/plugin-sdk";
 import type {
   PluginEnvironmentAcquireLeaseParams,
   PluginEnvironmentDestroyLeaseParams,
@@ -15,7 +15,7 @@ import type {
   PluginEnvironmentResumeLeaseParams,
   PluginEnvironmentValidateConfigParams,
   PluginEnvironmentValidationResult,
-} from "@paperclipai/plugin-sdk";
+} from "@noralos/plugin-sdk";
 
 interface E2bDriverConfig {
   template: string;
@@ -53,7 +53,7 @@ async function createSandbox(config: E2bDriverConfig): Promise<Sandbox> {
     apiKey: resolveApiKey(config),
     timeoutMs: config.timeoutMs,
     metadata: {
-      paperclipProvider: "e2b",
+      noralosProvider: "e2b",
     },
   };
   return await Sandbox.create(config.template, options);
@@ -314,7 +314,7 @@ const plugin = definePlugin({
       typeof params.lease.metadata?.remoteCwd === "string" &&
       params.lease.metadata.remoteCwd.trim().length > 0
         ? params.lease.metadata.remoteCwd.trim()
-        : params.workspace.remotePath ?? params.workspace.localPath ?? "/paperclip-workspace";
+        : params.workspace.remotePath ?? params.workspace.localPath ?? "/noralos-workspace";
 
     if (params.lease.providerLeaseId) {
       const sandbox = await connectSandbox(config, params.lease.providerLeaseId);

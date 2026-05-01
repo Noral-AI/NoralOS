@@ -50,7 +50,7 @@ interface ApiClientOptions {
   recoverAuth?: (input: RecoverAuthInput) => Promise<string | null>;
 }
 
-export class PaperclipApiClient {
+export class NoralosApiClient {
   readonly apiBase: string;
   apiKey?: string;
   readonly runId?: string;
@@ -217,9 +217,9 @@ function buildConnectionErrorMessage(input: {
     "This usually means the NoralOS server is not running, the configured URL is wrong, or the request is being blocked before it reaches NoralOS.",
     "",
     "Try:",
-    "- Start NoralOS with `pnpm dev` or `pnpm paperclipai run`.",
+    "- Start NoralOS with `pnpm dev` or `pnpm noralos run`.",
     `- Verify the server is reachable with \`curl ${healthUrl}\`.`,
-    `- If Paperclip is running elsewhere, pass \`--api-base ${input.apiBase.replace(/\/+$/, "")}\` or set \`PAPERCLIP_API_URL\`.`,
+    `- If NoralOS is running elsewhere, pass \`--api-base ${input.apiBase.replace(/\/+$/, "")}\` or set \`NORALOS_API_URL\`.`,
   );
   return lines.join("\n");
 }

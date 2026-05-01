@@ -16,8 +16,8 @@ import {
 describe("resolveEnvironmentExecutionTarget", () => {
   beforeEach(() => {
     mockResolveEnvironmentDriverConfigForRuntime.mockReset();
-    delete process.env.PAPERCLIP_API_URL;
-    delete process.env.PAPERCLIP_RUNTIME_API_URL;
+    delete process.env.NORALOS_API_URL;
+    delete process.env.NORALOS_RUNTIME_API_URL;
   });
 
   it("uses a bounded default cwd for sandbox targets when lease metadata omits remoteCwd", async () => {
@@ -54,14 +54,14 @@ describe("resolveEnvironmentExecutionTarget", () => {
       remoteCwd: DEFAULT_SANDBOX_REMOTE_CWD,
       leaseId: "lease-1",
       environmentId: "env-1",
-      paperclipTransport: "bridge",
+      noralosTransport: "bridge",
       timeoutMs: 30_000,
     });
   });
 
-  it("prefers an explicit Paperclip API URL from lease metadata for sandbox targets", async () => {
-    process.env.PAPERCLIP_API_URL = "https://paperclip.example.test";
-    process.env.PAPERCLIP_RUNTIME_API_URL = "http://paperclip.example.test:3200";
+  it("prefers an explicit NoralOS API URL from lease metadata for sandbox targets", async () => {
+    process.env.NORALOS_API_URL = "https://noralos.example.test";
+    process.env.NORALOS_RUNTIME_API_URL = "http://noralos.example.test:3200";
     mockResolveEnvironmentDriverConfigForRuntime.mockResolvedValue({
       driver: "sandbox",
       config: {
@@ -84,7 +84,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       },
       leaseId: "lease-1",
       leaseMetadata: {
-        paperclipApiUrl: "https://paperclip.example.test",
+        noralosApiUrl: "https://noralos.example.test",
       },
       lease: null,
       environmentRuntime: null,
@@ -93,8 +93,8 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "sandbox",
-      paperclipApiUrl: "https://paperclip.example.test",
-      paperclipTransport: "direct",
+      noralosApiUrl: "https://noralos.example.test",
+      noralosTransport: "direct",
     });
   });
 });

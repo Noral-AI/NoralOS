@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { paperclipConfigSchema, type PaperclipConfig } from "./schema.js";
+import { noralosConfigSchema, type NoralosConfig } from "./schema.js";
 import {
   resolveDefaultConfigPath,
-  resolvePaperclipInstanceId,
+  resolveNoralosInstanceId,
 } from "./home.js";
 
 const DEFAULT_CONFIG_BASENAME = "config.json";
@@ -28,8 +28,8 @@ function findConfigFileFromAncestors(startDir: string): string | null {
 
 export function resolveConfigPath(overridePath?: string): string {
   if (overridePath) return path.resolve(overridePath);
-  if (process.env.PAPERCLIP_CONFIG) return path.resolve(process.env.PAPERCLIP_CONFIG);
-  return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath(resolvePaperclipInstanceId());
+  if (process.env.NORALOS_CONFIG) return path.resolve(process.env.NORALOS_CONFIG);
+  return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath(resolveNoralosInstanceId());
 }
 
 function parseJson(filePath: string): unknown {
@@ -83,12 +83,12 @@ function formatValidationError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-export function readConfig(configPath?: string): PaperclipConfig | null {
+export function readConfig(configPath?: string): NoralosConfig | null {
   const filePath = resolveConfigPath(configPath);
   if (!fs.existsSync(filePath)) return null;
   const raw = parseJson(filePath);
   const migrated = migrateLegacyConfig(raw);
-  const parsed = paperclipConfigSchema.safeParse(migrated);
+  const parsed = noralosConfigSchema.safeParse(migrated);
   if (!parsed.success) {
     throw new Error(`Invalid config at ${filePath}: ${formatValidationError(parsed.error)}`);
   }
@@ -96,7 +96,7 @@ export function readConfig(configPath?: string): PaperclipConfig | null {
 }
 
 export function writeConfig(
-  config: PaperclipConfig,
+  config: NoralosConfig,
   configPath?: string,
 ): void {
   const filePath = resolveConfigPath(configPath);

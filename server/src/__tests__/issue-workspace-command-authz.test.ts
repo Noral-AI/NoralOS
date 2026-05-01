@@ -232,7 +232,7 @@ describe("issue workspace command authorization", () => {
         executionWorkspaceSettings: {
           workspaceStrategy: {
             type: "git_worktree",
-            provisionCommand: "touch /tmp/paperclip-rce",
+            provisionCommand: "touch /tmp/noralos-rce",
           },
         },
       });
@@ -259,7 +259,7 @@ describe("issue workspace command authorization", () => {
           adapterConfig: {
             workspaceStrategy: {
               type: "git_worktree",
-              teardownCommand: "rm -rf /tmp/paperclip-rce",
+              teardownCommand: "rm -rf /tmp/noralos-rce",
             },
           },
         },

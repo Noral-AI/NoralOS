@@ -130,7 +130,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           backupEngine: "javascript",
         });
 
-        expect(result.backupFile).toMatch(/paperclip-test-.*\.sql\.gz$/);
+        expect(result.backupFile).toMatch(/noralos-test-.*\.sql\.gz$/);
         expect(result.sizeBytes).toBeGreaterThan(0);
         expect(fs.existsSync(result.backupFile)).toBe(true);
 
@@ -321,7 +321,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
         await fs.promises.writeFile(
           backupFile,
           [
-            "-- Paperclip database backup",
+            "-- NoralOS database backup",
             "-- Created: 2026-04-06T00:00:00.000Z",
             "",
             "BEGIN;",

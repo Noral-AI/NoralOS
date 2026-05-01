@@ -1,4 +1,4 @@
-import type { Agent, FeedbackVote } from "@paperclipai/shared";
+import type { Agent, FeedbackVote } from "@noralos/shared";
 import type { LiveRunForIssue } from "../api/heartbeats";
 import type { InlineEntityOption } from "../components/InlineEntitySelector";
 import type { MentionOption } from "../components/MarkdownEditor";
@@ -81,7 +81,7 @@ export const issueChatUxMentions: MentionOption[] = [
   },
   {
     id: "mention-project-1",
-    name: "Paperclip Board UI",
+    name: "NoralOS Board UI",
     kind: "project",
     projectId: "project-1",
     projectColor: "#0f766e",

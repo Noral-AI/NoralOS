@@ -3,7 +3,7 @@
 import { act } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import type { ExecutionWorkspace, Issue } from "@paperclipai/shared";
+import type { ExecutionWorkspace, Issue } from "@noralos/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectWorkspaceSummary } from "../lib/project-workspaces-tab";
 import { ProjectWorkspaceSummaryCard } from "./ProjectWorkspaceSummaryCard";
@@ -165,7 +165,7 @@ describe("ProjectWorkspaceSummaryCard", () => {
       );
     });
 
-    const titleLink = container.querySelector("a[href='/projects/paperclip-app/workspaces/workspace-1']");
+    const titleLink = container.querySelector("a[href='/projects/noralos-app/workspaces/workspace-1']");
     expect(titleLink).not.toBeNull();
     expect(container.textContent).not.toContain("Close workspace");
     expect(container.textContent).not.toContain("Start services");
@@ -204,7 +204,7 @@ describe("ProjectWorkspaceSummaryCard", () => {
     const root = createRoot(container);
     const summary = createSummary({
       branchName: "PAP-1552-workspace-polish",
-      cwd: "/Users/dotta/paperclip/.worktrees/PAP-1552-workspace-polish",
+      cwd: "/Users/dotta/noralos/.worktrees/PAP-1552-workspace-polish",
     });
 
     await act(async () => {

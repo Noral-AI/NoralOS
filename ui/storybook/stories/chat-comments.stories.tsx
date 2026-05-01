@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { Agent, FeedbackVote, IssueComment } from "@paperclipai/shared";
+import type { Agent, FeedbackVote, IssueComment } from "@noralos/shared";
 import type { TranscriptEntry } from "@/adapters";
 import type { LiveRunForIssue } from "@/api/heartbeats";
 import { CommentThread } from "@/components/CommentThread";
@@ -15,7 +15,7 @@ import type {
   IssueChatTranscriptEntry,
 } from "@/lib/issue-chat-messages";
 import type { IssueTimelineEvent } from "@/lib/issue-timeline-events";
-import { storybookAgentMap, storybookAgents } from "../fixtures/paperclipData";
+import { storybookAgentMap, storybookAgents } from "../fixtures/noralosData";
 
 const companyId = "company-storybook";
 const projectId = "project-board-ui";

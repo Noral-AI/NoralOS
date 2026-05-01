@@ -39,7 +39,7 @@ This plan is now **gateway-only**. NoralOS supports OpenClaw through `openclaw_g
 Recommended fields:
 ```json
 {
-  "paperclipApiUrl": "http://host.docker.internal:3100",
+  "noralosApiUrl": "http://host.docker.internal:3100",
   "waitTimeoutMs": 120000,
   "sessionKeyStrategy": "issue",
   "role": "operator",
@@ -102,8 +102,8 @@ pnpm build
 
 If full suite is too heavy locally, run at least:
 ```bash
-pnpm --filter @paperclipai/server test:run -- openclaw-gateway
-pnpm --filter @paperclipai/server typecheck
-pnpm --filter @paperclipai/ui typecheck
+pnpm --filter @noralos/server test:run -- openclaw-gateway
+pnpm --filter @noralos/server typecheck
+pnpm --filter @noralos/ui typecheck
 pnpm --filter paperclipai typecheck
 ```

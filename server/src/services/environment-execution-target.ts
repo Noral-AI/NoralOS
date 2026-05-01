@@ -1,9 +1,9 @@
-import type { Db } from "@paperclipai/db";
-import type { Environment, EnvironmentLease } from "@paperclipai/shared";
+import type { Db } from "@noralos/db";
+import type { Environment, EnvironmentLease } from "@noralos/shared";
 import {
   adapterExecutionTargetToRemoteSpec,
   type AdapterExecutionTarget,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@noralos/adapter-utils/execution-target";
 import { parseObject } from "../adapters/utils.js";
 import { resolveEnvironmentDriverConfigForRuntime } from "./environment-config.js";
 import type { EnvironmentRuntimeService } from "./environment-runtime.js";
@@ -57,9 +57,9 @@ export async function resolveEnvironmentExecutionTarget(input: {
         ? input.leaseMetadata.remoteCwd.trim()
         : DEFAULT_SANDBOX_REMOTE_CWD;
     const timeoutMs = "timeoutMs" in parsed.config ? parsed.config.timeoutMs : null;
-    const paperclipApiUrl =
-      typeof input.leaseMetadata?.paperclipApiUrl === "string" && input.leaseMetadata.paperclipApiUrl.trim().length > 0
-        ? input.leaseMetadata.paperclipApiUrl.trim()
+    const noralosApiUrl =
+      typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
+        ? input.leaseMetadata.noralosApiUrl.trim()
         : null;
 
     return {
@@ -69,8 +69,8 @@ export async function resolveEnvironmentExecutionTarget(input: {
       remoteCwd,
       environmentId: input.environment.id ?? null,
       leaseId: input.leaseId ?? null,
-      paperclipApiUrl,
-      paperclipTransport: paperclipApiUrl ? "direct" : "bridge",
+      noralosApiUrl,
+      noralosTransport: noralosApiUrl ? "direct" : "bridge",
       timeoutMs,
       runner: input.environmentRuntime && input.lease
         ? {
@@ -136,9 +136,9 @@ export async function resolveEnvironmentExecutionTarget(input: {
     environmentId: input.environment.id ?? null,
     leaseId: input.leaseId ?? null,
     remoteCwd,
-    paperclipApiUrl:
-      typeof input.leaseMetadata?.paperclipApiUrl === "string" && input.leaseMetadata.paperclipApiUrl.trim().length > 0
-        ? input.leaseMetadata.paperclipApiUrl.trim()
+    noralosApiUrl:
+      typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
+        ? input.leaseMetadata.noralosApiUrl.trim()
         : null,
     spec: {
       host: parsed.config.host,
@@ -149,9 +149,9 @@ export async function resolveEnvironmentExecutionTarget(input: {
       knownHosts: parsed.config.knownHosts,
       strictHostKeyChecking: parsed.config.strictHostKeyChecking,
       remoteCwd,
-      paperclipApiUrl:
-        typeof input.leaseMetadata?.paperclipApiUrl === "string" && input.leaseMetadata.paperclipApiUrl.trim().length > 0
-          ? input.leaseMetadata.paperclipApiUrl.trim()
+      noralosApiUrl:
+        typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
+          ? input.leaseMetadata.noralosApiUrl.trim()
           : null,
     },
   };

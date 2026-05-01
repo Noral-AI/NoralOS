@@ -11,7 +11,7 @@ import {
   shouldArmIssueDetailInboxQuickArchive,
   withIssueDetailHeaderSeed,
 } from "./issueDetailBreadcrumb";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@noralos/shared";
 
 const sessionStorageMock = (() => {
   const store = new Map<string, string>();
@@ -76,7 +76,7 @@ describe("issueDetailBreadcrumb", () => {
         goalId: null,
         goalIds: [],
         goals: [],
-        name: "Paperclip App",
+        name: "NoralOS App",
         description: null,
         status: "in_progress",
         leadAgentId: null,
@@ -93,8 +93,8 @@ describe("issueDetailBreadcrumb", () => {
           defaultRef: null,
           repoName: null,
           localFolder: null,
-          managedFolder: "/tmp/paperclip-app",
-          effectiveLocalFolder: "/tmp/paperclip-app",
+          managedFolder: "/tmp/noralos-app",
+          effectiveLocalFolder: "/tmp/noralos-app",
           origin: "local_folder",
         },
         workspaces: [],
@@ -178,7 +178,7 @@ describe("issueDetailBreadcrumb", () => {
       status: "todo",
       priority: "medium",
       projectId: "project-1",
-      projectName: "Paperclip App",
+      projectName: "NoralOS App",
       originKind: "manual",
       originId: null,
     });
@@ -201,7 +201,7 @@ describe("issueDetailBreadcrumb", () => {
       status: "todo",
       priority: "medium",
       projectId: "project-1",
-      projectName: "Paperclip App",
+      projectName: "NoralOS App",
       originKind: "manual",
       originId: null,
     });

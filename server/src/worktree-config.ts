@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { PaperclipConfig } from "@paperclipai/shared";
-import { resolvePaperclipConfigPath, resolvePaperclipEnvPath } from "./paths.js";
+import type { NoralosConfig } from "@noralos/shared";
+import { resolveNoralosConfigPath, resolveNoralosEnvPath } from "./paths.js";
 
 function nonEmpty(value: string | null | undefined): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -110,25 +110,25 @@ function resolveWorktreeRuntimeContext(
   env: NodeJS.ProcessEnv,
   overrideConfigPath?: string,
 ): WorktreeRuntimeContext | null {
-  if (env.PAPERCLIP_IN_WORKTREE !== "true") return null;
+  if (env.NORALOS_IN_WORKTREE !== "true") return null;
 
-  const configPath = resolvePaperclipConfigPath(overrideConfigPath);
-  const envPath = resolvePaperclipEnvPath(configPath);
+  const configPath = resolveNoralosConfigPath(overrideConfigPath);
+  const envPath = resolveNoralosEnvPath(configPath);
   const persistedEnv = readEnvEntries(envPath);
   const worktreeRoot = path.resolve(path.dirname(configPath), "..");
   const worktreeName =
-    nonEmpty(persistedEnv.PAPERCLIP_WORKTREE_NAME) ??
-    nonEmpty(env.PAPERCLIP_WORKTREE_NAME) ??
+    nonEmpty(persistedEnv.NORALOS_WORKTREE_NAME) ??
+    nonEmpty(env.NORALOS_WORKTREE_NAME) ??
     path.basename(worktreeRoot);
   const instanceId =
-    nonEmpty(persistedEnv.PAPERCLIP_INSTANCE_ID) ??
-    nonEmpty(env.PAPERCLIP_INSTANCE_ID) ??
+    nonEmpty(persistedEnv.NORALOS_INSTANCE_ID) ??
+    nonEmpty(env.NORALOS_INSTANCE_ID) ??
     sanitizeWorktreeInstanceId(worktreeName);
   const homeDir = resolveHomeAwarePath(
-    nonEmpty(persistedEnv.PAPERCLIP_HOME) ??
-      nonEmpty(env.PAPERCLIP_HOME) ??
-      nonEmpty(env.PAPERCLIP_WORKTREES_DIR) ??
-      "~/.paperclip-worktrees",
+    nonEmpty(persistedEnv.NORALOS_HOME) ??
+      nonEmpty(env.NORALOS_HOME) ??
+      nonEmpty(env.NORALOS_WORKTREES_DIR) ??
+      "~/.noralos-worktrees",
   );
   const instanceRoot = path.resolve(homeDir, "instances", instanceId);
 
@@ -148,7 +148,7 @@ function resolveWorktreeRuntimeContext(
   };
 }
 
-function writeConfigFile(configPath: string, config: PaperclipConfig): void {
+function writeConfigFile(configPath: string, config: NoralosConfig): void {
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n", { mode: 0o600 });
 }
@@ -196,7 +196,7 @@ function collectSiblingWorktreePorts(context: WorktreeRuntimeContext): {
 
   for (const siblingConfigPath of siblingConfigPaths) {
     try {
-      const siblingConfig = JSON.parse(fs.readFileSync(siblingConfigPath, "utf8")) as PaperclipConfig;
+      const siblingConfig = JSON.parse(fs.readFileSync(siblingConfigPath, "utf8")) as NoralosConfig;
       if (Number.isInteger(siblingConfig.server.port) && siblingConfig.server.port > 0) {
         serverPorts.add(siblingConfig.server.port);
       }
@@ -224,19 +224,19 @@ function findNextUnclaimedPort(preferredPort: number, claimedPorts: Set<number>)
 }
 
 function buildIsolatedWorktreeConfig(
-  config: PaperclipConfig,
+  config: NoralosConfig,
   context: WorktreeRuntimeContext,
   portOverrides?: {
     serverPort?: number;
     databasePort?: number;
   },
-): PaperclipConfig {
+): NoralosConfig {
   const serverPort = portOverrides?.serverPort ?? config.server.port;
   const databasePort =
     config.database.mode === "embedded-postgres"
       ? portOverrides?.databasePort ?? config.database.embeddedPostgresPort
       : undefined;
-  const nextConfig: PaperclipConfig = {
+  const nextConfig: NoralosConfig = {
     ...config,
     database: {
       ...config.database,
@@ -286,7 +286,7 @@ function buildIsolatedWorktreeConfig(
 }
 
 function needsWorktreeConfigRepair(
-  config: PaperclipConfig,
+  config: NoralosConfig,
   context: WorktreeRuntimeContext,
 ): boolean {
   if (config.database.mode === "embedded-postgres") {
@@ -312,14 +312,14 @@ function needsWorktreeConfigRepair(
 }
 
 export function applyRuntimePortSelectionToConfig(
-  config: PaperclipConfig,
+  config: NoralosConfig,
   input: {
     serverPort: number;
     databasePort?: number | null;
     allowServerPortWrite?: boolean;
     allowDatabasePortWrite?: boolean;
   },
-): { config: PaperclipConfig; changed: boolean } {
+): { config: NoralosConfig; changed: boolean } {
   let changed = false;
   let nextConfig = config;
 
@@ -376,16 +376,16 @@ export function maybeRepairLegacyWorktreeConfigAndEnvFiles(): {
     return { repairedConfig: false, repairedEnv: false };
   }
 
-  process.env.PAPERCLIP_HOME = context.homeDir;
-  process.env.PAPERCLIP_INSTANCE_ID = context.instanceId;
-  process.env.PAPERCLIP_CONFIG = context.configPath;
-  process.env.PAPERCLIP_CONTEXT = context.contextPath;
-  process.env.PAPERCLIP_WORKTREE_NAME = context.worktreeName;
+  process.env.NORALOS_HOME = context.homeDir;
+  process.env.NORALOS_INSTANCE_ID = context.instanceId;
+  process.env.NORALOS_CONFIG = context.configPath;
+  process.env.NORALOS_CONTEXT = context.contextPath;
+  process.env.NORALOS_WORKTREE_NAME = context.worktreeName;
 
   let repairedConfig = false;
   if (fs.existsSync(context.configPath)) {
     try {
-      const parsed = JSON.parse(fs.readFileSync(context.configPath, "utf8")) as PaperclipConfig;
+      const parsed = JSON.parse(fs.readFileSync(context.configPath, "utf8")) as NoralosConfig;
       const siblingPorts = collectSiblingWorktreePorts(context);
       const hasSiblingPortCollision =
         siblingPorts.serverPorts.has(parsed.server.port) ||
@@ -424,12 +424,12 @@ export function maybeRepairLegacyWorktreeConfigAndEnvFiles(): {
   const existingEnvEntries = readEnvEntries(context.envPath);
   const desiredEnvEntries: Record<string, string> = {
     ...existingEnvEntries,
-    PAPERCLIP_HOME: context.homeDir,
-    PAPERCLIP_INSTANCE_ID: context.instanceId,
-    PAPERCLIP_CONFIG: context.configPath,
-    PAPERCLIP_CONTEXT: context.contextPath,
-    PAPERCLIP_IN_WORKTREE: "true",
-    PAPERCLIP_WORKTREE_NAME: context.worktreeName,
+    NORALOS_HOME: context.homeDir,
+    NORALOS_INSTANCE_ID: context.instanceId,
+    NORALOS_CONFIG: context.configPath,
+    NORALOS_CONTEXT: context.contextPath,
+    NORALOS_IN_WORKTREE: "true",
+    NORALOS_WORKTREE_NAME: context.worktreeName,
   };
 
   const repairedEnv = Object.entries(desiredEnvEntries).some(
@@ -451,9 +451,9 @@ export function maybePersistWorktreeRuntimePorts(input: {
   const context = resolveWorktreeRuntimeContext(process.env);
   if (!context || !fs.existsSync(context.configPath)) return;
 
-  let fileConfig: PaperclipConfig;
+  let fileConfig: NoralosConfig;
   try {
-    fileConfig = JSON.parse(fs.readFileSync(context.configPath, "utf8")) as PaperclipConfig;
+    fileConfig = JSON.parse(fs.readFileSync(context.configPath, "utf8")) as NoralosConfig;
   } catch {
     return;
   }

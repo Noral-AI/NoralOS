@@ -15,7 +15,7 @@ import {
   projects,
   routines,
   routineTriggers,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   copyGitHooksToWorktreeGitDir,
   copySeededSecretsKey,
@@ -43,7 +43,7 @@ import {
   rewriteLocalUrlPort,
   sanitizeWorktreeInstanceId,
 } from "../commands/worktree-lib.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { NoralosConfig } from "../config/schema.js";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -72,7 +72,7 @@ afterEach(() => {
   }
 });
 
-function buildSourceConfig(): PaperclipConfig {
+function buildSourceConfig(): NoralosConfig {
   return {
     $meta: {
       version: 1,
@@ -193,13 +193,13 @@ describe("worktree helpers", () => {
   it("rewrites auth URLs only when they already include a port", () => {
     expect(rewriteLocalUrlPort("http://127.0.0.1:3100", 3110)).toBe("http://127.0.0.1:3110/");
     expect(rewriteLocalUrlPort("http://my-host.ts.net:3100", 3110)).toBe("http://my-host.ts.net:3110/");
-    expect(rewriteLocalUrlPort("https://paperclip.example", 3110)).toBe("https://paperclip.example");
+    expect(rewriteLocalUrlPort("https://noralos.example", 3110)).toBe("https://noralos.example");
   });
 
   it("builds isolated config and env paths for a worktree", () => {
     const paths = resolveWorktreeLocalPaths({
-      cwd: "/tmp/paperclip-feature",
-      homeDir: "/tmp/paperclip-worktrees",
+      cwd: "/tmp/noralos-feature",
+      homeDir: "/tmp/noralos-worktrees",
       instanceId: "feature-worktree-support",
     });
     const config = buildWorktreeConfig({
@@ -211,25 +211,25 @@ describe("worktree helpers", () => {
     });
 
     expect(config.database.embeddedPostgresDataDir).toBe(
-      path.resolve("/tmp/paperclip-worktrees", "instances", "feature-worktree-support", "db"),
+      path.resolve("/tmp/noralos-worktrees", "instances", "feature-worktree-support", "db"),
     );
     expect(config.database.embeddedPostgresPort).toBe(54339);
     expect(config.server.port).toBe(3110);
     expect(config.auth.publicBaseUrl).toBe("http://127.0.0.1:3110/");
     expect(config.storage.localDisk.baseDir).toBe(
-      path.resolve("/tmp/paperclip-worktrees", "instances", "feature-worktree-support", "data", "storage"),
+      path.resolve("/tmp/noralos-worktrees", "instances", "feature-worktree-support", "data", "storage"),
     );
 
     const env = buildWorktreeEnvEntries(paths, {
       name: "feature-worktree-support",
       color: "#3abf7a",
     });
-    expect(env.PAPERCLIP_HOME).toBe(path.resolve("/tmp/paperclip-worktrees"));
-    expect(env.PAPERCLIP_INSTANCE_ID).toBe("feature-worktree-support");
-    expect(env.PAPERCLIP_IN_WORKTREE).toBe("true");
-    expect(env.PAPERCLIP_WORKTREE_NAME).toBe("feature-worktree-support");
-    expect(env.PAPERCLIP_WORKTREE_COLOR).toBe("#3abf7a");
-    expect(formatShellExports(env)).toContain("export PAPERCLIP_INSTANCE_ID='feature-worktree-support'");
+    expect(env.NORALOS_HOME).toBe(path.resolve("/tmp/noralos-worktrees"));
+    expect(env.NORALOS_INSTANCE_ID).toBe("feature-worktree-support");
+    expect(env.NORALOS_IN_WORKTREE).toBe("true");
+    expect(env.NORALOS_WORKTREE_NAME).toBe("feature-worktree-support");
+    expect(env.NORALOS_WORKTREE_COLOR).toBe("#3abf7a");
+    expect(formatShellExports(env)).toContain("export NORALOS_INSTANCE_ID='feature-worktree-support'");
   });
 
   it("falls back across storage roots before skipping a missing attachment object", async () => {
@@ -301,7 +301,7 @@ describe("worktree helpers", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix: "WTQ",
         requireBoardApprovalForNewAgents: false,
       });
@@ -421,11 +421,11 @@ describe("worktree helpers", () => {
 
   it("copies the source local_encrypted secrets key into the seeded worktree instance", () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-secrets-"));
-    const originalInlineMasterKey = process.env.PAPERCLIP_SECRETS_MASTER_KEY;
-    const originalKeyFile = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
+    const originalInlineMasterKey = process.env.NORALOS_SECRETS_MASTER_KEY;
+    const originalKeyFile = process.env.NORALOS_SECRETS_MASTER_KEY_FILE;
     try {
-      delete process.env.PAPERCLIP_SECRETS_MASTER_KEY;
-      delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
+      delete process.env.NORALOS_SECRETS_MASTER_KEY;
+      delete process.env.NORALOS_SECRETS_MASTER_KEY_FILE;
       const sourceConfigPath = path.join(tempRoot, "source", "config.json");
       const sourceKeyPath = path.join(tempRoot, "source", "secrets", "master.key");
       const targetKeyPath = path.join(tempRoot, "target", "secrets", "master.key");
@@ -445,14 +445,14 @@ describe("worktree helpers", () => {
       expect(fs.readFileSync(targetKeyPath, "utf8")).toBe("source-master-key");
     } finally {
       if (originalInlineMasterKey === undefined) {
-        delete process.env.PAPERCLIP_SECRETS_MASTER_KEY;
+        delete process.env.NORALOS_SECRETS_MASTER_KEY;
       } else {
-        process.env.PAPERCLIP_SECRETS_MASTER_KEY = originalInlineMasterKey;
+        process.env.NORALOS_SECRETS_MASTER_KEY = originalInlineMasterKey;
       }
       if (originalKeyFile === undefined) {
-        delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
+        delete process.env.NORALOS_SECRETS_MASTER_KEY_FILE;
       } else {
-        process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = originalKeyFile;
+        process.env.NORALOS_SECRETS_MASTER_KEY_FILE = originalKeyFile;
       }
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -468,7 +468,7 @@ describe("worktree helpers", () => {
         sourceConfigPath,
         sourceConfig: buildSourceConfig(),
         sourceEnvEntries: {
-          PAPERCLIP_SECRETS_MASTER_KEY: "inline-source-master-key",
+          NORALOS_SECRETS_MASTER_KEY: "inline-source-master-key",
         },
         targetKeyFilePath: targetKeyPath,
       });
@@ -483,11 +483,11 @@ describe("worktree helpers", () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-jwt-"));
     const repoRoot = path.join(tempRoot, "repo");
     const originalCwd = process.cwd();
-    const originalJwtSecret = process.env.PAPERCLIP_AGENT_JWT_SECRET;
+    const originalJwtSecret = process.env.NORALOS_AGENT_JWT_SECRET;
 
     try {
       fs.mkdirSync(repoRoot, { recursive: true });
-      process.env.PAPERCLIP_AGENT_JWT_SECRET = "worktree-shared-secret";
+      process.env.NORALOS_AGENT_JWT_SECRET = "worktree-shared-secret";
       process.chdir(repoRoot);
 
       await worktreeInitCommand({
@@ -498,15 +498,15 @@ describe("worktree helpers", () => {
 
       const envPath = path.join(repoRoot, ".paperclip", ".env");
       const envContents = fs.readFileSync(envPath, "utf8");
-      expect(envContents).toContain("PAPERCLIP_AGENT_JWT_SECRET=worktree-shared-secret");
-      expect(envContents).toContain("PAPERCLIP_WORKTREE_NAME=repo");
-      expect(envContents).toMatch(/PAPERCLIP_WORKTREE_COLOR=\"#[0-9a-f]{6}\"/);
+      expect(envContents).toContain("NORALOS_AGENT_JWT_SECRET=worktree-shared-secret");
+      expect(envContents).toContain("NORALOS_WORKTREE_NAME=repo");
+      expect(envContents).toMatch(/NORALOS_WORKTREE_COLOR=\"#[0-9a-f]{6}\"/);
     } finally {
       process.chdir(originalCwd);
       if (originalJwtSecret === undefined) {
-        delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
+        delete process.env.NORALOS_AGENT_JWT_SECRET;
       } else {
-        process.env.PAPERCLIP_AGENT_JWT_SECRET = originalJwtSecret;
+        process.env.NORALOS_AGENT_JWT_SECRET = originalJwtSecret;
       }
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -571,7 +571,7 @@ describe("worktree helpers", () => {
 
         const targetConfig = JSON.parse(
           fs.readFileSync(path.join(worktreeRoot, ".paperclip", "config.json"), "utf8"),
-        ) as PaperclipConfig;
+        ) as NoralosConfig;
         const { default: EmbeddedPostgres } = await import("embedded-postgres");
         const targetPg = new EmbeddedPostgres({
           databaseDir: targetConfig.database.embeddedPostgresDataDir,
@@ -587,7 +587,7 @@ describe("worktree helpers", () => {
         await targetPg.start();
         try {
           const targetDb = createDb(
-            `postgres://paperclip:paperclip@127.0.0.1:${targetConfig.database.embeddedPostgresPort}/paperclip`,
+            `postgres://noralos:paperclip@127.0.0.1:${targetConfig.database.embeddedPostgresPort}/noralos`,
           );
           const seededUsers = await targetDb.select().from(authUsers);
           expect(seededUsers.some((row) => row.email === "existing@paperclip.ing")).toBe(true);
@@ -684,26 +684,26 @@ describe("worktree helpers", () => {
     }
   });
 
-  it("defaults the seed source config to the current repo-local Paperclip config", () => {
+  it("defaults the seed source config to the current repo-local NoralOS config", () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-source-config-"));
     const repoRoot = path.join(tempRoot, "repo");
     const localConfigPath = path.join(repoRoot, ".paperclip", "config.json");
     const originalCwd = process.cwd();
-    const originalPaperclipConfig = process.env.PAPERCLIP_CONFIG;
+    const originalNoralosConfig = process.env.NORALOS_CONFIG;
 
     try {
       fs.mkdirSync(path.dirname(localConfigPath), { recursive: true });
       fs.writeFileSync(localConfigPath, JSON.stringify(buildSourceConfig()), "utf8");
-      delete process.env.PAPERCLIP_CONFIG;
+      delete process.env.NORALOS_CONFIG;
       process.chdir(repoRoot);
 
       expect(fs.realpathSync(resolveSourceConfigPath({}))).toBe(fs.realpathSync(localConfigPath));
     } finally {
       process.chdir(originalCwd);
-      if (originalPaperclipConfig === undefined) {
-        delete process.env.PAPERCLIP_CONFIG;
+      if (originalNoralosConfig === undefined) {
+        delete process.env.NORALOS_CONFIG;
       } else {
-        process.env.PAPERCLIP_CONFIG = originalPaperclipConfig;
+        process.env.NORALOS_CONFIG = originalNoralosConfig;
       }
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -714,13 +714,13 @@ describe("worktree helpers", () => {
     const sourceConfigPath = path.join(tempRoot, "source", "config.json");
     const targetRoot = path.join(tempRoot, "target");
     const originalCwd = process.cwd();
-    const originalPaperclipConfig = process.env.PAPERCLIP_CONFIG;
+    const originalNoralosConfig = process.env.NORALOS_CONFIG;
 
     try {
       fs.mkdirSync(path.dirname(sourceConfigPath), { recursive: true });
       fs.mkdirSync(targetRoot, { recursive: true });
       fs.writeFileSync(sourceConfigPath, JSON.stringify(buildSourceConfig()), "utf8");
-      delete process.env.PAPERCLIP_CONFIG;
+      delete process.env.NORALOS_CONFIG;
       process.chdir(targetRoot);
 
       expect(resolveSourceConfigPath({ sourceConfigPathOverride: sourceConfigPath })).toBe(
@@ -728,10 +728,10 @@ describe("worktree helpers", () => {
       );
     } finally {
       process.chdir(originalCwd);
-      if (originalPaperclipConfig === undefined) {
-        delete process.env.PAPERCLIP_CONFIG;
+      if (originalNoralosConfig === undefined) {
+        delete process.env.NORALOS_CONFIG;
       } else {
-        process.env.PAPERCLIP_CONFIG = originalPaperclipConfig;
+        process.env.NORALOS_CONFIG = originalNoralosConfig;
       }
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -764,8 +764,8 @@ describe("worktree helpers", () => {
       fs.writeFileSync(
         envPath,
         [
-          "PAPERCLIP_HOME=/tmp/paperclip-worktrees",
-          "PAPERCLIP_INSTANCE_ID=pap-1132-chat",
+          "NORALOS_HOME=/tmp/noralos-worktrees",
+          "NORALOS_INSTANCE_ID=pap-1132-chat",
         ].join("\n"),
         "utf8",
       );
@@ -776,7 +776,7 @@ describe("worktree helpers", () => {
         }),
       ).toMatchObject({
         cwd: worktreeRoot,
-        homeDir: "/tmp/paperclip-worktrees",
+        homeDir: "/tmp/noralos-worktrees",
         instanceId: "pap-1132-chat",
       });
     } finally {
@@ -798,7 +798,7 @@ describe("worktree helpers", () => {
         resolveWorktreeReseedTargetPaths({
           configPath,
           rootPath: worktreeRoot,
-        })).toThrow("does not look like a worktree-local Paperclip instance");
+        })).toThrow("does not look like a worktree-local NoralOS instance");
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -821,7 +821,7 @@ describe("worktree helpers", () => {
       instanceId: "default",
     });
     const originalCwd = process.cwd();
-    const originalPaperclipConfig = process.env.PAPERCLIP_CONFIG;
+    const originalNoralosConfig = process.env.NORALOS_CONFIG;
 
     try {
       fs.mkdirSync(path.dirname(currentPaths.configPath), { recursive: true });
@@ -848,15 +848,15 @@ describe("worktree helpers", () => {
       fs.writeFileSync(
         currentPaths.envPath,
         [
-          `PAPERCLIP_HOME=${homeDir}`,
-          `PAPERCLIP_INSTANCE_ID=${currentInstanceId}`,
-          "PAPERCLIP_WORKTREE_NAME=existing-name",
-          "PAPERCLIP_WORKTREE_COLOR=\"#112233\"",
+          `NORALOS_HOME=${homeDir}`,
+          `NORALOS_INSTANCE_ID=${currentInstanceId}`,
+          "NORALOS_WORKTREE_NAME=existing-name",
+          "NORALOS_WORKTREE_COLOR=\"#112233\"",
         ].join("\n"),
         "utf8",
       );
 
-      delete process.env.PAPERCLIP_CONFIG;
+      delete process.env.NORALOS_CONFIG;
       process.chdir(repoRoot);
 
       await worktreeReseedCommand({
@@ -870,15 +870,15 @@ describe("worktree helpers", () => {
       expect(rewrittenConfig.server.port).toBe(3114);
       expect(rewrittenConfig.database.embeddedPostgresPort).toBe(54341);
       expect(rewrittenConfig.database.embeddedPostgresDataDir).toBe(currentPaths.embeddedPostgresDataDir);
-      expect(rewrittenEnv).toContain(`PAPERCLIP_INSTANCE_ID=${currentInstanceId}`);
-      expect(rewrittenEnv).toContain("PAPERCLIP_WORKTREE_NAME=existing-name");
-      expect(rewrittenEnv).toContain("PAPERCLIP_WORKTREE_COLOR=\"#112233\"");
+      expect(rewrittenEnv).toContain(`NORALOS_INSTANCE_ID=${currentInstanceId}`);
+      expect(rewrittenEnv).toContain("NORALOS_WORKTREE_NAME=existing-name");
+      expect(rewrittenEnv).toContain("NORALOS_WORKTREE_COLOR=\"#112233\"");
     } finally {
       process.chdir(originalCwd);
-      if (originalPaperclipConfig === undefined) {
-        delete process.env.PAPERCLIP_CONFIG;
+      if (originalNoralosConfig === undefined) {
+        delete process.env.NORALOS_CONFIG;
       } else {
-        process.env.PAPERCLIP_CONFIG = originalPaperclipConfig;
+        process.env.NORALOS_CONFIG = originalNoralosConfig;
       }
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -901,7 +901,7 @@ describe("worktree helpers", () => {
       instanceId: "default",
     });
     const originalCwd = process.cwd();
-    const originalPaperclipConfig = process.env.PAPERCLIP_CONFIG;
+    const originalNoralosConfig = process.env.NORALOS_CONFIG;
 
     try {
       fs.mkdirSync(path.dirname(currentPaths.configPath), { recursive: true });
@@ -930,15 +930,15 @@ describe("worktree helpers", () => {
             keyFilePath: sourcePaths.secretsKeyFilePath,
           },
         },
-      } as PaperclipConfig;
+      } as NoralosConfig;
 
       fs.writeFileSync(currentPaths.configPath, JSON.stringify(currentConfig, null, 2), "utf8");
-      fs.writeFileSync(currentPaths.envPath, `PAPERCLIP_HOME=${homeDir}\nPAPERCLIP_INSTANCE_ID=${currentInstanceId}\n`, "utf8");
+      fs.writeFileSync(currentPaths.envPath, `NORALOS_HOME=${homeDir}\nNORALOS_INSTANCE_ID=${currentInstanceId}\n`, "utf8");
       fs.writeFileSync(path.join(currentPaths.instanceRoot, "marker.txt"), "keep me", "utf8");
       fs.writeFileSync(sourcePaths.configPath, JSON.stringify(sourceConfig, null, 2), "utf8");
       fs.writeFileSync(sourcePaths.secretsKeyFilePath, "source-secret", "utf8");
 
-      delete process.env.PAPERCLIP_CONFIG;
+      delete process.env.NORALOS_CONFIG;
       process.chdir(repoRoot);
 
       await expect(worktreeReseedCommand({
@@ -952,14 +952,14 @@ describe("worktree helpers", () => {
 
       expect(restoredConfig.server.port).toBe(3114);
       expect(restoredConfig.database.embeddedPostgresPort).toBe(54341);
-      expect(restoredEnv).toContain(`PAPERCLIP_INSTANCE_ID=${currentInstanceId}`);
+      expect(restoredEnv).toContain(`NORALOS_INSTANCE_ID=${currentInstanceId}`);
       expect(restoredMarker).toBe("keep me");
     } finally {
       process.chdir(originalCwd);
-      if (originalPaperclipConfig === undefined) {
-        delete process.env.PAPERCLIP_CONFIG;
+      if (originalNoralosConfig === undefined) {
+        delete process.env.NORALOS_CONFIG;
       } else {
-        process.env.PAPERCLIP_CONFIG = originalPaperclipConfig;
+        process.env.NORALOS_CONFIG = originalNoralosConfig;
       }
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -968,26 +968,26 @@ describe("worktree helpers", () => {
   it("rebinds same-repo workspace paths onto the current worktree root", () => {
     expect(
       rebindWorkspaceCwd({
-        sourceRepoRoot: "/Users/example/paperclip",
-        targetRepoRoot: "/Users/example/paperclip-pr-432",
-        workspaceCwd: "/Users/example/paperclip",
+        sourceRepoRoot: "/Users/example/noralos",
+        targetRepoRoot: "/Users/example/noralos-pr-432",
+        workspaceCwd: "/Users/example/noralos",
       }),
-    ).toBe("/Users/example/paperclip-pr-432");
+    ).toBe("/Users/example/noralos-pr-432");
 
     expect(
       rebindWorkspaceCwd({
-        sourceRepoRoot: "/Users/example/paperclip",
-        targetRepoRoot: "/Users/example/paperclip-pr-432",
-        workspaceCwd: "/Users/example/paperclip/packages/db",
+        sourceRepoRoot: "/Users/example/noralos",
+        targetRepoRoot: "/Users/example/noralos-pr-432",
+        workspaceCwd: "/Users/example/noralos/packages/db",
       }),
-    ).toBe("/Users/example/paperclip-pr-432/packages/db");
+    ).toBe("/Users/example/noralos-pr-432/packages/db");
   });
 
   it("does not rebind paths outside the source repo root", () => {
     expect(
       rebindWorkspaceCwd({
-        sourceRepoRoot: "/Users/example/paperclip",
-        targetRepoRoot: "/Users/example/paperclip-pr-432",
+        sourceRepoRoot: "/Users/example/noralos",
+        targetRepoRoot: "/Users/example/noralos-pr-432",
         workspaceCwd: "/Users/example/other-project",
       }),
     ).toBeNull();
@@ -1101,7 +1101,7 @@ describe("worktree helpers", () => {
     }
   });
 
-  it("repairs the current linked worktree when Paperclip metadata is missing", async () => {
+  it("repairs the current linked worktree when NoralOS metadata is missing", async () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-repair-current-"));
     const repoRoot = path.join(tempRoot, "repo");
     const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", "repair-me");
@@ -1200,7 +1200,7 @@ describeEmbeddedPostgres("pauseSeededScheduledRoutines", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
         requireBoardApprovalForNewAgents: false,
       });

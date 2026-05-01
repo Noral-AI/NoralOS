@@ -29,7 +29,7 @@ No Docker or external database required. NoralOS uses embedded PostgreSQL automa
 For a first-time install:
 
 ```sh
-pnpm paperclipai run
+pnpm noralos run
 ```
 
 This does:
@@ -64,7 +64,7 @@ pnpm dev --authenticated-private
 Allow additional private hostnames:
 
 ```sh
-pnpm paperclipai allowed-hostname dotta-macbook-pro
+pnpm noralos allowed-hostname dotta-macbook-pro
 ```
 
 For full setup and troubleshooting, see [Tailscale Private Access](/deploy/tailscale-private-access).
@@ -84,7 +84,7 @@ curl http://localhost:3100/api/companies
 To wipe local data and start fresh:
 
 ```sh
-rm -rf ~/.paperclip/instances/default/db
+rm -rf ~/.noralos/instances/default/db
 pnpm dev
 ```
 
@@ -92,14 +92,14 @@ pnpm dev
 
 | Data | Path |
 |------|------|
-| Config | `~/.paperclip/instances/default/config.json` |
-| Database | `~/.paperclip/instances/default/db` |
-| Storage | `~/.paperclip/instances/default/data/storage` |
-| Secrets key | `~/.paperclip/instances/default/secrets/master.key` |
-| Logs | `~/.paperclip/instances/default/logs` |
+| Config | `~/.noralos/instances/default/config.json` |
+| Database | `~/.noralos/instances/default/db` |
+| Storage | `~/.noralos/instances/default/data/storage` |
+| Secrets key | `~/.noralos/instances/default/secrets/master.key` |
+| Logs | `~/.noralos/instances/default/logs` |
 
 Override with environment variables:
 
 ```sh
-PAPERCLIP_HOME=/custom/path PAPERCLIP_INSTANCE_ID=dev pnpm paperclipai run
+NORALOS_HOME=/custom/path NORALOS_INSTANCE_ID=dev pnpm noralos run
 ```

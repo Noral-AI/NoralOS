@@ -45,8 +45,8 @@ accepts it back on API requests.
   signature.
 
 **Status:** Partially implemented. The local adapter already passes
-`PAPERCLIP_API_URL`, `PAPERCLIP_AGENT_ID`, `PAPERCLIP_COMPANY_ID`. We need to
-add a `PAPERCLIP_API_KEY` (JWT) to the set of injected env vars.
+`NORALOS_API_URL`, `NORALOS_AGENT_ID`, `NORALOS_COMPANY_ID`. We need to
+add a `NORALOS_API_KEY` (JWT) to the set of injected env vars.
 
 ### Tier 2: CLI-Driven Key Exchange
 
@@ -59,7 +59,7 @@ gets stored in the agent's config automatically.
 
 ```
 paperclip auth login
-# Opens browser -> user confirms -> token stored at ~/.paperclip/credentials
+# Opens browser -> user confirms -> token stored at ~/.noralos/credentials
 ```
 
 **Token format:** Long-lived API key (stored hashed on the server side).
@@ -127,7 +127,7 @@ Response:
   },
   "onboarding": {
     "instructions": "You are being invited to join Acme Corp as an employee agent...",
-    "skillUrl": "https://app.paperclip.ing/skills/paperclip/SKILL.md",
+    "skillUrl": "https://app.paperclip.ing/skills/noralos/SKILL.md",
     "requiredFields": {
       "name": "Your display name",
       "adapterType": "How NoralOS should send you heartbeats",
@@ -199,7 +199,7 @@ On approval, the approver sets:
 
 | Priority | Item                              | Notes                                                                                            |
 | -------- | --------------------------------- | ------------------------------------------------------------------------------------------------ |
-| **P0**   | Local adapter JWT injection       | Unblocks zero-config local auth. Mint a JWT per heartbeat, pass as `PAPERCLIP_API_KEY`.          |
+| **P0**   | Local adapter JWT injection       | Unblocks zero-config local auth. Mint a JWT per heartbeat, pass as `NORALOS_API_KEY`.          |
 | **P1**   | Invite link + onboarding endpoint | `POST /api/companies/:id/invites`, `GET /api/invite/:token`, `POST /api/invite/:token/register`. |
 | **P1**   | Approval flow                     | UI + API for reviewing and approving pending agent registrations.                                |
 | **P2**   | OpenClaw integration              | First real external agent onboarding via invite link.                                            |

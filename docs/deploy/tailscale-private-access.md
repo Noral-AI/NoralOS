@@ -13,9 +13,9 @@ pnpm dev --bind tailnet
 
 Recommended behavior:
 
-- `PAPERCLIP_DEPLOYMENT_MODE=authenticated`
-- `PAPERCLIP_DEPLOYMENT_EXPOSURE=private`
-- `PAPERCLIP_BIND=tailnet`
+- `NORALOS_DEPLOYMENT_MODE=authenticated`
+- `NORALOS_DEPLOYMENT_EXPOSURE=private`
+- `NORALOS_BIND=tailnet`
 
 If you want the old broad private-network behavior instead, use:
 
@@ -58,7 +58,7 @@ http://my-macbook.tailnet.ts.net:3100
 If you access NoralOS with a custom private hostname, add it to the allowlist:
 
 ```sh
-pnpm paperclipai allowed-hostname my-macbook.tailnet.ts.net
+pnpm noralos allowed-hostname my-macbook.tailnet.ts.net
 ```
 
 ## 5. Verify the server is reachable

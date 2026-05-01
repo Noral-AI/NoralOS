@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ensureCursorSkillsInjected } from "@paperclipai/adapter-cursor-local/server";
+import { ensureCursorSkillsInjected } from "@noralos/adapter-cursor-local/server";
 
 async function makeTempDir(prefix: string): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix));
@@ -20,14 +20,14 @@ describe("cursor local adapter skill injection", () => {
     cleanupDirs.clear();
   });
 
-  it("links missing Paperclip skills into Cursor skills home", async () => {
+  it("links missing NoralOS skills into Cursor skills home", async () => {
     const skillsDir = await makeTempDir("paperclip-cursor-skills-src-");
     const skillsHome = await makeTempDir("paperclip-cursor-skills-home-");
     cleanupDirs.add(skillsDir);
     cleanupDirs.add(skillsHome);
 
     await createSkillDir(skillsDir, "paperclip");
-    await createSkillDir(skillsDir, "paperclip-create-agent");
+    await createSkillDir(skillsDir, "noralos-create-agent");
     await fs.writeFile(path.join(skillsDir, "README.txt"), "ignore", "utf8");
 
     const logs: string[] = [];
@@ -39,15 +39,15 @@ describe("cursor local adapter skill injection", () => {
     );
 
     const injectedA = path.join(skillsHome, "paperclip");
-    const injectedB = path.join(skillsHome, "paperclip-create-agent");
+    const injectedB = path.join(skillsHome, "noralos-create-agent");
     expect((await fs.lstat(injectedA)).isSymbolicLink()).toBe(true);
     expect((await fs.lstat(injectedB)).isSymbolicLink()).toBe(true);
     expect(await fs.realpath(injectedA)).toBe(await fs.realpath(path.join(skillsDir, "paperclip")));
     expect(await fs.realpath(injectedB)).toBe(
-      await fs.realpath(path.join(skillsDir, "paperclip-create-agent")),
+      await fs.realpath(path.join(skillsDir, "noralos-create-agent")),
     );
     expect(logs.some((line) => line.includes('Injected Cursor skill "paperclip"'))).toBe(true);
-    expect(logs.some((line) => line.includes('Injected Cursor skill "paperclip-create-agent"'))).toBe(true);
+    expect(logs.some((line) => line.includes('Injected Cursor skill "noralos-create-agent"'))).toBe(true);
   });
 
   it("preserves existing targets and only links missing skills", async () => {
@@ -57,7 +57,7 @@ describe("cursor local adapter skill injection", () => {
     cleanupDirs.add(skillsHome);
 
     await createSkillDir(skillsDir, "paperclip");
-    await createSkillDir(skillsDir, "paperclip-create-agent");
+    await createSkillDir(skillsDir, "noralos-create-agent");
 
     const existingTarget = path.join(skillsHome, "paperclip");
     await fs.mkdir(existingTarget, { recursive: true });
@@ -67,7 +67,7 @@ describe("cursor local adapter skill injection", () => {
 
     expect((await fs.lstat(existingTarget)).isDirectory()).toBe(true);
     expect(await fs.readFile(path.join(existingTarget, "keep.txt"), "utf8")).toBe("keep");
-    expect((await fs.lstat(path.join(skillsHome, "paperclip-create-agent"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(skillsHome, "noralos-create-agent"))).isSymbolicLink()).toBe(true);
   });
 
   it("logs per-skill link failures and continues without throwing", async () => {

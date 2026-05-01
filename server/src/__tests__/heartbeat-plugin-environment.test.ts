@@ -11,7 +11,7 @@ import {
   plugins,
   projects,
   projectWorkspaces,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -77,7 +77,7 @@ describeEmbeddedPostgres("heartbeat plugin environments", () => {
     const environmentId = randomUUID();
     const pluginId = randomUUID();
     const agentId = randomUUID();
-    const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-plugin-env-heartbeat-"));
+    const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "noralos-plugin-env-heartbeat-"));
     tempRoots.push(workspaceRoot);
     const workerManager = {
       isRunning: vi.fn((id: string) => id === pluginId),
@@ -125,7 +125,7 @@ describeEmbeddedPostgres("heartbeat plugin environments", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/noralos-environments",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],

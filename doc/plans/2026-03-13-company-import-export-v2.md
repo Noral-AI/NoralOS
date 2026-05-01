@@ -46,7 +46,7 @@ The new direction is:
 4. the company package model is explicitly an extension of Agent Skills
 5. no future dependency on `paperclip.manifest.json`
 6. implicit folder discovery by convention for the common case
-7. an always-emitted `.paperclip.yaml` sidecar for high-fidelity Paperclip-specific details
+7. an always-emitted `.paperclip.yaml` sidecar for high-fidelity NoralOS-specific details
 8. package graph resolution at import time
 9. entity-level import UI with dependency-aware tree selection
 10. `skills.sh` compatibility is a V1 requirement for skill packages and skill installation flows
@@ -134,7 +134,7 @@ Rules:
 - `SKILL.md` stays Agent Skills compatible
 - the company package model is an extension of Agent Skills
 - the base package is vendor-neutral and intended for any agent-company runtime
-- Paperclip-specific fidelity lives in `.paperclip.yaml`
+- NoralOS-specific fidelity lives in `.paperclip.yaml`
 - NoralOS may resolve and install `SKILL.md` packages, but it must not require a NoralOS-only skill format
 - `skills.sh` compatibility is a V1 requirement, not a future nice-to-have
 

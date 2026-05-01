@@ -7,7 +7,7 @@ import {
   PLUGIN_STATE_SCOPE_KINDS,
   definePlugin,
   runWorker,
-  type PaperclipPlugin,
+  type NoralosPlugin,
   type PluginContext,
   type PluginEntityQuery,
   type PluginEvent,
@@ -20,8 +20,8 @@ import {
   type ScopeKey,
   type ToolResult,
   type ToolRunContext,
-} from "@paperclipai/plugin-sdk";
-import type { Goal, Issue } from "@paperclipai/shared";
+} from "@noralos/plugin-sdk";
+import type { Goal, Issue } from "@noralos/shared";
 import {
   DEFAULT_CONFIG,
   JOB_KEYS,
@@ -946,7 +946,7 @@ async function registerJobs(ctx: PluginContext): Promise<void> {
   });
 }
 
-const plugin: PaperclipPlugin = definePlugin({
+const plugin: NoralosPlugin = definePlugin({
   async setup(ctx) {
     currentContext = ctx;
     runtimeLaunchers.set(RUNTIME_LAUNCHER.id, RUNTIME_LAUNCHER);

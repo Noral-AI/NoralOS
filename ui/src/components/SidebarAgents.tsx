@@ -35,7 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
 
 function SidebarAgentItem({
   activeAgentId,

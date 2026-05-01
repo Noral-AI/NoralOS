@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { environmentLeases, environments } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
+import { environmentLeases, environments } from "@noralos/db";
 import {
   ENVIRONMENT_DRIVERS,
   ENVIRONMENT_LEASE_CLEANUP_STATUSES,
@@ -14,7 +14,7 @@ import {
   type EnvironmentLeasePolicy,
   type EnvironmentLeaseStatus,
   type UpdateEnvironment,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 
 type EnvironmentRow = typeof environments.$inferSelect;
 type EnvironmentLeaseRow = typeof environmentLeases.$inferSelect;
@@ -122,7 +122,7 @@ export function environmentService(db: Db) {
           status: "active",
           config: {},
           metadata: {
-            managedByPaperclip: true,
+            managedByNoralos: true,
             defaultForCompany: true,
           },
           createdAt: now,

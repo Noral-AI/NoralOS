@@ -29,7 +29,7 @@ A security vulnerability has been reported via GitHub Security Advisory:
 Pull the full advisory so you understand the vulnerability before doing anything else:
 
 ```
-gh api repos/paperclipai/paperclip/security-advisories/{{ghsaId}}
+gh api repos/noralos/noralos/security-advisories/{{ghsaId}}
 
 ```
 
@@ -51,7 +51,7 @@ This is where all fix development happens. Never push to the public repo.
 
 ```
 gh api --method POST \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}}/forks
+  repos/noralos/noralos/security-advisories/{{ghsaId}}/forks
 
 ```
 
@@ -60,14 +60,14 @@ This returns a repository object for the private fork. Save the `full_name` and 
 Clone it and set up your workspace:
 
 ```
-# Clone the private fork somewhere outside ~/paperclip
+# Clone the private fork somewhere outside ~/noralos
 git clone <clone_url_from_response> ~/security-patch-{{ghsaId}}
 cd ~/security-patch-{{ghsaId}}
 git checkout -b security-fix
 
 ```
 
-**Do not edit `~/paperclip`** — the dev server is running off the `~/paperclip` master branch and we don't want to touch it. All work happens in the private fork clone.
+**Do not edit `~/noralos`** — the dev server is running off the `~/noralos` master branch and we don't want to touch it. All work happens in the private fork clone.
 
 **TIPS:**
 
@@ -115,7 +115,7 @@ This makes vulnerability scanners (npm audit, Snyk, Dependabot) warn users to up
 
 ```
 gh api --method POST \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}}/cve
+  repos/noralos/noralos/security-advisories/{{ghsaId}}/cve
 
 ```
 
@@ -128,7 +128,7 @@ This all happens at once — do not stagger these steps. The goal is **zero wind
 ### 6a. Verify reporter credit before publishing
 
 ```
-gh api repos/paperclipai/paperclip/security-advisories/{{ghsaId}} --jq '.credits'
+gh api repos/noralos/noralos/security-advisories/{{ghsaId}} --jq '.credits'
 
 ```
 
@@ -136,7 +136,7 @@ If the reporter is not credited, add them:
 
 ```
 gh api --method PATCH \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}} \
+  repos/noralos/noralos/security-advisories/{{ghsaId}} \
   --input - << 'EOF'
 {
   "credits": [
@@ -154,7 +154,7 @@ EOF
 
 ```
 gh api --method PATCH \
-  repos/paperclipai/paperclip/security-advisories/{{ghsaId}} \
+  repos/noralos/noralos/security-advisories/{{ghsaId}} \
   --input - << 'EOF'
 {
   "state": "published",
@@ -162,7 +162,7 @@ gh api --method PATCH \
     {
       "package": {
         "ecosystem": "npm",
-        "name": "paperclip"
+        "name": "noralos"
       },
       "vulnerable_version_range": "< {{patchedVersion}}",
       "patched_versions": "{{patchedVersion}}"
@@ -182,11 +182,11 @@ Publishing the advisory simultaneously:
 ### 6c. Cut a release immediately after merge
 
 ```
-cd ~/paperclip
+cd ~/noralos
 git pull origin master
 
 gh release create v{{patchedVersion}} \
-  --repo paperclipai/paperclip \
+  --repo noralos/noralos \
   --title "v{{patchedVersion}} — Security Release" \
   --notes "## Security Release
 
@@ -210,11 +210,11 @@ All users running versions prior to {{patchedVersion}} should upgrade immediatel
 
 ```
 # Verify the advisory is published and CVE is assigned
-gh api repos/paperclipai/paperclip/security-advisories/{{ghsaId}} \
+gh api repos/noralos/noralos/security-advisories/{{ghsaId}} \
   --jq '{state: .state, cve_id: .cve_id, published_at: .published_at}'
 
 # Verify the release exists
-gh release view v{{patchedVersion}} --repo paperclipai/paperclip
+gh release view v{{patchedVersion}} --repo noralos/noralos
 
 ```
 

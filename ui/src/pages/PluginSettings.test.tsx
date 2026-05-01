@@ -28,7 +28,7 @@ vi.mock("@/context/BreadcrumbContext", () => ({
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
+    selectedCompany: { id: "company-1", name: "NoralOS", issuePrefix: "PAP" },
     selectedCompanyId: "company-1",
   }),
 }));
@@ -68,15 +68,15 @@ describe("PluginSettings", () => {
     mockPluginsApi.get.mockResolvedValue({
       id: "plugin-1",
       pluginKey: "paperclip.e2b-sandbox-provider",
-      packageName: "@paperclipai/plugin-e2b",
+      packageName: "@noralos/plugin-e2b",
       version: "0.1.0",
       status: "error",
       categories: ["automation"],
       manifestJson: {
         displayName: "E2B Sandbox Provider",
         version: "0.1.0",
-        description: "E2B environments for Paperclip.",
-        author: "Paperclip",
+        description: "E2B environments for NoralOS.",
+        author: "NoralOS",
         capabilities: ["environment.drivers.register"],
         environmentDrivers: [
           {

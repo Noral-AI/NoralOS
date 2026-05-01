@@ -28,7 +28,7 @@ Add a single storage subsystem for NoralOS that supports:
 
 ## Key Decisions
 
-- Default local path is under instance root: `~/.paperclip/instances/<instanceId>/data/storage`.
+- Default local path is under instance root: `~/.noralos/instances/<instanceId>/data/storage`.
 - Object bytes live in storage provider; metadata lives in Postgres.
 - `assets` is generic metadata table; `issue_attachments` links assets to issues/comments.
 - S3 credentials come from runtime environment/default AWS provider chain, not DB rows.
@@ -56,7 +56,7 @@ Add a single storage subsystem for NoralOS that supports:
 
 ### Acceptance Criteria
 
-- `paperclipai onboard` writes a valid `storage` config block by default.
+- `noralos onboard` writes a valid `storage` config block by default.
 - `paperclipai configure --section storage` can switch between local and s3 modes.
 - Server startup reads storage config without env-only hacks.
 

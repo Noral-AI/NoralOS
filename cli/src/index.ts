@@ -19,7 +19,7 @@ import { registerDashboardCommands } from "./commands/client/dashboard.js";
 import { registerRoutineCommands } from "./commands/routines.js";
 import { registerFeedbackCommands } from "./commands/client/feedback.js";
 import { applyDataDirOverride, type DataDirOptionLike } from "./config/data-dir.js";
-import { loadPaperclipEnvFile } from "./config/env.js";
+import { loadNoralosEnvFile } from "./config/env.js";
 import { initTelemetryFromConfigFile, flushTelemetry } from "./telemetry.js";
 import { registerWorktreeCommands } from "./commands/worktree.js";
 import { registerPluginCommands } from "./commands/client/plugin.js";
@@ -28,10 +28,10 @@ import { cliVersion } from "./version.js";
 
 const program = new Command();
 const DATA_DIR_OPTION_HELP =
-  "NoralOS data directory root (isolates state from ~/.paperclip)";
+  "NoralOS data directory root (isolates state from ~/.noralos)";
 
 program
-  .name("paperclipai")
+  .name("noralos")
   .description("NoralOS CLI — setup, diagnose, and configure your instance")
   .version(cliVersion);
 
@@ -42,7 +42,7 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
     hasConfigOption: optionNames.has("config"),
     hasContextOption: optionNames.has("context"),
   });
-  loadPaperclipEnvFile(options.config);
+  loadNoralosEnvFile(options.config);
   initTelemetryFromConfigFile(options.config);
 });
 

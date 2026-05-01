@@ -14,7 +14,7 @@ NoralOS is a self-hosted control plane that turns a fleet of AI agents into an o
 docker run -d --name noralos \
   -p 3100:3100 \
   -e BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
-  -v $(pwd)/data:/paperclip \
+  -v $(pwd)/data:/noralos \
   ghcr.io/noral-ai/noralos:latest
 ```
 

@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type { Agent, CompanySecret, EnvBinding, Project, RoutineVariable } from "@paperclipai/shared";
+import type { Agent, CompanySecret, EnvBinding, Project, RoutineVariable } from "@noralos/shared";
 import { Code2, FileText, ListPlus, RotateCcw, Table2 } from "lucide-react";
 import { EnvVarEditor } from "@/components/EnvVarEditor";
 import { ExecutionParticipantPicker } from "@/components/ExecutionParticipantPicker";
@@ -20,7 +20,7 @@ import { ScheduleEditor, describeSchedule } from "@/components/ScheduleEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buildExecutionPolicy } from "@/lib/issue-execution-policy";
-import { createIssue, storybookAgents } from "../fixtures/paperclipData";
+import { createIssue, storybookAgents } from "../fixtures/noralosData";
 
 function Section({
   eyebrow,
@@ -181,7 +181,7 @@ const validAdapterValues = {
   concurrency: 2,
   dryRun: true,
   notes: "Use the project worktree and post a concise task update before handoff.",
-  allowedCommands: ["pnpm --filter @paperclipai/ui typecheck", "pnpm build-storybook"],
+  allowedCommands: ["pnpm --filter @noralos/ui typecheck", "pnpm build-storybook"],
   advanced: { timeoutSeconds: 900, requireApproval: false },
 };
 
@@ -237,7 +237,7 @@ const routineVariables: RoutineVariable[] = [
     name: "repo",
     label: "Repository",
     type: "text",
-    defaultValue: "paperclipai/paperclip",
+    defaultValue: "noralos/noralos",
     required: true,
     options: [],
   },
@@ -290,9 +290,9 @@ const storybookProject: Project = {
     repoRef: "master",
     defaultRef: "master",
     repoName: "paperclip",
-    localFolder: "/Users/dotta/paperclip",
+    localFolder: "/Users/dotta/noralos",
     managedFolder: "paperclip",
-    effectiveLocalFolder: "/Users/dotta/paperclip",
+    effectiveLocalFolder: "/Users/dotta/noralos",
     origin: "local_folder",
   },
   workspaces: [],

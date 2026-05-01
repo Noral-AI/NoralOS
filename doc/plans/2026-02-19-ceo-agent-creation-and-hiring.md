@@ -284,12 +284,12 @@ Provide board-only destructive action in approval detail:
 - explicit confirmation dialog
 - preserves approval + comment history (audit)
 
-## 8. New Skill: `paperclip-create-agent`
+## 8. New Skill: `noralos-create-agent`
 
 Create new skill directory:
 
-- `skills/paperclip-create-agent/SKILL.md`
-- `skills/paperclip-create-agent/references/api-reference.md`
+- `skills/noralos-create-agent/SKILL.md`
+- `skills/noralos-create-agent/references/api-reference.md`
 
 Skill responsibilities:
 
@@ -301,7 +301,7 @@ Skill responsibilities:
 - Execute hire API flow
 - Handle revision loop with board comments
 
-Also update `skills/paperclip/SKILL.md` to reference this skill for hiring workflows.
+Also update `skills/noralos/SKILL.md` to reference this skill for hiring workflows.
 
 ## 9. Enforcement and Invariants
 
@@ -344,7 +344,7 @@ New/updated invariants:
 - permission controls
 - approval detail + comments/revision flow in inbox/approvals
 - disapproved agent delete flow
-- `paperclip-create-agent` skill + docs updates
+- `noralos-create-agent` skill + docs updates
 
 ## 11. Test Plan
 

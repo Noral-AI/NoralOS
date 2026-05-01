@@ -597,7 +597,7 @@ function CompanyInvitesPreview() {
               type="button"
               className="w-full rounded-md border border-border bg-muted/60 px-3 py-2 text-left text-sm break-all"
             >
-              https://paperclip.local/invite/new-token
+              https://noralos.local/invite/new-token
             </button>
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline">

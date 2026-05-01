@@ -1,8 +1,8 @@
-import { inferBindModeFromHost } from "@paperclipai/shared";
-import type { PaperclipConfig } from "../config/schema.js";
+import { inferBindModeFromHost } from "@noralos/shared";
+import type { NoralosConfig } from "../config/schema.js";
 import type { CheckResult } from "./index.js";
 
-export function deploymentAuthCheck(config: PaperclipConfig): CheckResult {
+export function deploymentAuthCheck(config: NoralosConfig): CheckResult {
   const mode = config.server.deploymentMode;
   const exposure = config.server.exposure;
   const auth = config.auth;
@@ -27,12 +27,12 @@ export function deploymentAuthCheck(config: PaperclipConfig): CheckResult {
 
   const secret =
     process.env.BETTER_AUTH_SECRET?.trim() ??
-    process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim();
+    process.env.NORALOS_AGENT_JWT_SECRET?.trim();
   if (!secret) {
     return {
       name: "Deployment/auth mode",
       status: "fail",
-      message: "authenticated mode requires BETTER_AUTH_SECRET (or PAPERCLIP_AGENT_JWT_SECRET)",
+      message: "authenticated mode requires BETTER_AUTH_SECRET (or NORALOS_AGENT_JWT_SECRET)",
       canRepair: false,
       repairHint: "Set BETTER_AUTH_SECRET before starting NoralOS",
     };

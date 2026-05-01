@@ -61,17 +61,17 @@ Environment knobs:
 - `OPENCLAW_MODEL_FALLBACK` (default `openai/gpt-5.2-chat-latest`)
 - `OPENCLAW_CONFIG_DIR` (default `~/.openclaw-paperclip-smoke`)
 - `OPENCLAW_RESET_STATE=1` (default) resets smoke agent state on each run to avoid stale auth/session drift
-- `PAPERCLIP_HOST_PORT` (default `3100`)
-- `PAPERCLIP_HOST_FROM_CONTAINER` (default `host.docker.internal`)
+- `NORALOS_HOST_PORT` (default `3100`)
+- `NORALOS_HOST_FROM_CONTAINER` (default `host.docker.internal`)
 
 ### Authenticated mode
 
 If your NoralOS deployment is `authenticated`, provide auth context:
 
 ```bash
-PAPERCLIP_AUTH_HEADER="Bearer <token>" pnpm smoke:openclaw-join
+NORALOS_AUTH_HEADER="Bearer <token>" pnpm smoke:openclaw-join
 # or
-PAPERCLIP_COOKIE="your_session_cookie=..." pnpm smoke:openclaw-join
+NORALOS_COOKIE="your_session_cookie=..." pnpm smoke:openclaw-join
 ```
 
 ### Network topology tips
@@ -82,7 +82,7 @@ PAPERCLIP_COOKIE="your_session_cookie=..." pnpm smoke:openclaw-join
 - If NoralOS rejects the container-visible host with a hostname error, allow it from host:
 
 ```bash
-pnpm paperclipai allowed-hostname host.docker.internal
+pnpm noralos allowed-hostname host.docker.internal
 ```
 
 Then restart NoralOS and rerun the smoke script.
@@ -90,7 +90,7 @@ Then restart NoralOS and rerun the smoke script.
 - Authenticated/private mode: ensure hostnames are in the allowed list when required:
 
 ```bash
-pnpm paperclipai allowed-hostname <host>
+pnpm noralos allowed-hostname <host>
 ```
 
 ## Prerequisites

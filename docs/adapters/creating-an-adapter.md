@@ -74,8 +74,8 @@ export { createServerAdapter } from "./server/index.js";
 
 Key responsibilities:
 
-1. Read config using safe helpers (`asString`, `asNumber`, etc.) from `@paperclipai/adapter-utils/server-utils`
-2. Build environment with `buildPaperclipEnv(agent)` plus context vars
+1. Read config using safe helpers (`asString`, `asNumber`, etc.) from `@noralos/adapter-utils/server-utils`
+2. Build environment with `buildNoralOSEnv(agent)` plus context vars
 3. Resolve session state from `runtime.sessionParams`
 4. Render prompt with `renderTemplate(template, data)`
 5. Spawn the process with `runChildProcess()` or call via `fetch()`
@@ -86,11 +86,11 @@ Key responsibilities:
 
 | Helper | Source | Purpose |
 |--------|--------|---------|
-| `runChildProcess(cmd, opts)` | `@paperclipai/adapter-utils/server-utils` | Spawn with timeout, grace, streaming |
-| `buildPaperclipEnv(agent)` | `@paperclipai/adapter-utils/server-utils` | Inject `PAPERCLIP_*` env vars |
-| `renderTemplate(tpl, data)` | `@paperclipai/adapter-utils/server-utils` | `{{variable}}` substitution |
-| `asString(v)` | `@paperclipai/adapter-utils` | Safe config value extraction |
-| `asNumber(v)` | `@paperclipai/adapter-utils` | Safe number extraction |
+| `runChildProcess(cmd, opts)` | `@noralos/adapter-utils/server-utils` | Spawn with timeout, grace, streaming |
+| `buildPaperclipEnv(agent)` | `@noralos/adapter-utils/server-utils` | Inject `PAPERCLIP_*` env vars |
+| `renderTemplate(tpl, data)` | `@noralos/adapter-utils/server-utils` | `{{variable}}` substitution |
+| `asString(v)` | `@noralos/adapter-utils` | Safe config value extraction |
+| `asNumber(v)` | `@noralos/adapter-utils` | Safe number extraction |
 
 ### AdapterExecutionContext
 

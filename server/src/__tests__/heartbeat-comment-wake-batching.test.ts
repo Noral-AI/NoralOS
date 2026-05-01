@@ -11,7 +11,7 @@ import {
   heartbeatRuns,
   issueComments,
   issues,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import { heartbeatService } from "../services/heartbeat.ts";
 import { startEmbeddedPostgresTestDatabase } from "./helpers/embedded-postgres.ts";
 
@@ -170,7 +170,7 @@ describe("heartbeat comment wake batching", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -280,7 +280,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -473,7 +473,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -611,7 +611,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -798,7 +798,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -997,7 +997,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -1065,7 +1065,7 @@ describe("heartbeat comment wake batching", () => {
           commentIds: [],
         },
       });
-      expect(String(firstPayload.message ?? "")).toContain("## Paperclip Wake Payload");
+      expect(String(firstPayload.message ?? "")).toContain("## NoralOS Wake Payload");
       expect(String(firstPayload.message ?? "")).toContain("Do not switch to another issue until you have handled this wake.");
       expect(String(firstPayload.message ?? "")).toContain("- checkout: already claimed by the harness for this run");
       expect(String(firstPayload.message ?? "")).toContain(
@@ -1149,7 +1149,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -1349,7 +1349,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });
@@ -1496,7 +1496,7 @@ describe("heartbeat comment wake batching", () => {
     try {
       await db.insert(companies).values({
         id: companyId,
-        name: "Paperclip",
+        name: "NoralOS",
         issuePrefix,
         requireBoardApprovalForNewAgents: false,
       });

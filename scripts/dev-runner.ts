@@ -37,7 +37,7 @@ const gracefulShutdownTimeoutMs = 10_000;
 const changedPathSampleLimit = 5;
 const devServerStatusFilePath = path.join(repoRoot, ".paperclip", "dev-server-status.json");
 const devServerStatusToken = mode === "dev" ? randomUUID() : null;
-const devServerStatusTokenHeader = "x-paperclip-dev-server-status-token";
+const devServerStatusTokenHeader = "x-noralos-dev-server-status-token";
 
 const watchedDirectories = [
   "cli",
@@ -70,7 +70,7 @@ const ignoredDirectoryNames = new Set([
 ]);
 
 const ignoredRelativePaths = new Set([
-  ".paperclip/dev-server-status.json",
+  ".noralos/dev-server-status.json",
 ]);
 
 const tailscaleAuthFlagNames = new Set([
@@ -131,19 +131,19 @@ if (bindMode === "custom" && !bindHost) {
 
 const env: NodeJS.ProcessEnv = {
   ...process.env,
-  PAPERCLIP_UI_DEV_MIDDLEWARE: "true",
+  NORALOS_UI_DEV_MIDDLEWARE: "true",
 };
 
 if (mode === "dev") {
-  env.PAPERCLIP_DEV_SERVER_STATUS_FILE = devServerStatusFilePath;
-  env.PAPERCLIP_DEV_SERVER_STATUS_TOKEN = devServerStatusToken ?? "";
-  env.PAPERCLIP_MIGRATION_AUTO_APPLY ??= "true";
+  env.NORALOS_DEV_SERVER_STATUS_FILE = devServerStatusFilePath;
+  env.NORALOS_DEV_SERVER_STATUS_TOKEN = devServerStatusToken ?? "";
+  env.NORALOS_MIGRATION_AUTO_APPLY ??= "true";
 }
 
 if (mode === "watch") {
-  delete env.PAPERCLIP_DEV_SERVER_STATUS_TOKEN;
-  env.PAPERCLIP_MIGRATION_PROMPT ??= "never";
-  env.PAPERCLIP_MIGRATION_AUTO_APPLY ??= "true";
+  delete env.NORALOS_DEV_SERVER_STATUS_TOKEN;
+  env.NORALOS_MIGRATION_PROMPT ??= "never";
+  env.NORALOS_MIGRATION_AUTO_APPLY ??= "true";
 }
 
 if (tailscaleAuth || bindMode) {
@@ -151,31 +151,31 @@ if (tailscaleAuth || bindMode) {
   if (tailscaleAuth) {
     console.log("[paperclip] note: --tailscale-auth/--authenticated-private are legacy aliases for --bind lan");
   }
-  env.PAPERCLIP_BIND = effectiveBind;
+  env.NORALOS_BIND = effectiveBind;
   if (bindHost) {
-    env.PAPERCLIP_BIND_HOST = bindHost;
+    env.NORALOS_BIND_HOST = bindHost;
   } else {
-    delete env.PAPERCLIP_BIND_HOST;
+    delete env.NORALOS_BIND_HOST;
   }
   if (effectiveBind === "loopback" && !tailscaleAuth) {
-    delete env.PAPERCLIP_DEPLOYMENT_MODE;
-    delete env.PAPERCLIP_DEPLOYMENT_EXPOSURE;
-    delete env.PAPERCLIP_AUTH_BASE_URL_MODE;
+    delete env.NORALOS_DEPLOYMENT_MODE;
+    delete env.NORALOS_DEPLOYMENT_EXPOSURE;
+    delete env.NORALOS_AUTH_BASE_URL_MODE;
     console.log("[paperclip] dev mode: local_trusted (bind=loopback)");
   } else {
-    env.PAPERCLIP_DEPLOYMENT_MODE = "authenticated";
-    env.PAPERCLIP_DEPLOYMENT_EXPOSURE = "private";
-    env.PAPERCLIP_AUTH_BASE_URL_MODE = "auto";
+    env.NORALOS_DEPLOYMENT_MODE = "authenticated";
+    env.NORALOS_DEPLOYMENT_EXPOSURE = "private";
+    env.NORALOS_AUTH_BASE_URL_MODE = "auto";
     console.log(
       `[paperclip] dev mode: authenticated/private (bind=${effectiveBind}${bindHost ? `:${bindHost}` : ""})`,
     );
   }
 } else {
-  delete env.PAPERCLIP_BIND;
-  delete env.PAPERCLIP_BIND_HOST;
-  delete env.PAPERCLIP_DEPLOYMENT_MODE;
-  delete env.PAPERCLIP_DEPLOYMENT_EXPOSURE;
-  delete env.PAPERCLIP_AUTH_BASE_URL_MODE;
+  delete env.NORALOS_BIND;
+  delete env.NORALOS_BIND_HOST;
+  delete env.NORALOS_DEPLOYMENT_MODE;
+  delete env.NORALOS_DEPLOYMENT_EXPOSURE;
+  delete env.NORALOS_AUTH_BASE_URL_MODE;
   console.log("[paperclip] dev mode: local_trusted (default)");
 }
 
@@ -354,7 +354,7 @@ async function updateDevServiceRecord(extra?: Record<string, unknown>) {
   await writeLocalServiceRegistryRecord({
     version: 1,
     serviceKey: devService.serviceKey,
-    profileKind: "paperclip-dev",
+    profileKind: "noralos-dev",
     serviceName: devService.serviceName,
     command: "dev-runner.ts",
     cwd: repoRoot,
@@ -421,14 +421,14 @@ async function runPnpm(args: string[], options: {
 
 async function getMigrationStatusPayload() {
   const status = await runPnpm(
-    ["--filter", "@paperclipai/db", "exec", "tsx", "src/migration-status.ts", "--json"],
+    ["--filter", "@noralos/db", "exec", "tsx", "src/migration-status.ts", "--json"],
     { env },
   );
   if (status.code !== 0) {
     process.stderr.write(
       status.stderr ||
         status.stdout ||
-        `[paperclip] Command failed with code ${status.code}: pnpm --filter @paperclipai/db exec tsx src/migration-status.ts --json\n`,
+        `[paperclip] Command failed with code ${status.code}: pnpm --filter @noralos/db exec tsx src/migration-status.ts --json\n`,
     );
     process.exit(status.code);
   }
@@ -457,7 +457,7 @@ async function refreshPendingMigrations() {
 
 async function maybePreflightMigrations(options: { interactive?: boolean; autoApply?: boolean; exitOnDecline?: boolean } = {}) {
   const interactive = options.interactive ?? mode === "watch";
-  const autoApply = options.autoApply ?? env.PAPERCLIP_MIGRATION_AUTO_APPLY === "true";
+  const autoApply = options.autoApply ?? env.NORALOS_MIGRATION_AUTO_APPLY === "true";
   const exitOnDecline = options.exitOnDecline ?? mode === "watch";
 
   const payload = await refreshPendingMigrations();
@@ -516,7 +516,7 @@ async function maybePreflightMigrations(options: { interactive?: boolean; autoAp
 async function buildPluginSdk() {
   console.log("[paperclip] building plugin sdk...");
   const result = await runPnpm(
-    ["--filter", "@paperclipai/plugin-sdk", "build"],
+    ["--filter", "@noralos/plugin-sdk", "build"],
     { stdio: "inherit" },
   );
   if (result.signal) {
@@ -596,7 +596,7 @@ async function startServerChild() {
   const serverScript = mode === "watch" ? "dev:watch" : "dev";
   child = spawn(
     pnpmBin,
-    ["--filter", "@paperclipai/server", serverScript, ...forwardedArgs],
+    ["--filter", "@noralos/server", serverScript, ...forwardedArgs],
     { stdio: "inherit", env, shell: process.platform === "win32" },
   );
 
