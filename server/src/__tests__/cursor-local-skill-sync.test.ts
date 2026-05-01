@@ -19,7 +19,7 @@ async function createSkillDir(root: string, name: string) {
 }
 
 describe("cursor local skill sync", () => {
-  const paperclipKey = "noralos/paperclip/paperclip";
+  const noralosKey = "noralos/noralos/noralos";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {
@@ -27,7 +27,7 @@ describe("cursor local skill sync", () => {
     cleanupDirs.clear();
   });
 
-  it("reports configured Paperclip skills and installs them into the Cursor skills home", async () => {
+  it("reports configured NoralOS skills and installs them into the Cursor skills home", async () => {
     const home = await makeTempDir("paperclip-cursor-skill-sync-");
     cleanupDirs.add(home);
 
@@ -39,30 +39,30 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        noralosSkillSync: {
+          desiredSkills: [noralosKey],
         },
       },
     } as const;
 
     const before = await listCursorSkills(ctx);
     expect(before.mode).toBe("persistent");
-    expect(before.desiredSkills).toContain(paperclipKey);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.required).toBe(true);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("missing");
+    expect(before.desiredSkills).toContain(noralosKey);
+    expect(before.entries.find((entry) => entry.key === noralosKey)?.required).toBe(true);
+    expect(before.entries.find((entry) => entry.key === noralosKey)?.state).toBe("missing");
 
-    const after = await syncCursorSkills(ctx, [paperclipKey]);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
+    const after = await syncCursorSkills(ctx, [noralosKey]);
+    expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
     expect((await fs.lstat(path.join(home, ".cursor", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
   });
 
-  it("recognizes company-library runtime skills supplied outside the bundled Paperclip directory", async () => {
+  it("recognizes company-library runtime skills supplied outside the bundled NoralOS directory", async () => {
     const home = await makeTempDir("paperclip-cursor-runtime-skills-home-");
     const runtimeSkills = await makeTempDir("paperclip-cursor-runtime-skills-src-");
     cleanupDirs.add(home);
     cleanupDirs.add(runtimeSkills);
 
-    const paperclipDir = await createSkillDir(runtimeSkills, "paperclip");
+    const noralosDir = await createSkillDir(runtimeSkills, "paperclip");
     const asciiHeartDir = await createSkillDir(runtimeSkills, "ascii-heart");
 
     const ctx = {
@@ -73,13 +73,13 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipRuntimeSkills: [
+        noralosRuntimeSkills: [
           {
             key: "paperclip",
             runtimeName: "paperclip",
-            source: paperclipDir,
+            source: noralosDir,
             required: true,
-            requiredReason: "Bundled Paperclip skills are always available for local adapters.",
+            requiredReason: "Bundled NoralOS skills are always available for local adapters.",
           },
           {
             key: "ascii-heart",
@@ -87,7 +87,7 @@ describe("cursor local skill sync", () => {
             source: asciiHeartDir,
           },
         ],
-        paperclipSkillSync: {
+        noralosSkillSync: {
           desiredSkills: ["ascii-heart"],
         },
       },
@@ -104,7 +104,7 @@ describe("cursor local skill sync", () => {
     expect((await fs.lstat(path.join(home, ".cursor", "skills", "ascii-heart"))).isSymbolicLink()).toBe(true);
   });
 
-  it("keeps required bundled Paperclip skills installed even when the desired set is emptied", async () => {
+  it("keeps required bundled NoralOS skills installed even when the desired set is emptied", async () => {
     const home = await makeTempDir("paperclip-cursor-skill-prune-");
     cleanupDirs.add(home);
 
@@ -116,13 +116,13 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        noralosSkillSync: {
+          desiredSkills: [noralosKey],
         },
       },
     } as const;
 
-    await syncCursorSkills(configuredCtx, [paperclipKey]);
+    await syncCursorSkills(configuredCtx, [noralosKey]);
 
     const clearedCtx = {
       ...configuredCtx,
@@ -130,15 +130,15 @@ describe("cursor local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
+        noralosSkillSync: {
           desiredSkills: [],
         },
       },
     } as const;
 
     const after = await syncCursorSkills(clearedCtx, []);
-    expect(after.desiredSkills).toContain(paperclipKey);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
+    expect(after.desiredSkills).toContain(noralosKey);
+    expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
     expect((await fs.lstat(path.join(home, ".cursor", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
   });
 });

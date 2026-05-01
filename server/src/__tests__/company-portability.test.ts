@@ -121,7 +121,7 @@ function asTextFile(entry: CompanyPortabilityFileEntry | undefined) {
 }
 
 describe("company portability", () => {
-  const paperclipKey = "noralos/paperclip/paperclip";
+  const noralosKey = "noralos/noralos/noralos";
   const companyPlaybookKey = "company/company-1/company-playbook";
 
   beforeEach(() => {
@@ -143,7 +143,7 @@ describe("company portability", () => {
     });
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
       requireBoardApprovalForNewAgents: false,
     });
     agentSvc.list.mockResolvedValue([
@@ -159,8 +159,8 @@ describe("company portability", () => {
         adapterType: "claude_local",
         adapterConfig: {
           promptTemplate: "You are ClaudeCoder.",
-          paperclipSkillSync: {
-            desiredSkills: [paperclipKey],
+          noralosSkillSync: {
+            desiredSkills: [noralosKey],
           },
           instructionsFilePath: "/tmp/ignored.md",
           cwd: "/tmp/ignored",
@@ -280,11 +280,11 @@ describe("company portability", () => {
       {
         id: "skill-1",
         companyId: "company-1",
-        key: paperclipKey,
+        key: noralosKey,
         slug: "paperclip",
         name: "paperclip",
-        description: "Paperclip coordination skill",
-        markdown: "---\nname: paperclip\ndescription: Paperclip coordination skill\n---\n\n# Paperclip\n",
+        description: "NoralOS coordination skill",
+        markdown: "---\nname: paperclip\ndescription: NoralOS coordination skill\n---\n\n# NoralOS\n",
         sourceType: "github",
         sourceLocator: "https://github.com/paperclipai/paperclip/tree/master/skills/paperclip",
         sourceRef: "0123456789abcdef0123456789abcdef01234567",
@@ -347,7 +347,7 @@ describe("company portability", () => {
         path: relativePath,
         kind: relativePath === "SKILL.md" ? "skill" : "reference",
         content: relativePath === "SKILL.md"
-          ? "---\nname: paperclip\ndescription: Paperclip coordination skill\n---\n\n# Paperclip\n"
+          ? "---\nname: paperclip\ndescription: NoralOS coordination skill\n---\n\n# NoralOS\n"
           : "# API\n",
         language: "markdown",
         markdown: true,
@@ -418,7 +418,7 @@ describe("company portability", () => {
     });
   });
 
-  it("exports referenced skills as stubs by default with sanitized Paperclip extension data", async () => {
+  it("exports referenced skills as stubs by default with sanitized NoralOS extension data", async () => {
     const portability = companyPortabilityService({} as any);
 
     const exported = await portability.exportBundle("company-1", {
@@ -434,11 +434,11 @@ describe("company portability", () => {
     expect(asTextFile(exported.files["COMPANY.md"])).toContain('schema: "agentcompanies/v1"');
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain("You are ClaudeCoder.");
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain("skills:");
-    expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain(`- "${paperclipKey}"`);
+    expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain(`- "${noralosKey}"`);
     expect(asTextFile(exported.files["agents/cmo/AGENTS.md"])).not.toContain("skills:");
-    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain('kind: "github-dir"');
-    expect(exported.files["skills/noralos/paperclip/paperclip/references/api.md"]).toBeUndefined();
+    expect(asTextFile(exported.files["skills/noralos/noralos/noralos/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/noralos/noralos/noralos/SKILL.md"])).toContain('kind: "github-dir"');
+    expect(exported.files["skills/noralos/noralos/noralos/references/api.md"]).toBeUndefined();
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/references/checklist.md"])).toContain("# Checklist");
 
@@ -453,7 +453,7 @@ describe("company portability", () => {
     expect(extension).toContain("ANTHROPIC_API_KEY:");
     expect(extension).toContain('requirement: "optional"');
     expect(extension).toContain('default: ""');
-    expect(extension).not.toContain("paperclipSkillSync");
+    expect(extension).not.toContain("noralosSkillSync");
     expect(extension).not.toContain("PATH:");
     expect(extension).not.toContain("requireBoardApprovalForNewAgents: true");
     expect(extension).not.toContain("budgetMonthlyCents: 0");
@@ -487,7 +487,7 @@ describe("company portability", () => {
     expect(asTextFile(exported.files[".paperclip.yaml"])).toContain("requireBoardApprovalForNewAgents: true");
   });
 
-  it("exports default sidebar order into the Paperclip extension and manifest", async () => {
+  it("exports default sidebar order into the NoralOS extension and manifest", async () => {
     const portability = companyPortabilityService({} as any);
 
     projectSvc.list.mockResolvedValue([
@@ -558,9 +558,9 @@ describe("company portability", () => {
       expandReferencedSkills: true,
     });
 
-    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain("# Paperclip");
-    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/references/api.md"])).toContain("# API");
+    expect(asTextFile(exported.files["skills/noralos/noralos/noralos/SKILL.md"])).toContain("# NoralOS");
+    expect(asTextFile(exported.files["skills/noralos/noralos/noralos/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/noralos/noralos/noralos/references/api.md"])).toContain("# API");
   });
 
   it("exports only selected skills when skills filter is provided", async () => {
@@ -578,7 +578,7 @@ describe("company portability", () => {
 
     expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
-    expect(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"]).toBeUndefined();
+    expect(exported.files["skills/noralos/noralos/noralos/SKILL.md"]).toBeUndefined();
   });
 
   it("warns and exports all skills when skills filter matches nothing", async () => {
@@ -596,7 +596,7 @@ describe("company portability", () => {
 
     expect(exported.warnings).toContainEqual(expect.stringContaining("nonexistent-skill"));
     expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
-    expect(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"]).toBeDefined();
+    expect(exported.files["skills/noralos/noralos/noralos/SKILL.md"]).toBeDefined();
   });
 
   it("exports the company logo into images/ and references it from .paperclip.yaml", async () => {
@@ -692,7 +692,7 @@ describe("company portability", () => {
       {
         id: "skill-paperclip",
         companyId: "company-1",
-        key: "noralos/paperclip/release-changelog",
+        key: "noralos/noralos/release-changelog",
         slug: "release-changelog",
         name: "release-changelog",
         description: "Bundled release changelog skill",
@@ -724,8 +724,8 @@ describe("company portability", () => {
     });
 
     expect(asTextFile(exported.files["skills/local/release-changelog/SKILL.md"])).toContain("# Local Release Changelog");
-    expect(asTextFile(exported.files["skills/noralos/paperclip/release-changelog/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/noralos/paperclip/release-changelog/SKILL.md"])).toContain("noralos/paperclip/release-changelog");
+    expect(asTextFile(exported.files["skills/noralos/noralos/release-changelog/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/noralos/noralos/release-changelog/SKILL.md"])).toContain("noralos/noralos/release-changelog");
   });
 
   it("builds export previews without tasks by default", async () => {
@@ -885,7 +885,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.list.mockResolvedValue([]);
@@ -941,7 +941,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       collisionStrategy: "rename",
     }, "user-1");
@@ -1182,7 +1182,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -1316,7 +1316,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -1335,7 +1335,7 @@ describe("company portability", () => {
     });
   });
 
-  it("exports routines as recurring task packages with Paperclip routine extensions", async () => {
+  it("exports routines as recurring task packages with NoralOS routine extensions", async () => {
     const portability = companyPortabilityService({} as any);
 
     projectSvc.list.mockResolvedValue([
@@ -1470,7 +1470,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.create.mockResolvedValue({
@@ -1489,7 +1489,7 @@ describe("company portability", () => {
       "COMPANY.md": [
         "---",
         'schema: "agentcompanies/v1"',
-        'name: "Imported Paperclip"',
+        'name: "Imported NoralOS"',
         "---",
         "",
       ].join("\n"),
@@ -1541,7 +1541,7 @@ describe("company portability", () => {
     const preview = await portability.previewImport({
       source: { type: "inline", rootPath: "paperclip-demo", files },
       include: { company: true, agents: true, projects: true, issues: true, skills: false },
-      target: { mode: "new_company", newCompanyName: "Imported Paperclip" },
+      target: { mode: "new_company", newCompanyName: "Imported NoralOS" },
       agents: "all",
       collisionStrategy: "rename",
     });
@@ -1557,7 +1557,7 @@ describe("company portability", () => {
     const result = await portability.importBundle({
       source: { type: "inline", rootPath: "paperclip-demo", files },
       include: { company: true, agents: true, projects: true, issues: true, skills: false },
-      target: { mode: "new_company", newCompanyName: "Imported Paperclip" },
+      target: { mode: "new_company", newCompanyName: "Imported NoralOS" },
       agents: "all",
       collisionStrategy: "rename",
     }, "user-1");
@@ -1594,7 +1594,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.create.mockResolvedValue({
@@ -1610,7 +1610,7 @@ describe("company portability", () => {
     projectSvc.list.mockResolvedValue([]);
 
     const files = {
-      "COMPANY.md": ['---', 'schema: "agentcompanies/v1"', 'name: "Imported Paperclip"', "---", ""].join("\n"),
+      "COMPANY.md": ['---', 'schema: "agentcompanies/v1"', 'name: "Imported NoralOS"', "---", ""].join("\n"),
       "agents/claudecoder/AGENTS.md": ['---', 'name: "ClaudeCoder"', "---", "", "You write code.", ""].join("\n"),
       "projects/launch/PROJECT.md": ['---', 'name: "Launch"', "---", ""].join("\n"),
       "tasks/monday-review/TASK.md": [
@@ -1636,7 +1636,7 @@ describe("company portability", () => {
     const preview = await portability.previewImport({
       source: { type: "inline", rootPath: "paperclip-demo", files },
       include: { company: true, agents: true, projects: true, issues: true, skills: false },
-      target: { mode: "new_company", newCompanyName: "Imported Paperclip" },
+      target: { mode: "new_company", newCompanyName: "Imported NoralOS" },
       agents: "all",
       collisionStrategy: "rename",
     });
@@ -1650,7 +1650,7 @@ describe("company portability", () => {
     await portability.importBundle({
       source: { type: "inline", rootPath: "paperclip-demo", files },
       include: { company: true, agents: true, projects: true, issues: true, skills: false },
-      target: { mode: "new_company", newCompanyName: "Imported Paperclip" },
+      target: { mode: "new_company", newCompanyName: "Imported NoralOS" },
       agents: "all",
       collisionStrategy: "rename",
     }, "user-1");
@@ -1671,7 +1671,7 @@ describe("company portability", () => {
         type: "inline",
         rootPath: "paperclip-demo",
         files: {
-          "COMPANY.md": ['---', 'schema: "agentcompanies/v1"', 'name: "Imported Paperclip"', "---", ""].join("\n"),
+          "COMPANY.md": ['---', 'schema: "agentcompanies/v1"', 'name: "Imported NoralOS"', "---", ""].join("\n"),
           "tasks/monday-review/TASK.md": [
             "---",
             'name: "Monday Review"',
@@ -1684,7 +1684,7 @@ describe("company portability", () => {
         },
       },
       include: { company: true, agents: false, projects: false, issues: true, skills: false },
-      target: { mode: "new_company", newCompanyName: "Imported Paperclip" },
+      target: { mode: "new_company", newCompanyName: "Imported NoralOS" },
       collisionStrategy: "rename",
     });
 
@@ -1697,7 +1697,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.create.mockResolvedValue({
@@ -1713,11 +1713,11 @@ describe("company portability", () => {
           "COMPANY.md": [
             "---",
             'schema: "agentcompanies/v1"',
-            'name: "Imported Paperclip"',
+            'name: "Imported NoralOS"',
             'description: "Portable company package"',
             "---",
             "",
-            "# Imported Paperclip",
+            "# Imported NoralOS",
             "",
           ].join("\n"),
           "agents/claudecoder/AGENTS.md": [
@@ -1741,14 +1741,14 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
     });
 
     expect(preview.errors).toEqual([]);
-    expect(preview.manifest.company?.name).toBe("Imported Paperclip");
+    expect(preview.manifest.company?.name).toBe("Imported NoralOS");
     expect(preview.manifest.agents).toEqual([
       expect.objectContaining({
         slug: "claudecoder",
@@ -1766,11 +1766,11 @@ describe("company portability", () => {
           "COMPANY.md": [
             "---",
             'schema: "agentcompanies/v1"',
-            'name: "Imported Paperclip"',
+            'name: "Imported NoralOS"',
             'description: "Portable company package"',
             "---",
             "",
-            "# Imported Paperclip",
+            "# Imported NoralOS",
             "",
           ].join("\n"),
           "agents/claudecoder/AGENTS.md": [
@@ -1794,14 +1794,14 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
     }, "user-1");
 
     expect(companySvc.create).toHaveBeenCalledWith(expect.objectContaining({
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
       description: "Portable company package",
     }));
     expect(agentSvc.create).toHaveBeenCalledWith("company-imported", expect.objectContaining({
@@ -1916,7 +1916,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.create.mockResolvedValue({
@@ -1949,7 +1949,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -1961,8 +1961,8 @@ describe("company portability", () => {
     });
     expect(agentSvc.create).toHaveBeenCalledWith("company-imported", expect.objectContaining({
       adapterConfig: expect.objectContaining({
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        noralosSkillSync: {
+          desiredSkills: [noralosKey],
         },
       }),
     }));
@@ -1981,12 +1981,12 @@ describe("company portability", () => {
     };
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
       logoAssetId: null,
     });
     companySvc.update.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
       logoAssetId: "asset-created",
     });
     agentSvc.create.mockResolvedValue({
@@ -2030,7 +2030,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -2058,7 +2058,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     agentSvc.create.mockResolvedValue({
       id: "agent-created",
@@ -2090,7 +2090,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -2113,7 +2113,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     agentSvc.create.mockImplementation(async (_companyId: string, input: Record<string, unknown>) => ({
       id: `agent-${String(input.name).toLowerCase()}`,
@@ -2147,7 +2147,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -2258,7 +2258,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.create.mockResolvedValue({
@@ -2291,7 +2291,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: "all",
       collisionStrategy: "rename",
@@ -2404,7 +2404,7 @@ describe("company portability", () => {
 
     companySvc.create.mockResolvedValue({
       id: "company-imported",
-      name: "Imported Paperclip",
+      name: "Imported NoralOS",
     });
     accessSvc.ensureMembership.mockResolvedValue(undefined);
     agentSvc.create.mockResolvedValue({
@@ -2444,7 +2444,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: ["claudecoder"],
       collisionStrategy: "rename",
@@ -2561,7 +2561,7 @@ describe("company portability", () => {
       },
       target: {
         mode: "new_company",
-        newCompanyName: "Imported Paperclip",
+        newCompanyName: "Imported NoralOS",
       },
       agents: ["claudecoder"],
       collisionStrategy: "rename",

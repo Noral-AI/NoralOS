@@ -26,8 +26,8 @@ import {
   supportedEnvironmentDriversForAdapter,
 } from "@noralos/shared";
 import {
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
+  readNoralosSkillSyncPreference,
+  writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
 import { trackAgentCreated } from "@noralos/shared/telemetry";
 import { validate } from "../middleware/validate.js";
@@ -178,7 +178,7 @@ export function agentRoutes(
    * Resolve the execution target the adapter should run its test probes against.
    *
    * - No environmentId / local environment → returns a local target so the
-   *   adapter probes the Paperclip host (legacy behavior).
+   *   adapter probes the NoralOS host (legacy behavior).
    * - SSH environment → builds an SSH execution target from the environment
    *   config so the adapter probes the remote box. No lease is required:
    *   the SSH spec is fully derived from the saved environment config.
@@ -1047,7 +1047,7 @@ export function agentRoutes(
     });
     return {
       ...config,
-      paperclipRuntimeSkills: runtimeSkillEntries,
+      noralosRuntimeSkills: runtimeSkillEntries,
     };
   }
 
@@ -1078,7 +1078,7 @@ export function agentRoutes(
     const desiredSkills = Array.from(new Set([...requiredSkills, ...resolvedRequestedSkills]));
 
     return {
-      adapterConfig: writePaperclipSkillSyncPreference(adapterConfig, desiredSkills),
+      adapterConfig: writeNoralosSkillSyncPreference(adapterConfig, desiredSkills),
       desiredSkills,
       runtimeSkillEntries,
     };
@@ -1262,7 +1262,7 @@ export function agentRoutes(
 
     const adapter = findActiveServerAdapter(agent.adapterType);
     if (!adapter?.listSkills) {
-      const preference = readPaperclipSkillSyncPreference(
+      const preference = readNoralosSkillSyncPreference(
         agent.adapterConfig as Record<string, unknown>,
       );
       const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId, {
@@ -1345,7 +1345,7 @@ export function agentRoutes(
       );
       const runtimeSkillConfig = {
         ...runtimeConfig,
-        paperclipRuntimeSkills: runtimeSkillEntries,
+        noralosRuntimeSkills: runtimeSkillEntries,
       };
       const snapshot = adapter?.syncSkills
         ? await adapter.syncSkills({

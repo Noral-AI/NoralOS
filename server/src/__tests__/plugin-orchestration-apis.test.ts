@@ -47,7 +47,7 @@ describeEmbeddedPostgres("plugin orchestration APIs", () => {
   let tempDb: Awaited<ReturnType<typeof startEmbeddedPostgresTestDatabase>> | null = null;
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-plugin-orchestration-");
+    tempDb = await startEmbeddedPostgresTestDatabase("noralos-plugin-orchestration-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 

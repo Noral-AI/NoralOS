@@ -122,7 +122,7 @@ export function environmentService(db: Db) {
           status: "active",
           config: {},
           metadata: {
-            managedByPaperclip: true,
+            managedByNoralos: true,
             defaultForCompany: true,
           },
           createdAt: now,

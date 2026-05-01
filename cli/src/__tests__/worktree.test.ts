@@ -684,7 +684,7 @@ describe("worktree helpers", () => {
     }
   });
 
-  it("defaults the seed source config to the current repo-local Paperclip config", () => {
+  it("defaults the seed source config to the current repo-local NoralOS config", () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-source-config-"));
     const repoRoot = path.join(tempRoot, "repo");
     const localConfigPath = path.join(repoRoot, ".paperclip", "config.json");
@@ -798,7 +798,7 @@ describe("worktree helpers", () => {
         resolveWorktreeReseedTargetPaths({
           configPath,
           rootPath: worktreeRoot,
-        })).toThrow("does not look like a worktree-local Paperclip instance");
+        })).toThrow("does not look like a worktree-local NoralOS instance");
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -933,7 +933,7 @@ describe("worktree helpers", () => {
       } as NoralosConfig;
 
       fs.writeFileSync(currentPaths.configPath, JSON.stringify(currentConfig, null, 2), "utf8");
-      fs.writeFileSync(currentPaths.envPath, `NORALOS_HOME=${homeDir}\nPAPERCLIP_INSTANCE_ID=${currentInstanceId}\n`, "utf8");
+      fs.writeFileSync(currentPaths.envPath, `NORALOS_HOME=${homeDir}\nNORALOS_INSTANCE_ID=${currentInstanceId}\n`, "utf8");
       fs.writeFileSync(path.join(currentPaths.instanceRoot, "marker.txt"), "keep me", "utf8");
       fs.writeFileSync(sourcePaths.configPath, JSON.stringify(sourceConfig, null, 2), "utf8");
       fs.writeFileSync(sourcePaths.secretsKeyFilePath, "source-secret", "utf8");
@@ -1101,7 +1101,7 @@ describe("worktree helpers", () => {
     }
   });
 
-  it("repairs the current linked worktree when Paperclip metadata is missing", async () => {
+  it("repairs the current linked worktree when NoralOS metadata is missing", async () => {
     const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-worktree-repair-current-"));
     const repoRoot = path.join(tempRoot, "repo");
     const worktreePath = path.join(repoRoot, ".paperclip", "worktrees", "repair-me");

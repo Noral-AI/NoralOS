@@ -9,7 +9,7 @@ not talk to the database directly and it does not reimplement business logic.
 
 The server reads its configuration from environment variables:
 
-- `NORALOS_API_URL` - Paperclip base URL, for example `http://localhost:3100`
+- `NORALOS_API_URL` - NoralOS base URL, for example `http://localhost:3100`
 - `NORALOS_API_KEY` - bearer token used for `/api` requests
 - `NORALOS_COMPANY_ID` - optional default company for company-scoped tools
 - `NORALOS_AGENT_ID` - optional default agent for checkout helpers

@@ -129,7 +129,7 @@ describe("pi_local execute", () => {
           cwd: workspace,
           model: "google/gemini-3-flash-preview",
           promptTemplate: "Keep working.",
-          paperclipRuntimeSkills: [
+          noralosRuntimeSkills: [
             { key: "demo-skill", runtimeName: "demo-skill", source: skillDir, required: true },
           ],
         },
@@ -185,9 +185,9 @@ describe("pi_local execute", () => {
           cwd: workspace,
           model: "google/gemini-3-flash-preview",
           promptTemplate: "Keep working.",
-          // required:false with no explicit paperclipSkillSync preference →
-          // resolvePaperclipDesiredSkillNames returns [] → skill is not injected.
-          paperclipRuntimeSkills: [
+          // required:false with no explicit noralosSkillSync preference →
+          // resolveNoralosDesiredSkillNames returns [] → skill is not injected.
+          noralosRuntimeSkills: [
             { key: "not-injected", runtimeName: "not-injected", source: nonInjectedSkillDir, required: false },
           ],
         },

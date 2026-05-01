@@ -8,10 +8,10 @@ import type {
 } from "@noralos/adapter-utils";
 import {
   buildPersistentSkillSnapshot,
-  ensurePaperclipSkillSymlink,
-  readPaperclipRuntimeSkillEntries,
+  ensureNoralosSkillSymlink,
+  readNoralosRuntimeSkillEntries,
   readInstalledSkillTargets,
-  resolvePaperclipDesiredSkillNames,
+  resolveNoralosDesiredSkillNames,
 } from "@noralos/adapter-utils/server-utils";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -31,8 +31,8 @@ function resolveOpenCodeSkillsHome(config: Record<string, unknown>) {
 }
 
 async function buildOpenCodeSkillSnapshot(config: Record<string, unknown>): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
-  const desiredSkills = resolvePaperclipDesiredSkillNames(config, availableEntries);
+  const availableEntries = await readNoralosRuntimeSkillEntries(config, __moduleDir);
+  const desiredSkills = resolveNoralosDesiredSkillNames(config, availableEntries);
   const skillsHome = resolveOpenCodeSkillsHome(config);
   const installed = await readInstalledSkillTargets(skillsHome);
   return buildPersistentSkillSnapshot({
@@ -60,7 +60,7 @@ export async function syncOpenCodeSkills(
   ctx: AdapterSkillContext,
   desiredSkills: string[],
 ): Promise<AdapterSkillSnapshot> {
-  const availableEntries = await readPaperclipRuntimeSkillEntries(ctx.config, __moduleDir);
+  const availableEntries = await readNoralosRuntimeSkillEntries(ctx.config, __moduleDir);
   const desiredSet = new Set([
     ...desiredSkills,
     ...availableEntries.filter((entry) => entry.required).map((entry) => entry.key),
@@ -73,7 +73,7 @@ export async function syncOpenCodeSkills(
   for (const available of availableEntries) {
     if (!desiredSet.has(available.key)) continue;
     const target = path.join(skillsHome, available.runtimeName);
-    await ensurePaperclipSkillSymlink(available.source, target);
+    await ensureNoralosSkillSymlink(available.source, target);
   }
 
   for (const [name, installedEntry] of installed.entries()) {
@@ -91,5 +91,5 @@ export function resolveOpenCodeDesiredSkillNames(
   config: Record<string, unknown>,
   availableEntries: Array<{ key: string; required?: boolean }>,
 ) {
-  return resolvePaperclipDesiredSkillNames(config, availableEntries);
+  return resolveNoralosDesiredSkillNames(config, availableEntries);
 }

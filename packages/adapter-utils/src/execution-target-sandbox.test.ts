@@ -9,7 +9,7 @@ import {
   adapterExecutionTargetToRemoteSpec,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetNoralosBridge,
   type AdapterSandboxExecutionTarget,
 } from "./execution-target.js";
 import { runChildProcess } from "./server-utils.js";
@@ -103,7 +103,7 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd: "/workspace",
-      paperclipTransport: "bridge",
+      noralosTransport: "bridge",
     });
   });
 
@@ -140,7 +140,7 @@ describe("sandbox adapter execution targets", () => {
     }));
   });
 
-  it("starts a localhost Paperclip bridge for sandbox targets in bridge mode", async () => {
+  it("starts a localhost NoralOS bridge for sandbox targets in bridge mode", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
@@ -174,12 +174,12 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd,
-      paperclipTransport: "bridge",
+      noralosTransport: "bridge",
       runner: createLocalSandboxRunner(),
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetNoralosBridge({
       runId: "run-bridge",
       target,
       runtimeRootDir,
@@ -252,12 +252,12 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd,
-      paperclipTransport: "bridge",
+      noralosTransport: "bridge",
       runner: createLocalSandboxRunner(),
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetNoralosBridge({
       runId: "run-bridge-limit",
       target,
       runtimeRootDir,

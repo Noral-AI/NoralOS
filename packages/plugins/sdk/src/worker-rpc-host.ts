@@ -40,12 +40,12 @@ import { fileURLToPath } from "node:url";
 
 import type {
   AskUserQuestionsInteraction,
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   RequestConfirmationInteraction,
   SuggestTasksInteraction,
 } from "@noralos/shared";
 
-import type { PaperclipPlugin } from "./define-plugin.js";
+import type { NoralosPlugin } from "./define-plugin.js";
 import type {
   PluginApiRequestInput,
   PluginHealthDiagnostics,
@@ -119,7 +119,7 @@ export interface WorkerRpcHostOptions {
    *
    * The worker entrypoint should import its plugin and pass it here.
    */
-  plugin: PaperclipPlugin;
+  plugin: NoralosPlugin;
 
   /**
    * Input stream to read JSON-RPC messages from.
@@ -207,7 +207,7 @@ export interface RunWorkerOptions {
  * ```
  */
 export function runWorker(
-  plugin: PaperclipPlugin,
+  plugin: NoralosPlugin,
   moduleUrl: string,
   options?: RunWorkerOptions,
 ): WorkerRpcHost | void {
@@ -262,7 +262,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
 
   let running = true;
   let initialized = false;
-  let manifest: PaperclipPluginManifestV1 | null = null;
+  let manifest: NoralosPluginManifestV1 | null = null;
   let currentConfig: Record<string, unknown> = {};
   let databaseNamespace: string | null = null;
 

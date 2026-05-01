@@ -913,7 +913,7 @@ V1 supports company import/export using a portable package contract:
 
 - markdown-first package rooted at `COMPANY.md`
 - implicit folder discovery by convention
-- `.paperclip.yaml` sidecar for Paperclip-specific fidelity
+- `.paperclip.yaml` sidecar for NoralOS-specific fidelity
 - canonical base package is vendor-neutral and aligned with `docs/companies/companies-spec.md`
 - common conventions:
   - `agents/<slug>/AGENTS.md`
@@ -927,7 +927,7 @@ Export/import behavior in V1:
 
 - export emits a clean vendor-neutral markdown package plus `.paperclip.yaml`
 - projects and starter tasks are opt-in export content rather than default package content
-- recurring `TASK.md` entries use `recurring: true` in the base package and Paperclip routine fidelity in `.paperclip.yaml`
+- recurring `TASK.md` entries use `recurring: true` in the base package and NoralOS routine fidelity in `.paperclip.yaml`
 - NoralOS imports recurring task packages as routines instead of downgrading them to one-time issues
 - export strips environment-specific paths (`cwd`, local instruction file paths, inline prompt duplication) while preserving portable project repo/workspace metadata such as `repoUrl`, refs, and workspace-policy references keyed in `.paperclip.yaml`
 - export never includes secret values; env inputs are reported as portable declarations instead

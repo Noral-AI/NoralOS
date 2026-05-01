@@ -16,7 +16,7 @@ describe("agent skill contract", () => {
       originLabel: "User-installed",
       locationLabel: "~/.claude/skills",
       readOnly: true,
-      detail: "Installed outside Paperclip management.",
+      detail: "Installed outside NoralOS management.",
     })).toMatchObject({
       origin: "user_installed",
       locationLabel: "~/.claude/skills",
@@ -31,7 +31,7 @@ describe("agent skill contract", () => {
       mode: "ephemeral",
       desiredSkills: [],
       entries: [{
-        key: "noralos/paperclip/paperclip",
+        key: "noralos/noralos/noralos",
         runtimeName: "paperclip",
         desired: true,
         managed: true,
@@ -41,7 +41,7 @@ describe("agent skill contract", () => {
     })).toMatchObject({
       adapterType: "claude_local",
       entries: [{
-        key: "noralos/paperclip/paperclip",
+        key: "noralos/noralos/noralos",
         state: "configured",
       }],
     });

@@ -103,7 +103,7 @@ export const telemetryConfigSchema = z.object({
   enabled: z.boolean().default(true),
 }).default({});
 
-export const paperclipConfigSchema = z
+export const noralosConfigSchema = z
   .object({
     $meta: configMetaSchema,
     llm: llmConfigSchema.optional(),
@@ -183,7 +183,7 @@ export const paperclipConfigSchema = z
     }
   });
 
-export type NoralosConfig = z.infer<typeof paperclipConfigSchema>;
+export type NoralosConfig = z.infer<typeof noralosConfigSchema>;
 export type LlmConfig = z.infer<typeof llmConfigSchema>;
 export type DatabaseConfig = z.infer<typeof databaseConfigSchema>;
 export type LoggingConfig = z.infer<typeof loggingConfigSchema>;

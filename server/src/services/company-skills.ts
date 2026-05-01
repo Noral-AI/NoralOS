@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "@noralos/db";
 import { companies, companySkills } from "@noralos/db";
-import { readPaperclipSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
-import type { PaperclipSkillEntry } from "@noralos/adapter-utils/server-utils";
+import { readNoralosSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
+import type { NoralosSkillEntry } from "@noralos/adapter-utils/server-utils";
 import type {
   CompanySkill,
   CompanySkillCreateRequest,
@@ -301,7 +301,7 @@ function uniqueImportedSkillKey(companyId: string, baseSlug: string, usedKeys: S
 }
 
 function buildSkillRuntimeName(key: string, slug: string) {
-  if (key.startsWith("noralos/paperclip/")) return slug;
+  if (key.startsWith("noralos/noralos/")) return slug;
   return `${slug}--${hashSkillValue(key)}`;
 }
 
@@ -311,7 +311,7 @@ function readCanonicalSkillKey(frontmatter: Record<string, unknown>, metadata: R
     ?? asString(frontmatter.skillKey)
     ?? asString(metadata?.skillKey)
     ?? asString(metadata?.canonicalKey)
-    ?? asString(metadata?.paperclipSkillKey),
+    ?? asString(metadata?.noralosSkillKey),
   );
   if (direct) return direct;
   const paperclip = isPlainRecord(metadata?.paperclip) ? metadata?.paperclip as Record<string, unknown> : null;
@@ -332,7 +332,7 @@ function deriveCanonicalSkillKey(
 
   const sourceKind = asString(metadata?.sourceKind);
   if (sourceKind === "paperclip_bundled") {
-    return `noralos/paperclip/${slug}`;
+    return `noralos/noralos/${slug}`;
   }
 
   const owner = normalizeSkillSlug(asString(metadata?.owner));
@@ -1336,7 +1336,7 @@ function resolveDesiredSkillKeys(
   skills: SkillReferenceTarget[],
   config: Record<string, unknown>,
 ) {
-  const preference = readPaperclipSkillSyncPreference(config);
+  const preference = readNoralosSkillSyncPreference(config);
   return Array.from(new Set(
     preference.desiredSkills
       .map((reference) => resolveSkillReference(skills, reference).skill?.key ?? normalizeSkillKey(reference))
@@ -2166,10 +2166,10 @@ export function companySkillService(db: Db) {
   async function listRuntimeSkillEntries(
     companyId: string,
     options: RuntimeSkillEntryOptions = {},
-  ): Promise<PaperclipSkillEntry[]> {
+  ): Promise<NoralosSkillEntry[]> {
     const skills = await listFull(companyId);
 
-    const out: PaperclipSkillEntry[] = [];
+    const out: NoralosSkillEntry[] = [];
     for (const skill of skills) {
       const sourceKind = asString(getSkillMeta(skill).sourceKind);
       let source = normalizeSkillDirectory(skill);

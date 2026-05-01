@@ -122,7 +122,7 @@ Create the directory structure and all files. Follow the spec's conventions exac
 │   └── <slug>/TASK.md        (if tasks are needed)
 ├── skills/
 │   └── <slug>/SKILL.md       (if custom skills are needed)
-└── .paperclip.yaml            (Paperclip vendor extension)
+└── .paperclip.yaml            (NoralOS vendor extension)
 ```
 
 **Rules:**
@@ -195,7 +195,7 @@ Write all files, then give a brief summary:
 
 ## .paperclip.yaml Guidelines
 
-The `.paperclip.yaml` file is the Paperclip vendor extension. It configures adapters and env inputs per agent.
+The `.paperclip.yaml` file is the NoralOS vendor extension. It configures adapters and env inputs per agent.
 
 ### Adapter Rules
 

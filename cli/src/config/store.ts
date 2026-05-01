@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { paperclipConfigSchema, type NoralosConfig } from "./schema.js";
+import { noralosConfigSchema, type NoralosConfig } from "./schema.js";
 import {
   resolveDefaultConfigPath,
   resolveNoralosInstanceId,
@@ -88,7 +88,7 @@ export function readConfig(configPath?: string): NoralosConfig | null {
   if (!fs.existsSync(filePath)) return null;
   const raw = parseJson(filePath);
   const migrated = migrateLegacyConfig(raw);
-  const parsed = paperclipConfigSchema.safeParse(migrated);
+  const parsed = noralosConfigSchema.safeParse(migrated);
   if (!parsed.success) {
     throw new Error(`Invalid config at ${filePath}: ${formatValidationError(parsed.error)}`);
   }

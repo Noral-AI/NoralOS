@@ -85,18 +85,18 @@ describe("worktree config repair", () => {
   it("repairs legacy repo-local worktree config and env files into an isolated instance", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-repair-"));
     const worktreeRoot = path.join(tempRoot, "PAP-884-ai-commits-component");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
+    const noralosDir = path.join(worktreeRoot, ".paperclip");
+    const configPath = path.join(noralosDir, "config.json");
+    const envPath = path.join(noralosDir, ".env");
     const sharedRoot = path.join(tempRoot, ".paperclip", "instances", "default");
     const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(noralosDir, { recursive: true });
     await fs.writeFile(configPath, JSON.stringify(buildLegacyConfig(sharedRoot), null, 2) + "\n", "utf8");
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
+        "# NoralOS environment variables",
         "NORALOS_IN_WORKTREE=true",
         "NORALOS_WORKTREE_NAME=PAP-884-ai-commits-component",
         "NORALOS_AGENT_JWT_SECRET=shared-secret",
@@ -142,20 +142,20 @@ describe("worktree config repair", () => {
   it("avoids sibling worktree ports when repairing legacy configs", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-repair-ports-"));
     const worktreeRoot = path.join(tempRoot, "PAP-880-thumbs-capture-for-evals-feature");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
+    const noralosDir = path.join(worktreeRoot, ".paperclip");
+    const configPath = path.join(noralosDir, "config.json");
+    const envPath = path.join(noralosDir, ".env");
     const sharedRoot = path.join(tempRoot, ".paperclip", "instances", "default");
     const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
     const siblingInstanceRoot = path.join(isolatedHome, "instances", "pap-878-create-a-mine-tab-in-inbox");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(noralosDir, { recursive: true });
     await fs.mkdir(siblingInstanceRoot, { recursive: true });
     await fs.writeFile(configPath, JSON.stringify(buildLegacyConfig(sharedRoot), null, 2) + "\n", "utf8");
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
+        "# NoralOS environment variables",
         "NORALOS_IN_WORKTREE=true",
         "NORALOS_WORKTREE_NAME=PAP-880-thumbs-capture-for-evals-feature",
         "",
@@ -215,13 +215,13 @@ describe("worktree config repair", () => {
     const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
     const transientHome = path.join(tempRoot, "tests", "e2e", ".tmp", "multiuser-authenticated");
     const worktreeRoot = path.join(tempRoot, "PAP-989-multi-user-implementation-using-plan-from-pap-958");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
+    const noralosDir = path.join(worktreeRoot, ".paperclip");
+    const configPath = path.join(noralosDir, "config.json");
+    const envPath = path.join(noralosDir, ".env");
     const instanceId = "pap-989-multi-user-implementation-using-plan-from-pap-958";
     const stableInstanceRoot = path.join(isolatedHome, "instances", instanceId);
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(noralosDir, { recursive: true });
     await fs.writeFile(
       configPath,
       JSON.stringify(
@@ -278,7 +278,7 @@ describe("worktree config repair", () => {
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
+        "# NoralOS environment variables",
         `NORALOS_HOME=${JSON.stringify(isolatedHome)}`,
         `NORALOS_INSTANCE_ID=${JSON.stringify(instanceId)}`,
         `NORALOS_CONFIG=${JSON.stringify(configPath)}`,
@@ -324,13 +324,13 @@ describe("worktree config repair", () => {
     const siblingWorktreeRoot = path.join(repoWorktreesRoot, "PAP-878-create-a-mine-tab-in-inbox");
     const siblingInstanceRoot = path.join(isolatedHome, "instances", "pap-878-create-a-mine-tab-in-inbox");
     const currentWorktreeRoot = path.join(repoWorktreesRoot, "PAP-884-ai-commits-component");
-    const paperclipDir = path.join(currentWorktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
-    const envPath = path.join(paperclipDir, ".env");
+    const noralosDir = path.join(currentWorktreeRoot, ".paperclip");
+    const configPath = path.join(noralosDir, "config.json");
+    const envPath = path.join(noralosDir, ".env");
     const currentInstanceRoot = path.join(isolatedHome, "instances", "pap-884-ai-commits-component");
     const siblingConfigPath = path.join(siblingWorktreeRoot, ".paperclip", "config.json");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(noralosDir, { recursive: true });
     await fs.mkdir(path.dirname(siblingConfigPath), { recursive: true });
     await fs.writeFile(
       configPath,
@@ -388,7 +388,7 @@ describe("worktree config repair", () => {
     await fs.writeFile(
       envPath,
       [
-        "# Paperclip environment variables",
+        "# NoralOS environment variables",
         "NORALOS_IN_WORKTREE=true",
         "NORALOS_WORKTREE_NAME=PAP-884-ai-commits-component",
         "",
@@ -442,12 +442,12 @@ describe("worktree config repair", () => {
   it("persists runtime-selected worktree ports back into explicit-port auth URLs", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-ports-"));
     const worktreeRoot = path.join(tempRoot, "PAP-878-create-a-mine-tab-in-inbox");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
+    const noralosDir = path.join(worktreeRoot, ".paperclip");
+    const configPath = path.join(noralosDir, "config.json");
     const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
     const instanceRoot = path.join(isolatedHome, "instances", "pap-878-create-a-mine-tab-in-inbox");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(noralosDir, { recursive: true });
     await fs.writeFile(
       configPath,
       JSON.stringify(
@@ -524,12 +524,12 @@ describe("worktree config repair", () => {
   it("does not rewrite no-port public auth URLs when persisting runtime-selected ports", async () => {
     const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-public-ports-"));
     const worktreeRoot = path.join(tempRoot, "PAP-125-public-base-url");
-    const paperclipDir = path.join(worktreeRoot, ".paperclip");
-    const configPath = path.join(paperclipDir, "config.json");
+    const noralosDir = path.join(worktreeRoot, ".paperclip");
+    const configPath = path.join(noralosDir, "config.json");
     const isolatedHome = path.join(tempRoot, ".paperclip-worktrees");
     const instanceRoot = path.join(isolatedHome, "instances", "pap-125-public-base-url");
 
-    await fs.mkdir(paperclipDir, { recursive: true });
+    await fs.mkdir(noralosDir, { recursive: true });
     await fs.writeFile(
       configPath,
       JSON.stringify(

@@ -9,11 +9,11 @@
     "build": "node ./esbuild.config.mjs",
     "build:rollup": "rollup -c",
     "dev": "node ./esbuild.config.mjs --watch",
-    "dev:ui": "paperclip-plugin-dev-server --root . --ui-dir dist/ui --port 4177",
+    "dev:ui": "noralos-plugin-dev-server --root . --ui-dir dist/ui --port 4177",
     "test": "vitest run --config ./vitest.config.ts",
     "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit"
   },
-  "paperclipPlugin": {
+  "noralosPlugin": {
     "manifest": "./dist/manifest.js",
     "worker": "./dist/worker.js",
     "ui": "./dist/ui/"

@@ -29,12 +29,12 @@ import "./styles.css";
 function installStorybookApiFixtures() {
   if (typeof window === "undefined") return;
   const currentWindow = window as typeof window & {
-    __paperclipStorybookFetchInstalled?: boolean;
+    __noralosStorybookFetchInstalled?: boolean;
   };
-  if (currentWindow.__paperclipStorybookFetchInstalled) return;
+  if (currentWindow.__noralosStorybookFetchInstalled) return;
 
   const originalFetch = window.fetch.bind(window);
-  currentWindow.__paperclipStorybookFetchInstalled = true;
+  currentWindow.__noralosStorybookFetchInstalled = true;
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const rawUrl =

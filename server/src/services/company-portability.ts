@@ -45,8 +45,8 @@ import {
   normalizeAgentUrlKey,
 } from "@noralos/shared";
 import {
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
+  readNoralosSkillSyncPreference,
+  writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "@noralos/adapter-opencode-local/server";
 import { findServerAdapter } from "../adapters/index.js";
@@ -167,7 +167,7 @@ function readSkillKey(frontmatter: Record<string, unknown>) {
     ?? asString(frontmatter.skillKey)
     ?? asString(metadata?.skillKey)
     ?? asString(metadata?.canonicalKey)
-    ?? asString(metadata?.paperclipSkillKey)
+    ?? asString(metadata?.noralosSkillKey)
     ?? asString(paperclip?.skillKey)
     ?? asString(paperclip?.key),
   );
@@ -190,7 +190,7 @@ function deriveManifestSkillKey(
     return `${owner}/${repo}/${slug}`;
   }
   if (sourceKind === "paperclip_bundled") {
-    return `noralos/paperclip/${slug}`;
+    return `noralos/noralos/${slug}`;
   }
   if (sourceType === "url" || sourceKind === "url") {
     try {
@@ -491,7 +491,7 @@ type CompanyPackageIncludeEntry = {
   path: string;
 };
 
-type PaperclipExtensionDoc = {
+type NoralosExtensionDoc = {
   schema?: string;
   company?: Record<string, unknown> | null;
   agents?: Record<string, Record<string, unknown>> | null;
@@ -1555,7 +1555,7 @@ function filterPortableExtensionYaml(yaml: string, selectedFiles: Set<string>) {
 function filterExportFiles(
   files: Record<string, CompanyPortabilityFileEntry>,
   selectedFilesInput: string[] | undefined,
-  paperclipExtensionPath: string,
+  noralosExtensionPath: string,
 ) {
   if (!selectedFilesInput || selectedFilesInput.length === 0) {
     return files;
@@ -1572,15 +1572,15 @@ function filterExportFiles(
     filtered[filePath] = content;
   }
 
-  const extensionEntry = filtered[paperclipExtensionPath];
-  if (selectedFiles.has(paperclipExtensionPath) && typeof extensionEntry === "string") {
-    filtered[paperclipExtensionPath] = filterPortableExtensionYaml(extensionEntry, selectedFiles);
+  const extensionEntry = filtered[noralosExtensionPath];
+  if (selectedFiles.has(noralosExtensionPath) && typeof extensionEntry === "string") {
+    filtered[noralosExtensionPath] = filterPortableExtensionYaml(extensionEntry, selectedFiles);
   }
 
   return filtered;
 }
 
-function findPaperclipExtensionPath(files: Record<string, CompanyPortabilityFileEntry>) {
+function findNoralosExtensionPath(files: Record<string, CompanyPortabilityFileEntry>) {
   if (typeof files[".paperclip.yaml"] === "string") return ".paperclip.yaml";
   if (typeof files[".paperclip.yml"] === "string") return ".paperclip.yml";
   return Object.keys(files).find((entry) => entry.endsWith("/.paperclip.yaml") || entry.endsWith("/.paperclip.yml")) ?? null;
@@ -1610,7 +1610,7 @@ function normalizePortableConfig(
       key === "instructionsEntryFile" ||
       key === "promptTemplate" ||
       key === "bootstrapPromptTemplate" || // deprecated — kept for backward compat
-      key === "paperclipSkillSync"
+      key === "noralosSkillSync"
     ) continue;
     if (key === "env") continue;
     next[key] = entry;
@@ -1964,7 +1964,7 @@ async function buildSkillSourceEntry(skill: CompanySkill) {
     const commit = await resolveBundledSkillsCommit();
     return {
       kind: "github-dir",
-      repo: "noralos/paperclip",
+      repo: "noralos/noralos",
       path: `skills/${skill.slug}`,
       commit,
       trackingRef: "master",
@@ -2033,7 +2033,7 @@ async function withSkillSourceMetadata(skill: CompanySkill, markdown: string) {
     metadata.sources = [...existingSources, sourceEntry];
   }
   metadata.skillKey = skill.key;
-  metadata.paperclipSkillKey = skill.key;
+  metadata.noralosSkillKey = skill.key;
   metadata.paperclip = {
     ...(isPlainRecord(metadata.paperclip) ? metadata.paperclip : {}),
     skillKey: skill.key,
@@ -2362,16 +2362,16 @@ function buildManifestFromPackageFiles(
   }
   const companyDoc = parseFrontmatterMarkdown(companyMarkdown);
   const companyFrontmatter = companyDoc.frontmatter;
-  const paperclipExtensionPath = findPaperclipExtensionPath(normalizedFiles);
-  const paperclipExtension = paperclipExtensionPath
-    ? parseYamlFile(readPortableTextFile(normalizedFiles, paperclipExtensionPath) ?? "")
+  const noralosExtensionPath = findNoralosExtensionPath(normalizedFiles);
+  const noralosExtension = noralosExtensionPath
+    ? parseYamlFile(readPortableTextFile(normalizedFiles, noralosExtensionPath) ?? "")
     : {};
-  const paperclipCompany = isPlainRecord(paperclipExtension.company) ? paperclipExtension.company : {};
-  const paperclipSidebar = normalizePortableSidebarOrder(paperclipExtension.sidebar);
-  const paperclipAgents = isPlainRecord(paperclipExtension.agents) ? paperclipExtension.agents : {};
-  const paperclipProjects = isPlainRecord(paperclipExtension.projects) ? paperclipExtension.projects : {};
-  const paperclipTasks = isPlainRecord(paperclipExtension.tasks) ? paperclipExtension.tasks : {};
-  const paperclipRoutines = isPlainRecord(paperclipExtension.routines) ? paperclipExtension.routines : {};
+  const noralosCompany = isPlainRecord(noralosExtension.company) ? noralosExtension.company : {};
+  const noralosSidebar = normalizePortableSidebarOrder(noralosExtension.sidebar);
+  const noralosAgents = isPlainRecord(noralosExtension.agents) ? noralosExtension.agents : {};
+  const noralosProjects = isPlainRecord(noralosExtension.projects) ? noralosExtension.projects : {};
+  const noralosTasks = isPlainRecord(noralosExtension.tasks) ? noralosExtension.tasks : {};
+  const noralosRoutines = isPlainRecord(noralosExtension.routines) ? noralosExtension.routines : {};
   const companyName =
     asString(companyFrontmatter.name)
     ?? opts?.sourceLabel?.companyName
@@ -2426,30 +2426,30 @@ function buildManifestFromPackageFiles(
       path: resolvedCompanyPath,
       name: companyName,
       description: asString(companyFrontmatter.description),
-      brandColor: asString(paperclipCompany.brandColor),
-      logoPath: asString(paperclipCompany.logoPath) ?? asString(paperclipCompany.logo),
+      brandColor: asString(noralosCompany.brandColor),
+      logoPath: asString(noralosCompany.logoPath) ?? asString(noralosCompany.logo),
       attachmentMaxBytes:
-        typeof paperclipCompany.attachmentMaxBytes === "number" && Number.isFinite(paperclipCompany.attachmentMaxBytes)
-          ? Math.max(1, Math.floor(paperclipCompany.attachmentMaxBytes))
+        typeof noralosCompany.attachmentMaxBytes === "number" && Number.isFinite(noralosCompany.attachmentMaxBytes)
+          ? Math.max(1, Math.floor(noralosCompany.attachmentMaxBytes))
           : null,
       requireBoardApprovalForNewAgents:
-        typeof paperclipCompany.requireBoardApprovalForNewAgents === "boolean"
-          ? paperclipCompany.requireBoardApprovalForNewAgents
+        typeof noralosCompany.requireBoardApprovalForNewAgents === "boolean"
+          ? noralosCompany.requireBoardApprovalForNewAgents
           : readCompanyApprovalDefault(companyFrontmatter),
       feedbackDataSharingEnabled:
-        typeof paperclipCompany.feedbackDataSharingEnabled === "boolean"
-          ? paperclipCompany.feedbackDataSharingEnabled
+        typeof noralosCompany.feedbackDataSharingEnabled === "boolean"
+          ? noralosCompany.feedbackDataSharingEnabled
           : false,
       feedbackDataSharingConsentAt:
-        typeof paperclipCompany.feedbackDataSharingConsentAt === "string"
-          ? paperclipCompany.feedbackDataSharingConsentAt
+        typeof noralosCompany.feedbackDataSharingConsentAt === "string"
+          ? noralosCompany.feedbackDataSharingConsentAt
           : null,
       feedbackDataSharingConsentByUserId:
-        asString(paperclipCompany.feedbackDataSharingConsentByUserId),
+        asString(noralosCompany.feedbackDataSharingConsentByUserId),
       feedbackDataSharingTermsVersion:
-        asString(paperclipCompany.feedbackDataSharingTermsVersion),
+        asString(noralosCompany.feedbackDataSharingTermsVersion),
     },
-    sidebar: paperclipSidebar,
+    sidebar: noralosSidebar,
     agents: [],
     skills: [],
     projects: [],
@@ -2471,7 +2471,7 @@ function buildManifestFromPackageFiles(
     const frontmatter = agentDoc.frontmatter;
     const fallbackSlug = normalizeAgentUrlKey(path.posix.basename(path.posix.dirname(agentPath))) ?? "agent";
     const slug = asString(frontmatter.slug) ?? fallbackSlug;
-    const extension = isPlainRecord(paperclipAgents[slug]) ? paperclipAgents[slug] : {};
+    const extension = isPlainRecord(noralosAgents[slug]) ? noralosAgents[slug] : {};
     const extensionAdapter = isPlainRecord(extension.adapter) ? extension.adapter : null;
     const extensionRuntime = isPlainRecord(extension.runtime) ? extension.runtime : null;
     const extensionPermissions = isPlainRecord(extension.permissions) ? extension.permissions : null;
@@ -2610,7 +2610,7 @@ function buildManifestFromPackageFiles(
       projectPath,
     );
     const slug = asString(frontmatter.slug) ?? fallbackSlug;
-    const extension = isPlainRecord(paperclipProjects[slug]) ? paperclipProjects[slug] : {};
+    const extension = isPlainRecord(noralosProjects[slug]) ? noralosProjects[slug] : {};
     const workspaceExtensions = isPlainRecord(extension.workspaces) ? extension.workspaces : {};
     const workspaces = Object.entries(workspaceExtensions)
       .map(([workspaceKey, entry]) => normalizePortableProjectWorkspaceExtension(workspaceKey, entry))
@@ -2648,9 +2648,9 @@ function buildManifestFromPackageFiles(
     const frontmatter = taskDoc.frontmatter;
     const fallbackSlug = normalizeAgentUrlKey(path.posix.basename(path.posix.dirname(taskPath))) ?? "task";
     const slug = asString(frontmatter.slug) ?? fallbackSlug;
-    const extension = isPlainRecord(paperclipTasks[slug]) ? paperclipTasks[slug] : {};
-    const routineExtension = normalizeRoutineExtension(paperclipRoutines[slug]);
-    const routineExtensionRaw = isPlainRecord(paperclipRoutines[slug]) ? paperclipRoutines[slug] : {};
+    const extension = isPlainRecord(noralosTasks[slug]) ? noralosTasks[slug] : {};
+    const routineExtension = normalizeRoutineExtension(noralosRoutines[slug]);
+    const routineExtensionRaw = isPlainRecord(noralosRoutines[slug]) ? noralosRoutines[slug] : {};
     const schedule = isPlainRecord(frontmatter.schedule) ? frontmatter.schedule : null;
     const legacyRecurrence = schedule && isPlainRecord(schedule.recurrence)
       ? schedule.recurrence
@@ -2812,7 +2812,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
     if (mode === "agent_safe" && IMPORT_FORBIDDEN_ADAPTER_TYPES.has(effectiveAdapterType)) {
       throw forbidden(`Adapter type "${effectiveAdapterType}" is not allowed in safe imports`);
     }
-    const nextAdapterConfig = writePaperclipSkillSyncPreference({ ...adapterConfig }, desiredSkills);
+    const nextAdapterConfig = writeNoralosSkillSyncPreference({ ...adapterConfig }, desiredSkills);
     delete nextAdapterConfig.promptTemplate;
     delete nextAdapterConfig.bootstrapPromptTemplate;
     delete nextAdapterConfig.instructionsFilePath;
@@ -3191,11 +3191,11 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
       }
     }
 
-    const paperclipAgentsOut: Record<string, Record<string, unknown>> = {};
-    const paperclipProjectsOut: Record<string, Record<string, unknown>> = {};
-    const paperclipTasksOut: Record<string, Record<string, unknown>> = {};
+    const noralosAgentsOut: Record<string, Record<string, unknown>> = {};
+    const noralosProjectsOut: Record<string, Record<string, unknown>> = {};
+    const noralosTasksOut: Record<string, Record<string, unknown>> = {};
     const unportableTaskWorkspaceRefs = new Map<string, { workspaceId: string; taskSlugs: string[] }>();
-    const paperclipRoutinesOut: Record<string, Record<string, unknown>> = {};
+    const noralosRoutinesOut: Record<string, Record<string, unknown>> = {};
 
     const skillByReference = new Map<string, typeof companySkillRows[number]>();
     for (const skill of companySkillRows) {
@@ -3277,7 +3277,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
             .filter((inputValue) => inputValue.agentSlug === slug),
         );
         const reportsToSlug = agent.reportsTo ? (idToSlug.get(agent.reportsTo) ?? null) : null;
-        const desiredSkills = readPaperclipSkillSyncPreference(
+        const desiredSkills = readNoralosSkillSyncPreference(
           (agent.adapterConfig as Record<string, unknown>) ?? {},
         ).desiredSkills;
 
@@ -3321,7 +3321,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
             env: buildEnvInputMap(agentEnvInputs),
           };
         }
-        paperclipAgentsOut[slug] = isPlainRecord(extension) ? extension : {};
+        noralosAgentsOut[slug] = isPlainRecord(extension) ? extension : {};
       }
     }
 
@@ -3364,7 +3364,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
           env: buildEnvInputMap(projectEnvInputs),
         };
       }
-      paperclipProjectsOut[slug] = isPlainRecord(extension) ? extension : {};
+      noralosProjectsOut[slug] = isPlainRecord(extension) ? extension : {};
     }
 
     for (const issue of selectedIssueRows) {
@@ -3406,7 +3406,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
         executionWorkspaceSettings: issue.executionWorkspaceSettings ?? undefined,
         assigneeAdapterOverrides: issue.assigneeAdapterOverrides ?? undefined,
       });
-      paperclipTasksOut[taskSlug] = isPlainRecord(extension) ? extension : {};
+      noralosTasksOut[taskSlug] = isPlainRecord(extension) ? extension : {};
     }
 
     for (const { workspaceId, taskSlugs } of unportableTaskWorkspaceRefs.values()) {
@@ -3447,23 +3447,23 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
             : undefined,
         })),
       });
-      paperclipRoutinesOut[taskSlug] = isPlainRecord(extension) ? extension : {};
+      noralosRoutinesOut[taskSlug] = isPlainRecord(extension) ? extension : {};
     }
 
-    const paperclipExtensionPath = ".paperclip.yaml";
-    const paperclipAgents = Object.fromEntries(
-      Object.entries(paperclipAgentsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const noralosExtensionPath = ".paperclip.yaml";
+    const noralosAgents = Object.fromEntries(
+      Object.entries(noralosAgentsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    const paperclipProjects = Object.fromEntries(
-      Object.entries(paperclipProjectsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const noralosProjects = Object.fromEntries(
+      Object.entries(noralosProjectsOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    const paperclipTasks = Object.fromEntries(
-      Object.entries(paperclipTasksOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const noralosTasks = Object.fromEntries(
+      Object.entries(noralosTasksOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    const paperclipRoutines = Object.fromEntries(
-      Object.entries(paperclipRoutinesOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
+    const noralosRoutines = Object.fromEntries(
+      Object.entries(noralosRoutinesOut).filter(([, value]) => isPlainRecord(value) && Object.keys(value).length > 0),
     );
-    files[paperclipExtensionPath] = buildYamlFile(
+    files[noralosExtensionPath] = buildYamlFile(
       {
         schema: "paperclip/v1",
         company: stripEmptyValues({
@@ -3477,15 +3477,15 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
           feedbackDataSharingTermsVersion: company.feedbackDataSharingTermsVersion ?? null,
         }),
         sidebar: stripEmptyValues(sidebarOrder),
-        agents: Object.keys(paperclipAgents).length > 0 ? paperclipAgents : undefined,
-        projects: Object.keys(paperclipProjects).length > 0 ? paperclipProjects : undefined,
-        tasks: Object.keys(paperclipTasks).length > 0 ? paperclipTasks : undefined,
-        routines: Object.keys(paperclipRoutines).length > 0 ? paperclipRoutines : undefined,
+        agents: Object.keys(noralosAgents).length > 0 ? noralosAgents : undefined,
+        projects: Object.keys(noralosProjects).length > 0 ? noralosProjects : undefined,
+        tasks: Object.keys(noralosTasks).length > 0 ? noralosTasks : undefined,
+        routines: Object.keys(noralosRoutines).length > 0 ? noralosRoutines : undefined,
       },
       { preserveEmptyStrings: true },
     );
 
-    let finalFiles = filterExportFiles(files, input.selectedFiles, paperclipExtensionPath);
+    let finalFiles = filterExportFiles(files, input.selectedFiles, noralosExtensionPath);
     let resolved = buildManifestFromPackageFiles(finalFiles, {
       sourceLabel: {
         companyId: company.id,
@@ -3541,7 +3541,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
       manifest: resolved.manifest,
       files: finalFiles,
       warnings: resolved.warnings,
-      paperclipExtensionPath,
+      noralosExtensionPath,
     };
   }
 

@@ -73,7 +73,7 @@ interface CompanyImportOptions extends BaseClientOptions {
   agents?: string;
   collision?: CompanyCollisionMode;
   ref?: string;
-  paperclipUrl?: string;
+  noralosUrl?: string;
   yes?: boolean;
   dryRun?: boolean;
 }
@@ -201,9 +201,9 @@ function normalizePortablePath(filePath: string): string {
 function shouldIncludePortableFile(filePath: string): boolean {
   const baseName = path.basename(filePath);
   const isMarkdown = baseName.endsWith(".md");
-  const isPaperclipYaml = baseName === ".paperclip.yaml" || baseName === ".paperclip.yml";
+  const isNoralosYaml = baseName === ".paperclip.yaml" || baseName === ".paperclip.yml";
   const contentType = binaryContentTypeByExtension[path.extname(baseName).toLowerCase()];
-  return isMarkdown || isPaperclipYaml || Boolean(contentType);
+  return isMarkdown || isNoralosYaml || Boolean(contentType);
 }
 
 function findPortableExtensionPath(files: Record<string, CompanyPortabilityFileEntry>): string | null {
@@ -1247,7 +1247,7 @@ export function registerCompanyCommands(program: Command): void {
               out: path.resolve(opts.out!),
               rootPath: exported.rootPath,
               filesWritten: Object.keys(exported.files).length,
-              paperclipExtensionPath: exported.paperclipExtensionPath,
+              noralosExtensionPath: exported.noralosExtensionPath,
               warningCount: exported.warnings.length,
             },
             { json: ctx.json },
@@ -1280,8 +1280,8 @@ export function registerCompanyCommands(program: Command): void {
       .option("--dry-run", "Run preview only without applying", false)
       .action(async (fromPathOrUrl: string, opts: CompanyImportOptions) => {
         try {
-          if (!opts.apiBase?.trim() && opts.paperclipUrl?.trim()) {
-            opts.apiBase = opts.paperclipUrl.trim();
+          if (!opts.apiBase?.trim() && opts.noralosUrl?.trim()) {
+            opts.apiBase = opts.noralosUrl.trim();
           }
           const ctx = resolveCommandContext(opts);
           const interactiveView = isInteractiveTerminal() && !ctx.json;

@@ -2,7 +2,7 @@ import { Command } from "commander";
 import type { Agent } from "@noralos/shared";
 import {
   removeMaintainerOnlySkillSymlinks,
-  resolvePaperclipSkillsDir,
+  resolveNoralosSkillsDir,
 } from "@noralos/adapter-utils/server-utils";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -248,7 +248,7 @@ export function registerAgentCommands(program: Command): void {
 
           const installSummaries: SkillsInstallSummary[] = [];
           if (opts.installSkills !== false) {
-            const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path.resolve(process.cwd(), "skills")]);
+            const skillsDir = await resolveNoralosSkillsDir(__moduleDir, [path.resolve(process.cwd(), "skills")]);
             if (!skillsDir) {
               throw new Error(
                 "Could not locate local NoralOS skills directory. Expected ./skills in the repo checkout.",

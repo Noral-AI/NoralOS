@@ -14,8 +14,8 @@ import {
   storageCheck,
   type CheckResult,
 } from "../checks/index.js";
-import { loadPaperclipEnvFile } from "../config/env.js";
-import { printPaperclipCliBanner } from "../utils/banner.js";
+import { loadNoralosEnvFile } from "../config/env.js";
+import { printNoralosCliBanner } from "../utils/banner.js";
 
 const STATUS_ICON = {
   pass: pc.green("✓"),
@@ -28,11 +28,11 @@ export async function doctor(opts: {
   repair?: boolean;
   yes?: boolean;
 }): Promise<{ passed: number; warned: number; failed: number }> {
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclip doctor ")));
 
   const configPath = resolveConfigPath(opts.config);
-  loadPaperclipEnvFile(configPath);
+  loadNoralosEnvFile(configPath);
   const results: CheckResult[] = [];
 
   // 1. Config check (must pass before others)
@@ -173,7 +173,7 @@ async function runRepairableCheck(input: {
   if (!repaired) return result;
 
   // Repairs may create/update the adjacent .env file or other local resources.
-  loadPaperclipEnvFile(input.configPath);
+  loadNoralosEnvFile(input.configPath);
   result = await input.run();
   printResult(result);
   return result;

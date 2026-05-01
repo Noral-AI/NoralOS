@@ -75,7 +75,7 @@ export { createServerAdapter } from "./server/index.js";
 Key responsibilities:
 
 1. Read config using safe helpers (`asString`, `asNumber`, etc.) from `@noralos/adapter-utils/server-utils`
-2. Build environment with `buildPaperclipEnv(agent)` plus context vars
+2. Build environment with `buildNoralOSEnv(agent)` plus context vars
 3. Resolve session state from `runtime.sessionParams`
 4. Render prompt with `renderTemplate(template, data)`
 5. Spawn the process with `runChildProcess()` or call via `fetch()`

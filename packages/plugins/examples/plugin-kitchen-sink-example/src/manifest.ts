@@ -1,4 +1,4 @@
-import type { PaperclipPluginManifestV1 } from "@noralos/plugin-sdk";
+import type { NoralosPluginManifestV1 } from "@noralos/plugin-sdk";
 import {
   DEFAULT_CONFIG,
   EXPORT_NAMES,
@@ -11,7 +11,7 @@ import {
   WEBHOOK_KEYS,
 } from "./constants.js";
 
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: NoralosPluginManifestV1 = {
   id: PLUGIN_ID,
   apiVersion: 1,
   version: PLUGIN_VERSION,

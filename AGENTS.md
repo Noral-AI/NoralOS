@@ -178,7 +178,7 @@ A change is done when all are true:
 
 ## 11. Fork-Specific: HenkDz/noralos
 
-This is a fork of `noralos/paperclip` with QoL patches and an **external-only** Hermes adapter story on branch `feat/externalize-hermes-adapter` ([tree](https://github.com/HenkDz/paperclip/tree/feat/externalize-hermes-adapter)).
+This is a fork of `noralos/noralos` with QoL patches and an **external-only** Hermes adapter story on branch `feat/externalize-hermes-adapter` ([tree](https://github.com/HenkDz/noralos/tree/feat/externalize-hermes-adapter)).
 
 ### Branch Strategy
 
@@ -196,7 +196,7 @@ This is a fork of `noralos/paperclip` with QoL patches and an **external-only** 
 - Fork runs on port 3101+ (auto-detects if 3100 is taken by upstream instance)
 - `npx vite build` hangs on NTFS — use `node node_modules/vite/bin/vite.js build` instead
 - Server startup from NTFS takes 30-60s — don't assume failure immediately
-- Kill ALL paperclip processes before starting: `pkill -f "paperclip"; pkill -f "tsx.*index.ts"`
+- Kill ALL noralos processes before starting: `pkill -f "noralos"; pkill -f "tsx.*index.ts"`
 - Vite cache survives `rm -rf dist` — delete both: `rm -rf ui/dist ui/node_modules/.vite`
 
 ### Fork QoL Patches (not in upstream)

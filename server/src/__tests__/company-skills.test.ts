@@ -158,7 +158,7 @@ describe("project workspace skill discovery", () => {
         "metadata:",
         "  sources:",
         "    - kind: github-dir",
-        "      repo: noralos/paperclip",
+        "      repo: noralos/noralos",
         "      path: skills/noralos",
         "---",
         "",
@@ -179,7 +179,7 @@ describe("project workspace skill discovery", () => {
       sources: [
         {
           kind: "github-dir",
-          repo: "noralos/paperclip",
+          repo: "noralos/noralos",
           path: "skills/noralos",
         },
       ],

@@ -604,14 +604,14 @@ function buildAgentSnippet(input: AgentSnippetInput) {
 
   const connectivityBlock =
     candidateUrls.length === 0
-      ? `No candidate URLs are available. Ask your user to configure a reachable hostname in Paperclip, then retry.
+      ? `No candidate URLs are available. Ask your user to configure a reachable hostname in NoralOS, then retry.
 Suggested steps:
 - choose a hostname that resolves to the NoralOS host from your runtime
 - run: pnpm noralos allowed-hostname <host>
 - restart NoralOS
 - verify with: curl -fsS http://<host>:3100/api/health
 - regenerate this invite snippet`
-      : `If none are reachable, ask your user to add a reachable hostname in Paperclip, restart, and retry.
+      : `If none are reachable, ask your user to add a reachable hostname in NoralOS, restart, and retry.
 Suggested command:
 - pnpm noralos allowed-hostname <host>
 Then verify with: curl -fsS <base-url>/api/health`;
@@ -626,7 +626,7 @@ The URLs you should try are:
 ${candidateList}
 
 Connectivity guidance:
-If you are running on a different machine than Paperclip, Paperclip must be reachable at one of the hostnames used above.
+If you are running on a different machine than NoralOS, NoralOS must be reachable at one of the hostnames used above.
 Verify the hostname works from your runtime with: GET <base-url>/api/health
 
 ${connectivityBlock}

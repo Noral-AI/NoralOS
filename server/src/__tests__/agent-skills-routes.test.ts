@@ -242,7 +242,7 @@ describe.sequential("agent skill routes", () => {
     mockSecretService.resolveAdapterConfigForRuntime.mockResolvedValue({ config: { env: {} } });
     mockCompanySkillService.listRuntimeSkillEntries.mockResolvedValue([
       {
-        key: "noralos/paperclip/paperclip",
+        key: "noralos/noralos/noralos",
         runtimeName: "paperclip",
         source: "/tmp/noralos",
         required: true,
@@ -253,7 +253,7 @@ describe.sequential("agent skill routes", () => {
       async (_companyId: string, requested: string[]) =>
         requested.map((value) =>
           value === "paperclip"
-            ? "noralos/paperclip/paperclip"
+            ? "noralos/noralos/noralos"
             : value,
         ),
     );
@@ -261,7 +261,7 @@ describe.sequential("agent skill routes", () => {
       adapterType: "claude_local",
       supported: true,
       mode: "ephemeral",
-      desiredSkills: ["noralos/paperclip/paperclip"],
+      desiredSkills: ["noralos/noralos/noralos"],
       entries: [],
       warnings: [],
     });
@@ -269,7 +269,7 @@ describe.sequential("agent skill routes", () => {
       adapterType: "claude_local",
       supported: true,
       mode: "ephemeral",
-      desiredSkills: ["noralos/paperclip/paperclip"],
+      desiredSkills: ["noralos/noralos/noralos"],
       entries: [],
       warnings: [],
     });
@@ -336,7 +336,7 @@ describe.sequential("agent skill routes", () => {
       expect.objectContaining({
         adapterType: "claude_local",
         config: expect.objectContaining({
-          paperclipRuntimeSkills: expect.any(Array),
+          noralosRuntimeSkills: expect.any(Array),
         }),
       }),
     );
@@ -348,7 +348,7 @@ describe.sequential("agent skill routes", () => {
       adapterType: "codex_local",
       supported: true,
       mode: "ephemeral",
-      desiredSkills: ["noralos/paperclip/paperclip"],
+      desiredSkills: ["noralos/noralos/noralos"],
       entries: [],
       warnings: [],
     });
@@ -368,7 +368,7 @@ describe.sequential("agent skill routes", () => {
       adapterType: "cursor",
       supported: true,
       mode: "persistent",
-      desiredSkills: ["noralos/paperclip/paperclip"],
+      desiredSkills: ["noralos/noralos/noralos"],
       entries: [],
       warnings: [],
     });
@@ -387,7 +387,7 @@ describe.sequential("agent skill routes", () => {
 
     const res = await requestApp(await createApp(), (baseUrl) => request(baseUrl)
       .post("/api/agents/11111111-1111-4111-8111-111111111111/skills/sync?companyId=company-1")
-      .send({ desiredSkills: ["noralos/paperclip/paperclip"] }));
+      .send({ desiredSkills: ["noralos/noralos/noralos"] }));
 
     expect(res.status, JSON.stringify(res.body)).toBe(200);
     expect(mockAdapter.syncSkills).toHaveBeenCalled();
@@ -405,8 +405,8 @@ describe.sequential("agent skill routes", () => {
       expect.any(String),
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["noralos/paperclip/paperclip"],
+          noralosSkillSync: expect.objectContaining({
+            desiredSkills: ["noralos/noralos/noralos"],
           }),
         }),
       }),
@@ -430,8 +430,8 @@ describe.sequential("agent skill routes", () => {
       "company-1",
       expect.objectContaining({
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["noralos/paperclip/paperclip"],
+          noralosSkillSync: expect.objectContaining({
+            desiredSkills: ["noralos/noralos/noralos"],
           }),
         }),
       }),
@@ -612,9 +612,9 @@ describe.sequential("agent skill routes", () => {
       "company-1",
       expect.objectContaining({
         payload: expect.objectContaining({
-          desiredSkills: ["noralos/paperclip/paperclip"],
+          desiredSkills: ["noralos/noralos/noralos"],
           requestedConfigurationSnapshot: expect.objectContaining({
-            desiredSkills: ["noralos/paperclip/paperclip"],
+            desiredSkills: ["noralos/noralos/noralos"],
           }),
         }),
       }),
@@ -643,8 +643,8 @@ describe.sequential("agent skill routes", () => {
       expect.objectContaining({
         icon: "crown",
         adapterConfig: expect.objectContaining({
-          paperclipSkillSync: expect.objectContaining({
-            desiredSkills: ["noralos/paperclip/paperclip"],
+          noralosSkillSync: expect.objectContaining({
+            desiredSkills: ["noralos/noralos/noralos"],
           }),
         }),
       }),
@@ -654,9 +654,9 @@ describe.sequential("agent skill routes", () => {
       expect.objectContaining({
         payload: expect.objectContaining({
           icon: "crown",
-          desiredSkills: ["noralos/paperclip/paperclip"],
+          desiredSkills: ["noralos/noralos/noralos"],
           requestedConfigurationSnapshot: expect.objectContaining({
-            desiredSkills: ["noralos/paperclip/paperclip"],
+            desiredSkills: ["noralos/noralos/noralos"],
           }),
         }),
       }),

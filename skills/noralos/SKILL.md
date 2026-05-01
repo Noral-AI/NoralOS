@@ -19,9 +19,9 @@ Env vars auto-injected: `NORALOS_AGENT_ID`, `NORALOS_COMPANY_ID`, `NORALOS_API_U
 
 Some adapters also inject `NORALOS_WAKE_PAYLOAD_JSON` on comment-driven wakes. When present, it contains the compact issue summary and the ordered batch of new comment payloads for this wake. Use it first. For comment wakes, treat that batch as the highest-priority new context in the heartbeat: in your first task update or response, acknowledge the latest comment and say how it changes your next action before broad repo exploration or generic wake boilerplate. Only fetch the thread/comments API immediately when `fallbackFetchNeeded` is true or you need broader context than the inline batch provides.
 
-Manual local CLI mode (outside heartbeat runs): use `paperclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>` to install Paperclip skills for Claude/Codex and print/export the required `PAPERCLIP_*` environment variables for that agent identity.
+Manual local CLI mode (outside heartbeat runs): use `paperclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>` to install NoralOS skills for Claude/Codex and print/export the required `NORALOS_*` environment variables for that agent identity.
 
-**Run audit trail:** You MUST include `-H 'X-Paperclip-Run-Id: $NORALOS_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
+**Run audit trail:** You MUST include `-H 'X-NoralOS-Run-Id: $NORALOS_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
 
 ## The Heartbeat Procedure
 
@@ -57,7 +57,7 @@ Overrides and special cases:
 
 ```
 POST /api/issues/{issueId}/checkout
-Headers: Authorization: Bearer $NORALOS_API_KEY, X-Paperclip-Run-Id: $NORALOS_RUN_ID
+Headers: Authorization: Bearer $NORALOS_API_KEY, X-NoralOS-Run-Id: $NORALOS_RUN_ID
 { "agentId": "{your-agent-id}", "expectedStatuses": ["todo", "backlog", "blocked", "in_review"] }
 ```
 
@@ -100,7 +100,7 @@ When writing issue descriptions or comments, follow the ticket-linking rule in *
 
 ```json
 PATCH /api/issues/{issueId}
-Headers: X-Paperclip-Run-Id: $NORALOS_RUN_ID
+Headers: X-NoralOS-Run-Id: $NORALOS_RUN_ID
 { "status": "done", "comment": "What was done and why." }
 ```
 
@@ -173,7 +173,7 @@ POST /api/companies/{companyId}/approvals
 }
 ```
 
-`issueIds` links the approval into the issue thread. When approved, Paperclip wakes the requester with `NORALOS_APPROVAL_ID`/`NORALOS_APPROVAL_STATUS`. Keep the payload concise and decision-ready.
+`issueIds` links the approval into the issue thread. When approved, NoralOS wakes the requester with `NORALOS_APPROVAL_ID`/`NORALOS_APPROVAL_STATUS`. Keep the payload concise and decision-ready.
 
 ## Niche Workflow Pointers
 
@@ -231,7 +231,7 @@ For commands, response fields, and MCP tools, read:
 - **Budget**: auto-paused at 100%. Above 80%, focus on critical tasks only.
 - **Escalate** via `chainOfCommand` when stuck. Reassign to manager or create a task for them.
 - **Hiring**: use the `noralos-create-agent` skill for new agent creation workflows (links to reusable `AGENTS.md` templates like `Coder` and `QA`).
-- **Commit Co-author**: if you make a git commit you MUST add EXACTLY `Co-Authored-By: Paperclip <noreply@paperclip.ing>` to the end of each commit message. Do not put in your agent name, put `Co-Authored-By: Paperclip <noreply@paperclip.ing>`.
+- **Commit Co-author**: if you make a git commit you MUST add EXACTLY `Co-Authored-By: NoralOS <noreply@paperclip.ing>` to the end of each commit message. Do not put in your agent name, put `Co-Authored-By: NoralOS <noreply@paperclip.ing>`.
 
 ## Comment Style (Required)
 
@@ -290,9 +290,9 @@ If you're asked to make a plan, _do not mark the issue as done_. When the plan i
 
 If the plan needs explicit approval before implementation, update the `plan` document, create a `request_confirmation` issue-thread interaction bound to the latest plan revision, then update the source issue to `in_review` with a comment that links the plan and names the pending confirmation. This is a deliberate waiting path, not an abandoned productive run. Wait for acceptance before creating implementation subtasks. See `references/api-reference.md` for the interaction payload.
 
-When asked to convert a plan into executable Paperclip tasks — depth, assignment, dependencies, parallelization — use the companion skill `noralos-converting-plans-to-tasks`.
+When asked to convert a plan into executable NoralOS tasks — depth, assignment, dependencies, parallelization — use the companion skill `noralos-converting-plans-to-tasks`.
 
-When asked to convert a plan into executable Paperclip tasks — depth, assignment, dependencies, parallelization — use the companion skill `noralos-converting-plans-to-tasks`.
+When asked to convert a plan into executable NoralOS tasks — depth, assignment, dependencies, parallelization — use the companion skill `noralos-converting-plans-to-tasks`.
 
 Recommended API flow:
 

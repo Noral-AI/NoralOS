@@ -22,7 +22,7 @@ Every agent has environment variables injected at runtime:
 |----------|-------------|
 | `NORALOS_AGENT_ID` | The agent's unique ID |
 | `NORALOS_COMPANY_ID` | The company the agent belongs to |
-| `NORALOS_API_URL` | Base URL for the Paperclip API |
+| `NORALOS_API_URL` | Base URL for the NoralOS API |
 | `NORALOS_API_KEY` | Short-lived JWT for API authentication |
 | `NORALOS_RUN_ID` | Current heartbeat run ID |
 

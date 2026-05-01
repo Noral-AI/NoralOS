@@ -25,7 +25,7 @@ Generates:
 - example UI widget using the supported `@noralos/plugin-sdk/ui` hooks
 - test file using `@noralos/plugin-sdk/testing`
 - `esbuild` and `rollup` config files using SDK bundler presets
-- dev server script for hot-reload (`paperclip-plugin-dev-server`)
+- dev server script for hot-reload (`noralos-plugin-dev-server`)
 
 The scaffold intentionally uses plain React elements rather than host-provided UI kit components, because the current plugin runtime does not ship a stable shared component library yet.
 
@@ -34,7 +34,7 @@ Inside this repo, the generated package uses `@noralos/plugin-sdk` via `workspac
 Outside this repo, the scaffold snapshots `@noralos/plugin-sdk` from your local Paperclip checkout into a `.paperclip-sdk/` tarball and points the generated package at that local file by default. You can override the SDK source explicitly:
 
 ```bash
-node packages/plugins/create-paperclip-plugin/dist/index.js @acme/my-plugin \
+node packages/plugins/create-noralos-plugin/dist/index.js @acme/my-plugin \
   --output /absolute/path/to/plugins \
   --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
 ```

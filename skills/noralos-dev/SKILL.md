@@ -10,7 +10,7 @@ description: >
 
 # NoralOS Dev
 
-This skill covers the day-to-day workflows for developing and operating a local Paperclip instance. It assumes you are working inside the Paperclip repo checkout with `origin` pointing to `git@github.com:noralos/paperclip.git`.
+This skill covers the day-to-day workflows for developing and operating a local NoralOS instance. It assumes you are working inside the NoralOS repo checkout with `origin` pointing to `git@github.com:noralos/noralos.git`.
 
 > **OPEN SOURCE HYGIENE:** This repository is public-facing. Treat anything you push to `origin` as publishable. Never commit or push secrets, API keys, tokens, private logs, PII, customer data, or machine-local configuration that should stay private. Keep git history tidy as well: avoid pushing throwaway branches, noisy checkpoint commits, or speculative work that does not need to be shared upstream.
 
@@ -96,7 +96,7 @@ npx noralos worktree:cleanup my-feature
 
 ## Forks — Prefer Pushing to a User Fork
 
-If the user has a personal fork of `noralos/paperclip` configured as a git remote, push your feature branches to **that fork** instead of creating branches on the main repo. This keeps the upstream branch list clean and matches the standard open-source contribution flow.
+If the user has a personal fork of `noralos/noralos` configured as a git remote, push your feature branches to **that fork** instead of creating branches on the main repo. This keeps the upstream branch list clean and matches the standard open-source contribution flow.
 
 ### Detect a fork remote
 
@@ -106,7 +106,7 @@ Before pushing or creating a PR, list remotes and check for one that points at a
 git remote -v
 ```
 
-Treat any remote whose URL points to `github.com:<user>/paperclip` (or `github.com/<user>/paperclip.git`) as the user's fork. Common names are `fork`, `<username>`, or `myfork`. The remote named `origin` or `upstream` that points at `noralos/paperclip` is the canonical upstream — do not push feature branches there if a fork exists.
+Treat any remote whose URL points to `github.com:<user>/noralos` (or `github.com/<user>/noralos.git`) as the user's fork. Common names are `fork`, `<username>`, or `myfork`. The remote named `origin` or `upstream` that points at `noralos/noralos` is the canonical upstream — do not push feature branches there if a fork exists.
 
 ### Pushing to the fork
 
@@ -118,21 +118,21 @@ git push -u <fork-remote> HEAD
 Then create the PR from the fork branch:
 
 ```bash
-gh pr create --repo noralos/paperclip --head <fork-owner>:<branch-name> ...
+gh pr create --repo noralos/noralos --head <fork-owner>:<branch-name> ...
 ```
 
 `gh pr create` usually figures out the head ref automatically when run from a branch tracking the fork; the explicit `--head <owner>:<branch>` form is the reliable fallback when it does not.
 
 ### When no fork exists
 
-If `git remote -v` shows only `noralos/paperclip` remotes (no user fork), fall back to pushing branches to `origin` as before. Do NOT create a fork on the user's behalf — ask first.
+If `git remote -v` shows only `noralos/noralos` remotes (no user fork), fall back to pushing branches to `origin` as before. Do NOT create a fork on the user's behalf — ask first.
 
 ### Keeping the fork up to date
 
-The canonical remote that points at `noralos/paperclip` may be named `origin` **or** `upstream` depending on how the user set up the repo. Detect it the same way as in the "Detect a fork remote" step, then fetch and push from/with that remote so the sync works under either convention:
+The canonical remote that points at `noralos/noralos` may be named `origin` **or** `upstream` depending on how the user set up the repo. Detect it the same way as in the "Detect a fork remote" step, then fetch and push from/with that remote so the sync works under either convention:
 
 ```bash
-UPSTREAM_REMOTE=$(git remote -v | awk '/paperclipai\/noralos.*\(fetch\)/{print $1; exit}')
+UPSTREAM_REMOTE=$(git remote -v | awk '/noralosai\/noralos.*\(fetch\)/{print $1; exit}')
 git fetch "$UPSTREAM_REMOTE"
 git push <fork-remote> "${UPSTREAM_REMOTE}/master:master"
 ```
@@ -264,4 +264,4 @@ lsof -nP -iTCP:<port> -sTCP:LISTEN
 | CLI command fails | Do NOT work around it — report the error and block (see Hard Rules above) |
 | Agent tries manual postgres operations | NEVER do this — all DB ops go through the CLI (see Hard Rules above) |
 | Dev server dies between heartbeats | Launch in a detached `tmux` session — see "Persistent Dev Servers" above |
-| Pushed feature branch to `noralos/paperclip` when a fork exists | Push to the user's fork remote instead — see "Forks" above |
+| Pushed feature branch to `noralos/noralos` when a fork exists | Push to the user's fork remote instead — see "Forks" above |

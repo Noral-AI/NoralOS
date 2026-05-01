@@ -223,7 +223,7 @@ describe("ssh env-lab fixture", () => {
 
     await mkdir(localRepo, { recursive: true });
     await git(localRepo, ["init", "-b", "main"]);
-    await git(localRepo, ["config", "user.name", "Paperclip Test"]);
+    await git(localRepo, ["config", "user.name", "NoralOS Test"]);
     await git(localRepo, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(localRepo, "tracked.txt"), "base\n", "utf8");
     await writeFile(path.join(localRepo, "._tracked.txt"), "should stay local only\n", "utf8");
@@ -256,7 +256,7 @@ describe("ssh env-lab fixture", () => {
 
     await runSshCommand(
       config,
-      `sh -lc 'cd ${JSON.stringify(started.workspaceDir)} && git config user.name "Paperclip SSH" && git config user.email "ssh@paperclip.dev" && git add tracked.txt untracked.txt && git commit -m "remote update" >/dev/null && printf "remote dirty\\n" > tracked.txt && printf "remote extra\\n" > remote-only.txt'`,
+      `sh -lc 'cd ${JSON.stringify(started.workspaceDir)} && git config user.name "NoralOS SSH" && git config user.email "ssh@paperclip.dev" && git add tracked.txt untracked.txt && git commit -m "remote update" >/dev/null && printf "remote dirty\\n" > tracked.txt && printf "remote extra\\n" > remote-only.txt'`,
       { timeoutMs: 30_000, maxBuffer: 256 * 1024 },
     );
 

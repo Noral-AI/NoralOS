@@ -24,7 +24,7 @@
 
 import type { Db } from "@noralos/db";
 import type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginRecord,
 } from "@noralos/shared";
 import type { ToolRunContext, ToolResult } from "@noralos/plugin-sdk";
@@ -155,7 +155,7 @@ export interface PluginToolDispatcher {
    */
   registerPluginTools(
     pluginId: string,
-    manifest: PaperclipPluginManifestV1,
+    manifest: NoralosPluginManifestV1,
   ): void;
 
   /**
@@ -428,7 +428,7 @@ export function createPluginToolDispatcher(
 
     registerPluginTools(
       pluginId: string,
-      manifest: PaperclipPluginManifestV1,
+      manifest: NoralosPluginManifestV1,
     ): void {
       registry.registerPlugin(pluginId, manifest);
     },

@@ -62,7 +62,7 @@ function markdownBody(index: number) {
     "",
     "- Parsed checklist item one with inline `code`",
     "- Parsed checklist item two with **bold** and _italic_ text",
-    "- Parsed checklist item three with a link to [Paperclip](/PAP/dashboard)",
+    "- Parsed checklist item three with a link to [NoralOS](/PAP/dashboard)",
     "",
     "| Metric | Value |",
     "| --- | ---: |",

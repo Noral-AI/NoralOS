@@ -29,7 +29,7 @@ A security vulnerability has been reported via GitHub Security Advisory:
 Pull the full advisory so you understand the vulnerability before doing anything else:
 
 ```
-gh api repos/noralos/paperclip/security-advisories/{{ghsaId}}
+gh api repos/noralos/noralos/security-advisories/{{ghsaId}}
 
 ```
 
@@ -51,7 +51,7 @@ This is where all fix development happens. Never push to the public repo.
 
 ```
 gh api --method POST \
-  repos/noralos/paperclip/security-advisories/{{ghsaId}}/forks
+  repos/noralos/noralos/security-advisories/{{ghsaId}}/forks
 
 ```
 
@@ -115,7 +115,7 @@ This makes vulnerability scanners (npm audit, Snyk, Dependabot) warn users to up
 
 ```
 gh api --method POST \
-  repos/noralos/paperclip/security-advisories/{{ghsaId}}/cve
+  repos/noralos/noralos/security-advisories/{{ghsaId}}/cve
 
 ```
 
@@ -128,7 +128,7 @@ This all happens at once — do not stagger these steps. The goal is **zero wind
 ### 6a. Verify reporter credit before publishing
 
 ```
-gh api repos/noralos/paperclip/security-advisories/{{ghsaId}} --jq '.credits'
+gh api repos/noralos/noralos/security-advisories/{{ghsaId}} --jq '.credits'
 
 ```
 
@@ -136,7 +136,7 @@ If the reporter is not credited, add them:
 
 ```
 gh api --method PATCH \
-  repos/noralos/paperclip/security-advisories/{{ghsaId}} \
+  repos/noralos/noralos/security-advisories/{{ghsaId}} \
   --input - << 'EOF'
 {
   "credits": [
@@ -154,7 +154,7 @@ EOF
 
 ```
 gh api --method PATCH \
-  repos/noralos/paperclip/security-advisories/{{ghsaId}} \
+  repos/noralos/noralos/security-advisories/{{ghsaId}} \
   --input - << 'EOF'
 {
   "state": "published",
@@ -186,7 +186,7 @@ cd ~/noralos
 git pull origin master
 
 gh release create v{{patchedVersion}} \
-  --repo noralos/paperclip \
+  --repo noralos/noralos \
   --title "v{{patchedVersion}} — Security Release" \
   --notes "## Security Release
 
@@ -210,11 +210,11 @@ All users running versions prior to {{patchedVersion}} should upgrade immediatel
 
 ```
 # Verify the advisory is published and CVE is assigned
-gh api repos/noralos/paperclip/security-advisories/{{ghsaId}} \
+gh api repos/noralos/noralos/security-advisories/{{ghsaId}} \
   --jq '{state: .state, cve_id: .cve_id, published_at: .published_at}'
 
 # Verify the release exists
-gh release view v{{patchedVersion}} --repo noralos/paperclip
+gh release view v{{patchedVersion}} --repo noralos/noralos
 
 ```
 

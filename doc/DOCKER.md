@@ -86,7 +86,7 @@ BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
   docker compose -f docker/docker-compose.yml up --build
 ```
 
-PostgreSQL data persists in a named Docker volume (`pgdata`). Paperclip data persists in `paperclip-data`.
+PostgreSQL data persists in a named Docker volume (`pgdata`). NoralOS data persists in `paperclip-data`.
 
 ### Untrusted PR review
 
@@ -153,7 +153,7 @@ The `docker/quadlet/` directory contains unit files to run NoralOS + PostgreSQL 
 | File | Purpose |
 |------|---------|
 | `docker/quadlet/noralos.pod` | Pod definition — groups containers into a shared network namespace |
-| `docker/quadlet/noralos.container` | Paperclip server — joins the pod, connects to Postgres at `127.0.0.1` |
+| `docker/quadlet/noralos.container` | NoralOS server — joins the pod, connects to Postgres at `127.0.0.1` |
 | `docker/quadlet/noralos-db.container` | PostgreSQL 17 — joins the pod, health-checked |
 
 ### Setup
@@ -209,7 +209,7 @@ systemctl --user stop paperclip-pod      # Stop all
 - **First boot**: Unlike Docker Compose's `condition: service_healthy`, Quadlet's `After=` only waits for the DB unit to *start*, not for PostgreSQL to be ready. On a cold first boot you may see one or two restart attempts in `journalctl --user -u paperclip` while PostgreSQL initialises — this is expected and resolves automatically via `Restart=on-failure`.
 - Containers in a pod share `localhost`, so NoralOS reaches Postgres at `127.0.0.1:5432`.
 - PostgreSQL data persists in the `paperclip-pgdata` named volume.
-- Paperclip data persists at `~/.local/share/noralos`.
+- NoralOS data persists at `~/.local/share/noralos`.
 - For rootful quadlet deployment, remove `%h` prefixes and use absolute paths.
 
 ## Onboard Smoke Test (Ubuntu + npm only)
@@ -251,4 +251,4 @@ Notes:
 ## General Notes
 
 - The `docker-entrypoint.sh` adjusts the container `node` user UID/GID at startup to match the values passed via `USER_UID`/`USER_GID`, avoiding permission issues on bind-mounted volumes.
-- Paperclip data persists via Docker volumes/bind mounts (compose) or at `~/.local/share/noralos` (quadlet).
+- NoralOS data persists via Docker volumes/bind mounts (compose) or at `~/.local/share/noralos` (quadlet).

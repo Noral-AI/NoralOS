@@ -1,8 +1,8 @@
-# PAPERCLIP_TREE — Noral-AI/NoralOS @ HEAD f1a312f7
+# NORALOS_TREE — Noral-AI/NoralOS @ post-rebrand HEAD
 
-Generated 2026-04-30 from `/tmp/noralos-audit/NoralOS`. Depth 3, excluding node_modules/.git/dist/build/.next/coverage. Substituted for tree(1) since tree is not installed locally.
+Regenerated after Maximum-tier rebrand. Depth 3, excluding node_modules/.git/dist/build/.next/coverage. Substituted for tree(1) since tree is not installed locally.
 
-Total entries: 438
+Total entries: 452
 
 ```
 .
@@ -20,7 +20,7 @@ Total entries: 438
   |-- skills
     |-- company-creator
     |-- design-guide
-    |-- paperclip
+    |-- noralos
 .dockerignore
 .env.example
 .mailmap
@@ -29,6 +29,10 @@ AGENTS.md
 CONTRIBUTING.md
 Dockerfile
 LICENSE
+NORALOS_AUDIT.md
+NORALOS_MIGRATION.md
+NORALOS_NEXT_SESSION.md
+NORALOS_TREE.md
 NOTICE
 README.md
 ROADMAP.md
@@ -101,7 +105,7 @@ doc
     |-- 2026-03-13-agent-evals-framework.md
     |-- 2026-03-13-company-import-export-v2.md
     |-- 2026-03-13-features.md
-    |-- 2026-03-13-paperclip-skill-tightening-plan.md
+    |-- 2026-03-13-noralos-skill-tightening-plan.md
     |-- 2026-03-13-plugin-kitchen-sink-example.md
     |-- 2026-03-13-workspace-product-model-and-work-product.md
     |-- 2026-03-14-adapter-skill-sync-rollout.md
@@ -141,9 +145,9 @@ docker
     |-- Dockerfile
     |-- server.mjs
   |-- quadlet
-    |-- paperclip-db.container
-    |-- paperclip.container
-    |-- paperclip.pod
+    |-- noralos-db.container
+    |-- noralos.container
+    |-- noralos.pod
   |-- untrusted-review
     |-- Dockerfile
     |-- bin
@@ -203,6 +207,7 @@ docs
   |-- plans
     |-- 2026-03-13-issue-documents-plan.md
   |-- pr-screenshots
+    |-- pap-2837
     |-- pr-4616
   |-- specs
     |-- agent-config-ui.md
@@ -211,7 +216,7 @@ docs
     |-- architecture.md
     |-- core-concepts.md
     |-- quickstart.md
-    |-- what-is-paperclip.md
+    |-- what-is-noralos.md
 evals
   |-- README.md
   |-- promptfoo
@@ -248,9 +253,9 @@ packages
     |-- tsconfig.json
     |-- vitest.config.ts
   |-- plugins
-    |-- create-paperclip-plugin
+    |-- create-noralos-plugin
     |-- examples
-    |-- paperclip-plugin-fake-sandbox
+    |-- noralos-plugin-fake-sandbox
     |-- sandbox-providers
     |-- sdk
   |-- shared
@@ -309,9 +314,10 @@ scripts
   |-- kill-dev.sh
   |-- kill-vitest.sh
   |-- link-plugin-dev-sdk.mjs
+  |-- measure-issue-chat-long-thread.mjs
   |-- migrate-inline-env-secrets.ts
-  |-- paperclip-commit-metrics.ts
-  |-- paperclip-issue-update.sh
+  |-- noralos-commit-metrics.ts
+  |-- noralos-issue-update.sh
   |-- prepare-server-ui-dist.sh
   |-- provision-worktree.sh
   |-- release-lib.sh
@@ -327,6 +333,9 @@ scripts
     |-- openclaw-gateway-e2e.sh
     |-- openclaw-join.sh
     |-- openclaw-sse-standalone.sh
+    |-- terminal-bench-loop-skill-smoke.mjs
+  |-- verify-release-registry-state.mjs
+  |-- verify-release-registry-state.test.mjs
 server
   |-- CHANGELOG.md
   |-- package.json
@@ -370,21 +379,25 @@ server
   |-- tsconfig.json
   |-- vitest.config.ts
 skills
-  |-- paperclip
-  |-- paperclip-converting-plans-to-tasks
+  |-- diagnose-why-work-stopped
     |-- SKILL.md
-  |-- paperclip-create-agent
+  |-- noralos
+  |-- noralos-converting-plans-to-tasks
+    |-- SKILL.md
+  |-- noralos-create-agent
     |-- SKILL.md
     |-- references
-  |-- paperclip-create-plugin
+  |-- noralos-create-plugin
     |-- SKILL.md
-  |-- paperclip-dev
+  |-- noralos-dev
     |-- SKILL.md
     |-- SKILL.md
     |-- references
   |-- para-memory-files
     |-- SKILL.md
     |-- references
+  |-- terminal-bench-loop
+    |-- SKILL.md
 tests
   |-- e2e
     |-- multi-user-authenticated.spec.ts
@@ -439,6 +452,7 @@ ui
     |-- fixtures
     |-- stories
   |-- tsconfig.json
+  |-- tsconfig.tsbuildinfo
   |-- vite.config.ts
   |-- vitest.config.ts
   |-- vitest.setup.ts

@@ -42,8 +42,8 @@ const payload = {
     ? fs.readdirSync(process.env.CLAUDE_CONFIG_DIR).sort()
     : [],
   noralosApiUrl: process.env.NORALOS_API_URL || null,
-  paperclipApiKey: process.env.NORALOS_API_KEY || null,
-  paperclipApiBridgeMode: process.env.NORALOS_API_BRIDGE_MODE || null,
+  noralosApiKey: process.env.NORALOS_API_KEY || null,
+  noralosApiBridgeMode: process.env.NORALOS_API_BRIDGE_MODE || null,
 };
 if (capturePath) {
   fs.writeFileSync(capturePath, JSON.stringify(payload), "utf8");
@@ -66,8 +66,8 @@ type CapturePayload = {
   claudeConfigDir: string | null;
   claudeConfigEntries?: string[];
   noralosApiUrl?: string | null;
-  paperclipApiKey?: string | null;
-  paperclipApiBridgeMode?: string | null;
+  noralosApiKey?: string | null;
+  noralosApiBridgeMode?: string | null;
   appendedSystemPromptFilePath?: string | null;
   appendedSystemPromptFileContents?: string | null;
 };
@@ -508,8 +508,8 @@ describe("claude execute", () => {
       expect(capture.claudeConfigDir).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "claude", "config"));
       expect(capture.claudeConfigEntries).toContain("settings.json");
       expect(capture.noralosApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(capture.paperclipApiKey).not.toBe("run-jwt-token");
-      expect(capture.paperclipApiBridgeMode).toBe("queue_v1");
+      expect(capture.noralosApiKey).not.toBe("run-jwt-token");
+      expect(capture.noralosApiBridgeMode).toBe("queue_v1");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -519,23 +519,23 @@ describe("claude execute", () => {
     }
   });
 
-  it("reuses a stable Paperclip-managed Claude prompt bundle across equivalent runs", async () => {
+  it("reuses a stable NoralOS-managed Claude prompt bundle across equivalent runs", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-bundle-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");
     const capturePath1 = path.join(root, "capture-1.json");
     const capturePath2 = path.join(root, "capture-2.json");
     const instructionsPath = path.join(root, "AGENTS.md");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const noralosHome = path.join(root, "paperclip-home");
     await fs.mkdir(workspace, { recursive: true });
     await fs.writeFile(instructionsPath, "You are managed instructions.\n", "utf8");
     await writeFakeClaudeCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.NORALOS_HOME;
-    const previousPaperclipInstanceId = process.env.NORALOS_INSTANCE_ID;
+    const previousNoralosHome = process.env.NORALOS_HOME;
+    const previousNoralosInstanceId = process.env.NORALOS_INSTANCE_ID;
     process.env.HOME = root;
-    process.env.NORALOS_HOME = paperclipHome;
+    process.env.NORALOS_HOME = noralosHome;
     delete process.env.NORALOS_INSTANCE_ID;
 
     try {
@@ -605,7 +605,7 @@ describe("claude execute", () => {
           taskId: "issue-1",
           wakeReason: "issue_commented",
           wakeCommentId: "comment-2",
-          paperclipWake: {
+          noralosWake: {
             reason: "issue_commented",
             issue: {
               id: "issue-1",
@@ -645,7 +645,7 @@ describe("claude execute", () => {
       const capture1 = JSON.parse(await fs.readFile(capturePath1, "utf8")) as CapturePayload;
       const capture2 = JSON.parse(await fs.readFile(capturePath2, "utf8")) as CapturePayload;
       const expectedRoot = path.join(
-        paperclipHome,
+        noralosHome,
         "instances",
         "default",
         "companies",
@@ -664,15 +664,15 @@ describe("claude execute", () => {
       expect(capture1.skillEntries).toContain("paperclip");
       expect(capture2.argv).toContain("--resume");
       expect(capture2.argv).toContain("claude-session-1");
-      expect(capture2.prompt).toContain("## Paperclip Resume Delta");
+      expect(capture2.prompt).toContain("## NoralOS Resume Delta");
       expect(capture2.prompt).not.toContain("Follow the paperclip heartbeat.");
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.NORALOS_HOME;
-      else process.env.NORALOS_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.NORALOS_INSTANCE_ID;
-      else process.env.NORALOS_INSTANCE_ID = previousPaperclipInstanceId;
+      if (previousNoralosHome === undefined) delete process.env.NORALOS_HOME;
+      else process.env.NORALOS_HOME = previousNoralosHome;
+      if (previousNoralosInstanceId === undefined) delete process.env.NORALOS_INSTANCE_ID;
+      else process.env.NORALOS_INSTANCE_ID = previousNoralosInstanceId;
       await fs.rm(root, { recursive: true, force: true });
     }
   });
@@ -684,17 +684,17 @@ describe("claude execute", () => {
     const capturePath1 = path.join(root, "capture-before.json");
     const capturePath2 = path.join(root, "capture-after.json");
     const instructionsPath = path.join(root, "AGENTS.md");
-    const paperclipHome = path.join(root, "paperclip-home");
+    const noralosHome = path.join(root, "paperclip-home");
     const logs: string[] = [];
     await fs.mkdir(workspace, { recursive: true });
     await fs.writeFile(instructionsPath, "Version one instructions.\n", "utf8");
     await writeFakeClaudeCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousPaperclipHome = process.env.NORALOS_HOME;
-    const previousPaperclipInstanceId = process.env.NORALOS_INSTANCE_ID;
+    const previousNoralosHome = process.env.NORALOS_HOME;
+    const previousNoralosInstanceId = process.env.NORALOS_INSTANCE_ID;
     process.env.HOME = root;
-    process.env.NORALOS_HOME = paperclipHome;
+    process.env.NORALOS_HOME = noralosHome;
     delete process.env.NORALOS_INSTANCE_ID;
 
     try {
@@ -774,10 +774,10 @@ describe("claude execute", () => {
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousPaperclipHome === undefined) delete process.env.NORALOS_HOME;
-      else process.env.NORALOS_HOME = previousPaperclipHome;
-      if (previousPaperclipInstanceId === undefined) delete process.env.NORALOS_INSTANCE_ID;
-      else process.env.NORALOS_INSTANCE_ID = previousPaperclipInstanceId;
+      if (previousNoralosHome === undefined) delete process.env.NORALOS_HOME;
+      else process.env.NORALOS_HOME = previousNoralosHome;
+      if (previousNoralosInstanceId === undefined) delete process.env.NORALOS_INSTANCE_ID;
+      else process.env.NORALOS_INSTANCE_ID = previousNoralosInstanceId;
       await fs.rm(root, { recursive: true, force: true });
     }
   }, 15_000);

@@ -54,12 +54,12 @@ describe("resolveEnvironmentExecutionTarget", () => {
       remoteCwd: DEFAULT_SANDBOX_REMOTE_CWD,
       leaseId: "lease-1",
       environmentId: "env-1",
-      paperclipTransport: "bridge",
+      noralosTransport: "bridge",
       timeoutMs: 30_000,
     });
   });
 
-  it("prefers an explicit Paperclip API URL from lease metadata for sandbox targets", async () => {
+  it("prefers an explicit NoralOS API URL from lease metadata for sandbox targets", async () => {
     process.env.NORALOS_API_URL = "https://noralos.example.test";
     process.env.NORALOS_RUNTIME_API_URL = "http://noralos.example.test:3200";
     mockResolveEnvironmentDriverConfigForRuntime.mockResolvedValue({
@@ -94,7 +94,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       kind: "remote",
       transport: "sandbox",
       noralosApiUrl: "https://noralos.example.test",
-      paperclipTransport: "direct",
+      noralosTransport: "direct",
     });
   });
 });

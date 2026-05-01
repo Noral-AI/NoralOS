@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const ORIGINAL_PAPERCLIP_API_URL = process.env.NORALOS_API_URL;
+const ORIGINAL_NORALOS_API_URL = process.env.NORALOS_API_URL;
 const ORIGINAL_PAPERCLIP_RUNTIME_API_URL = process.env.NORALOS_RUNTIME_API_URL;
 const ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
 const ORIGINAL_PAPERCLIP_LISTEN_HOST = process.env.NORALOS_LISTEN_HOST;
@@ -272,8 +272,8 @@ describe("startServer NORALOS_API_URL handling", () => {
   });
 
   afterEach(() => {
-    if (ORIGINAL_PAPERCLIP_API_URL === undefined) delete process.env.NORALOS_API_URL;
-    else process.env.NORALOS_API_URL = ORIGINAL_PAPERCLIP_API_URL;
+    if (ORIGINAL_NORALOS_API_URL === undefined) delete process.env.NORALOS_API_URL;
+    else process.env.NORALOS_API_URL = ORIGINAL_NORALOS_API_URL;
 
     if (ORIGINAL_PAPERCLIP_RUNTIME_API_URL === undefined) delete process.env.NORALOS_RUNTIME_API_URL;
     else process.env.NORALOS_RUNTIME_API_URL = ORIGINAL_PAPERCLIP_RUNTIME_API_URL;

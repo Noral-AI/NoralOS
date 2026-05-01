@@ -97,7 +97,7 @@ describe("claude remote execution", () => {
         instructionsFilePath: instructionsPath,
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -173,7 +173,7 @@ describe("claude remote execution", () => {
         command: "claude",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -233,7 +233,7 @@ describe("claude remote execution", () => {
         command: "claude",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

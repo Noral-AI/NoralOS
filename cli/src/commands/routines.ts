@@ -12,7 +12,7 @@ import {
   routines,
 } from "@noralos/db";
 import { eq, inArray } from "drizzle-orm";
-import { loadPaperclipEnvFile } from "../config/env.js";
+import { loadNoralosEnvFile } from "../config/env.js";
 import { readConfig, resolveConfigPath } from "../config/store.js";
 
 type RoutinesDisableAllOptions = {
@@ -234,7 +234,7 @@ export async function disableAllRoutinesInConfig(
   options: Pick<RoutinesDisableAllOptions, "config" | "companyId">,
 ): Promise<DisableAllRoutinesResult> {
   const configPath = resolveConfigPath(options.config);
-  loadPaperclipEnvFile(configPath);
+  loadNoralosEnvFile(configPath);
   const companyId =
     nonEmpty(options.companyId)
     ?? nonEmpty(process.env.NORALOS_COMPANY_ID)

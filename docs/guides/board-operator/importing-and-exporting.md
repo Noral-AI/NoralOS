@@ -27,7 +27,7 @@ my-company/
 - **COMPANY.md** defines company name, description, and metadata.
 - **AGENT.md** files contain agent identity, role, and instructions.
 - **SKILL.md** files are compatible with the Agent Skills ecosystem.
-- **.paperclip.yaml** holds Paperclip-specific config (adapter types, env inputs, budgets) as an optional sidecar.
+- **.paperclip.yaml** holds NoralOS-specific config (adapter types, env inputs, budgets) as an optional sidecar.
 
 ## Exporting a Company
 

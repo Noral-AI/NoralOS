@@ -70,7 +70,7 @@ async function createTempRepo(defaultBranch = "main") {
   const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-repo-"));
   await runGit(repoRoot, ["init"]);
   await runGit(repoRoot, ["config", "user.email", "paperclip@example.com"]);
-  await runGit(repoRoot, ["config", "user.name", "Paperclip Test"]);
+  await runGit(repoRoot, ["config", "user.name", "NoralOS Test"]);
   await fs.writeFile(path.join(repoRoot, "README.md"), "hello\n", "utf8");
   await runGit(repoRoot, ["add", "README.md"]);
   await runGit(repoRoot, ["commit", "-m", "Initial commit"]);
@@ -173,7 +173,7 @@ afterEach(async () => {
 });
 
 describe("sanitizeRuntimeServiceBaseEnv", () => {
-  it("removes inherited Paperclip and pnpm auth flags before spawning runtime services", () => {
+  it("removes inherited NoralOS and pnpm auth flags before spawning runtime services", () => {
     const sanitized = sanitizeRuntimeServiceBaseEnv({
       PATH: process.env.PATH,
       DATABASE_URL: "postgres://example.test/noralos",
@@ -810,19 +810,19 @@ describe("realizeExecutionWorkspace", () => {
     await expect(fs.readFile(path.join(reused.cwd, ".paperclip-provision-version"), "utf8")).resolves.toBe("v2\n");
   }, 30_000);
 
-  it("writes an isolated repo-local Paperclip config and worktree branding when provisioning", async () => {
+  it("writes an isolated repo-local NoralOS config and worktree branding when provisioning", async () => {
     const repoRoot = await createTempRepo();
     const previousCwd = process.cwd();
     const previousPath = process.env.PATH;
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-home-"));
+    const noralosHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-home-"));
     const isolatedWorktreeHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktrees-"));
     const isolatedBin = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-worktree-bin-"));
     const instanceId = "worktree-base";
-    const sharedConfigDir = path.join(paperclipHome, "instances", instanceId);
+    const sharedConfigDir = path.join(noralosHome, "instances", instanceId);
     const sharedConfigPath = path.join(sharedConfigDir, "config.json");
     const sharedEnvPath = path.join(sharedConfigDir, ".env");
 
-    process.env.NORALOS_HOME = paperclipHome;
+    process.env.NORALOS_HOME = noralosHome;
     process.env.NORALOS_INSTANCE_ID = instanceId;
     process.env.NORALOS_WORKTREES_DIR = isolatedWorktreeHome;
     // Keep this server-side fixture on provision-worktree.sh's config writer path;
@@ -2271,7 +2271,7 @@ describe("ensureRuntimeServicesForRun", () => {
     expect(await executionResponse.text()).toBe(path.join(worktreeWorkspaceRoot, ".paperclip", "runtime-services"));
   });
 
-  it("does not leak parent Paperclip instance env into runtime service commands", async () => {
+  it("does not leak parent NoralOS instance env into runtime service commands", async () => {
     const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-env-"));
     const workspace = buildWorkspace(workspaceRoot);
     const envCapturePath = path.join(workspaceRoot, "captured-env.json");
@@ -2281,9 +2281,9 @@ describe("ensureRuntimeServicesForRun", () => {
         [
           "const fs = require('node:fs');",
           `fs.writeFileSync(${JSON.stringify(envCapturePath)}, JSON.stringify({`,
-          "paperclipConfig: process.env.NORALOS_CONFIG ?? null,",
-          "paperclipHome: process.env.NORALOS_HOME ?? null,",
-          "paperclipInstanceId: process.env.NORALOS_INSTANCE_ID ?? null,",
+          "noralosConfig: process.env.NORALOS_CONFIG ?? null,",
+          "noralosHome: process.env.NORALOS_HOME ?? null,",
+          "noralosInstanceId: process.env.NORALOS_INSTANCE_ID ?? null,",
           "databaseUrl: process.env.DATABASE_URL ?? null,",
           "customEnv: process.env.RUNTIME_CUSTOM_ENV ?? null,",
           "port: process.env.PORT ?? null,",
@@ -2340,9 +2340,9 @@ describe("ensureRuntimeServicesForRun", () => {
 
     expect(services).toHaveLength(1);
     const captured = JSON.parse(await fs.readFile(envCapturePath, "utf8")) as Record<string, string | null>;
-    expect(captured.paperclipConfig).toBeNull();
-    expect(captured.paperclipHome).toBeNull();
-    expect(captured.paperclipInstanceId).toBeNull();
+    expect(captured.noralosConfig).toBeNull();
+    expect(captured.noralosHome).toBeNull();
+    expect(captured.noralosInstanceId).toBeNull();
     expect(captured.databaseUrl).toBeNull();
     expect(captured.customEnv).toBe("from-adapter");
     expect(captured.port).toMatch(/^\d+$/);
@@ -2818,8 +2818,8 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
   it("adopts a live auto-port shared service after runtime state is reset", async () => {
     const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-reconcile-"));
-    const paperclipHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-home-"));
-    process.env.NORALOS_HOME = paperclipHome;
+    const noralosHome = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-home-"));
+    process.env.NORALOS_HOME = noralosHome;
     process.env.NORALOS_INSTANCE_ID = `runtime-reconcile-${randomUUID()}`;
 
     const companyId = randomUUID();

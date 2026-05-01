@@ -1531,7 +1531,7 @@ describe("IssueChatThread", () => {
     });
   });
 
-  it("renders the transcript directly from stable Paperclip messages", () => {
+  it("renders the transcript directly from stable NoralOS messages", () => {
     const root = createRoot(container);
 
     act(() => {

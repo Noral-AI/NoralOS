@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-const DEFAULT_QUERY = "\"Co-Authored-By: Paperclip <noreply@paperclip.ing>\"";
+const DEFAULT_QUERY = "\"Co-Authored-By: NoralOS <noreply@paperclip.ing>\"";
 const DEFAULT_CACHE_FILE = path.resolve("data/noralos-commit-metrics-cache.json");
 const DEFAULT_SEARCH_START = "2008-01-01T00:00:00Z";
 const SEARCH_WINDOW_LIMIT = 900;

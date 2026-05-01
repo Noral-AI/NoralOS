@@ -476,10 +476,10 @@ function generateReadmeFromSelection(
   lines.push("pnpm noralos company import this-github-url-or-folder");
   lines.push("```");
   lines.push("");
-  lines.push("See [Paperclip](https://noralos.ing) for more information.");
+  lines.push("See [NoralOS](https://noralos.ing) for more information.");
   lines.push("");
   lines.push("---");
-  lines.push(`Exported from [Paperclip](https://noralos.ing) on ${new Date().toISOString().split("T")[0]}`);
+  lines.push(`Exported from [NoralOS](https://noralos.ing) on ${new Date().toISOString().split("T")[0]}`);
   lines.push("");
 
   return lines.join("\n");
@@ -782,7 +782,7 @@ export function CompanyExport() {
     const filtered = { ...exportData.files };
 
     // Filter .paperclip.yaml
-    const yamlPath = exportData.paperclipExtensionPath;
+    const yamlPath = exportData.noralosExtensionPath;
     if (yamlPath && typeof exportData.files[yamlPath] === "string") {
       filtered[yamlPath] = filterNoralosYaml(exportData.files[yamlPath], checkedFiles);
     }

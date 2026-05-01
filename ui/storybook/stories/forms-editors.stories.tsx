@@ -237,7 +237,7 @@ const routineVariables: RoutineVariable[] = [
     name: "repo",
     label: "Repository",
     type: "text",
-    defaultValue: "noralos/paperclip",
+    defaultValue: "noralos/noralos",
     required: true,
     options: [],
   },

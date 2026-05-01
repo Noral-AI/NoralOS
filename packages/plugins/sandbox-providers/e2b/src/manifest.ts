@@ -1,9 +1,9 @@
-import type { PaperclipPluginManifestV1 } from "@noralos/plugin-sdk";
+import type { NoralosPluginManifestV1 } from "@noralos/plugin-sdk";
 
 const PLUGIN_ID = "paperclip.e2b-sandbox-provider";
 const PLUGIN_VERSION = "0.1.0";
 
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: NoralosPluginManifestV1 = {
   id: PLUGIN_ID,
   apiVersion: 1,
   version: PLUGIN_VERSION,

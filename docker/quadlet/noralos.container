@@ -1,5 +1,5 @@
 [Unit]
-Description=Paperclip AI Agent Orchestrator
+Description=NoralOS AI Agent Orchestrator
 Requires=paperclip-db.service
 After=paperclip-db.service
 

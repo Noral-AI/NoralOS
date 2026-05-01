@@ -4,9 +4,9 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ensureAgentJwtSecret,
-  mergePaperclipEnvEntries,
+  mergeNoralosEnvEntries,
   readAgentJwtSecretFromEnv,
-  readPaperclipEnvEntries,
+  readNoralosEnvEntries,
   resolveAgentJwtEnvFile,
 } from "../config/env.js";
 import { agentJwtSecretCheck } from "../checks/agent-jwt-secret-check.js";
@@ -65,7 +65,7 @@ describe("agent jwt env helpers", () => {
     const configPath = tempConfigPath();
     const envPath = resolveAgentJwtEnvFile(configPath);
 
-    mergePaperclipEnvEntries(
+    mergeNoralosEnvEntries(
       {
         NORALOS_WORKTREE_COLOR: "#439edb",
       },
@@ -74,6 +74,6 @@ describe("agent jwt env helpers", () => {
 
     const contents = fs.readFileSync(envPath, "utf-8");
     expect(contents).toContain('NORALOS_WORKTREE_COLOR="#439edb"');
-    expect(readPaperclipEnvEntries(envPath).NORALOS_WORKTREE_COLOR).toBe("#439edb");
+    expect(readNoralosEnvEntries(envPath).NORALOS_WORKTREE_COLOR).toBe("#439edb");
   });
 });

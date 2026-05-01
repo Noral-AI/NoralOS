@@ -107,7 +107,7 @@ describe("gemini remote execution", () => {
         command: "gemini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -194,7 +194,7 @@ describe("gemini remote execution", () => {
         command: "gemini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -245,7 +245,7 @@ describe("gemini remote execution", () => {
         command: "gemini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

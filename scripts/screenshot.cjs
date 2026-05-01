@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Screenshot utility for Paperclip UI.
+ * Screenshot utility for NoralOS UI.
  *
  * Reads the board token from ~/.noralos/auth.json and injects it as a
  * Bearer header so Playwright can access authenticated pages.

@@ -162,8 +162,8 @@ function readSkillMarkdown(skillName: string): string | null {
   return null;
 }
 
-/** Resolve the Paperclip repo skills directory (built-in / managed skills). */
-function resolvePaperclipSkillsDir(): string | null {
+/** Resolve the NoralOS repo skills directory (built-in / managed skills). */
+function resolveNoralosSkillsDir(): string | null {
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [
     path.resolve(moduleDir, "../../skills"),         // published
@@ -209,14 +209,14 @@ interface AvailableSkill {
 function listAvailableSkills(): AvailableSkill[] {
   const homeDir = process.env.HOME || process.env.USERPROFILE || "";
   const claudeSkillsDir = path.join(homeDir, ".claude", "skills");
-  const paperclipSkillsDir = resolvePaperclipSkillsDir();
+  const noralosSkillsDir = resolveNoralosSkillsDir();
 
   // Build set of NoralOS-managed skill names
-  const paperclipSkillNames = new Set<string>();
-  if (paperclipSkillsDir) {
+  const noralosSkillNames = new Set<string>();
+  if (noralosSkillsDir) {
     try {
-      for (const entry of fs.readdirSync(paperclipSkillsDir, { withFileTypes: true })) {
-        if (entry.isDirectory()) paperclipSkillNames.add(entry.name);
+      for (const entry of fs.readdirSync(noralosSkillsDir, { withFileTypes: true })) {
+        if (entry.isDirectory()) noralosSkillNames.add(entry.name);
       }
     } catch { /* skip */ }
   }
@@ -237,7 +237,7 @@ function listAvailableSkills(): AvailableSkill[] {
       skills.push({
         name: entry.name,
         description,
-        isNoralosManaged: paperclipSkillNames.has(entry.name),
+        isNoralosManaged: noralosSkillNames.has(entry.name),
       });
     }
   } catch { /* ~/.claude/skills/ doesn't exist */ }
@@ -471,8 +471,8 @@ export function buildJoinDefaultsPayloadForAccept(input: {
     : ({} as Record<string, unknown>);
 
   if (!nonEmptyTrimmedString(merged.noralosApiUrl)) {
-    const legacyPaperclipApiUrl = nonEmptyTrimmedString(input.noralosApiUrl);
-    if (legacyPaperclipApiUrl) merged.noralosApiUrl = legacyPaperclipApiUrl;
+    const legacyNoralosApiUrl = nonEmptyTrimmedString(input.noralosApiUrl);
+    if (legacyNoralosApiUrl) merged.noralosApiUrl = legacyNoralosApiUrl;
   }
   const mergedHeaders = normalizeHeaderMap(merged.headers) ?? {};
 
@@ -852,35 +852,35 @@ export function normalizeAgentDefaultsForJoin(input: {
     }
   }
 
-  const rawPaperclipApiUrl =
+  const rawNoralosApiUrl =
     typeof defaults.noralosApiUrl === "string"
       ? defaults.noralosApiUrl.trim()
       : "";
-  if (rawPaperclipApiUrl) {
+  if (rawNoralosApiUrl) {
     try {
-      const parsedPaperclipApiUrl = new URL(rawPaperclipApiUrl);
+      const parsedNoralosApiUrl = new URL(rawNoralosApiUrl);
       if (
-        parsedPaperclipApiUrl.protocol !== "http:" &&
-        parsedPaperclipApiUrl.protocol !== "https:"
+        parsedNoralosApiUrl.protocol !== "http:" &&
+        parsedNoralosApiUrl.protocol !== "https:"
       ) {
         diagnostics.push({
           code: "openclaw_gateway_paperclip_api_url_protocol",
           level: "warn",
-          message: `noralosApiUrl must use http:// or https:// (got ${parsedPaperclipApiUrl.protocol}).`
+          message: `noralosApiUrl must use http:// or https:// (got ${parsedNoralosApiUrl.protocol}).`
         });
       } else {
-        normalized.noralosApiUrl = parsedPaperclipApiUrl.toString();
+        normalized.noralosApiUrl = parsedNoralosApiUrl.toString();
         diagnostics.push({
           code: "openclaw_gateway_paperclip_api_url_configured",
           level: "info",
-          message: `noralosApiUrl set to ${parsedPaperclipApiUrl.toString()}`
+          message: `noralosApiUrl set to ${parsedNoralosApiUrl.toString()}`
         });
       }
     } catch {
       diagnostics.push({
         code: "openclaw_gateway_paperclip_api_url_invalid",
         level: "warn",
-        message: `Invalid noralosApiUrl: ${rawPaperclipApiUrl}`
+        message: `Invalid noralosApiUrl: ${rawNoralosApiUrl}`
       });
     }
   }
@@ -1651,7 +1651,7 @@ export function buildInviteOnboardingTextDocument(
   };
 
   appendBlock(`
-    # Paperclip OpenClaw Gateway Onboarding
+    # NoralOS OpenClaw Gateway Onboarding
 
     This document is meant to be readable by both humans and agents.
 
@@ -1720,7 +1720,7 @@ export function buildInviteOnboardingTextDocument(
     Legacy x-openclaw-auth is also accepted, but x-openclaw-token is preferred.
     Use adapterType "openclaw_gateway" and a ws:// or wss:// gateway URL.
     Pairing mode requirement:
-    - Keep device auth enabled (recommended). If devicePrivateKeyPem is omitted, Paperclip generates and persists one during join so pairing approvals are stable.
+    - Keep device auth enabled (recommended). If devicePrivateKeyPem is omitted, NoralOS generates and persists one during join so pairing approvals are stable.
     - You may set disableDeviceAuth=true only for special environments that cannot support pairing.
     - First run may return "pairing required" once; approve the pending pairing request in OpenClaw, then retry.
     Do NOT use /v1/responses or /hooks/* in this gateway join flow.
@@ -1748,7 +1748,7 @@ export function buildInviteOnboardingTextDocument(
     - claimApiKeyPath
 
     ## Step 2: Wait for board approval
-    The board approves the join request in Paperclip before key claim is allowed.
+    The board approves the join request in NoralOS before key claim is allowed.
 
     ## Step 3: Claim API key (one-time)
     ${
@@ -1784,7 +1784,7 @@ export function buildInviteOnboardingTextDocument(
     - claim secrets are single-use
     - claim fails before board approval
 
-    ## Step 4: Install Paperclip skill in OpenClaw
+    ## Step 4: Install NoralOS skill in OpenClaw
     GET ${onboarding.skill.url}
     Install path: ${onboarding.skill.installPath}
 
@@ -1822,7 +1822,7 @@ export function buildInviteOnboardingTextDocument(
       If none are reachable: ask your human operator for a reachable hostname/address and help them update network configuration.
       For authenticated/private mode, they may need:
       - pnpm noralos allowed-hostname <host>
-      - then restart Paperclip and retry onboarding.
+      - then restart NoralOS and retry onboarding.
     `);
   }
 

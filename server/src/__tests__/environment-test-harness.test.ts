@@ -9,9 +9,9 @@ import {
   assertExecutionLifecycle,
   assertEnvironmentError,
 } from "@noralos/plugin-sdk/testing";
-import type { PaperclipPluginManifestV1 } from "@noralos/shared";
+import type { NoralosPluginManifestV1 } from "@noralos/shared";
 
-const FAKE_MANIFEST: PaperclipPluginManifestV1 = {
+const FAKE_MANIFEST: NoralosPluginManifestV1 = {
   id: "test-env-plugin",
   apiVersion: 1,
   version: "0.1.0",

@@ -20,7 +20,7 @@ describe("cursor local adapter skill injection", () => {
     cleanupDirs.clear();
   });
 
-  it("links missing Paperclip skills into Cursor skills home", async () => {
+  it("links missing NoralOS skills into Cursor skills home", async () => {
     const skillsDir = await makeTempDir("paperclip-cursor-skills-src-");
     const skillsHome = await makeTempDir("paperclip-cursor-skills-home-");
     cleanupDirs.add(skillsDir);

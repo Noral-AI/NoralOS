@@ -106,7 +106,7 @@ describe("opencode remote execution", () => {
         model: "opencode/gpt-5-nano",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -198,7 +198,7 @@ describe("opencode remote execution", () => {
         model: "opencode/gpt-5-nano",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

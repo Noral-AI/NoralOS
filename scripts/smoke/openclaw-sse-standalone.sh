@@ -54,7 +54,7 @@ NORALOS_APPROVAL_ID=${NORALOS_APPROVAL_ID}
 NORALOS_APPROVAL_STATUS=${NORALOS_APPROVAL_STATUS}
 NORALOS_LINKED_ISSUE_IDS=${NORALOS_LINKED_ISSUE_IDS}
 
-Run your Paperclip heartbeat procedure now.
+Run your NoralOS heartbeat procedure now.
 EOF
 
 PAYLOAD="$(jq -nc \
