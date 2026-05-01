@@ -17,7 +17,7 @@ Examples:
 Environment overrides:
   KEEP_TEMP=1                 Keep the temp directory and detached worktree for debugging
   PC_TEST_ROOT=/tmp/custom    Base temp directory to use
-  PC_DATA=/tmp/data           Paperclip data dir to use
+  PC_DATA=/tmp/data           NoralOS data dir to use
   NORALOS_HOST=127.0.0.1    Host passed to the onboarded server
   NORALOS_PORT=3232         Port passed to the onboarded server
 

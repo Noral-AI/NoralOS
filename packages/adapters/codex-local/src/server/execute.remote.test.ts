@@ -97,7 +97,7 @@ describe("codex remote execution", () => {
         },
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -176,7 +176,7 @@ describe("codex remote execution", () => {
         },
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -246,7 +246,7 @@ describe("codex remote execution", () => {
         },
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -318,7 +318,7 @@ describe("codex remote execution", () => {
         },
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

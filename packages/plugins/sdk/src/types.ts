@@ -1,5 +1,5 @@
 /**
- * Core types for the Paperclip plugin worker-side SDK.
+ * Core types for the NoralOS plugin worker-side SDK.
  *
  * These types define the stable public API surface that plugin workers import
  * from `@noralos/plugin-sdk`.  The host provides a concrete implementation
@@ -10,7 +10,7 @@
  */
 
 import type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginStateScopeKind,
   PluginEventType,
   PluginToolDeclaration,
@@ -37,7 +37,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 export type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginJobDeclaration,
   PluginWebhookDeclaration,
   PluginToolDeclaration,
@@ -112,7 +112,7 @@ export type {
  * @see PLUGIN_SPEC.md §21.3 `plugin_state`
  */
 export interface ScopeKey {
-  /** What kind of Paperclip object this state is scoped to. */
+  /** What kind of NoralOS object this state is scoped to. */
   scopeKind: PluginStateScopeKind;
   /** UUID or text identifier for the scoped object. Omit for `instance` scope. */
   scopeId?: string;
@@ -244,7 +244,7 @@ export interface PluginEntityUpsert {
   scopeId?: string;
   /** External identifier in the remote system (e.g. Linear issue ID). */
   externalId?: string;
-  /** Human-readable title for display in the Paperclip UI. */
+  /** Human-readable title for display in the NoralOS UI. */
   title?: string;
   /** Optional status string. */
   status?: string;
@@ -350,7 +350,7 @@ export interface PluginConfigClient {
 }
 
 /**
- * `ctx.events` — subscribe to and emit Paperclip domain events.
+ * `ctx.events` — subscribe to and emit NoralOS domain events.
  *
  * Requires `events.subscribe` capability for `on()`.
  * Requires `events.emit` capability for `emit()`.
@@ -359,7 +359,7 @@ export interface PluginConfigClient {
  */
 export interface PluginEventsClient {
   /**
-   * Subscribe to a core Paperclip domain event or a plugin-namespaced event.
+   * Subscribe to a core NoralOS domain event or a plugin-namespaced event.
    *
    * @param name - Event type, e.g. `"issue.created"` or `"plugin.@acme/linear.sync-done"`
    * @param fn - Async event handler
@@ -473,7 +473,7 @@ export interface PluginHttpClient {
  * Requires `secrets.read-ref` capability.
  *
  * Plugins store secret *references* in their config (e.g. a secret name).
- * This client resolves the reference through the Paperclip secret provider
+ * This client resolves the reference through the NoralOS secret provider
  * system and returns the resolved value at execution time.
  *
  * @see PLUGIN_SPEC.md §22 — Secrets
@@ -483,7 +483,7 @@ export interface PluginSecretsClient {
    * Resolve a secret reference to its current value.
    *
    * The reference is a string identifier pointing to a secret configured
-   * in the Paperclip secret provider (e.g. `"MY_API_KEY"`).
+   * in the NoralOS secret provider (e.g. `"MY_API_KEY"`).
    *
    * Secret values are resolved at call time and must never be cached or
    * written to logs, config, or other persistent storage.
@@ -1431,7 +1431,7 @@ export interface PluginStreamsClient {
  */
 export interface PluginContext {
   /** The plugin's manifest as validated at install time. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: NoralosPluginManifestV1;
 
   /** Read resolved operator configuration. */
   config: PluginConfigClient;

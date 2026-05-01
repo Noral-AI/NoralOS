@@ -11,7 +11,7 @@ const NORALOS_ART = [
 
 const TAGLINE = "Open-source orchestration for zero-human companies";
 
-export function printPaperclipCliBanner(): void {
+export function printNoralosCliBanner(): void {
   const lines = [
     "",
     ...NORALOS_ART.map((line) => pc.cyan(line)),

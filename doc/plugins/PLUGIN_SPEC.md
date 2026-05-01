@@ -313,14 +313,14 @@ Suggested `package.json` keys:
 Normative manifest shape:
 
 ```ts
-export interface PaperclipPluginManifestV1 {
+export interface NoralOSPluginManifestV1 {
   id: string;
   apiVersion: 1;
   version: string;
   displayName: string;
   description: string;
   categories: Array<"connector" | "workspace" | "automation" | "ui">;
-  minimumPaperclipVersion?: string;
+  minimumNoralOSVersion?: string;
   capabilities: string[];
   entrypoints: {
     worker: string;
@@ -670,13 +670,13 @@ Scoped API routes:
 
 ```ts
 /** Top-level helper for defining a plugin with type checking */
-export function definePlugin(definition: PluginDefinition): PaperclipPlugin;
+export function definePlugin(definition: PluginDefinition): NoralOSPlugin;
 
 /** Re-exported from Zod for config schema definitions */
 export { z } from "zod";
 
 export interface PluginContext {
-  manifest: PaperclipPluginManifestV1;
+  manifest: NoralOSPluginManifestV1;
   config: {
     get(): Promise<Record<string, unknown>>;
   };
@@ -1549,7 +1549,7 @@ For developing a plugin against a running NoralOS instance:
 
 ### 27.3 Plugin Starter Template
 
-The host should publish a starter template (`create-paperclip-plugin`) that scaffolds:
+The host should publish a starter template (`create-noralos-plugin`) that scaffolds:
 
 - `package.json` with correct `paperclipPlugin` keys
 - manifest with placeholder values
@@ -1655,7 +1655,7 @@ When a new SDK version is released:
 - graceful shutdown with configurable deadlines
 - plugin logging and health dashboard
 - `@noralos/plugin-test-harness`
-- `create-paperclip-plugin` starter template
+- `create-noralos-plugin` starter template
 - uninstall with data retention grace period
 - hot plugin lifecycle (install, uninstall, upgrade, config change without server restart)
 - SDK versioning with multi-version host support and deprecation policy

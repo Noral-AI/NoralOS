@@ -31,7 +31,7 @@ describe("dev-runner worktree env bootstrap", () => {
     expect(isLinkedGitWorktreeCheckout(root)).toBe(true);
   });
 
-  it("loads repo-local Paperclip env for initialized worktrees without overriding explicit env", () => {
+  it("loads repo-local NoralOS env for initialized worktrees without overriding explicit env", () => {
     const root = createTempRoot("noralos-dev-runner-worktree-env-");
     fs.mkdirSync(path.join(root, ".paperclip"), { recursive: true });
     fs.writeFileSync(path.join(root, ".git"), "gitdir: /tmp/noralos/.git/worktrees/feature\n", "utf8");

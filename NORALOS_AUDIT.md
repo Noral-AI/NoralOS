@@ -4,9 +4,9 @@
 **HEAD:** `f1a312f7` — `rebrand: README + UI title + boot banner → Noral`
 **Default branch:** `master` (NOT `main` — both branches exist on origin)
 **Audited:** 2026-04-30 (read-only)
-**Auditor brief:** `PAPERCLIP_NEXT_SESSION.md` (companion file)
+**Auditor brief:** `NORALOS_NEXT_SESSION.md` (companion file)
 
-This audit fills in Phase 0 of `PAPERCLIP_MIGRATION.md` — the internal map of the Paperclip fork that the rest of the migration depends on. No code was changed; only the four deliverable docs were added.
+This audit fills in Phase 0 of `NORALOS_MIGRATION.md` — the internal map of the NoralOS fork that the rest of the migration depends on. No code was changed; only the four deliverable docs were added.
 
 ---
 
@@ -31,7 +31,7 @@ This audit fills in Phase 0 of `PAPERCLIP_MIGRATION.md` — the internal map of 
 | `c93fe58d` | Noral-AI <quentin@noralconsulting.com> | `ci: amd64 only + 60min timeout (Noral-AI fork)` | `.github/workflows/docker.yml` (4 ins / 3 del) |
 | `f1a312f7` | Noral-AI <noreply@noral-ai.local> | `rebrand: README + UI title + boot banner → Noral` | 5 files (83 ins / 413 del) — README, NOTICE, startup-banner.ts, ui/index.html, BreadcrumbContext.tsx |
 
-The rebrand commit body is explicit about what was deliberately **not** rebranded: `@paperclipai/*` workspace package names, `PAPERCLIP_*` env var prefix, `/paperclip` filesystem paths, DB / table names, test fixtures using `Paperclip` as a company name string. Quoting the commit author: "high-risk for low brand value right now."
+The rebrand commit body is explicit about what was deliberately **not** rebranded: `@noralos/*` workspace package names, `NORALOS_*` env var prefix, `/noralos` filesystem paths, DB / table names, test fixtures using `NoralOS` as a company name string. Quoting the commit author: "high-risk for low brand value right now."
 
 ### Upstream-only commits (fork is missing these — last 5 of 13)
 
@@ -55,7 +55,7 @@ The `+1,612 / -13,346` line count in `git diff upstream/master HEAD` looks alarm
 - **Node:** `>=20` (per top-level `package.json` `engines`)
 - **Package manager:** `pnpm@9.15.4` (monorepo with `pnpm-workspace.yaml`)
 - **Patched dependency:** `embedded-postgres@18.1.0-beta.16` via `patches/embedded-postgres@18.1.0-beta.16.patch`
-- **Database:** Postgres (Drizzle ORM at `@paperclipai/db`); embedded mode for dev, real Postgres in prod
+- **Database:** Postgres (Drizzle ORM at `@noralos/db`); embedded mode for dev, real Postgres in prod
 
 ### Top-level scripts (selected)
 `dev`, `dev:watch`, `dev:once`, `dev:server`, `dev:ui`, `build`, `typecheck`, `test`, `db:generate`, `db:migrate`, `db:backup`, `release`, `release:canary`, `release:stable`, `release:rollback`, `secrets:migrate-inline-env`, `smoke:openclaw-join`, `smoke:openclaw-docker-ui`, `smoke:openclaw-sse-standalone`, `test:e2e`, `evals:smoke`.
@@ -72,12 +72,12 @@ The `+1,612 / -13,346` line count in `git diff upstream/master HEAD` looks alarm
 | `DISCORD_WEBHOOK_URL` | No | Commented out by default. Optional Discord daily-digest webhook. |
 
 ### Additional env vars set in production Dockerfile
-`NODE_ENV`, `HOME`, `HOST=0.0.0.0`, `PORT=3100`, `SERVE_UI=true`, `PAPERCLIP_HOME=/paperclip`, `PAPERCLIP_INSTANCE_ID=default`, `PAPERCLIP_CONFIG=/paperclip/instances/default/config.json`, `PAPERCLIP_DEPLOYMENT_MODE=authenticated`, `PAPERCLIP_DEPLOYMENT_EXPOSURE=private`, `OPENCODE_ALLOW_ALL_MODELS=true`, plus `USER_UID` / `USER_GID` for filesystem ownership.
+`NODE_ENV`, `HOME`, `HOST=0.0.0.0`, `PORT=3100`, `SERVE_UI=true`, `NORALOS_HOME=/noralos`, `NORALOS_INSTANCE_ID=default`, `NORALOS_CONFIG=/noralos/instances/default/config.json`, `NORALOS_DEPLOYMENT_MODE=authenticated`, `NORALOS_DEPLOYMENT_EXPOSURE=private`, `OPENCODE_ALLOW_ALL_MODELS=true`, plus `USER_UID` / `USER_GID` for filesystem ownership.
 
 No real `.env` file was found anywhere in the clone (good — no leaks).
 
 ### Containers / runtime
-- **Dockerfile:** multi-stage Node 20 LTS Trixie slim. Production image globally installs `@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`. Volume `/paperclip`, exposes `EXPOSE 3100`, runs as `node` user.
+- **Dockerfile:** multi-stage Node 20 LTS Trixie slim. Production image globally installs `@anthropic-ai/claude-code`, `@openai/codex`, `opencode-ai`. Volume `/noralos`, exposes `EXPOSE 3100`, runs as `node` user.
 - **Docker compose configs:** `docker/docker-compose.yml`, `docker/docker-compose.quickstart.yml`, `docker/docker-compose.untrusted-review.yml`. Plus `Dockerfile.onboard-smoke`, `ecs-task-definition.json` (AWS ECS), `quadlet/` (systemd-quadlet).
 - **No** systemd `.service` files, **no** PM2 `ecosystem.*` files, **no** launchd plists. Runtime is container-first.
 
@@ -92,9 +92,9 @@ All paths are relative to the repo root.
 
 | # | Subsystem | Primary path | Notes |
 |---|---|---|---|
-| 1 | **Plugin / extension entry point** | `packages/plugins/sdk/` (`@paperclipai/plugin-sdk`) + `packages/plugins/create-paperclip-plugin/` | Worker-side plugin runtime via `definePlugin` / `runWorker`. Plugin host integration in `server/src/services/plugin-worker-manager.ts`, plugin tool registry in `server/src/services/plugin-tool-registry.ts`. Plugin manifests declare capabilities; gating in `server/src/services/plugin-capability-validator.ts`. |
+| 1 | **Plugin / extension entry point** | `packages/plugins/sdk/` (`@noralos/plugin-sdk`) + `packages/plugins/create-noralos-plugin/` | Worker-side plugin runtime via `definePlugin` / `runWorker`. Plugin host integration in `server/src/services/plugin-worker-manager.ts`, plugin tool registry in `server/src/services/plugin-tool-registry.ts`. Plugin manifests declare capabilities; gating in `server/src/services/plugin-capability-validator.ts`. |
 | 2 | **Adapter registry (mutable, runtime-extensible)** | `server/src/adapters/registry.ts` + `server/src/adapters/index.ts` (with `registerServerAdapter` / `unregisterServerAdapter` / `requireServerAdapter`) | Documented in top-level `adapter-plugin.md`. Built-in adapters live under `packages/adapters/` (claude-local, codex-local, cursor-local, gemini-local, opencode-local, pi-local, **openclaw-gateway**). Each exposes `execute`, `listSkills`, `syncSkills`, `testEnvironment`, `sessionCodec`. |
-| 3 | **Input adapter layer (Telegram-style channel hook)** | **No native equivalent** | Upstream Paperclip is web-driven; zero references to Telegram or any messaging-channel adapter exist in the codebase. The Phase 1 input adapter must be built from scratch — recommended path is a Paperclip plugin under `packages/plugins/<noralai-telegram>/` (using `@paperclipai/plugin-sdk`) that posts an `issue.created` event for each inbound message and calls a tool to deliver outbound text/files. |
+| 3 | **Input adapter layer (Telegram-style channel hook)** | **No native equivalent** | Upstream NoralOS is web-driven; zero references to Telegram or any messaging-channel adapter exist in the codebase. The Phase 1 input adapter must be built from scratch — recommended path is a NoralOS plugin under `packages/plugins/<noralai-telegram>/` (using `@noralos/plugin-sdk`) that posts an `issue.created` event for each inbound message and calls a tool to deliver outbound text/files. |
 | 4 | **Skill loader (DB-backed registry)** | `server/src/services/company-skills.ts` (writes `companySkills` table) | Routes: `server/src/routes/company-skills.ts`. Native source types supported: `github`, `skills_sh`, `url`, `local_path` (sub-kind `managed_local`), `catalog`. **paperclipskills.com URLs are NOT a native source type** (matches upstream issue #2766 noted in handoff). Adapter-side skill sync into adapter-specific skill homes is at `packages/adapters/<adapter>/src/server/skills.ts` (e.g. claude-local syncs to `~/.claude/skills/`). |
 | 5 | **Agent runtime / heartbeat** | `server/src/services/heartbeat.ts` (factory `heartbeatService(db, options)` at line 1981) | Heartbeats are routine-driven (cron) plus on-demand wake-ups (`agentWakeupRequests`). Tables: `agents`, `agentRuntimeState`, `agentTaskSessions`, `agentWakeupRequests`, `heartbeatRuns`, `heartbeatRunEvents`. Companion services: `services/heartbeat-stop-metadata.ts`, `services/heartbeat-run-summary.ts`, `services/issue-liveness.ts`, `services/issue-assignment-wakeup.ts`. |
 | 6 | **Routines (cron / scheduled work)** | `server/src/services/routines.ts` + `server/src/services/cron.ts` | Tables: `routines`, `routineTriggers`, `routineRuns`. Drives scheduled heartbeats. |
@@ -105,8 +105,8 @@ All paths are relative to the repo root.
 | 11 | **Dashboard UI components** | `ui/src/components/` + `ui/src/pages/` | Major panels: `IssuesList.tsx`, `IssueDetail.tsx`, `IssueChatThread.tsx`, `IssueRunLedger.tsx`, `Agents.tsx`, `CompanySettings.tsx`, `Routines.tsx`, `PluginSettings.tsx`, `AdapterManager.tsx`. Storybook at `ui/storybook/`. |
 | 12 | **Security: plugin capability validator** (NOT a 7-category skill scanner) | `server/src/services/plugin-capability-validator.ts` | Manifest-time + runtime gating. Maps operations (e.g. `companies.list`, `issues.read`) to required capabilities (e.g. `companies.read`); rejects worker→host bridge calls that lack declared capabilities. **This is a plugin capability model, not a skill threat-classification scanner.** See Open Issue #1. |
 | 13 | **Agent prompt assembly** | `server/src/services/agent-instructions.ts` + `server/src/services/default-agent-instructions.ts` + `server/src/onboarding-assets/{ceo,default}/` | "Instruction bundles" per agent — managed (NoralOS-controlled) or external (user file path). Default templates: `default` agent loads `AGENTS.md`; `ceo` agent loads `AGENTS.md`, `HEARTBEAT.md`, `SOUL.md`, `TOOLS.md`. Prompt content is assembled at heartbeat time. Memory-context injection (Phase 3) plugs in here, not as an output filter. |
-| 14 | **Config layer** | `server/src/config.ts` + `server/src/config-file.ts` | Loads JSON from `PAPERCLIP_CONFIG=/paperclip/instances/<id>/config.json`; sensitive material via `server/src/services/secrets.ts` and the `secrets/` dir. |
-| 15 | **Data / instance dir** | `/paperclip/instances/<instance-id>/` (per Dockerfile envs) | Paperclip data root is `PAPERCLIP_HOME=/paperclip`; the default instance is `/paperclip/instances/default/`. Suggested location for migrated SQLite: `/paperclip/instances/default/data/noralai.db`. |
+| 14 | **Config layer** | `server/src/config.ts` + `server/src/config-file.ts` | Loads JSON from `NORALOS_CONFIG=/noralos/instances/<id>/config.json`; sensitive material via `server/src/services/secrets.ts` and the `secrets/` dir. |
+| 15 | **Data / instance dir** | `/noralos/instances/<instance-id>/` (per Dockerfile envs) | NoralOS data root is `NORALOS_HOME=/noralos`; the default instance is `/noralos/instances/default/`. Suggested location for migrated SQLite: `/noralos/instances/default/data/noralai.db`. |
 
 ---
 
@@ -136,18 +136,18 @@ Recommended: **rebase the fork onto `upstream/master` before starting Phase 1.**
 ### Bundled skills (in the fork repo, not user-installed at runtime)
 
 **`skills/` (top-level — NoralOS platform skills, ship with the fork):**
-- `paperclip` — Interact with the NoralOS control plane API (task management, governance)
-- `paperclip-converting-plans-to-tasks` — Plan → executable task breakdown
-- `paperclip-create-agent` — Create new agents with governance-aware hiring
-- `paperclip-create-plugin` — Scaffold new Paperclip plugins via the SDK
-- `paperclip-dev` — Operate a local Paperclip instance (start/stop, build, test, worktrees, backup)
+- `noralos` — Interact with the NoralOS control plane API (task management, governance)
+- `noralos-converting-plans-to-tasks` — Plan → executable task breakdown
+- `noralos-create-agent` — Create new agents with governance-aware hiring
+- `noralos-create-plugin` — Scaffold new NoralOS plugins via the SDK
+- `noralos-dev` — Operate a local NoralOS instance (start/stop, build, test, worktrees, backup)
 - `para-memory-files` — File-based PARA memory (3 layers: knowledge graph, daily notes, tacit knowledge)
 
 **`.agents/skills/` (NoralOS-internal dev/release skills, used by maintainers):**
 - `company-creator`, `create-agent-adapter`, `deal-with-security-advisory`, `doc-maintenance`, `pr-report`, `prcheckloop`, `release`, `release-changelog`
 
 **`.claude/skills/` (Claude Code skills for working in this repo):**
-- `company-creator`, `design-guide`, `paperclip`
+- `company-creator`, `design-guide`, `noralos`
 
 ### Onboarding agent templates (seeded into new companies)
 - `ceo` — bundle: `AGENTS.md`, `HEARTBEAT.md`, `SOUL.md`, `TOOLS.md`. Pure delegator: must NOT do IC work, must hire/delegate.
@@ -160,7 +160,7 @@ There is **no static "agent / org chart config" file** in the repo — agents ar
 | Bundle | Pre-installed in fork? | Conflict? |
 |---|---|---|
 | ClawHub bundle (36 skills at `/Users/quentin/Documents/NORALAI/NORALOS/noralOS/clawhub-bundle/`) | None | None |
-| paperclipskills.com bundle (3 skills at `.../paperclip-bundle/`) | None | None |
+| paperclipskills.com bundle (3 skills at `.../noralos-bundle/`) | None | None |
 
 The fork is a clean NoralOS install with only platform-native skills. None of the 39 curated NoralAI skills are present — they'll be installed as part of Phase 1+ via the skill loader.
 
@@ -198,11 +198,11 @@ No breaking changes detected in the 2 fork commits (CI workflow restriction + co
 
 ### #1 — Migration plan's "7-category skill security scan" is not a real NoralOS feature
 
-The `clawhub-bundle/_HANDOFF.md` and `paperclip-bundle/_FINAL_INSTALL_LIST.md` both reference a "7-category skill security scan" as a Paperclip platform feature whose overlap should be avoided.
+The `clawhub-bundle/_HANDOFF.md` and `noralos-bundle/_FINAL_INSTALL_LIST.md` both reference a "7-category skill security scan" as a NoralOS platform feature whose overlap should be avoided.
 
 **Reality:** NoralOS ships `server/src/services/plugin-capability-validator.ts`, which is a **plugin capability model** (least-privilege gating on worker→host bridge calls based on declared manifest capabilities). It is not a skill threat-classification scanner. The "scan" function in `services/company-skills.ts` (`scanProjectWorkspaces`) discovers existing skill files in the user's project workspaces — not a security scan.
 
-The hard-rule list in `_HANDOFF.md` rejected `@paperclip-skills/skill-security` from paperclipskills.com on the basis that "Paperclip already ships a 7-category skill security scan." That premise appears to be incorrect. The rejection may still be correct on other grounds (skill-security is described in the marketplace as a per-install scanner — possibly redundant with the plugin capability model), but the stated reason needs re-examination.
+The hard-rule list in `_HANDOFF.md` rejected `@paperclip-skills/skill-security` from paperclipskills.com on the basis that "NoralOS already ships a 7-category skill security scan." That premise appears to be incorrect. The rejection may still be correct on other grounds (skill-security is described in the marketplace as a per-install scanner — possibly redundant with the plugin capability model), but the stated reason needs re-examination.
 
 **Action:** confirm with Quentin whether (a) the 7-category scanner exists in a NoralOS code path I missed, (b) the framing came from an external doc / marketing page that doesn't match the code, or (c) it was conflated with the plugin capability validator. If the scan does not exist, the hard-rule list should be revised.
 
@@ -221,7 +221,7 @@ Option 3 is cleanest but slowest. Option 2 is the most pragmatic for a near-term
 
 The skill loader supports `github`, `skills_sh`, `url`, `local_path`, `catalog` source types. paperclipskills.com URL import is open as upstream issue #2766 (per `clawhub-bundle/_HANDOFF.md`).
 
-**Impact:** the 3 skills in `paperclip-bundle/` (`git-commit-review`, `code-simplifier`, `create-skill`) cannot be installed by URL — they must come in via `local_path` (drop the `.md` files in a watched dir) or `url` pointed at a raw file URL hosted somewhere the fork controls.
+**Impact:** the 3 skills in `noralos-bundle/` (`git-commit-review`, `code-simplifier`, `create-skill`) cannot be installed by URL — they must come in via `local_path` (drop the `.md` files in a watched dir) or `url` pointed at a raw file URL hosted somewhere the fork controls.
 
 **Action:** when Phase 1 installs the bundles, plan for `local_path` import for the paperclipskills.com files. Optionally watch upstream for #2766 to land.
 
@@ -231,13 +231,13 @@ Routine drift, not a defect. Becomes a defect if not addressed before code-modif
 
 ### #5 — Rebrand is incomplete by design
 
-Per the rebrand commit body, package names (`@paperclipai/*`), env var prefix (`PAPERCLIP_*`), filesystem paths (`/paperclip`), DB / table names, and test fixtures still say Paperclip. Quentin's earlier "rebrand at all levels" goal is not yet realized. The author flagged this as deferred ("high-risk for low brand value right now").
+Per the rebrand commit body, package names (`@noralos/*`), env var prefix (`NORALOS_*`), filesystem paths (`/noralos`), DB / table names, and test fixtures still say NoralOS. Quentin's earlier "rebrand at all levels" goal is not yet realized. The author flagged this as deferred ("high-risk for low brand value right now").
 
 **Action:** if "all levels" is still the goal, plan a separate Phase X for it. Lowest risk to highest:
 - (1) test-fixture company name strings — search & replace in test files only
 - (2) DB / table names — requires a migration; Drizzle schema lives in `packages/db/`
-- (3) `/paperclip` paths and `PAPERCLIP_*` env vars — touches Dockerfile, scripts, configs, deployment runbooks
-- (4) `@paperclipai/*` package names — touches every package.json, every import, lockfile, pnpm workspace config
+- (3) `/noralos` paths and `NORALOS_*` env vars — touches Dockerfile, scripts, configs, deployment runbooks
+- (4) `@noralos/*` package names — touches every package.json, every import, lockfile, pnpm workspace config
 
 Order matters: if you do (4) before (3), a halfway state breaks builds. If you do (2) before (3), env vars still mention paperclip but DB doesn't — confusing for ops. Suggest doing all four as one coordinated cutover.
 
@@ -245,9 +245,9 @@ Order matters: if you do (4) before (3), a halfway state breaks builds. If you d
 
 The migration's task spec said "push to main" but caveated "check `git symbolic-ref refs/remotes/origin/HEAD` first." Confirmed: origin default is `master`. Both branches exist on origin (likely a transitional state). The audit was committed to `master`. If you want to switch to `main` as default, that's a separate one-time cutover.
 
-### #7 — Bundled top-level skill `paperclip` is a NoralOS-native skill, NOT the operations skill of the same name from ClawHub
+### #7 — Bundled top-level skill `noralos` is a NoralOS-native skill, NOT the operations skill of the same name from ClawHub
 
-`clawhub-bundle/_HANDOFF.md` lists `paperclip` (operations skill) in the rejected list. The fork's `skills/paperclip/SKILL.md` is the in-repo "interact with the Paperclip control plane" skill — completely different despite the slug collision. No conflict at install time as long as the install path doesn't try to overwrite the fork's bundled skill.
+`clawhub-bundle/_HANDOFF.md` lists `noralos` (operations skill) in the rejected list. The fork's `skills/noralos/SKILL.md` is the in-repo "interact with the NoralOS control plane" skill — completely different despite the slug collision. No conflict at install time as long as the install path doesn't try to overwrite the fork's bundled skill.
 
 ---
 
@@ -258,7 +258,7 @@ This pass was static / read-only against the cloned fork. The following could no
 1. **Real `.env` values** — none read by design. Whether the live install has `DATABASE_URL`, `BETTER_AUTH_SECRET`, etc. populated is unknown from this audit.
 2. **Service health** — whether the bot is currently running, what port it's actually listening on, whether the Postgres backend is up, whether heartbeats are scheduled and firing.
 3. **Live data** — number of companies / agents / issues / heartbeat runs / cost events currently in the DB. The audit knows the schema, not the contents.
-4. **Adapter session state** — which adapter sessions exist (`agentTaskSessions`), whether they're stale, how much disk space `/paperclip/instances/<id>/` is using.
+4. **Adapter session state** — which adapter sessions exist (`agentTaskSessions`), whether they're stale, how much disk space `/noralos/instances/<id>/` is using.
 5. **Storage backend** — `services/storage/` was not opened; whether it's local-disk, S3, or another driver in production is unknown.
 6. **Live skill installs** — the `companySkills` table contents on the running instance. Whether any of the 39 NoralAI-curated skills have already been installed at runtime is unknown from the repo alone.
 7. **Plugin worker pool** — whether plugins are running, what they are, whether any are misbehaving.
@@ -295,10 +295,10 @@ If still wanted, plan it now as a coordinated cutover (Open Issue #5). If deferr
 Capture the unknowns from §8 — env vars set, services running, DB stats, installed skills. Should be under an hour with read-only DB access. Output should be a short companion to this static audit.
 
 **5. Begin Phase 1 (Telegram input adapter).**
-Per the new plan: build it as a Paperclip plugin under `packages/plugins/<noralai-telegram>/` rather than a fork-internal modification, using `@paperclipai/plugin-sdk`. This keeps the Telegram adapter merge-friendly with upstream and aligns with the platform's plugin-first direction. Telegram message arrives → plugin tool creates an `issue` assigned to the right agent → heartbeat picks it up → agent response delivered back through the plugin.
+Per the new plan: build it as a NoralOS plugin under `packages/plugins/<noralai-telegram>/` rather than a fork-internal modification, using `@noralos/plugin-sdk`. This keeps the Telegram adapter merge-friendly with upstream and aligns with the platform's plugin-first direction. Telegram message arrives → plugin tool creates an `issue` assigned to the right agent → heartbeat picks it up → agent response delivered back through the plugin.
 
 **6. Decide Phase 4's output-filter strategy.**
 Option 2 (heartbeat post-processor) is the recommended near-term path given upstream lacks a hook (Open Issue #2). Confirm before writing code.
 
 **7. Update the migration plan's Phase 3 ("memory") decision-tree.**
-Per finding §3.7: there's no built-in PARA layer, so the choice is "use the para-memory-files skill" vs. "build a memory plugin," not "is PARA sufficient?" Edit MIGRATION.md accordingly. (This audit's `PAPERCLIP_MIGRATION.md` already filled the tags but did not rewrite the decision narrative — that's a separate edit Quentin should make.)
+Per finding §3.7: there's no built-in PARA layer, so the choice is "use the para-memory-files skill" vs. "build a memory plugin," not "is PARA sufficient?" Edit MIGRATION.md accordingly. (This audit's `NORALOS_MIGRATION.md` already filled the tags but did not rewrite the decision narrative — that's a separate edit Quentin should make.)

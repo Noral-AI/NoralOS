@@ -12,7 +12,7 @@ async function makeTempDir(prefix: string): Promise<string> {
 }
 
 describe("gemini local skill sync", () => {
-  const paperclipKey = "noralos/paperclip/paperclip";
+  const noralosKey = "noralos/noralos/noralos";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {
@@ -20,7 +20,7 @@ describe("gemini local skill sync", () => {
     cleanupDirs.clear();
   });
 
-  it("reports configured Paperclip skills and installs them into the Gemini skills home", async () => {
+  it("reports configured NoralOS skills and installs them into the Gemini skills home", async () => {
     const home = await makeTempDir("paperclip-gemini-skill-sync-");
     cleanupDirs.add(home);
 
@@ -32,24 +32,24 @@ describe("gemini local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        noralosSkillSync: {
+          desiredSkills: [noralosKey],
         },
       },
     } as const;
 
     const before = await listGeminiSkills(ctx);
     expect(before.mode).toBe("persistent");
-    expect(before.desiredSkills).toContain(paperclipKey);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.required).toBe(true);
-    expect(before.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("missing");
+    expect(before.desiredSkills).toContain(noralosKey);
+    expect(before.entries.find((entry) => entry.key === noralosKey)?.required).toBe(true);
+    expect(before.entries.find((entry) => entry.key === noralosKey)?.state).toBe("missing");
 
-    const after = await syncGeminiSkills(ctx, [paperclipKey]);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
+    const after = await syncGeminiSkills(ctx, [noralosKey]);
+    expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
     expect((await fs.lstat(path.join(home, ".gemini", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
   });
 
-  it("keeps required bundled Paperclip skills installed even when the desired set is emptied", async () => {
+  it("keeps required bundled NoralOS skills installed even when the desired set is emptied", async () => {
     const home = await makeTempDir("paperclip-gemini-skill-prune-");
     cleanupDirs.add(home);
 
@@ -61,13 +61,13 @@ describe("gemini local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
-          desiredSkills: [paperclipKey],
+        noralosSkillSync: {
+          desiredSkills: [noralosKey],
         },
       },
     } as const;
 
-    await syncGeminiSkills(configuredCtx, [paperclipKey]);
+    await syncGeminiSkills(configuredCtx, [noralosKey]);
 
     const clearedCtx = {
       ...configuredCtx,
@@ -75,15 +75,15 @@ describe("gemini local skill sync", () => {
         env: {
           HOME: home,
         },
-        paperclipSkillSync: {
+        noralosSkillSync: {
           desiredSkills: [],
         },
       },
     } as const;
 
     const after = await syncGeminiSkills(clearedCtx, []);
-    expect(after.desiredSkills).toContain(paperclipKey);
-    expect(after.entries.find((entry) => entry.key === paperclipKey)?.state).toBe("installed");
+    expect(after.desiredSkills).toContain(noralosKey);
+    expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
     expect((await fs.lstat(path.join(home, ".gemini", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
   });
 });

@@ -505,7 +505,7 @@ export type {
   PluginDatabaseDeclaration,
   PluginApiRouteCompanyResolution,
   PluginApiRouteDeclaration,
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginRecord,
   PluginDatabaseNamespaceRecord,
   PluginMigrationRecord,
@@ -919,7 +919,7 @@ export {
 } from "./routine-variables.js";
 
 export {
-  paperclipConfigSchema,
+  noralosConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,

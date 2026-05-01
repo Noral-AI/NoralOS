@@ -390,7 +390,7 @@ pnpm noralos worktree env --json
 eval "$(pnpm noralos worktree env)"
 ```
 
-For project execution worktrees, Paperclip can also run a project-defined provision command after it creates or reuses an isolated git worktree. Configure this on the project's execution workspace policy (`workspaceStrategy.provisionCommand`). The command runs inside the derived worktree and receives `NORALOS_WORKSPACE_*`, `NORALOS_PROJECT_ID`, `NORALOS_AGENT_ID`, and `NORALOS_ISSUE_*` environment variables so each repo can bootstrap itself however it wants.
+For project execution worktrees, NoralOS can also run a project-defined provision command after it creates or reuses an isolated git worktree. Configure this on the project's execution workspace policy (`workspaceStrategy.provisionCommand`). The command runs inside the derived worktree and receives `NORALOS_WORKSPACE_*`, `NORALOS_PROJECT_ID`, `NORALOS_AGENT_ID`, and `NORALOS_ISSUE_*` environment variables so each repo can bootstrap itself however it wants.
 
 ## Quick Health Checks
 
@@ -532,7 +532,7 @@ Agent-oriented invite onboarding now exposes machine-readable API docs:
 - `GET /api/invites/:token/onboarding` returns onboarding manifest details (registration endpoint, claim endpoint template, skill install hints).
 - `GET /api/invites/:token/onboarding.txt` returns a plain-text onboarding doc intended for both human operators and agents (llm.txt-style handoff), including optional inviter message and suggested network host candidates.
 - `GET /api/skills/index` lists available skill documents.
-- `GET /api/skills/noralos` returns the Paperclip heartbeat skill markdown.
+- `GET /api/skills/noralos` returns the NoralOS heartbeat skill markdown.
 
 ## OpenClaw Join Smoke Test
 

@@ -140,7 +140,7 @@ describe.sequential("cli auth routes", () => {
     expect(skillRes.status, skillRes.text || JSON.stringify(skillRes.body)).toBe(401);
   });
 
-  it.sequential("serves the invite-scoped paperclip skill anonymously for active invites", async () => {
+  it.sequential("serves the invite-scoped noralos skill anonymously for active invites", async () => {
     const invite = {
       id: "invite-1",
       companyId: "company-1",
@@ -168,7 +168,7 @@ describe.sequential("cli auth routes", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("text/markdown");
-    expect(res.text).toContain("# Paperclip Skill");
+    expect(res.text).toContain("# NoralOS Skill");
   });
 
   it.sequential("marks challenge status as requiring sign-in for anonymous viewers", async () => {

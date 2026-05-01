@@ -22,14 +22,14 @@ Use the scaffold package:
 
 ```bash
 pnpm --filter @noralos/create-noralos-plugin build
-node packages/plugins/create-paperclip-plugin/dist/index.js @yourscope/plugin-name --output ./packages/plugins/examples
+node packages/plugins/create-noralos-plugin/dist/index.js @yourscope/plugin-name --output ./packages/plugins/examples
 ```
 
 For a plugin that lives outside the NoralOS repo:
 
 ```bash
 pnpm --filter @noralos/create-noralos-plugin build
-node packages/plugins/create-paperclip-plugin/dist/index.js @yourscope/plugin-name \
+node packages/plugins/create-noralos-plugin/dist/index.js @yourscope/plugin-name \
   --output /absolute/path/to/plugin-repos \
   --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
 ```

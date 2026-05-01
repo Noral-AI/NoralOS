@@ -121,7 +121,7 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Generate Paperclip config
+      - name: Generate NoralOS config
         run: |
           mkdir -p ~/.noralos/instances/default
           cat > ~/.noralos/instances/default/config.json << 'CONF'

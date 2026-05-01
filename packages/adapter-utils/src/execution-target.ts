@@ -51,7 +51,7 @@ export interface AdapterSandboxExecutionTarget {
   leaseId?: string | null;
   remoteCwd: string;
   noralosApiUrl?: string | null;
-  paperclipTransport?: "direct" | "bridge";
+  noralosTransport?: "direct" | "bridge";
   timeoutMs?: number | null;
   runner?: CommandManagedRuntimeRunner;
 }
@@ -91,7 +91,7 @@ export interface AdapterExecutionTargetShellOptions {
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
 }
 
-export interface AdapterExecutionTargetPaperclipBridgeHandle {
+export interface AdapterExecutionTargetNoralosBridgeHandle {
   env: Record<string, string>;
   stop(): Promise<void>;
 }
@@ -117,7 +117,7 @@ function resolveHostForUrl(rawHost: string): string {
   return host;
 }
 
-function resolveDefaultPaperclipApiUrl(): string {
+function resolveDefaultNoralosApiUrl(): string {
   const runtimeHost = resolveHostForUrl(
     process.env.NORALOS_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
@@ -126,11 +126,11 @@ function resolveDefaultPaperclipApiUrl(): string {
   return `http://${runtimeHost}:${runtimePort}`;
 }
 
-function resolveSandboxPaperclipTransport(
-  target: Pick<AdapterSandboxExecutionTarget, "paperclipTransport" | "noralosApiUrl">,
+function resolveSandboxNoralosTransport(
+  target: Pick<AdapterSandboxExecutionTarget, "noralosTransport" | "noralosApiUrl">,
 ): "direct" | "bridge" {
-  if (target.paperclipTransport === "direct" || target.paperclipTransport === "bridge") {
-    return target.paperclipTransport;
+  if (target.noralosTransport === "direct" || target.noralosTransport === "bridge") {
+    return target.noralosTransport;
   }
   return target.noralosApiUrl ? "direct" : "bridge";
 }
@@ -180,21 +180,21 @@ export function resolveAdapterExecutionTargetCwd(
   return adapterExecutionTargetRemoteCwd(target, localFallbackCwd);
 }
 
-export function adapterExecutionTargetPaperclipApiUrl(
+export function adapterExecutionTargetNoralosApiUrl(
   target: AdapterExecutionTarget | null | undefined,
 ): string | null {
   if (target?.kind !== "remote") return null;
   if (target.transport === "ssh") return target.noralosApiUrl ?? target.spec.noralosApiUrl ?? null;
-  if (resolveSandboxPaperclipTransport(target) === "bridge") return null;
+  if (resolveSandboxNoralosTransport(target) === "bridge") return null;
   return target.noralosApiUrl ?? null;
 }
 
-export function adapterExecutionTargetUsesPaperclipBridge(
+export function adapterExecutionTargetUsesNoralosBridge(
   target: AdapterExecutionTarget | null | undefined,
 ): boolean {
   return target?.kind === "remote" &&
     target.transport === "sandbox" &&
-    resolveSandboxPaperclipTransport(target) === "bridge";
+    resolveSandboxNoralosTransport(target) === "bridge";
 }
 
 export function describeAdapterExecutionTarget(
@@ -401,7 +401,7 @@ export async function ensureAdapterExecutionTargetFile(
  * For local targets this delegates to the local `ensureAbsoluteDirectory` helper
  * (Node fs). For remote (SSH/sandbox) targets it shells out and runs
  * `mkdir -p` (when allowed) followed by a `[ -d ]` check so the result reflects
- * the directory state inside the environment, not on the Paperclip host.
+ * the directory state inside the environment, not on the NoralOS host.
  *
  * Throws an Error with a human-readable message on failure.
  */
@@ -458,15 +458,15 @@ export function adapterExecutionTargetSessionIdentity(
 ): Record<string, unknown> | null {
   if (!target || target.kind === "local") return null;
   if (target.transport === "ssh") return buildRemoteExecutionSessionIdentity(target.spec);
-  const paperclipTransport = resolveSandboxPaperclipTransport(target);
+  const noralosTransport = resolveSandboxNoralosTransport(target);
   return {
     transport: "sandbox",
     providerKey: target.providerKey ?? null,
     environmentId: target.environmentId ?? null,
     leaseId: target.leaseId ?? null,
     remoteCwd: target.remoteCwd,
-    paperclipTransport,
-    ...(paperclipTransport === "direct" && target.noralosApiUrl ? { noralosApiUrl: target.noralosApiUrl } : {}),
+    noralosTransport,
+    ...(noralosTransport === "direct" && target.noralosApiUrl ? { noralosApiUrl: target.noralosApiUrl } : {}),
   };
 }
 
@@ -486,7 +486,7 @@ export function adapterExecutionTargetSessionMatches(
     readStringMeta(parsedSaved, "environmentId") === current?.environmentId &&
     readStringMeta(parsedSaved, "leaseId") === current?.leaseId &&
     readStringMeta(parsedSaved, "remoteCwd") === current?.remoteCwd &&
-    readStringMeta(parsedSaved, "paperclipTransport") === (current?.paperclipTransport ?? null) &&
+    readStringMeta(parsedSaved, "noralosTransport") === (current?.noralosTransport ?? null) &&
     readStringMeta(parsedSaved, "noralosApiUrl") === (current?.noralosApiUrl ?? null)
   );
 }
@@ -519,7 +519,7 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
 
   if (kind === "remote" && readStringMeta(parsed, "transport") === "sandbox") {
     const remoteCwd = readStringMeta(parsed, "remoteCwd");
-    const paperclipTransport = readStringMeta(parsed, "paperclipTransport");
+    const noralosTransport = readStringMeta(parsed, "noralosTransport");
     if (!remoteCwd) return null;
     return {
       kind: "remote",
@@ -529,9 +529,9 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd,
       noralosApiUrl: readStringMeta(parsed, "noralosApiUrl"),
-      paperclipTransport:
-        paperclipTransport === "direct" || paperclipTransport === "bridge"
-          ? paperclipTransport
+      noralosTransport:
+        noralosTransport === "direct" || noralosTransport === "bridge"
+          ? noralosTransport
           : undefined,
       timeoutMs: typeof parsed.timeoutMs === "number" ? parsed.timeoutMs : null,
     };
@@ -690,7 +690,7 @@ async function readBridgeForwardResponseBody(response: Response, maxBodyBytes: n
   return Buffer.concat(chunks, totalBytes).toString("utf8");
 }
 
-export async function startAdapterExecutionTargetPaperclipBridge(input: {
+export async function startAdapterExecutionTargetNoralosBridge(input: {
   runId: string;
   target: AdapterExecutionTarget | null | undefined;
   runtimeRootDir: string | null | undefined;
@@ -699,8 +699,8 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
   hostApiUrl?: string | null;
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
   maxBodyBytes?: number | null;
-}): Promise<AdapterExecutionTargetPaperclipBridgeHandle | null> {
-  if (!adapterExecutionTargetUsesPaperclipBridge(input.target)) {
+}): Promise<AdapterExecutionTargetNoralosBridgeHandle | null> {
+  if (!adapterExecutionTargetUsesNoralosBridge(input.target)) {
     return null;
   }
   if (!input.target || input.target.kind !== "remote" || input.target.transport !== "sandbox") {
@@ -730,7 +730,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
     input.hostApiUrl?.trim() ||
     process.env.NORALOS_RUNTIME_API_URL?.trim() ||
     process.env.NORALOS_API_URL?.trim() ||
-    resolveDefaultPaperclipApiUrl();
+    resolveDefaultNoralosApiUrl();
 
   await onLog(
     "stdout",

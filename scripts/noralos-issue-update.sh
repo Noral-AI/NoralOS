@@ -105,6 +105,6 @@ fi
 curl -sS -X PATCH \
   "$NORALOS_API_URL/api/issues/$issue_id" \
   -H "Authorization: Bearer $NORALOS_API_KEY" \
-  -H "X-Paperclip-Run-Id: $NORALOS_RUN_ID" \
+  -H "X-NoralOS-Run-Id: $NORALOS_RUN_ID" \
   -H 'Content-Type: application/json' \
   --data-binary "$payload"

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { writePaperclipSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
+import { writeNoralosSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
 import {
   agents,
   companies,
@@ -144,10 +144,10 @@ describe("feedbackService.saveIssueVote", () => {
       {
         id: randomUUID(),
         companyId,
-        key: "noralos/paperclip/paperclip",
+        key: "noralos/noralos/noralos",
         slug: "paperclip",
         name: "NoralOS",
-        markdown: "# Paperclip",
+        markdown: "# NoralOS",
         sourceType: "catalog",
         sourceLocator: null,
         sourceRef: null,
@@ -174,7 +174,7 @@ describe("feedbackService.saveIssueVote", () => {
       role: "engineer",
       status: "active",
       adapterType: "codex_local",
-      adapterConfig: writePaperclipSkillSyncPreference(
+      adapterConfig: writeNoralosSkillSyncPreference(
         {
           model: "gpt-5.4",
           instructionsBundleMode: "external",
@@ -182,7 +182,7 @@ describe("feedbackService.saveIssueVote", () => {
           instructionsEntryFile: "AGENTS.md",
           instructionsFilePath: instructionsPath,
         },
-        ["noralos/paperclip/paperclip", "octo/research/public-skill"],
+        ["noralos/noralos/noralos", "octo/research/public-skill"],
       ),
       runtimeConfig: {
         heartbeat: {

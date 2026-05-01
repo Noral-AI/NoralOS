@@ -540,12 +540,12 @@ describe("MarkdownEditor", () => {
   });
 
   it("keeps mention queries active across spaces", () => {
-    expect(findMentionMatch("Ping @Paperclip App", "Ping @Paperclip App".length)).toEqual({
+    expect(findMentionMatch("Ping @NoralOS App", "Ping @NoralOS App".length)).toEqual({
       trigger: "mention",
       marker: "@",
       query: "NoralOS App",
       atPos: 5,
-      endPos: "Ping @Paperclip App".length,
+      endPos: "Ping @NoralOS App".length,
     });
   });
 
@@ -715,7 +715,7 @@ describe("MarkdownEditor", () => {
     });
 
     expect(handleChange).toHaveBeenCalledWith(
-      `[@Paperclip App](${buildProjectMentionHref("project-123", "#336699")}) `,
+      `[@NoralOS App](${buildProjectMentionHref("project-123", "#336699")}) `,
     );
 
     await act(async () => {

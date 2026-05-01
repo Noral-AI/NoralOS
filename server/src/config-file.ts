@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { paperclipConfigSchema, type NoralosConfig } from "@noralos/shared";
+import { noralosConfigSchema, type NoralosConfig } from "@noralos/shared";
 import { resolveNoralosConfigPath } from "./paths.js";
 
 export function readConfigFile(): NoralosConfig | null {
@@ -9,7 +9,7 @@ export function readConfigFile(): NoralosConfig | null {
 
   try {
     const raw = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    return paperclipConfigSchema.parse(raw);
+    return noralosConfigSchema.parse(raw);
   } catch {
     return null;
   }

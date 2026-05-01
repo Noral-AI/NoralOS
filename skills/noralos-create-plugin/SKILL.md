@@ -34,14 +34,14 @@ Use the scaffold package instead of hand-writing the boilerplate:
 
 ```bash
 pnpm --filter @noralos/create-noralos-plugin build
-node packages/plugins/create-paperclip-plugin/dist/index.js <npm-package-name> --output <target-dir>
+node packages/plugins/create-noralos-plugin/dist/index.js <npm-package-name> --output <target-dir>
 ```
 
-For a plugin that lives outside the Paperclip repo, pass `--sdk-path` and let the scaffold snapshot the local SDK/shared packages into `.paperclip-sdk/`:
+For a plugin that lives outside the NoralOS repo, pass `--sdk-path` and let the scaffold snapshot the local SDK/shared packages into `.paperclip-sdk/`:
 
 ```bash
 pnpm --filter @noralos/create-noralos-plugin build
-node packages/plugins/create-paperclip-plugin/dist/index.js @acme/plugin-name \
+node packages/plugins/create-noralos-plugin/dist/index.js @acme/plugin-name \
   --output /absolute/path/to/plugin-repos \
   --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
 ```

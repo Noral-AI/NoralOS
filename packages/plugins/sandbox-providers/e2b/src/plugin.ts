@@ -53,7 +53,7 @@ async function createSandbox(config: E2bDriverConfig): Promise<Sandbox> {
     apiKey: resolveApiKey(config),
     timeoutMs: config.timeoutMs,
     metadata: {
-      paperclipProvider: "e2b",
+      noralosProvider: "e2b",
     },
   };
   return await Sandbox.create(config.template, options);

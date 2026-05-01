@@ -5,12 +5,12 @@ import type { AdapterExecutionContext, AdapterExecutionResult } from "@noralos/a
 import type { RunProcessResult } from "@noralos/adapter-utils/server-utils";
 import {
   adapterExecutionTargetIsRemote,
-  adapterExecutionTargetPaperclipApiUrl,
+  adapterExecutionTargetNoralosApiUrl,
   adapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-  adapterExecutionTargetUsesPaperclipBridge,
+  adapterExecutionTargetUsesNoralosBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   prepareAdapterExecutionTargetRuntime,
@@ -18,7 +18,7 @@ import {
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
 import {
   asString,
@@ -27,16 +27,16 @@ import {
   asStringArray,
   parseObject,
   parseJson,
-  applyPaperclipWorkspaceEnv,
-  buildPaperclipEnv,
-  readPaperclipRuntimeSkillEntries,
+  applyNoralosWorkspaceEnv,
+  buildNoralosEnv,
+  readNoralosRuntimeSkillEntries,
   joinPromptSections,
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
   ensurePathInEnv,
   renderTemplate,
-  renderPaperclipWakePrompt,
-  stringifyPaperclipWakePayload,
+  renderNoralosWakePrompt,
+  stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
 } from "@noralos/adapter-utils/server-utils";
 import { shellQuote } from "@noralos/adapter-utils/ssh";
@@ -115,7 +115,7 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   const { runId, agent, config, context, executionTarget, authToken } = input;
 
   const command = asString(config.command, "claude");
-  const workspaceContext = parseObject(context.paperclipWorkspace);
+  const workspaceContext = parseObject(context.noralosWorkspace);
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
   const workspaceStrategy = asString(workspaceContext.strategy, "");
@@ -125,22 +125,22 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   const workspaceBranch = asString(workspaceContext.branchName, "") || null;
   const workspaceWorktreePath = asString(workspaceContext.worktreePath, "") || null;
   const agentHome = asString(workspaceContext.agentHome, "") || null;
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.noralosWorkspaces)
+    ? context.noralosWorkspaces.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
-  const runtimeServiceIntents = Array.isArray(context.paperclipRuntimeServiceIntents)
-    ? context.paperclipRuntimeServiceIntents.filter(
+  const runtimeServiceIntents = Array.isArray(context.noralosRuntimeServiceIntents)
+    ? context.noralosRuntimeServiceIntents.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
-  const runtimeServices = Array.isArray(context.paperclipRuntimeServices)
-    ? context.paperclipRuntimeServices.filter(
+  const runtimeServices = Array.isArray(context.noralosRuntimeServices)
+    ? context.noralosRuntimeServices.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
-  const runtimePrimaryUrl = asString(context.paperclipRuntimePrimaryUrl, "");
+  const runtimePrimaryUrl = asString(context.noralosRuntimePrimaryUrl, "");
   const configuredCwd = asString(config.cwd, "");
   const useConfiguredInsteadOfAgentHome = workspaceSource === "agent_home" && configuredCwd.length > 0;
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
@@ -150,7 +150,7 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   const envConfig = parseObject(config.env);
   const hasExplicitApiKey =
     typeof envConfig.NORALOS_API_KEY === "string" && envConfig.NORALOS_API_KEY.trim().length > 0;
-  const env: Record<string, string> = { ...buildPaperclipEnv(agent) };
+  const env: Record<string, string> = { ...buildNoralosEnv(agent) };
   env.NORALOS_RUN_ID = runId;
 
   const wakeTaskId =
@@ -176,7 +176,7 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
+  const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
 
   if (wakeTaskId) {
     env.NORALOS_TASK_ID = wakeTaskId;
@@ -199,7 +199,7 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   if (wakePayloadJson) {
     env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
   }
-  applyPaperclipWorkspaceEnv(env, {
+  applyNoralosWorkspaceEnv(env, {
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceStrategy,
@@ -222,9 +222,9 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   if (runtimePrimaryUrl) {
     env.NORALOS_RUNTIME_PRIMARY_URL = runtimePrimaryUrl;
   }
-  const targetPaperclipApiUrl = adapterExecutionTargetPaperclipApiUrl(executionTarget);
-  if (targetPaperclipApiUrl) {
-    env.NORALOS_API_URL = targetPaperclipApiUrl;
+  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
+  if (targetNoralosApiUrl) {
+    env.NORALOS_API_URL = targetNoralosApiUrl;
   }
 
   for (const [key, value] of Object.entries(envConfig)) {
@@ -359,7 +359,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     ),
   );
   const billingType = resolveClaudeBillingType(effectiveEnv);
-  const claudeSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
+  const claudeSkillEntries = await readNoralosRuntimeSkillEntries(config, __moduleDir);
   const desiredSkillNames = new Set(resolveClaudeDesiredSkillNames(config, claudeSkillEntries));
   // When instructionsFilePath is configured, build a stable content-addressed
   // file that includes both the file content and the path directive, so we only
@@ -468,9 +468,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       },
     );
   }
-  let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
-  if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(executionTarget)) {
-    paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
+  let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
+  if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
+    noralosBridge = await startAdapterExecutionTargetNoralosBridge({
       runId,
       target: executionTarget,
       runtimeRootDir: preparedExecutionTargetRuntime?.runtimeRootDir,
@@ -478,8 +478,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
-    if (paperclipBridge) {
-      Object.assign(env, paperclipBridge.env);
+    if (noralosBridge) {
+      Object.assign(env, noralosBridge.env);
       const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });
       loggedEnv = buildInvocationEnvForLogs(env, {
         runtimeEnv,
@@ -549,11 +549,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     !sessionId && bootstrapPromptTemplate.trim().length > 0
       ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
       : "";
-  const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, { resumedSession: Boolean(sessionId) });
+  const wakePrompt = renderNoralosWakePrompt(context.noralosWake, { resumedSession: Boolean(sessionId) });
   const shouldUseResumeDeltaPrompt = Boolean(sessionId) && wakePrompt.length > 0;
   const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
-  const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
-  const taskContextNote = asString(context.paperclipTaskMarkdown, "").trim();
+  const sessionHandoffNote = asString(context.noralosSessionHandoffMarkdown, "").trim();
+  const taskContextNote = asString(context.noralosTaskMarkdown, "").trim();
   const prompt = joinPromptSections([
     renderedBootstrapPrompt,
     wakePrompt,
@@ -846,8 +846,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
     return toAdapterResult(initial, { fallbackSessionId: runtimeSessionId || runtime.sessionId });
   } finally {
-    if (paperclipBridge) {
-      await paperclipBridge.stop();
+    if (noralosBridge) {
+      await noralosBridge.stop();
     }
     if (restoreRemoteWorkspace) {
       await onLog(

@@ -166,10 +166,10 @@ describeEmbeddedPostgres("cleanup removal services", () => {
     await db.insert(companySkills).values({
       id: randomUUID(),
       companyId,
-      key: "noralos/paperclip/paperclip",
+      key: "noralos/noralos/noralos",
       slug: "paperclip",
       name: "NoralOS",
-      markdown: "# Paperclip",
+      markdown: "# NoralOS",
     });
 
     await db.insert(activityLog).values({

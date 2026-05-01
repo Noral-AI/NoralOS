@@ -574,7 +574,7 @@ This is critical for operators. Without observability, debugging plugin issues r
 
 A `@noralos/plugin-test-harness` package should provide a mock host with in-memory stores, synthetic event emission, and `getData`/`performAction`/`executeTool` simulation. Plugin authors should be able to write unit tests without a running Paperclip instance.
 
-A `create-paperclip-plugin` CLI should scaffold a working plugin with manifest, worker, UI bundle, test file, and build config.
+A `create-noralos-plugin` CLI should scaffold a working plugin with manifest, worker, UI bundle, test file, and build config.
 
 Low authoring friction was called out as one of `opencode`'s best qualities. The test harness and starter template are how NoralOS achieves the same.
 

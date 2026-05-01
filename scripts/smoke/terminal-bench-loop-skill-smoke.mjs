@@ -56,7 +56,7 @@ Usage:
   pnpm smoke:terminal-bench-loop-skill
 
 Options:
-  --source-issue-id <uuid>  Attach smoke issues under an existing Paperclip issue.
+  --source-issue-id <uuid>  Attach smoke issues under an existing NoralOS issue.
   --project-id <uuid>       Override inferred project id.
   --goal-id <uuid>          Override inferred goal id.
   --run-key <string>        Stable key used in smoke titles and mocked artifact paths.

@@ -77,7 +77,7 @@ describeEmbeddedPostgres("heartbeat plugin environments", () => {
     const environmentId = randomUUID();
     const pluginId = randomUUID();
     const agentId = randomUUID();
-    const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-plugin-env-heartbeat-"));
+    const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "noralos-plugin-env-heartbeat-"));
     tempRoots.push(workspaceRoot);
     const workerManager = {
       isRunning: vi.fn((id: string) => id === pluginId),

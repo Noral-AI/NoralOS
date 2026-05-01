@@ -88,30 +88,30 @@ describe("applyRunScopedMentionedSkillKeys", () => {
   it("adds mentioned skills without mutating the original config", () => {
     const originalConfig = {
       command: "codex",
-      paperclipSkillSync: {
-        desiredSkills: ["noralos/paperclip/paperclip"],
+      noralosSkillSync: {
+        desiredSkills: ["noralos/noralos/noralos"],
       },
     };
 
     const updatedConfig = applyRunScopedMentionedSkillKeys(originalConfig, [
       "company/company-1/release-changelog",
-      "noralos/paperclip/paperclip",
+      "noralos/noralos/noralos",
       "company/company-1/release-changelog",
     ]);
 
     expect(updatedConfig).toEqual({
       command: "codex",
-      paperclipSkillSync: {
+      noralosSkillSync: {
         desiredSkills: [
-          "noralos/paperclip/paperclip",
+          "noralos/noralos/noralos",
           "company/company-1/release-changelog",
         ],
       },
     });
     expect(originalConfig).toEqual({
       command: "codex",
-      paperclipSkillSync: {
-        desiredSkills: ["noralos/paperclip/paperclip"],
+      noralosSkillSync: {
+        desiredSkills: ["noralos/noralos/noralos"],
       },
     });
   });

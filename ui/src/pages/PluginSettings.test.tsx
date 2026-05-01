@@ -75,7 +75,7 @@ describe("PluginSettings", () => {
       manifestJson: {
         displayName: "E2B Sandbox Provider",
         version: "0.1.0",
-        description: "E2B environments for Paperclip.",
+        description: "E2B environments for NoralOS.",
         author: "NoralOS",
         capabilities: ["environment.drivers.register"],
         environmentDrivers: [

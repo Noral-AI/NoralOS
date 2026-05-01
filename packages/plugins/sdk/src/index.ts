@@ -91,7 +91,7 @@ export {
 // Plugin definition and lifecycle types
 export type {
   PluginDefinition,
-  PaperclipPlugin,
+  NoralosPlugin,
   PluginHealthDiagnostics,
   PluginConfigValidationResult,
   PluginWebhookInput,
@@ -250,7 +250,7 @@ export type {
 // Plugin authors import manifest types from here so they have a single
 // dependency (@noralos/plugin-sdk) for all plugin authoring needs.
 export type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginJobDeclaration,
   PluginWebhookDeclaration,
   PluginToolDeclaration,

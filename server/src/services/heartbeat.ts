@@ -127,8 +127,8 @@ import {
   type SessionCompactionPolicy,
 } from "@noralos/adapter-utils";
 import {
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
+  readNoralosSkillSyncPreference,
+  writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
 import { extractSkillMentionIds } from "@noralos/shared";
 import { environmentService } from "./environments.js";
@@ -151,8 +151,8 @@ const LIVENESS_BOOKKEEPING_ACTIVITY_ACTIONS = [
 ];
 const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
 const WAKE_COMMENT_IDS_KEY = "wakeCommentIds";
-const NORALOS_WAKE_PAYLOAD_KEY = "paperclipWake";
-const NORALOS_HARNESS_CHECKOUT_KEY = "paperclipHarnessCheckedOut";
+const NORALOS_WAKE_PAYLOAD_KEY = "noralosWake";
+const NORALOS_HARNESS_CHECKOUT_KEY = "noralosHarnessCheckedOut";
 const DETACHED_PROCESS_ERROR_CODE = "process_detached";
 const REPO_ONLY_CWD_SENTINEL = "/__paperclip_repo_only__";
 const MANAGED_WORKSPACE_GIT_CLONE_TIMEOUT_MS = 10 * 60 * 1000;
@@ -315,8 +315,8 @@ export function applyRunScopedMentionedSkillKeys(
   );
   if (normalizedSkillKeys.length === 0) return config;
 
-  const existingPreference = readPaperclipSkillSyncPreference(config);
-  return writePaperclipSkillSyncPreference(config, [
+  const existingPreference = readNoralosSkillSyncPreference(config);
+  return writeNoralosSkillSyncPreference(config, [
     ...existingPreference.desiredSkills,
     ...normalizedSkillKeys,
   ]);
@@ -1751,7 +1751,7 @@ export function mergeCoalescedContextSnapshot(
   return merged;
 }
 
-async function buildPaperclipWakePayload(input: {
+async function buildNoralosWakePayload(input: {
   db: Db;
   companyId: string;
   contextSnapshot: Record<string, unknown>;
@@ -1942,7 +1942,7 @@ function isHeartbeatRunTerminalStatus(
   );
 }
 
-export function buildPaperclipTaskMarkdown(input: {
+export function buildNoralosTaskMarkdown(input: {
   issue: {
     id: string;
     identifier: string | null;
@@ -5035,16 +5035,16 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       ? await getIssueContinuationSummaryDocument(db, issueRef.id)
       : null;
     if (continuationSummary) {
-      context.paperclipContinuationSummary = {
+      context.noralosContinuationSummary = {
         key: continuationSummary.key,
         title: continuationSummary.title,
         body: continuationSummary.body,
         updatedAt: continuationSummary.updatedAt.toISOString(),
       };
     } else {
-      delete context.paperclipContinuationSummary;
+      delete context.noralosContinuationSummary;
     }
-    const paperclipWakePayload = await buildPaperclipWakePayload({
+    const noralosWakePayload = await buildNoralosWakePayload({
       db,
       companyId: agent.companyId,
       contextSnapshot: context,
@@ -5059,12 +5059,12 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           }
         : null,
     });
-    if (paperclipWakePayload) {
-      context[NORALOS_WAKE_PAYLOAD_KEY] = paperclipWakePayload;
+    if (noralosWakePayload) {
+      context[NORALOS_WAKE_PAYLOAD_KEY] = noralosWakePayload;
     } else {
       delete context[NORALOS_WAKE_PAYLOAD_KEY];
     }
-    const taskMarkdown = buildPaperclipTaskMarkdown({
+    const taskMarkdown = buildNoralosTaskMarkdown({
       issue: issueRef
         ? {
             id: issueRef.id,
@@ -5076,24 +5076,24 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       wakeComment: wakeCommentContext,
     });
     if (issueRef) {
-      context.paperclipIssue = {
+      context.noralosIssue = {
         id: issueRef.id,
         identifier: issueRef.identifier,
         title: issueRef.title,
         description: issueRef.description,
       };
     } else {
-      delete context.paperclipIssue;
+      delete context.noralosIssue;
     }
     if (wakeCommentContext) {
-      context.paperclipWakeComment = wakeCommentContext;
+      context.noralosWakeComment = wakeCommentContext;
     } else {
-      delete context.paperclipWakeComment;
+      delete context.noralosWakeComment;
     }
     if (taskMarkdown) {
-      context.paperclipTaskMarkdown = taskMarkdown;
+      context.noralosTaskMarkdown = taskMarkdown;
     } else {
-      delete context.paperclipTaskMarkdown;
+      delete context.noralosTaskMarkdown;
     }
     const existingExecutionWorkspace =
       issueRef?.executionWorkspaceId ? await executionWorkspacesSvc.getById(issueRef.executionWorkspaceId) : null;
@@ -5158,10 +5158,10 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     });
     const modelProfileMetadata = modelProfileRunMetadata(modelProfileApplication);
     if (modelProfileMetadata) {
-      context.paperclipModelProfile = modelProfileMetadata;
+      context.noralosModelProfile = modelProfileMetadata;
       if (modelProfileApplication.requested) context.modelProfile = modelProfileApplication.requested;
     } else {
-      delete context.paperclipModelProfile;
+      delete context.noralosModelProfile;
     }
     const mergedConfig = mergeModelProfileAdapterConfig({
       baseConfig: persistedWorkspaceManagedConfig,
@@ -5188,7 +5188,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId);
     let runtimeConfig = {
       ...effectiveResolvedConfig,
-      paperclipRuntimeSkills: runtimeSkillEntries,
+      noralosRuntimeSkills: runtimeSkillEntries,
     };
     const workspaceOperationRecorder = workspaceOperationsSvc.createRecorder({
       companyId: agent.companyId,
@@ -5395,7 +5395,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     const workspaceRealization = realizationResult.workspaceRealization;
     const executionTarget = realizationResult.executionTarget;
     const remoteExecution = realizationResult.remoteExecution;
-    context.paperclipEnvironment = {
+    context.noralosEnvironment = {
       id: selectedEnvironment.id,
       name: selectedEnvironment.name,
       driver: selectedEnvironment.driver,
@@ -5447,7 +5447,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           ]
         : []),
     ];
-    context.paperclipWorkspace = {
+    context.noralosWorkspace = {
       cwd: executionWorkspace.cwd,
       source: executionWorkspace.source,
       mode: effectiveExecutionWorkspaceMode,
@@ -5465,7 +5465,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         return home;
       })(),
     };
-    context.paperclipWorkspaces = resolvedWorkspace.workspaceHints;
+    context.noralosWorkspaces = resolvedWorkspace.workspaceHints;
     const runtimeServiceIntents = (() => {
       const runtimeConfig = parseObject(resolvedConfig.workspaceRuntime);
       return Array.isArray(runtimeConfig.services)
@@ -5475,9 +5475,9 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         : [];
     })();
     if (runtimeServiceIntents.length > 0) {
-      context.paperclipRuntimeServiceIntents = runtimeServiceIntents;
+      context.noralosRuntimeServiceIntents = runtimeServiceIntents;
     } else {
-      delete context.paperclipRuntimeServiceIntents;
+      delete context.noralosRuntimeServiceIntents;
     }
     if (executionWorkspace.projectId && !readNonEmptyString(context.projectId)) {
       context.projectId = executionWorkspace.projectId;
@@ -5501,9 +5501,9 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       continuationSummaryBody: continuationSummary?.body ?? null,
     });
     if (sessionCompaction.rotate) {
-      context.paperclipSessionHandoffMarkdown = sessionCompaction.handoffMarkdown;
-      context.paperclipSessionRotationReason = sessionCompaction.reason;
-      context.paperclipPreviousSessionId = previousSessionDisplayId ?? runtimeSessionIdForAdapter;
+      context.noralosSessionHandoffMarkdown = sessionCompaction.handoffMarkdown;
+      context.noralosSessionRotationReason = sessionCompaction.reason;
+      context.noralosPreviousSessionId = previousSessionDisplayId ?? runtimeSessionIdForAdapter;
       runtimeSessionIdForAdapter = null;
       runtimeSessionParamsForAdapter = null;
       previousSessionDisplayId = null;
@@ -5513,9 +5513,9 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         );
       }
     } else {
-      delete context.paperclipSessionHandoffMarkdown;
-      delete context.paperclipSessionRotationReason;
-      delete context.paperclipPreviousSessionId;
+      delete context.noralosSessionHandoffMarkdown;
+      delete context.noralosSessionRotationReason;
+      delete context.noralosPreviousSessionId;
     }
 
     const runtimeForAdapter = {
@@ -5694,8 +5694,8 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         onLog,
       });
       if (runtimeServices.length > 0) {
-        context.paperclipRuntimeServices = runtimeServices;
-        context.paperclipRuntimePrimaryUrl =
+        context.noralosRuntimeServices = runtimeServices;
+        context.noralosRuntimePrimaryUrl =
           runtimeServices.find((service) => readNonEmptyString(service.url))?.url ?? null;
         await db
           .update(heartbeatRuns)
@@ -5800,8 +5800,8 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           ...runtimeServices,
           ...adapterManagedRuntimeServices,
         ];
-        context.paperclipRuntimeServices = combinedRuntimeServices;
-        context.paperclipRuntimePrimaryUrl =
+        context.noralosRuntimeServices = combinedRuntimeServices;
+        context.noralosRuntimePrimaryUrl =
           combinedRuntimeServices.find((service) => readNonEmptyString(service.url))?.url ?? null;
         await db
           .update(heartbeatRuns)

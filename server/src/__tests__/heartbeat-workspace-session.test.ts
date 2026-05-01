@@ -394,7 +394,7 @@ describe("comment wake batching", () => {
         wakeReason: "issue_commented",
         wakeCommentId: "comment-1",
         wakeCommentIds: ["comment-1"],
-        paperclipWake: {
+        noralosWake: {
           latestCommentId: "comment-1",
         },
       },
@@ -408,7 +408,7 @@ describe("comment wake batching", () => {
     expect(extractWakeCommentIds(merged)).toEqual(["comment-1", "comment-2"]);
     expect(merged.commentId).toBe("comment-2");
     expect(merged.wakeCommentId).toBe("comment-2");
-    expect(merged.paperclipWake).toBeUndefined();
+    expect(merged.noralosWake).toBeUndefined();
   });
 });
 
@@ -509,7 +509,7 @@ describe("prioritizeProjectWorkspaceCandidatesForRun", () => {
 });
 
 describe("parseSessionCompactionPolicy", () => {
-  it("disables Paperclip-managed rotation by default for codex and claude local", () => {
+  it("disables NoralOS-managed rotation by default for codex and claude local", () => {
     expect(parseSessionCompactionPolicy(buildAgent("codex_local"))).toEqual({
       enabled: true,
       maxSessionRuns: 0,

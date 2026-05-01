@@ -323,7 +323,7 @@ export type {
   PluginDatabaseDeclaration,
   PluginApiRouteCompanyResolution,
   PluginApiRouteDeclaration,
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginRecord,
   PluginDatabaseNamespaceRecord,
   PluginMigrationRecord,

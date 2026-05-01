@@ -4,34 +4,34 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-  adapterExecutionTargetPaperclipApiUrl,
+  adapterExecutionTargetNoralosApiUrl,
   adapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
-  adapterExecutionTargetUsesPaperclipBridge,
+  adapterExecutionTargetUsesNoralosBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   prepareAdapterExecutionTargetRuntime,
   readAdapterExecutionTarget,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
-  startAdapterExecutionTargetPaperclipBridge,
+  startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
 import {
   asString,
   asNumber,
   parseObject,
-  applyPaperclipWorkspaceEnv,
-  buildPaperclipEnv,
+  applyNoralosWorkspaceEnv,
+  buildNoralosEnv,
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
-  ensurePaperclipSkillSymlink,
+  ensureNoralosSkillSymlink,
   ensurePathInEnv,
-  readPaperclipRuntimeSkillEntries,
-  resolvePaperclipDesiredSkillNames,
+  readNoralosRuntimeSkillEntries,
+  resolveNoralosDesiredSkillNames,
   renderTemplate,
-  renderPaperclipWakePrompt,
-  stringifyPaperclipWakePayload,
+  renderNoralosWakePrompt,
+  stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   joinPromptSections,
 } from "@noralos/adapter-utils/server-utils";
@@ -89,7 +89,7 @@ function resolveCodexBiller(env: Record<string, string>, billingType: "api" | "s
   return billingType === "subscription" ? "chatgpt" : openAiCompatibleBiller ?? "openai";
 }
 
-async function isLikelyPaperclipRepoRoot(candidate: string): Promise<boolean> {
+async function isLikelyNoralosRepoRoot(candidate: string): Promise<boolean> {
   const [hasWorkspace, hasPackageJson, hasServerDir, hasAdapterUtilsDir] = await Promise.all([
     pathExists(path.join(candidate, "pnpm-workspace.yaml")),
     pathExists(path.join(candidate, "package.json")),
@@ -100,7 +100,7 @@ async function isLikelyPaperclipRepoRoot(candidate: string): Promise<boolean> {
   return hasWorkspace && hasPackageJson && hasServerDir && hasAdapterUtilsDir;
 }
 
-async function isLikelyPaperclipRuntimeSkillPath(
+async function isLikelyNoralosRuntimeSkillPath(
   candidate: string,
   skillName: string,
   options: { requireSkillMarkdown?: boolean } = {},
@@ -114,7 +114,7 @@ async function isLikelyPaperclipRuntimeSkillPath(
 
   let cursor = path.dirname(skillsRoot);
   for (let depth = 0; depth < 6; depth += 1) {
-    if (await isLikelyPaperclipRepoRoot(cursor)) return true;
+    if (await isLikelyNoralosRepoRoot(cursor)) return true;
     const parent = path.dirname(cursor);
     if (parent === cursor) break;
     cursor = parent;
@@ -123,7 +123,7 @@ async function isLikelyPaperclipRuntimeSkillPath(
   return false;
 }
 
-async function pruneBrokenUnavailablePaperclipSkillSymlinks(
+async function pruneBrokenUnavailableNoralosSkillSymlinks(
   skillsHome: string,
   allowedSkillNames: Iterable<string>,
   onLog: AdapterExecutionContext["onLog"],
@@ -141,7 +141,7 @@ async function pruneBrokenUnavailablePaperclipSkillSymlinks(
     const resolvedLinkedPath = path.resolve(path.dirname(target), linkedPath);
     if (await pathExists(resolvedLinkedPath)) continue;
     if (
-      !(await isLikelyPaperclipRuntimeSkillPath(resolvedLinkedPath, entry.name, {
+      !(await isLikelyNoralosRuntimeSkillPath(resolvedLinkedPath, entry.name, {
         requireSkillMarkdown: false,
       }))
     ) {
@@ -217,7 +217,7 @@ export async function ensureCodexSkillsInjected(
   onLog: AdapterExecutionContext["onLog"],
   options: EnsureCodexSkillsInjectedOptions = {},
 ) {
-  const allSkillsEntries = options.skillsEntries ?? await readPaperclipRuntimeSkillEntries({}, __moduleDir);
+  const allSkillsEntries = options.skillsEntries ?? await readNoralosRuntimeSkillEntries({}, __moduleDir);
   const desiredSkillNames =
     options.desiredSkillNames ?? allSkillsEntries.map((entry) => entry.key);
   const desiredSet = new Set(desiredSkillNames);
@@ -240,7 +240,7 @@ export async function ensureCodexSkillsInjected(
         if (
           resolvedLinkedPath &&
           resolvedLinkedPath !== entry.source &&
-          (await isLikelyPaperclipRuntimeSkillPath(resolvedLinkedPath, entry.runtimeName))
+          (await isLikelyNoralosRuntimeSkillPath(resolvedLinkedPath, entry.runtimeName))
         ) {
           await fs.unlink(target);
           if (linkSkill) {
@@ -256,7 +256,7 @@ export async function ensureCodexSkillsInjected(
         }
       }
 
-      const result = await ensurePaperclipSkillSymlink(entry.source, target, linkSkill);
+      const result = await ensureNoralosSkillSymlink(entry.source, target, linkSkill);
       if (result === "skipped") continue;
 
       await onLog(
@@ -271,7 +271,7 @@ export async function ensureCodexSkillsInjected(
     }
   }
 
-  await pruneBrokenUnavailablePaperclipSkillSymlinks(
+  await pruneBrokenUnavailableNoralosSkillSymlinks(
     skillsHome,
     skillsEntries.map((entry) => entry.runtimeName),
     onLog,
@@ -288,7 +288,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const command = asString(config.command, "codex");
   const model = asString(config.model, "");
 
-  const workspaceContext = parseObject(context.paperclipWorkspace);
+  const workspaceContext = parseObject(context.noralosWorkspace);
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
   const workspaceStrategy = asString(workspaceContext.strategy, "");
@@ -298,22 +298,22 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const workspaceBranch = asString(workspaceContext.branchName, "");
   const workspaceWorktreePath = asString(workspaceContext.worktreePath, "");
   const agentHome = asString(workspaceContext.agentHome, "");
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.noralosWorkspaces)
+    ? context.noralosWorkspaces.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
-  const runtimeServiceIntents = Array.isArray(context.paperclipRuntimeServiceIntents)
-    ? context.paperclipRuntimeServiceIntents.filter(
+  const runtimeServiceIntents = Array.isArray(context.noralosRuntimeServiceIntents)
+    ? context.noralosRuntimeServiceIntents.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
-  const runtimeServices = Array.isArray(context.paperclipRuntimeServices)
-    ? context.paperclipRuntimeServices.filter(
+  const runtimeServices = Array.isArray(context.noralosRuntimeServices)
+    ? context.noralosRuntimeServices.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
-  const runtimePrimaryUrl = asString(context.paperclipRuntimePrimaryUrl, "");
+  const runtimePrimaryUrl = asString(context.noralosRuntimePrimaryUrl, "");
   const configuredCwd = asString(config.cwd, "");
   const useConfiguredInsteadOfAgentHome = workspaceSource === "agent_home" && configuredCwd.length > 0;
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
@@ -328,7 +328,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     typeof envConfig.CODEX_HOME === "string" && envConfig.CODEX_HOME.trim().length > 0
       ? path.resolve(envConfig.CODEX_HOME.trim())
       : null;
-  const codexSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
+  const codexSkillEntries = await readNoralosRuntimeSkillEntries(config, __moduleDir);
   const desiredSkillNames = resolveCodexDesiredSkillNames(config, codexSkillEntries);
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
   const preparedManagedCodexHome =
@@ -371,14 +371,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const restoreRemoteWorkspace = preparedExecutionTargetRuntime
     ? () => preparedExecutionTargetRuntime.restoreWorkspace()
     : null;
-  let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
+  let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
   const remoteCodexHome = executionTargetIsRemote
     ? preparedExecutionTargetRuntime?.assetDirs.home ??
       path.posix.join(effectiveExecutionCwd, ".paperclip-runtime", "codex", "home")
     : null;
   const hasExplicitApiKey =
     typeof envConfig.NORALOS_API_KEY === "string" && envConfig.NORALOS_API_KEY.trim().length > 0;
-  const env: Record<string, string> = { ...buildPaperclipEnv(agent) };
+  const env: Record<string, string> = { ...buildNoralosEnv(agent) };
   env.NORALOS_RUN_ID = runId;
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
@@ -403,7 +403,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
+  const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
   if (wakeTaskId) {
     env.NORALOS_TASK_ID = wakeTaskId;
   }
@@ -425,7 +425,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (wakePayloadJson) {
     env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
   }
-  applyPaperclipWorkspaceEnv(env, {
+  applyNoralosWorkspaceEnv(env, {
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceStrategy,
@@ -448,9 +448,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (runtimePrimaryUrl) {
     env.NORALOS_RUNTIME_PRIMARY_URL = runtimePrimaryUrl;
   }
-  const targetPaperclipApiUrl = adapterExecutionTargetPaperclipApiUrl(executionTarget);
-  if (targetPaperclipApiUrl) {
-    env.NORALOS_API_URL = targetPaperclipApiUrl;
+  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
+  if (targetNoralosApiUrl) {
+    env.NORALOS_API_URL = targetNoralosApiUrl;
   }
   for (const [k, v] of Object.entries(envConfig)) {
     if (typeof v === "string") env[k] = v;
@@ -459,8 +459,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (!hasExplicitApiKey && authToken) {
     env.NORALOS_API_KEY = authToken;
   }
-  if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(executionTarget)) {
-    paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
+  if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
+    noralosBridge = await startAdapterExecutionTargetNoralosBridge({
       runId,
       target: executionTarget,
       runtimeRootDir: preparedExecutionTargetRuntime?.runtimeRootDir,
@@ -468,8 +468,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
-    if (paperclipBridge) {
-      Object.assign(env, paperclipBridge.env);
+    if (noralosBridge) {
+      Object.assign(env, noralosBridge.env);
     }
   }
   const effectiveEnv = Object.fromEntries(
@@ -549,11 +549,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     !sessionId && bootstrapPromptTemplate.trim().length > 0
       ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
       : "";
-  const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, { resumedSession: Boolean(sessionId) });
+  const wakePrompt = renderNoralosWakePrompt(context.noralosWake, { resumedSession: Boolean(sessionId) });
   const shouldUseResumeDeltaPrompt = Boolean(sessionId) && wakePrompt.length > 0;
   const promptInstructionsPrefix = shouldUseResumeDeltaPrompt ? "" : instructionsPrefix;
   instructionsChars = promptInstructionsPrefix.length;
-  const continuationSummary = parseObject(context.paperclipContinuationSummary);
+  const continuationSummary = parseObject(context.noralosContinuationSummary);
   const continuationSummaryBody = asString(continuationSummary.body, "").trim() || null;
   const codexFallbackHandoffNote =
     forceFreshSession
@@ -615,7 +615,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     return notes;
   })();
   const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
-  const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
+  const sessionHandoffNote = asString(context.noralosSessionHandoffMarkdown, "").trim();
   const prompt = joinPromptSections([
     promptInstructionsPrefix,
     renderedBootstrapPrompt,
@@ -796,8 +796,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
     return toResult(initial, false, false);
   } finally {
-    if (paperclipBridge) {
-      await paperclipBridge.stop();
+    if (noralosBridge) {
+      await noralosBridge.stop();
     }
     if (restoreRemoteWorkspace) {
       await onLog(

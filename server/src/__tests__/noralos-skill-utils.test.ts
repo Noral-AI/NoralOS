@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
-  listPaperclipSkillEntries,
+  listNoralosSkillEntries,
   removeMaintainerOnlySkillSymlinks,
 } from "@noralos/adapter-utils/server-utils";
 
@@ -11,7 +11,7 @@ async function makeTempDir(prefix: string): Promise<string> {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix));
 }
 
-describe("paperclip skill utils", () => {
+describe("noralos skill utils", () => {
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {
@@ -29,11 +29,11 @@ describe("paperclip skill utils", () => {
     await fs.mkdir(path.join(root, "skills", "noralos-create-agent"), { recursive: true });
     await fs.mkdir(path.join(root, ".agents", "skills", "release"), { recursive: true });
 
-    const entries = await listPaperclipSkillEntries(moduleDir);
+    const entries = await listNoralosSkillEntries(moduleDir);
 
     expect(entries.map((entry) => entry.key)).toEqual([
-      "noralos/paperclip/paperclip",
-      "noralos/paperclip/noralos-create-agent",
+      "noralos/noralos/noralos",
+      "noralos/noralos/noralos-create-agent",
     ]);
     expect(entries.map((entry) => entry.runtimeName)).toEqual([
       "paperclip",
@@ -53,14 +53,14 @@ describe("paperclip skill utils", () => {
     // Required skill (no frontmatter flag)
     const requiredDir = path.join(root, "skills", "paperclip");
     await fs.mkdir(requiredDir, { recursive: true });
-    await fs.writeFile(path.join(requiredDir, "SKILL.md"), "---\nname: paperclip\n---\n\n# Paperclip\n");
+    await fs.writeFile(path.join(requiredDir, "SKILL.md"), "---\nname: paperclip\n---\n\n# NoralOS\n");
 
     // Optional skill (required: false)
     const optionalDir = path.join(root, "skills", "noralos-dev");
     await fs.mkdir(optionalDir, { recursive: true });
     await fs.writeFile(path.join(optionalDir, "SKILL.md"), "---\nname: noralos-dev\nrequired: false\n---\n\n# Dev\n");
 
-    const entries = await listPaperclipSkillEntries(moduleDir);
+    const entries = await listNoralosSkillEntries(moduleDir);
     entries.sort((a, b) => a.runtimeName.localeCompare(b.runtimeName));
 
     expect(entries).toHaveLength(2);

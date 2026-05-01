@@ -68,7 +68,7 @@ describe("log redaction", () => {
   });
 
   it("skips redaction when disabled", () => {
-    const input = "cwd=/Users/paperclipuser/noralos";
+    const input = "cwd=/Users/noralosuser/noralos";
     expect(redactCurrentUserText(input, { enabled: false })).toBe(input);
   });
 });

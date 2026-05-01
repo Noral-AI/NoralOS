@@ -1,5 +1,5 @@
 export {
-  paperclipConfigSchema,
+  noralosConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,

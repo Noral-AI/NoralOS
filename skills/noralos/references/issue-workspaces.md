@@ -28,7 +28,7 @@ Prefer NoralOS-managed runtime service controls over manual `pnpm dev &` or ad-h
 # Start all configured services; waits for configured readiness checks.
 curl -sS -X POST \
   -H "Authorization: Bearer $NORALOS_API_KEY" \
-  -H "X-Paperclip-Run-Id: $NORALOS_RUN_ID" \
+  -H "X-NoralOS-Run-Id: $NORALOS_RUN_ID" \
   -H "Content-Type: application/json" \
   "$NORALOS_API_URL/api/execution-workspaces/<workspace-id>/runtime-services/start" \
   -d '{}'
@@ -36,7 +36,7 @@ curl -sS -X POST \
 # Restart all configured services.
 curl -sS -X POST \
   -H "Authorization: Bearer $NORALOS_API_KEY" \
-  -H "X-Paperclip-Run-Id: $NORALOS_RUN_ID" \
+  -H "X-NoralOS-Run-Id: $NORALOS_RUN_ID" \
   -H "Content-Type: application/json" \
   "$NORALOS_API_URL/api/execution-workspaces/<workspace-id>/runtime-services/restart" \
   -d '{}'
@@ -44,7 +44,7 @@ curl -sS -X POST \
 # Stop all running services.
 curl -sS -X POST \
   -H "Authorization: Bearer $NORALOS_API_KEY" \
-  -H "X-Paperclip-Run-Id: $NORALOS_RUN_ID" \
+  -H "X-NoralOS-Run-Id: $NORALOS_RUN_ID" \
   -H "Content-Type: application/json" \
   "$NORALOS_API_URL/api/execution-workspaces/<workspace-id>/runtime-services/stop" \
   -d '{}'

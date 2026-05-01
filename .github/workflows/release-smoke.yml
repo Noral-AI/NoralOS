@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       paperclip_version:
-        description: Published Paperclip dist-tag to test
+        description: Published NoralOS dist-tag to test
         required: true
         default: canary
         type: choice

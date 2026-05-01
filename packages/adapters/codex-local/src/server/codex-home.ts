@@ -6,7 +6,7 @@ import type { AdapterExecutionContext } from "@noralos/adapter-utils";
 const TRUTHY_ENV_RE = /^(1|true|yes|on)$/i;
 const COPIED_SHARED_FILES = ["config.json", "config.toml", "instructions.md"] as const;
 const SYMLINKED_SHARED_FILES = ["auth.json"] as const;
-const DEFAULT_PAPERCLIP_INSTANCE_ID = "default";
+const DEFAULT_NORALOS_INSTANCE_ID = "default";
 
 function nonEmpty(value: string | undefined): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -31,11 +31,11 @@ export function resolveManagedCodexHomeDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-  const paperclipHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_PAPERCLIP_INSTANCE_ID;
+  const noralosHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
+  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_NORALOS_INSTANCE_ID;
   return companyId
-    ? path.resolve(paperclipHome, "instances", instanceId, "companies", companyId, "codex-home")
-    : path.resolve(paperclipHome, "instances", instanceId, "codex-home");
+    ? path.resolve(noralosHome, "instances", instanceId, "companies", companyId, "codex-home")
+    : path.resolve(noralosHome, "instances", instanceId, "codex-home");
 }
 
 async function ensureParentDir(target: string): Promise<void> {

@@ -266,7 +266,7 @@ This is the most important file. It receives an `AdapterExecutionContext` and mu
 **Required behavior:**
 
 1. **Read config** — extract typed values from `ctx.config` using helpers (`asString`, `asNumber`, `asBoolean`, `asStringArray`, `parseObject` from `@noralos/adapter-utils/server-utils`)
-2. **Build environment** — call `buildPaperclipEnv(agent)` then layer in `NORALOS_RUN_ID`, context vars (`NORALOS_TASK_ID`, `NORALOS_WAKE_REASON`, `NORALOS_WAKE_COMMENT_ID`, `NORALOS_APPROVAL_ID`, `NORALOS_APPROVAL_STATUS`, `NORALOS_LINKED_ISSUE_IDS`), user env overrides, and auth token
+2. **Build environment** — call `buildNoralOSEnv(agent)` then layer in `NORALOS_RUN_ID`, context vars (`NORALOS_TASK_ID`, `NORALOS_WAKE_REASON`, `NORALOS_WAKE_COMMENT_ID`, `NORALOS_APPROVAL_ID`, `NORALOS_APPROVAL_STATUS`, `NORALOS_LINKED_ISSUE_IDS`), user env overrides, and auth token
 3. **Resolve session** — check `runtime.sessionParams` / `runtime.sessionId` for an existing session; validate it's compatible (e.g. same cwd); decide whether to resume or start fresh
 4. **Render prompt** — use `renderTemplate(template, data)` with the template variables: `agentId`, `companyId`, `runId`, `company`, `agent`, `run`, `context`
 5. **Call onMeta** — emit adapter invocation metadata before spawning the process
@@ -524,7 +524,7 @@ Import from `@noralos/adapter-utils/server-utils`:
 | `parseObject(val)` | Safe `Record<string, unknown>` extraction |
 | `parseJson(str)` | Safe JSON.parse returning `Record` or null |
 | `renderTemplate(tmpl, data)` | `{{path.to.value}}` template rendering |
-| `buildPaperclipEnv(agent)` | Standard `PAPERCLIP_*` env vars |
+| `buildNoralOSEnv(agent)` | Standard `NORALOS_*` env vars |
 | `redactEnvForLogs(env)` | Redact sensitive keys for onMeta |
 | `ensureAbsoluteDirectory(cwd)` | Validate cwd exists and is absolute |
 | `ensureCommandResolvable(cmd, cwd, env)` | Validate command is in PATH |
@@ -563,7 +563,7 @@ Import from `@noralos/adapter-utils/server-utils`:
 
 ### NoralOS Skills Injection
 
-Paperclip ships shared skills (in the repo's top-level `skills/` directory) that agents need at runtime — things like the `noralos` API skill and the `noralos-create-agent` workflow skill. Each adapter is responsible for making these skills discoverable by its agent runtime **without polluting the agent's working directory**.
+NoralOS ships shared skills (in the repo's top-level `skills/` directory) that agents need at runtime — things like the `noralos` API skill and the `noralos-create-agent` workflow skill. Each adapter is responsible for making these skills discoverable by its agent runtime **without polluting the agent's working directory**.
 
 **The constraint:** never copy or symlink skills into the agent's `cwd`. The cwd is the user's project checkout — writing `.claude/skills/` or any other files into it would contaminate the repo with NoralOS internals, break git status, and potentially leak into commits.
 
@@ -627,9 +627,9 @@ async function ensureCodexSkillsInjected(onLog) {
 3. **Acceptable: env var** — if the runtime reads a skills/plugin path from an environment variable, point it at the repo's `skills/` directory directly.
 4. **Last resort: prompt injection** — if the runtime has no plugin system, include skill content in the prompt template itself. This uses tokens but avoids filesystem side effects entirely.
 
-**Skills as loaded procedures, not prompt bloat.** The Paperclip skills (like `noralos` and `noralos-create-agent`) are designed as on-demand procedures: the agent sees skill metadata (name + description) in its context, but only loads the full SKILL.md content when it decides to invoke a skill. This keeps the base prompt small. When writing `agentConfigurationDoc` or prompt templates for your adapter, do not inline skill content — let the agent runtime's skill discovery do the work. The descriptions in each SKILL.md frontmatter act as routing logic: they tell the agent when to load the full skill, not what the skill contains.
+**Skills as loaded procedures, not prompt bloat.** The NoralOS skills (like `noralos` and `noralos-create-agent`) are designed as on-demand procedures: the agent sees skill metadata (name + description) in its context, but only loads the full SKILL.md content when it decides to invoke a skill. This keeps the base prompt small. When writing `agentConfigurationDoc` or prompt templates for your adapter, do not inline skill content — let the agent runtime's skill discovery do the work. The descriptions in each SKILL.md frontmatter act as routing logic: they tell the agent when to load the full skill, not what the skill contains.
 
-**Explicit vs. fuzzy skill invocation.** For production workflows where reliability matters (e.g. an agent that must always call the NoralOS API to report status), use explicit instructions in the prompt template: "Use the paperclip skill to report your progress." Fuzzy routing (letting the model decide based on description matching) is fine for exploratory tasks but unreliable for mandatory procedures.
+**Explicit vs. fuzzy skill invocation.** For production workflows where reliability matters (e.g. an agent that must always call the NoralOS API to report status), use explicit instructions in the prompt template: "Use the noralos skill to report your progress." Fuzzy routing (letting the model decide based on description matching) is fine for exploratory tasks but unreliable for mandatory procedures.
 
 ---
 

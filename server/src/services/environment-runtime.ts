@@ -14,7 +14,7 @@ import type {
   PluginEnvironmentLease,
   PluginEnvironmentRealizeWorkspaceResult,
 } from "@noralos/plugin-sdk";
-import { ensureSshWorkspaceReady, findReachablePaperclipApiUrlOverSsh } from "@noralos/adapter-utils/ssh";
+import { ensureSshWorkspaceReady, findReachableNoralosApiUrlOverSsh } from "@noralos/adapter-utils/ssh";
 import { environmentService } from "./environments.js";
 import {
   parseEnvironmentDriverConfig,
@@ -239,7 +239,7 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
           return [];
         }
       })();
-      const noralosApiUrl = await findReachablePaperclipApiUrlOverSsh({
+      const noralosApiUrl = await findReachableNoralosApiUrlOverSsh({
         config: parsed.config,
         candidates: candidateUrls,
       });

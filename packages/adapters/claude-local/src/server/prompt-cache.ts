@@ -4,11 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import { createHash, type Hash } from "node:crypto";
 import type { AdapterExecutionContext } from "@noralos/adapter-utils";
-import { ensurePaperclipSkillSymlink, type PaperclipSkillEntry } from "@noralos/adapter-utils/server-utils";
+import { ensureNoralosSkillSymlink, type NoralosSkillEntry } from "@noralos/adapter-utils/server-utils";
 
-const DEFAULT_PAPERCLIP_INSTANCE_ID = "default";
+const DEFAULT_NORALOS_INSTANCE_ID = "default";
 
-type SkillEntry = PaperclipSkillEntry;
+type SkillEntry = NoralosSkillEntry;
 
 export interface ClaudePromptBundle {
   bundleKey: string;
@@ -25,10 +25,10 @@ function resolveManagedClaudePromptCacheRoot(
   env: NodeJS.ProcessEnv,
   companyId: string,
 ): string {
-  const paperclipHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_PAPERCLIP_INSTANCE_ID;
+  const noralosHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
+  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_NORALOS_INSTANCE_ID;
   return path.resolve(
-    paperclipHome,
+    noralosHome,
     "instances",
     instanceId,
     "companies",
@@ -147,7 +147,7 @@ export async function prepareClaudePromptBundle(input: {
   for (const entry of skills) {
     const target = path.join(skillsHome, entry.runtimeName);
     try {
-      await ensurePaperclipSkillSymlink(entry.source, target);
+      await ensureNoralosSkillSymlink(entry.source, target);
     } catch (err) {
       await onLog(
         "stderr",

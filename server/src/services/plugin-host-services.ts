@@ -442,7 +442,7 @@ if (_logFlushInterval.unref) _logFlushInterval.unref();
  * buildHostServices — creates a concrete implementation of the `HostServices`
  * interface for a specific plugin.
  *
- * This implementation delegates to the core Paperclip domain services,
+ * This implementation delegates to the core NoralOS domain services,
  * providing the bridge between the plugin worker's SDK and the host platform.
  *
  * @param db - Database connection instance.

@@ -44,11 +44,11 @@ interface AdapterSettings {
 // ---------------------------------------------------------------------------
 
 function adapterPluginPaths() {
-  const paperclipDir = resolveNoralosHomeDir();
+  const noralosDir = resolveNoralosHomeDir();
   return {
-    adapterPluginsDir: path.join(paperclipDir, "adapter-plugins"),
-    adapterPluginsStorePath: path.join(paperclipDir, "adapter-plugins.json"),
-    adapterSettingsPath: path.join(paperclipDir, "adapter-settings.json"),
+    adapterPluginsDir: path.join(noralosDir, "adapter-plugins"),
+    adapterPluginsStorePath: path.join(noralosDir, "adapter-plugins.json"),
+    adapterSettingsPath: path.join(noralosDir, "adapter-settings.json"),
   };
 }
 

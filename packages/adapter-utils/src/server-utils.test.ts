@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
-  applyPaperclipWorkspaceEnv,
+  applyNoralosWorkspaceEnv,
   appendWithByteCap,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  renderPaperclipWakePrompt,
+  renderNoralosWakePrompt,
   runningProcesses,
   runChildProcess,
-  stringifyPaperclipWakePayload,
+  stringifyNoralosWakePayload,
 } from "./server-utils.js";
 
 function isPidAlive(pid: number) {
@@ -251,7 +251,7 @@ describe("runChildProcess", () => {
   });
 });
 
-describe("renderPaperclipWakePrompt", () => {
+describe("renderNoralosWakePrompt", () => {
   it("keeps the default local-agent prompt action-oriented", () => {
     expect(DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE).toContain("Start actionable work in this heartbeat");
     expect(DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE).toContain("do not stop at a plan");
@@ -269,7 +269,7 @@ describe("renderPaperclipWakePrompt", () => {
   });
 
   it("adds the execution contract to scoped wake prompts", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_assigned",
       issue: {
         id: "issue-1",
@@ -286,14 +286,14 @@ describe("renderPaperclipWakePrompt", () => {
       fallbackFetchNeeded: false,
     });
 
-    expect(prompt).toContain("## Paperclip Wake Payload");
+    expect(prompt).toContain("## NoralOS Wake Payload");
     expect(prompt).toContain("Execution contract: take concrete action in this heartbeat");
     expect(prompt).toContain("use child issues instead of polling");
     expect(prompt).toContain("mark blocked work with the unblock owner/action");
   });
 
   it("renders dependency-blocked interaction guidance", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -329,7 +329,7 @@ describe("renderPaperclipWakePrompt", () => {
   });
 
   it("renders loose review request instructions for execution handoffs", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "execution_review_requested",
       issue: {
         id: "issue-1",
@@ -392,7 +392,7 @@ describe("renderPaperclipWakePrompt", () => {
       ],
     };
 
-    expect(JSON.parse(stringifyPaperclipWakePayload(payload) ?? "{}")).toMatchObject({
+    expect(JSON.parse(stringifyNoralosWakePayload(payload) ?? "{}")).toMatchObject({
       continuationSummary: {
         body: expect.stringContaining("Continuation Summary"),
       },
@@ -411,7 +411,7 @@ describe("renderPaperclipWakePrompt", () => {
       ],
     });
 
-    const prompt = renderPaperclipWakePrompt(payload);
+    const prompt = renderNoralosWakePrompt(payload);
     expect(prompt).toContain("Issue continuation summary:");
     expect(prompt).toContain("Integrate child outputs.");
     expect(prompt).toContain("Run liveness continuation:");
@@ -426,9 +426,9 @@ describe("renderPaperclipWakePrompt", () => {
   });
 });
 
-describe("applyPaperclipWorkspaceEnv", () => {
+describe("applyNoralosWorkspaceEnv", () => {
   it("adds shared workspace env vars including AGENT_HOME", () => {
-    const env = applyPaperclipWorkspaceEnv(
+    const env = applyNoralosWorkspaceEnv(
       {},
       {
         workspaceCwd: "/tmp/workspace",
@@ -457,7 +457,7 @@ describe("applyPaperclipWorkspaceEnv", () => {
   });
 
   it("skips empty workspace env values", () => {
-    const env = applyPaperclipWorkspaceEnv(
+    const env = applyNoralosWorkspaceEnv(
       {},
       {
         workspaceCwd: "",

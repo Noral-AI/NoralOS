@@ -7,7 +7,7 @@ import pc from "picocolors";
 import { bootstrapCeoInvite } from "./auth-bootstrap-ceo.js";
 import { onboard } from "./onboard.js";
 import { doctor } from "./doctor.js";
-import { loadPaperclipEnvFile } from "../config/env.js";
+import { loadNoralosEnvFile } from "../config/env.js";
 import { configExists, resolveConfigPath } from "../config/store.js";
 import type { NoralosConfig } from "../config/schema.js";
 import { readConfig } from "../config/store.js";
@@ -44,7 +44,7 @@ export async function runCommand(opts: RunOptions): Promise<void> {
 
   const configPath = resolveConfigPath(opts.config);
   process.env.NORALOS_CONFIG = configPath;
-  loadPaperclipEnvFile(configPath);
+  loadNoralosEnvFile(configPath);
 
   p.intro(pc.bgCyan(pc.black(" paperclipai run ")));
   p.log.message(pc.dim(`Home: ${paths.homeDir}`));

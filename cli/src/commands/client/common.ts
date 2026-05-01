@@ -4,7 +4,7 @@ import { getStoredBoardCredential, loginBoardCli } from "../../client/board-auth
 import { buildCliCommandLabel } from "../../client/command-label.js";
 import { readConfig } from "../../config/store.js";
 import { readContext, resolveProfile, type ClientContextProfile } from "../../client/context.js";
-import { ApiRequestError, PaperclipApiClient } from "../../client/http.js";
+import { ApiRequestError, NoralosApiClient } from "../../client/http.js";
 
 export interface BaseClientOptions {
   config?: string;
@@ -18,7 +18,7 @@ export interface BaseClientOptions {
 }
 
 export interface ResolvedClientContext {
-  api: PaperclipApiClient;
+  api: NoralosApiClient;
   companyId?: string;
   profileName: string;
   profile: ClientContextProfile;
@@ -73,7 +73,7 @@ export function resolveCommandContext(
     );
   }
 
-  const api = new PaperclipApiClient({
+  const api = new NoralosApiClient({
     apiBase,
     apiKey,
     recoverAuth: explicitApiKey || !canAttemptInteractiveBoardAuth()

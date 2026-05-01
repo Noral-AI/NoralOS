@@ -13,7 +13,7 @@ const capturePath = process.env.NORALOS_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
-  paperclipEnvKeys: Object.keys(process.env)
+  noralosEnvKeys: Object.keys(process.env)
     .filter((key) => key.startsWith("PAPERCLIP_"))
     .sort(),
 };
@@ -106,7 +106,7 @@ function createLocalSandboxRunner() {
 type CapturePayload = {
   argv: string[];
   prompt: string;
-  paperclipEnvKeys: string[];
+  noralosEnvKeys: string[];
 };
 
 async function createSkillDir(root: string, name: string) {
@@ -169,7 +169,7 @@ describe("cursor execute", () => {
       expect(capture.argv).not.toContain("Follow the paperclip heartbeat.");
       expect(capture.argv).not.toContain("--mode");
       expect(capture.argv).not.toContain("ask");
-      expect(capture.paperclipEnvKeys).toEqual(
+      expect(capture.noralosEnvKeys).toEqual(
         expect.arrayContaining([
           "NORALOS_AGENT_ID",
           "NORALOS_API_KEY",
@@ -178,9 +178,9 @@ describe("cursor execute", () => {
           "NORALOS_RUN_ID",
         ]),
       );
-      expect(capture.prompt).toContain("Paperclip runtime note:");
+      expect(capture.prompt).toContain("NoralOS runtime note:");
       expect(capture.prompt).toContain("NORALOS_API_KEY");
-      expect(invocationPrompt).toContain("Paperclip runtime note:");
+      expect(invocationPrompt).toContain("NoralOS runtime note:");
       expect(invocationPrompt).toContain("NORALOS_API_URL");
     } finally {
       if (previousHome === undefined) {
@@ -258,7 +258,7 @@ describe("cursor execute", () => {
     await fs.mkdir(workspace, { recursive: true });
     await writeFakeCursorCommand(commandPath);
 
-    const paperclipDir = await createSkillDir(runtimeSkillsRoot, "paperclip");
+    const noralosDir = await createSkillDir(runtimeSkillsRoot, "paperclip");
     const asciiHeartDir = await createSkillDir(runtimeSkillsRoot, "ascii-heart");
 
     const previousHome = process.env.HOME;
@@ -284,19 +284,19 @@ describe("cursor execute", () => {
           command: commandPath,
           cwd: workspace,
           model: "auto",
-          paperclipRuntimeSkills: [
+          noralosRuntimeSkills: [
             {
               name: "paperclip",
-              source: paperclipDir,
+              source: noralosDir,
               required: true,
-              requiredReason: "Bundled Paperclip skills are always available for local adapters.",
+              requiredReason: "Bundled NoralOS skills are always available for local adapters.",
             },
             {
               name: "ascii-heart",
               source: asciiHeartDir,
             },
           ],
-          paperclipSkillSync: {
+          noralosSkillSync: {
             desiredSkills: ["ascii-heart"],
           },
           promptTemplate: "Follow the paperclip heartbeat.",

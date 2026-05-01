@@ -13,7 +13,7 @@ import {
   pluginMigrations,
   plugins,
 } from "@noralos/db";
-import type { PaperclipPluginManifestV1 } from "@noralos/shared";
+import type { NoralosPluginManifestV1 } from "@noralos/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -88,7 +88,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   let packageRoots: string[] = [];
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-plugin-db-");
+    tempDb = await startEmbeddedPostgresTestDatabase("noralos-plugin-db-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -111,8 +111,8 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     await tempDb?.cleanup();
   });
 
-  async function createPluginPackage(manifest: PaperclipPluginManifestV1, migrationSql: string) {
-    const packageRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-plugin-package-"));
+  async function createPluginPackage(manifest: NoralosPluginManifestV1, migrationSql: string) {
+    const packageRoot = await mkdtemp(path.join(os.tmpdir(), "noralos-plugin-package-"));
     packageRoots.push(packageRoot);
     const migrationsDir = path.join(packageRoot, manifest.database!.migrationsDir);
     await mkdir(migrationsDir, { recursive: true });
@@ -120,7 +120,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return packageRoot;
   }
 
-  async function installPluginRecord(manifest: PaperclipPluginManifestV1) {
+  async function installPluginRecord(manifest: NoralosPluginManifestV1) {
     const pluginId = randomUUID();
     await db.insert(plugins).values({
       id: pluginId,
@@ -136,7 +136,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return pluginId;
   }
 
-  function manifest(pluginKey = "paperclip.dbtest"): PaperclipPluginManifestV1 {
+  function manifest(pluginKey = "paperclip.dbtest"): NoralosPluginManifestV1 {
     return {
       id: pluginKey,
       apiVersion: 1,

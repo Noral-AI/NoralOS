@@ -185,7 +185,7 @@ describeEmbeddedPostgres("issueReferenceService", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip Backfill",
+      name: "NoralOS Backfill",
       issuePrefix: `B${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

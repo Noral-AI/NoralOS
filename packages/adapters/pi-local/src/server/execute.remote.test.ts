@@ -111,7 +111,7 @@ describe("pi remote execution", () => {
         model: "openai/gpt-5.4-mini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -202,7 +202,7 @@ describe("pi remote execution", () => {
         model: "openai/gpt-5.4-mini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

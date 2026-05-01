@@ -1,6 +1,6 @@
-import type { PaperclipPluginManifestV1 } from "@noralos/plugin-sdk";
+import type { NoralosPluginManifestV1 } from "@noralos/plugin-sdk";
 
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: NoralosPluginManifestV1 = {
   id: "paperclipai.plugin-orchestration-smoke-example",
   apiVersion: 1,
   version: "0.1.0",

@@ -10,7 +10,7 @@ import {
   plugins,
 } from "@noralos/db";
 import type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginDatabaseCoreReadTable,
   PluginMigrationRecord,
 } from "@noralos/shared";
@@ -311,7 +311,7 @@ export function pluginDatabaseService(db: Db) {
     return plugin;
   }
 
-  async function ensureNamespace(pluginId: string, manifest: PaperclipPluginManifestV1) {
+  async function ensureNamespace(pluginId: string, manifest: NoralosPluginManifestV1) {
     if (!manifest.database) return null;
     const namespaceName = derivePluginDatabaseNamespace(
       manifest.id,
@@ -400,7 +400,7 @@ export function pluginDatabaseService(db: Db) {
   return {
     ensureNamespace,
 
-    async applyMigrations(pluginId: string, manifest: PaperclipPluginManifestV1, packageRoot: string) {
+    async applyMigrations(pluginId: string, manifest: NoralosPluginManifestV1, packageRoot: string) {
       if (!manifest.database) return null;
       const namespace = await ensureNamespace(pluginId, manifest);
       if (!namespace) return null;

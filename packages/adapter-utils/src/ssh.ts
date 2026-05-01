@@ -112,7 +112,7 @@ function normalizeHttpUrlCandidate(value: string): string | null {
   }
 }
 
-export async function findReachablePaperclipApiUrlOverSsh(input: {
+export async function findReachableNoralosApiUrlOverSsh(input: {
   config: SshConnectionConfig;
   candidates: string[];
   timeoutMs?: number;

@@ -14,11 +14,11 @@ All environment variables that NoralOS uses for server configuration.
 | `NORALOS_BIND_HOST` | (unset) | Required when `NORALOS_BIND=custom` |
 | `HOST` | `127.0.0.1` | Legacy host override; prefer `NORALOS_BIND` for new setups |
 | `DATABASE_URL` | (embedded) | PostgreSQL connection string |
-| `NORALOS_HOME` | `~/.noralos` | Base directory for all Paperclip data |
+| `NORALOS_HOME` | `~/.noralos` | Base directory for all NoralOS data |
 | `NORALOS_INSTANCE_ID` | `default` | Instance identifier (for multiple local instances) |
 | `NORALOS_DEPLOYMENT_MODE` | `local_trusted` | Runtime mode override |
 | `NORALOS_DEPLOYMENT_EXPOSURE` | `private` | Exposure policy when deployment mode is `authenticated` |
-| `NORALOS_API_URL` | (auto-derived) | Paperclip API base URL. When set externally (e.g., via Kubernetes ConfigMap, load balancer, or reverse proxy), the server preserves the value instead of deriving it from the listen host and port. Useful for deployments where the public-facing URL differs from the local bind address. |
+| `NORALOS_API_URL` | (auto-derived) | NoralOS API base URL. When set externally (e.g., via Kubernetes ConfigMap, load balancer, or reverse proxy), the server preserves the value instead of deriving it from the listen host and port. Useful for deployments where the public-facing URL differs from the local bind address. |
 
 ## Secrets
 
@@ -36,7 +36,7 @@ These are set automatically by the server when invoking agents:
 |----------|-------------|
 | `NORALOS_AGENT_ID` | Agent's unique ID |
 | `NORALOS_COMPANY_ID` | Company ID |
-| `NORALOS_API_URL` | Paperclip API base URL (inherits the server-level value; see Server Configuration above) |
+| `NORALOS_API_URL` | NoralOS API base URL (inherits the server-level value; see Server Configuration above) |
 | `NORALOS_API_KEY` | Short-lived JWT for API auth |
 | `NORALOS_RUN_ID` | Current heartbeat run ID |
 | `NORALOS_TASK_ID` | Issue that triggered this wake |

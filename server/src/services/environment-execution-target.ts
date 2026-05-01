@@ -70,7 +70,7 @@ export async function resolveEnvironmentExecutionTarget(input: {
       environmentId: input.environment.id ?? null,
       leaseId: input.leaseId ?? null,
       noralosApiUrl,
-      paperclipTransport: noralosApiUrl ? "direct" : "bridge",
+      noralosTransport: noralosApiUrl ? "direct" : "bridge",
       timeoutMs,
       runner: input.environmentRuntime && input.lease
         ? {

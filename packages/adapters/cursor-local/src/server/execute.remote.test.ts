@@ -101,7 +101,7 @@ describe("cursor remote execution", () => {
         command: "agent",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -190,7 +190,7 @@ describe("cursor remote execution", () => {
         command: "agent",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -241,7 +241,7 @@ describe("cursor remote execution", () => {
         command: "agent",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

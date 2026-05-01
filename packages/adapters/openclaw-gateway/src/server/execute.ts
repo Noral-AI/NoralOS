@@ -6,10 +6,10 @@ import type {
 import {
   asNumber,
   asString,
-  buildPaperclipEnv,
+  buildNoralosEnv,
   parseObject,
-  renderPaperclipWakePrompt,
-  stringifyPaperclipWakePayload,
+  renderNoralosWakePrompt,
+  stringifyNoralosWakePayload,
 } from "@noralos/adapter-utils/server-utils";
 import crypto, { randomUUID } from "node:crypto";
 import { WebSocket } from "ws";
@@ -318,7 +318,7 @@ function buildWakePayload(ctx: AdapterExecutionContext): WakePayload {
   };
 }
 
-function resolvePaperclipApiUrlOverride(value: unknown): string | null {
+function resolveNoralosApiUrlOverride(value: unknown): string | null {
   const raw = nonEmpty(value);
   if (!raw) return null;
   try {
@@ -336,31 +336,31 @@ function resolveClaimedApiKeyPath(value: unknown): string {
   return nonEmpty(value) ?? DEFAULT_CLAIMED_API_KEY_PATH;
 }
 
-function buildPaperclipEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakePayload): Record<string, string> {
-  const noralosApiUrlOverride = resolvePaperclipApiUrlOverride(ctx.config.noralosApiUrl);
-  const paperclipEnv: Record<string, string> = {
-    ...buildPaperclipEnv(ctx.agent),
+function buildNoralosEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakePayload): Record<string, string> {
+  const noralosApiUrlOverride = resolveNoralosApiUrlOverride(ctx.config.noralosApiUrl);
+  const noralosEnv: Record<string, string> = {
+    ...buildNoralosEnv(ctx.agent),
     NORALOS_RUN_ID: ctx.runId,
   };
 
   if (noralosApiUrlOverride) {
-    paperclipEnv.NORALOS_API_URL = noralosApiUrlOverride;
+    noralosEnv.NORALOS_API_URL = noralosApiUrlOverride;
   }
-  if (wakePayload.taskId) paperclipEnv.NORALOS_TASK_ID = wakePayload.taskId;
-  if (wakePayload.wakeReason) paperclipEnv.NORALOS_WAKE_REASON = wakePayload.wakeReason;
-  if (wakePayload.wakeCommentId) paperclipEnv.NORALOS_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
-  if (wakePayload.approvalId) paperclipEnv.NORALOS_APPROVAL_ID = wakePayload.approvalId;
-  if (wakePayload.approvalStatus) paperclipEnv.NORALOS_APPROVAL_STATUS = wakePayload.approvalStatus;
+  if (wakePayload.taskId) noralosEnv.NORALOS_TASK_ID = wakePayload.taskId;
+  if (wakePayload.wakeReason) noralosEnv.NORALOS_WAKE_REASON = wakePayload.wakeReason;
+  if (wakePayload.wakeCommentId) noralosEnv.NORALOS_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
+  if (wakePayload.approvalId) noralosEnv.NORALOS_APPROVAL_ID = wakePayload.approvalId;
+  if (wakePayload.approvalStatus) noralosEnv.NORALOS_APPROVAL_STATUS = wakePayload.approvalStatus;
   if (wakePayload.issueIds.length > 0) {
-    paperclipEnv.NORALOS_LINKED_ISSUE_IDS = wakePayload.issueIds.join(",");
+    noralosEnv.NORALOS_LINKED_ISSUE_IDS = wakePayload.issueIds.join(",");
   }
 
-  return paperclipEnv;
+  return noralosEnv;
 }
 
 function buildWakeText(
   payload: WakePayload,
-  paperclipEnv: Record<string, string>,
+  noralosEnv: Record<string, string>,
   structuredWakePrompt: string,
 ): string {
   const claimedApiKeyPath = "~/.openclaw/workspace/noralos-claimed-api-key.json";
@@ -379,13 +379,13 @@ function buildWakeText(
 
   const envLines: string[] = [];
   for (const key of orderedKeys) {
-    const value = paperclipEnv[key];
+    const value = noralosEnv[key];
     if (!value) continue;
     envLines.push(`${key}=${value}`);
   }
 
   const issueIdHint = payload.taskId ?? payload.issueId ?? "";
-  const apiBaseHint = paperclipEnv.NORALOS_API_URL ?? "<set NORALOS_API_URL>";
+  const apiBaseHint = noralosEnv.NORALOS_API_URL ?? "<set NORALOS_API_URL>";
 
   const lines = [
     "NoralOS wake event for a cloud adapter.",
@@ -409,7 +409,7 @@ function buildWakeText(
     "",
     "HTTP rules:",
     "- Use Authorization: Bearer $NORALOS_API_KEY on every API call.",
-    "- Use X-Paperclip-Run-Id: $NORALOS_RUN_ID on every mutating API call.",
+    "- Use X-NoralOS-Run-Id: $NORALOS_RUN_ID on every mutating API call.",
     "- Use only /api endpoints listed below.",
     "- Do NOT call guessed endpoints like /api/cloud-adapter/*, /api/cloud-adapters/*, /api/adapters/cloud/*, or /api/heartbeat.",
     "",
@@ -463,25 +463,25 @@ function joinWakePayloadSections(structuredWakePrompt: string, structuredWakeJso
   return sections.join("\n");
 }
 
-function buildStandardPaperclipPayload(
+function buildStandardNoralosPayload(
   ctx: AdapterExecutionContext,
   wakePayload: WakePayload,
-  paperclipEnv: Record<string, string>,
+  noralosEnv: Record<string, string>,
   payloadTemplate: Record<string, unknown>,
 ): Record<string, unknown> {
-  const templatePaperclip = parseObject(payloadTemplate.paperclip);
-  const workspace = asRecord(ctx.context.paperclipWorkspace);
-  const workspaces = Array.isArray(ctx.context.paperclipWorkspaces)
-    ? ctx.context.paperclipWorkspaces.filter((entry): entry is Record<string, unknown> => Boolean(asRecord(entry)))
+  const templateNoralos = parseObject(payloadTemplate.paperclip);
+  const workspace = asRecord(ctx.context.noralosWorkspace);
+  const workspaces = Array.isArray(ctx.context.noralosWorkspaces)
+    ? ctx.context.noralosWorkspaces.filter((entry): entry is Record<string, unknown> => Boolean(asRecord(entry)))
     : [];
   const configuredWorkspaceRuntime = parseObject(ctx.config.workspaceRuntime);
-  const runtimeServiceIntents = Array.isArray(ctx.context.paperclipRuntimeServiceIntents)
-    ? ctx.context.paperclipRuntimeServiceIntents.filter(
+  const runtimeServiceIntents = Array.isArray(ctx.context.noralosRuntimeServiceIntents)
+    ? ctx.context.noralosRuntimeServiceIntents.filter(
         (entry): entry is Record<string, unknown> => Boolean(asRecord(entry)),
       )
     : [];
 
-  const standardPaperclip: Record<string, unknown> = {
+  const standardNoralos: Record<string, unknown> = {
     runId: ctx.runId,
     companyId: ctx.agent.companyId,
     agentId: ctx.agent.id,
@@ -493,29 +493,29 @@ function buildStandardPaperclipPayload(
     wakeCommentId: wakePayload.wakeCommentId,
     approvalId: wakePayload.approvalId,
     approvalStatus: wakePayload.approvalStatus,
-    apiUrl: paperclipEnv.NORALOS_API_URL ?? null,
+    apiUrl: noralosEnv.NORALOS_API_URL ?? null,
   };
-  const structuredWake = parseObject(ctx.context.paperclipWake);
+  const structuredWake = parseObject(ctx.context.noralosWake);
   if (Object.keys(structuredWake).length > 0) {
-    standardPaperclip.wake = structuredWake;
+    standardNoralos.wake = structuredWake;
   }
 
   if (workspace) {
-    standardPaperclip.workspace = workspace;
+    standardNoralos.workspace = workspace;
   }
   if (workspaces.length > 0) {
-    standardPaperclip.workspaces = workspaces;
+    standardNoralos.workspaces = workspaces;
   }
   if (runtimeServiceIntents.length > 0 || Object.keys(configuredWorkspaceRuntime).length > 0) {
-    standardPaperclip.workspaceRuntime = {
+    standardNoralos.workspaceRuntime = {
       ...configuredWorkspaceRuntime,
       ...(runtimeServiceIntents.length > 0 ? { services: runtimeServiceIntents } : {}),
     };
   }
 
   return {
-    ...templatePaperclip,
-    ...standardPaperclip,
+    ...templateNoralos,
+    ...standardNoralos,
   };
 }
 
@@ -1104,12 +1104,12 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const disableDeviceAuth = parseBoolean(ctx.config.disableDeviceAuth, false);
 
   const wakePayload = buildWakePayload(ctx);
-  const paperclipEnv = buildPaperclipEnvForWake(ctx, wakePayload);
-  const structuredWakePrompt = renderPaperclipWakePrompt(ctx.context.paperclipWake);
-  const structuredWakeJson = stringifyPaperclipWakePayload(ctx.context.paperclipWake);
+  const noralosEnv = buildNoralosEnvForWake(ctx, wakePayload);
+  const structuredWakePrompt = renderNoralosWakePrompt(ctx.context.noralosWake);
+  const structuredWakeJson = stringifyNoralosWakePayload(ctx.context.noralosWake);
   const wakeText = buildWakeText(
     wakePayload,
-    paperclipEnv,
+    noralosEnv,
     structuredWakeJson
       ? joinWakePayloadSections(structuredWakePrompt, structuredWakeJson)
       : structuredWakePrompt,
@@ -1127,7 +1127,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const templateMessage = nonEmpty(payloadTemplate.message) ?? nonEmpty(payloadTemplate.text);
   const message = templateMessage ? appendWakeText(templateMessage, wakeText) : wakeText;
-  const paperclipPayload = buildStandardPaperclipPayload(ctx, wakePayload, paperclipEnv, payloadTemplate);
+  const noralosPayload = buildStandardNoralosPayload(ctx, wakePayload, noralosEnv, payloadTemplate);
 
   const agentParams: Record<string, unknown> = {
     ...payloadTemplate,
@@ -1136,7 +1136,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     idempotencyKey: ctx.runId,
   };
   delete agentParams.text;
-  agentParams.paperclip = paperclipPayload;
+  agentParams.paperclip = noralosPayload;
 
   const configuredAgentId = nonEmpty(ctx.config.agentId);
   if (configuredAgentId && !nonEmpty(agentParams.agentId)) {

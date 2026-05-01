@@ -36,7 +36,7 @@ export type {
 } from "../constants.js";
 
 // ---------------------------------------------------------------------------
-// Manifest sub-types — nested declarations within PaperclipPluginManifestV1
+// Manifest sub-types — nested declarations within NoralosPluginManifestV1
 // ---------------------------------------------------------------------------
 
 /**
@@ -210,7 +210,7 @@ export interface PluginLauncherDeclaration {
 }
 
 /**
- * Lower-bound semver requirement for the Paperclip host.
+ * Lower-bound semver requirement for the NoralOS host.
  *
  * The host should reject installation when its running version is lower than
  * the declared minimum.
@@ -274,7 +274,7 @@ export interface PluginApiRouteDeclaration {
  * The manifest shape every plugin package must export.
  * See PLUGIN_SPEC.md §10.1 for the normative definition.
  */
-export interface PaperclipPluginManifestV1 {
+export interface NoralosPluginManifestV1 {
   /** Globally unique plugin identifier (e.g. `"acme.linear-sync"`). Must be lowercase alphanumeric with dots, hyphens, or underscores. */
   id: string;
   /** Plugin API version. Must be `1` for the current spec. */
@@ -298,7 +298,7 @@ export interface PaperclipPluginManifestV1 {
    * Legacy alias for `minimumHostVersion`.
    * Kept for backwards compatibility with existing manifests and docs.
    */
-  minimumPaperclipVersion?: PluginMinimumHostVersion;
+  minimumNoralosVersion?: PluginMinimumHostVersion;
   /** Capabilities this plugin requires from the host. Enforced at runtime. */
   capabilities: PluginCapability[];
   /** Entrypoint paths relative to the package root. */
@@ -353,7 +353,7 @@ export interface PluginRecord {
   /** Plugin categories from the manifest. */
   categories: PluginCategory[];
   /** Full manifest snapshot persisted at install/upgrade time. */
-  manifestJson: PaperclipPluginManifestV1;
+  manifestJson: NoralosPluginManifestV1;
   /** Current lifecycle status. */
   status: PluginStatus;
   /** Deterministic load order (null if not yet assigned). */

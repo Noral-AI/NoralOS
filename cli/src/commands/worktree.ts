@@ -47,11 +47,11 @@ import {
   formatEmbeddedPostgresError,
 } from "@noralos/db";
 import type { Command } from "commander";
-import { ensureAgentJwtSecret, loadPaperclipEnvFile, mergePaperclipEnvEntries, readPaperclipEnvEntries, resolvePaperclipEnvFile } from "../config/env.js";
+import { ensureAgentJwtSecret, loadNoralosEnvFile, mergeNoralosEnvEntries, readNoralosEnvEntries, resolveNoralosEnvFile } from "../config/env.js";
 import { expandHomePrefix } from "../config/home.js";
 import type { NoralosConfig } from "../config/schema.js";
 import { readConfig, resolveConfigPath, writeConfig } from "../config/store.js";
-import { printPaperclipCliBanner } from "../utils/banner.js";
+import { printNoralosCliBanner } from "../utils/banner.js";
 import { resolveRuntimeLikePath } from "../utils/path-resolver.js";
 import {
   buildWorktreeConfig,
@@ -868,13 +868,13 @@ export function resolveWorktreeReseedTargetPaths(input: {
   configPath: string;
   rootPath: string;
 }): WorktreeLocalPaths {
-  const envEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(input.configPath));
+  const envEntries = readNoralosEnvEntries(resolveNoralosEnvFile(input.configPath));
   const homeDir = nonEmpty(envEntries.NORALOS_HOME);
   const instanceId = nonEmpty(envEntries.NORALOS_INSTANCE_ID);
 
   if (!homeDir || !instanceId) {
     throw new Error(
-      `Target config ${input.configPath} does not look like a worktree-local Paperclip instance. Expected NORALOS_HOME and NORALOS_INSTANCE_ID in the adjacent .env.`,
+      `Target config ${input.configPath} does not look like a worktree-local NoralOS instance. Expected NORALOS_HOME and NORALOS_INSTANCE_ID in the adjacent .env.`,
     );
   }
 
@@ -1281,8 +1281,8 @@ async function seedWorktreeDatabase(input: {
   preserveLiveWork?: boolean;
 }): Promise<SeedWorktreeDatabaseResult> {
   const seedPlan = resolveWorktreeSeedPlan(input.seedMode);
-  const sourceEnvFile = resolvePaperclipEnvFile(input.sourceConfigPath);
-  const sourceEnvEntries = readPaperclipEnvEntries(sourceEnvFile);
+  const sourceEnvFile = resolveNoralosEnvFile(input.sourceConfigPath);
+  const sourceEnvEntries = readNoralosEnvEntries(sourceEnvFile);
   copySeededSecretsKey({
     sourceConfigPath: input.sourceConfigPath,
     sourceConfig: input.sourceConfig,
@@ -1405,11 +1405,11 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   });
 
   writeConfig(targetConfig, paths.configPath);
-  const sourceEnvEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(sourceConfigPath));
+  const sourceEnvEntries = readNoralosEnvEntries(resolveNoralosEnvFile(sourceConfigPath));
   const existingAgentJwtSecret =
     nonEmpty(sourceEnvEntries.NORALOS_AGENT_JWT_SECRET) ??
     nonEmpty(process.env.NORALOS_AGENT_JWT_SECRET);
-  mergePaperclipEnvEntries(
+  mergeNoralosEnvEntries(
     {
       ...buildWorktreeEnvEntries(paths, branding),
       ...(existingAgentJwtSecret ? { NORALOS_AGENT_JWT_SECRET: existingAgentJwtSecret } : {}),
@@ -1417,7 +1417,7 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
     paths.envPath,
   );
   ensureAgentJwtSecret(paths.configPath);
-  loadPaperclipEnvFile(paths.configPath);
+  loadNoralosEnvFile(paths.configPath);
   const copiedGitHooks = copyGitHooksToWorktreeGitDir(cwd);
 
   let seedSummary: string | null = null;
@@ -1491,13 +1491,13 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
 }
 
 export async function worktreeInitCommand(opts: WorktreeInitOptions): Promise<void> {
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree init ")));
   await runWorktreeInit(opts);
 }
 
 export async function worktreeMakeCommand(nameArg: string, opts: WorktreeMakeOptions): Promise<void> {
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree:make ")));
 
   const name = resolveWorktreeMakeName(nameArg);
@@ -1710,7 +1710,7 @@ function worktreePathHasUncommittedChanges(worktreePath: string): boolean {
 }
 
 export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeCleanupOptions): Promise<void> {
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree:cleanup ")));
 
   const name = resolveWorktreeMakeName(nameArg);
@@ -1847,8 +1847,8 @@ export async function worktreeCleanupCommand(nameArg: string, opts: WorktreeClea
 
 export async function worktreeEnvCommand(opts: WorktreeEnvOptions): Promise<void> {
   const configPath = resolveConfigPath(opts.config);
-  const envPath = resolvePaperclipEnvFile(configPath);
-  const envEntries = readPaperclipEnvEntries(envPath);
+  const envPath = resolveNoralosEnvFile(configPath);
+  const envEntries = readNoralosEnvEntries(envPath);
   const out = {
     NORALOS_CONFIG: configPath,
     ...(envEntries.NORALOS_HOME ? { NORALOS_HOME: envEntries.NORALOS_HOME } : {}),
@@ -1921,7 +1921,7 @@ async function openConfiguredDb(configPath: string): Promise<OpenDbHandle> {
   if (!config) {
     throw new Error(`Config not found at ${configPath}.`);
   }
-  const envEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(configPath));
+  const envEntries = readNoralosEnvEntries(resolveNoralosEnvFile(configPath));
   let embeddedHandle: EmbeddedPostgresHandle | null = null;
 
   try {
@@ -3148,13 +3148,13 @@ async function runWorktreeReseed(opts: WorktreeReseedOptions): Promise<void> {
 }
 
 export async function worktreeReseedCommand(opts: WorktreeReseedOptions): Promise<void> {
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree reseed ")));
   await runWorktreeReseed(opts);
 }
 
 export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promise<void> {
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" paperclipai worktree repair ")));
 
   const seedMode = opts.seedMode ?? "minimal";
@@ -3182,7 +3182,7 @@ export async function worktreeRepairCommand(opts: WorktreeRepairOptions): Promis
   }
 
   const targetConfig = existsSync(target.configPath) ? readConfig(target.configPath) : null;
-  const targetEnvEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(target.configPath));
+  const targetEnvEntries = readNoralosEnvEntries(resolveNoralosEnvFile(target.configPath));
   const targetHasWorktreeEnv = Boolean(
     nonEmpty(targetEnvEntries.NORALOS_HOME) && nonEmpty(targetEnvEntries.NORALOS_INSTANCE_ID),
   );

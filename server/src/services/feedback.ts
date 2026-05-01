@@ -18,7 +18,7 @@ import {
   issueDocuments,
   issues,
 } from "@noralos/db";
-import { readPaperclipSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
+import { readNoralosSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
 import { claudeConfigDir, parseClaudeStreamJson } from "@noralos/adapter-claude-local/server";
 import { codexHomeDir, parseCodexJsonl } from "@noralos/adapter-codex-local/server";
 import { parseOpenCodeJsonl } from "@noralos/adapter-opencode-local/server";
@@ -1085,7 +1085,7 @@ async function buildAgentContext(
 
   const adapterConfig = asRecord(agent.adapterConfig) ?? {};
   const runtimeConfig = asRecord(agent.runtimeConfig) ?? {};
-  const desiredSkillRefs = uniqueNonEmpty(readPaperclipSkillSyncPreference(adapterConfig).desiredSkills).slice(0, MAX_SKILLS);
+  const desiredSkillRefs = uniqueNonEmpty(readNoralosSkillSyncPreference(adapterConfig).desiredSkills).slice(0, MAX_SKILLS);
   const availableSkills = desiredSkillRefs.length === 0
     ? []
     : await db
@@ -1430,7 +1430,7 @@ async function buildFeedbackTraceBundleFromRow(
   const files: FeedbackTraceBundleFile[] = [];
   const sourceRunId = resolveSourceRunId(payloadSnapshot);
 
-  let paperclipRun: Record<string, unknown> | null = null;
+  let noralosRun: Record<string, unknown> | null = null;
   let rawAdapterTrace: Record<string, unknown> | null = null;
   let normalizedAdapterTrace: Record<string, unknown> | null = null;
   let adapterType: string | null = null;
@@ -1487,7 +1487,7 @@ async function buildFeedbackTraceBundleFromRow(
         .map((entry) => entry.chunk)
         .join("");
 
-      paperclipRun = sanitizeFeedbackValue(
+      noralosRun = sanitizeFeedbackValue(
         {
           id: run.id,
           companyId: run.companyId,
@@ -1517,7 +1517,7 @@ async function buildFeedbackTraceBundleFromRow(
           eventCount: events.length,
         },
         state,
-        "bundle.paperclipRun",
+        "bundle.noralosRun",
         MAX_TRACE_FILE_CHARS,
       ) as Record<string, unknown>;
 
@@ -1525,13 +1525,13 @@ async function buildFeedbackTraceBundleFromRow(
         path: "paperclip/run.json",
         contentType: "application/json",
         source: "paperclip_run",
-        contents: `${JSON.stringify(paperclipRun, null, 2)}\n`,
+        contents: `${JSON.stringify(noralosRun, null, 2)}\n`,
       }));
 
       const sanitizedEvents = sanitizeFeedbackValue(
         events,
         state,
-        "bundle.paperclipRun.events",
+        "bundle.noralosRun.events",
         MAX_TRACE_FILE_CHARS,
       );
       files.push(makeBundleFile({
@@ -1546,7 +1546,7 @@ async function buildFeedbackTraceBundleFromRow(
           path: "paperclip/run-log.ndjson",
           contentType: "application/x-ndjson",
           source: "paperclip_run_log",
-          contents: `${sanitizeFeedbackText(logText, state, "bundle.paperclipRun.log", MAX_TRACE_FILE_CHARS)}\n`,
+          contents: `${sanitizeFeedbackText(logText, state, "bundle.noralosRun.log", MAX_TRACE_FILE_CHARS)}\n`,
         }));
       } else {
         appendNote(notes, "run_log_missing");
@@ -1647,7 +1647,7 @@ async function buildFeedbackTraceBundleFromRow(
     notes,
     envelope,
     surface,
-    paperclipRun,
+    noralosRun,
     rawAdapterTrace,
     normalizedAdapterTrace,
     privacy,

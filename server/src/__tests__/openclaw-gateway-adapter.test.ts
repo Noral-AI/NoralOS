@@ -422,24 +422,24 @@ describe("openclaw gateway adapter execute", () => {
               issueId: "issue-123",
               wakeReason: "issue_assigned",
               issueIds: ["issue-123"],
-              paperclipWorkspace: {
+              noralosWorkspace: {
                 cwd: "/tmp/worktrees/pap-123",
                 strategy: "git_worktree",
                 branchName: "pap-123-test",
               },
-              paperclipWorkspaces: [
+              noralosWorkspaces: [
                 {
                   id: "workspace-1",
                   cwd: "/tmp/project",
                 },
               ],
-              paperclipRuntimeServiceIntents: [
+              noralosRuntimeServiceIntents: [
                 {
                   name: "preview",
                   lifecycle: "ephemeral",
                 },
               ],
-              paperclipWake: {
+              noralosWake: {
                 reason: "issue_commented",
                 issue: {
                   id: "issue-123",
@@ -493,7 +493,7 @@ describe("openclaw gateway adapter execute", () => {
       expect(String(payload?.message ?? "")).toContain("wake now");
       expect(String(payload?.message ?? "")).toContain("NORALOS_RUN_ID=run-123");
       expect(String(payload?.message ?? "")).toContain("NORALOS_TASK_ID=task-123");
-      expect(String(payload?.message ?? "")).toContain("## Paperclip Wake Payload");
+      expect(String(payload?.message ?? "")).toContain("## NoralOS Wake Payload");
       expect(String(payload?.message ?? "")).toContain(
         "Treat this wake payload as the highest-priority change for the current heartbeat.",
       );

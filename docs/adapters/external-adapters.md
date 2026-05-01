@@ -146,7 +146,7 @@ import type {
 
 import {
   runChildProcess,
-  buildPaperclipEnv,
+  buildNoralOSEnv,
   renderTemplate,
 } from "@noralos/adapter-utils/server-utils";
 
@@ -161,7 +161,7 @@ export async function execute(
   const timeoutSec = Number(config.timeoutSec ?? 300);
 
   // 2. Build environment with NoralOS vars injected
-  const env = buildPaperclipEnv(agent);
+  const env = buildNoralOSEnv(agent);
 
   // 3. Render prompt template
   const prompt = config.promptTemplate
@@ -201,7 +201,7 @@ export async function execute(
 | Helper | Purpose |
 |--------|---------|
 | `runChildProcess(command, opts)` | Spawn a child process with timeout, grace period, and streaming callbacks |
-| `buildPaperclipEnv(agent)` | Inject `PAPERCLIP_*` environment variables |
+| `buildNoralOSEnv(agent)` | Inject `NORALOS_*` environment variables |
 | `renderTemplate(template, data)` | `{{variable}}` substitution in prompt templates |
 | `asString(v)`, `asNumber(v)`, `asBoolean(v)` | Safe config value extraction |
 

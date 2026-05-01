@@ -37,7 +37,7 @@ import {
   resolveNoralosInstanceId,
 } from "../config/home.js";
 import { bootstrapCeoInvite } from "./auth-bootstrap-ceo.js";
-import { printPaperclipCliBanner } from "../utils/banner.js";
+import { printNoralosCliBanner } from "../utils/banner.js";
 import {
   getTelemetryClient,
   trackInstallStarted,
@@ -327,7 +327,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     throw new Error(`Unsupported bind preset for onboard: ${opts.bind}. Use loopback, lan, or tailnet.`);
   }
 
-  printPaperclipCliBanner();
+  printNoralosCliBanner();
   p.intro(pc.bgCyan(pc.black(" noralos onboard ")));
   const configPath = resolveConfigPath(opts.config);
   const instance = describeLocalInstancePaths(resolveNoralosInstanceId());
