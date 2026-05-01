@@ -96,7 +96,7 @@ describeEmbeddedPostgres("heartbeat local environment lifecycle", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });

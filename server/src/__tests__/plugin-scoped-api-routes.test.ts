@@ -45,7 +45,7 @@ function manifest(apiRoutes: NonNullable<PaperclipPluginManifestV1["apiRoutes"]>
     version: "1.0.0",
     displayName: "Scoped API Test",
     description: "Test plugin for scoped API routes",
-    author: "Paperclip",
+    author: "NoralOS",
     categories: ["automation"],
     capabilities: ["api.routes.register"],
     entrypoints: { worker: "dist/worker.js" },

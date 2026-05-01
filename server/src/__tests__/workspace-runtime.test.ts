@@ -2196,7 +2196,7 @@ describe("ensureRuntimeServicesForRun", () => {
       workspaceRuntime: {
         services: [
           {
-            name: "paperclip-dev",
+            name: "noralos-dev",
             command: serviceCommand,
             cwd: ".",
             env: {
@@ -2829,7 +2829,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2934,7 +2934,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2962,10 +2962,10 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
       issueId: null,
       scopeType: "project_workspace",
       scopeId: projectWorkspaceId,
-      serviceName: "paperclip-dev",
+      serviceName: "noralos-dev",
       status: "running",
       lifecycle: "shared",
-      reuseKey: `project_workspace:${projectWorkspaceId}:paperclip-dev`,
+      reuseKey: `project_workspace:${projectWorkspaceId}:noralos-dev`,
       command: "pnpm dev",
       cwd: "/tmp/paperclip-primary",
       port: 49195,
@@ -2984,9 +2984,9 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
     });
     await writeLocalServiceRegistryRecord({
       version: 1,
-      serviceKey: "workspace-runtime-paperclip-dev-stale",
+      serviceKey: "workspace-runtime-noralos-dev-stale",
       profileKind: "workspace-runtime",
-      serviceName: "paperclip-dev",
+      serviceName: "noralos-dev",
       command: "pnpm dev",
       cwd: "/tmp/paperclip-primary",
       envFingerprint: "fingerprint",
@@ -2996,7 +2996,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
       processGroupId: 999999,
       provider: "local_process",
       runtimeServiceId,
-      reuseKey: `project_workspace:${projectWorkspaceId}:paperclip-dev`,
+      reuseKey: `project_workspace:${projectWorkspaceId}:noralos-dev`,
       startedAt: startedAt.toISOString(),
       lastSeenAt: updatedAt.toISOString(),
       metadata: null,
@@ -3024,7 +3024,7 @@ describeEmbeddedPostgres("workspace runtime startup reconciliation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

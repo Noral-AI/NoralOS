@@ -29,7 +29,7 @@ import {
   storybookIssueLabels,
   storybookIssues,
   storybookProjects,
-} from "../fixtures/paperclipData";
+} from "../fixtures/noralosData";
 
 const COMPANY_ID = "company-storybook";
 const SELECTED_COMPANY_STORAGE_KEY = "paperclip.selectedCompanyId";

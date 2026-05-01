@@ -29,7 +29,7 @@ Company-scoped commands also accept `--company-id <id>`.
 For clean local instances, pass `--data-dir` on the command you run:
 
 ```sh
-pnpm paperclipai run --data-dir ./tmp/paperclip-dev
+pnpm paperclipai run --data-dir ./tmp/noralos-dev
 ```
 
 ## Context Profiles

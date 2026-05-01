@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AppendMessage, ExternalStoreAdapter, ThreadMessage } from "@assistant-ui/react";
-import { usePaperclipIssueRuntime } from "./usePaperclipIssueRuntime";
+import { useNoralosIssueRuntime } from "./useNoralosIssueRuntime";
 
 const { useExternalStoreRuntimeMock } = vi.hoisted(() => ({
   useExternalStoreRuntimeMock: vi.fn(() => ({ kind: "runtime" })),
@@ -28,7 +28,7 @@ function HookHarness({
   onSend: (options: { body: string; reopen?: boolean; reassignment?: { assigneeAgentId: string | null; assigneeUserId: string | null } }) => Promise<void>;
   onCancel?: (() => Promise<void>) | undefined;
 }) {
-  usePaperclipIssueRuntime({
+  useNoralosIssueRuntime({
     messages,
     isRunning,
     onSend,
@@ -72,7 +72,7 @@ function createAssistantMessage(id: string, text: string): ThreadMessage {
   } as unknown as ThreadMessage;
 }
 
-describe("usePaperclipIssueRuntime", () => {
+describe("useNoralosIssueRuntime", () => {
   afterEach(() => {
     useExternalStoreRuntimeMock.mockReset();
   });

@@ -75,7 +75,7 @@ describe("feedbackService.saveIssueVote", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `F${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -135,7 +135,7 @@ describe("feedbackService.saveIssueVote", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `R${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -146,7 +146,7 @@ describe("feedbackService.saveIssueVote", () => {
         companyId,
         key: "paperclipai/paperclip/paperclip",
         slug: "paperclip",
-        name: "Paperclip",
+        name: "NoralOS",
         markdown: "# Paperclip",
         sourceType: "catalog",
         sourceLocator: null,
@@ -279,7 +279,7 @@ describe("feedbackService.saveIssueVote", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `D${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -348,7 +348,7 @@ describe("feedbackService.saveIssueVote", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -917,7 +917,7 @@ describe("feedbackService.saveIssueVote", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `H${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

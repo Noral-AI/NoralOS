@@ -50,7 +50,7 @@ import {
   storybookAgents,
   storybookIssues,
   storybookLiveRuns,
-} from "../fixtures/paperclipData";
+} from "../fixtures/noralosData";
 
 const companyId = "company-storybook";
 const primaryIssueId = "issue-storybook-1";

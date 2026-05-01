@@ -51,7 +51,7 @@ export function healthRoutes(
       opts.deploymentMode,
     );
     const exposeDevServerDetails =
-      exposeFullDetails || hasDevServerStatusToken(req.get("x-paperclip-dev-server-status-token"));
+      exposeFullDetails || hasDevServerStatusToken(req.get("x-noralos-dev-server-status-token"));
 
     if (!db) {
       res.json(

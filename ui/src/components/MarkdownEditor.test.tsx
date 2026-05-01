@@ -543,7 +543,7 @@ describe("MarkdownEditor", () => {
     expect(findMentionMatch("Ping @Paperclip App", "Ping @Paperclip App".length)).toEqual({
       trigger: "mention",
       marker: "@",
-      query: "Paperclip App",
+      query: "NoralOS App",
       atPos: 5,
       endPos: "Ping @Paperclip App".length,
     });
@@ -668,7 +668,7 @@ describe("MarkdownEditor", () => {
             {
               id: "project:project-123",
               kind: "project",
-              name: "Paperclip App",
+              name: "NoralOS App",
               projectId: "project-123",
               projectColor: "#336699",
             },
@@ -697,7 +697,7 @@ describe("MarkdownEditor", () => {
     await flush();
 
     const option = Array.from(document.body.querySelectorAll('button[type="button"]'))
-      .find((node) => node.textContent?.includes("Paperclip App")) as HTMLButtonElement | undefined;
+      .find((node) => node.textContent?.includes("NoralOS App")) as HTMLButtonElement | undefined;
     expect(option).toBeTruthy();
     return { option: option!, root };
   }

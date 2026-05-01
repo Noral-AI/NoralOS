@@ -244,7 +244,7 @@ NoralOS-specific metadata can live in a namespaced field on the imported task de
   "type": "shell",
   "command": "pnpm dev",
   "isBackground": true,
-  "paperclip": {
+  "noralos": {
     "kind": "service",
     "readiness": {
       "type": "http",

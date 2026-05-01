@@ -1,12 +1,12 @@
 ---
-name: paperclip-converting-plans-to-tasks
+name: noralos-converting-plans-to-tasks
 description: >
   The NoralOS way of converting a plan into executable tasks. Use whenever
   you are asked to plan, scope, or break down work inside a NoralOS company.
   Industry-agnostic guidance on how to translate a plan into assigned issues
   with the right specialty, dependencies, and parallelization so NoralOS's
   executor can pick up the work — it does not prescribe a plan format. Pair
-  with the `paperclip` skill, which covers the mechanics of writing the plan
+  with the `noralos` skill, which covers the mechanics of writing the plan
   document and reassigning the issue.
 ---
 
@@ -14,7 +14,7 @@ description: >
 
 A companion skill for turning a plan into executable NoralOS work. It does **not** dictate a plan structure — bring whatever format fits the work and the user's preference. It tells you _how_ to translate that plan into issues so that the rest of NoralOS works for you.
 
-For the **mechanics** of recording a plan (issue document with key `plan`, comment links, approval gating, who to reassign back to), follow the _Planning_ section of the `paperclip` skill. This skill covers planning method, not the API surface.
+For the **mechanics** of recording a plan (issue document with key `plan`, comment links, approval gating, who to reassign back to), follow the _Planning_ section of the `noralos` skill. This skill covers planning method, not the API surface.
 
 ## When you're asked to plan
 
@@ -39,4 +39,4 @@ For the **mechanics** of recording a plan (issue document with key `plan`, comme
 
 - Not a plan template. Use any format — prose, outline, table, RACI, Gantt, whatever fits.
 - Not software-development–specific. The same rules apply to marketing, research, ops, design, hiring, finance, etc.
-- Not a replacement for the `paperclip` skill's planning mechanics. Use both.
+- Not a replacement for the `noralos` skill's planning mechanics. Use both.

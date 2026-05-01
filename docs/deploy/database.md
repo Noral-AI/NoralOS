@@ -16,7 +16,7 @@ pnpm dev
 On first start, the server:
 
 1. Creates `~/.paperclip/instances/default/db/` for storage
-2. Ensures the `paperclip` database exists
+2. Ensures the `noralos` database exists
 3. Runs migrations automatically
 4. Starts serving requests
 

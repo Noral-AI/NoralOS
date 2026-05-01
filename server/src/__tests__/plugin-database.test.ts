@@ -143,7 +143,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
       version: "1.0.0",
       displayName: "DB Test",
       description: "Exercises restricted plugin database access.",
-      author: "Paperclip",
+      author: "NoralOS",
       categories: ["automation"],
       capabilities: [
         "database.namespace.migrate",
@@ -176,7 +176,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     const issueId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: "TST",
       requireBoardApprovalForNewAgents: false,
     });

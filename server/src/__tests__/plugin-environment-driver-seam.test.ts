@@ -19,7 +19,7 @@ const baseManifest: PaperclipPluginManifestV1 = {
   version: "1.0.0",
   displayName: "Environment Driver",
   description: "Test environment driver plugin",
-  author: "Paperclip",
+  author: "NoralOS",
   categories: ["automation"],
   capabilities: ["environment.drivers.register"],
   entrypoints: { worker: "dist/worker.js" },

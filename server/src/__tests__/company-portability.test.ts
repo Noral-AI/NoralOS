@@ -133,7 +133,7 @@ describe("company portability", () => {
     }));
     companySvc.getById.mockResolvedValue({
       id: "company-1",
-      name: "Paperclip",
+      name: "NoralOS",
       description: null,
       issuePrefix: "PAP",
       brandColor: "#5c5fff",
@@ -430,7 +430,7 @@ describe("company portability", () => {
       },
     });
 
-    expect(asTextFile(exported.files["COMPANY.md"])).toContain('name: "Paperclip"');
+    expect(asTextFile(exported.files["COMPANY.md"])).toContain('name: "NoralOS"');
     expect(asTextFile(exported.files["COMPANY.md"])).toContain('schema: "agentcompanies/v1"');
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain("You are ClaudeCoder.");
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain("skills:");
@@ -466,7 +466,7 @@ describe("company portability", () => {
 
     companySvc.getById.mockResolvedValueOnce({
       id: "company-1",
-      name: "Paperclip",
+      name: "NoralOS",
       description: null,
       issuePrefix: "PAP",
       brandColor: "#5c5fff",
@@ -607,7 +607,7 @@ describe("company portability", () => {
     };
     companySvc.getById.mockResolvedValue({
       id: "company-1",
-      name: "Paperclip",
+      name: "NoralOS",
       description: null,
       issuePrefix: "PAP",
       brandColor: "#5c5fff",
@@ -981,7 +981,7 @@ describe("company portability", () => {
     projectSvc.list.mockResolvedValue([
       {
         id: "project-1",
-        name: "Paperclip App",
+        name: "NoralOS App",
         urlKey: "paperclip-app",
         description: "Ship it",
         leadAgentId: null,
@@ -2180,7 +2180,7 @@ describe("company portability", () => {
     projectSvc.list.mockResolvedValue([]);
     companySvc.getById.mockResolvedValue({
       id: "company-1",
-      name: "Paperclip",
+      name: "NoralOS",
       description: "Existing company",
       brandColor: "#123456",
       requireBoardApprovalForNewAgents: false,

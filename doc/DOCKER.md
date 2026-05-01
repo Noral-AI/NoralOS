@@ -152,9 +152,9 @@ The `docker/quadlet/` directory contains unit files to run NoralOS + PostgreSQL 
 
 | File | Purpose |
 |------|---------|
-| `docker/quadlet/paperclip.pod` | Pod definition — groups containers into a shared network namespace |
-| `docker/quadlet/paperclip.container` | Paperclip server — joins the pod, connects to Postgres at `127.0.0.1` |
-| `docker/quadlet/paperclip-db.container` | PostgreSQL 17 — joins the pod, health-checked |
+| `docker/quadlet/noralos.pod` | Pod definition — groups containers into a shared network namespace |
+| `docker/quadlet/noralos.container` | Paperclip server — joins the pod, connects to Postgres at `127.0.0.1` |
+| `docker/quadlet/noralos-db.container` | PostgreSQL 17 — joins the pod, health-checked |
 
 ### Setup
 

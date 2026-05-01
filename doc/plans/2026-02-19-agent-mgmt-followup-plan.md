@@ -200,7 +200,7 @@ Add comment standard:
   - agent: `/agents/{id}`
   - issue: `/issues/{id}`
 
-## 6.2 `skills/paperclip-create-agent/SKILL.md`
+## 6.2 `skills/noralos-create-agent/SKILL.md`
 
 Require:
 

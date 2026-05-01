@@ -6,21 +6,21 @@ import {
   type ExternalStoreAdapter,
 } from "@assistant-ui/react";
 
-export interface PaperclipIssueRuntimeReassignment {
+export interface NoralosIssueRuntimeReassignment {
   assigneeAgentId: string | null;
   assigneeUserId: string | null;
 }
 
-export interface PaperclipIssueRuntimeSendOptions {
+export interface NoralosIssueRuntimeSendOptions {
   body: string;
   reopen?: boolean;
-  reassignment?: PaperclipIssueRuntimeReassignment;
+  reassignment?: NoralosIssueRuntimeReassignment;
 }
 
-interface UsePaperclipIssueRuntimeOptions {
+interface UseNoralosIssueRuntimeOptions {
   messages: readonly ThreadMessage[];
   isRunning: boolean;
-  onSend: (options: PaperclipIssueRuntimeSendOptions) => Promise<void>;
+  onSend: (options: NoralosIssueRuntimeSendOptions) => Promise<void>;
   onCancel?: (() => Promise<void>) | undefined;
 }
 
@@ -37,12 +37,12 @@ function readTextContent(message: AppendMessage) {
     .trim();
 }
 
-export function usePaperclipIssueRuntime({
+export function useNoralosIssueRuntime({
   messages,
   isRunning,
   onSend,
   onCancel,
-}: UsePaperclipIssueRuntimeOptions) {
+}: UseNoralosIssueRuntimeOptions) {
   const onSendRef = useRef(onSend);
   const onCancelRef = useRef(onCancel);
 

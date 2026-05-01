@@ -1,5 +1,5 @@
 ---
-name: paperclip-dev
+name: noralos-dev
 required: false
 description: >
   Develop and operate a local NoralOS instance — start and stop servers,

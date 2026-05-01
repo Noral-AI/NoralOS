@@ -1,5 +1,5 @@
 ---
-name: paperclip-create-plugin
+name: noralos-create-plugin
 description: >
   Create new NoralOS plugins with the current alpha SDK/runtime. Use when
   scaffolding a plugin package, adding a new example plugin, or updating plugin
