@@ -140,9 +140,9 @@ function readSkillMarkdown(skillName: string): string | null {
   const normalized = skillName.trim().toLowerCase();
   if (
     normalized !== "paperclip" &&
-    normalized !== "paperclip-create-agent" &&
-    normalized !== "paperclip-create-plugin" &&
-    normalized !== "paperclip-converting-plans-to-tasks" &&
+    normalized !== "noralos-create-agent" &&
+    normalized !== "noralos-create-plugin" &&
+    normalized !== "noralos-converting-plans-to-tasks" &&
     normalized !== "para-memory-files"
   )
     return null;
@@ -2867,12 +2867,12 @@ export function accessRoutes(
           path: "/api/skills/para-memory-files"
         },
         {
-          name: "paperclip-create-agent",
-          path: "/api/skills/paperclip-create-agent"
+          name: "noralos-create-agent",
+          path: "/api/skills/noralos-create-agent"
         },
         {
-          name: "paperclip-converting-plans-to-tasks",
-          path: "/api/skills/paperclip-converting-plans-to-tasks"
+          name: "noralos-converting-plans-to-tasks",
+          path: "/api/skills/noralos-converting-plans-to-tasks"
         }
       ]
     });

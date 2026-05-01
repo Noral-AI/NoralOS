@@ -32,7 +32,7 @@ async function createCustomSkill(root: string, skillName: string) {
 
 describe("codex local adapter skill injection", () => {
   const paperclipKey = "paperclipai/paperclip/paperclip";
-  const createAgentKey = "paperclipai/paperclip/paperclip-create-agent";
+  const createAgentKey = "paperclipai/paperclip/noralos-create-agent";
   const cleanupDirs = new Set<string>();
 
   afterEach(async () => {
@@ -49,7 +49,7 @@ describe("codex local adapter skill injection", () => {
     cleanupDirs.add(skillsHome);
 
     await createPaperclipRepoSkill(currentRepo, "paperclip");
-    await createPaperclipRepoSkill(currentRepo, "paperclip-create-agent");
+    await createPaperclipRepoSkill(currentRepo, "noralos-create-agent");
     await createPaperclipRepoSkill(oldRepo, "paperclip");
     await fs.symlink(path.join(oldRepo, "skills", "paperclip"), path.join(skillsHome, "paperclip"));
 
@@ -68,8 +68,8 @@ describe("codex local adapter skill injection", () => {
           },
           {
             key: createAgentKey,
-            runtimeName: "paperclip-create-agent",
-            source: path.join(currentRepo, "skills", "paperclip-create-agent"),
+            runtimeName: "noralos-create-agent",
+            source: path.join(currentRepo, "skills", "noralos-create-agent"),
           },
         ],
       },
@@ -78,8 +78,8 @@ describe("codex local adapter skill injection", () => {
     expect(await fs.realpath(path.join(skillsHome, "paperclip"))).toBe(
       await fs.realpath(path.join(currentRepo, "skills", "paperclip")),
     );
-    expect(await fs.realpath(path.join(skillsHome, "paperclip-create-agent"))).toBe(
-      await fs.realpath(path.join(currentRepo, "skills", "paperclip-create-agent")),
+    expect(await fs.realpath(path.join(skillsHome, "noralos-create-agent"))).toBe(
+      await fs.realpath(path.join(currentRepo, "skills", "noralos-create-agent")),
     );
     expect(logs).toContainEqual(
       expect.objectContaining({
@@ -90,7 +90,7 @@ describe("codex local adapter skill injection", () => {
     expect(logs).toContainEqual(
       expect.objectContaining({
         stream: "stdout",
-        chunk: expect.stringContaining('Injected Codex skill "paperclip-create-agent"'),
+        chunk: expect.stringContaining('Injected Codex skill "noralos-create-agent"'),
       }),
     );
   });

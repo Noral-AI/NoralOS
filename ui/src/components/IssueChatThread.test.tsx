@@ -166,8 +166,8 @@ vi.mock("./IssueLinkQuicklook", () => ({
   ),
 }));
 
-vi.mock("../hooks/usePaperclipIssueRuntime", () => ({
-  usePaperclipIssueRuntime: () => ({}),
+vi.mock("../hooks/useNoralosIssueRuntime", () => ({
+  useNoralosIssueRuntime: () => ({}),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

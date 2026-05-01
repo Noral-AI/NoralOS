@@ -27,7 +27,7 @@ const storybookWorktreeRoot = `${storybookRepoRoot}/.paperclip/worktrees`;
 export const storybookCompanies: Company[] = [
   {
     id: "company-storybook",
-    name: "Paperclip Storybook",
+    name: "NoralOS Storybook",
     description: "Fixture company for isolated UI review.",
     status: "active",
     pauseReason: null,
@@ -231,8 +231,8 @@ export const storybookGoals: Goal[] = [
   {
     id: "goal-company",
     companyId: "company-storybook",
-    title: "Build Paperclip",
-    description: "Make Paperclip the control plane operators trust for autonomous AI companies.",
+    title: "Build NoralOS",
+    description: "Make NoralOS the control plane operators trust for autonomous AI companies.",
     level: "company",
     status: "active",
     parentId: null,
@@ -1057,7 +1057,7 @@ export const storybookApprovals: Approval[] = [
     requestedByUserId: null,
     status: "revision_requested",
     payload: {
-      scopeName: "Paperclip App",
+      scopeName: "NoralOS App",
       scopeType: "project",
       windowKind: "calendar_month_utc",
       metric: "billed_cents",
@@ -1102,7 +1102,7 @@ export const storybookBudgetSummaries: BudgetPolicySummary[] = [
     companyId: "company-storybook",
     scopeType: "company",
     scopeId: "company-storybook",
-    scopeName: "Paperclip Storybook",
+    scopeName: "NoralOS Storybook",
     metric: "billed_cents",
     windowKind: "calendar_month_utc",
     amount: 250_000,
@@ -1124,7 +1124,7 @@ export const storybookBudgetSummaries: BudgetPolicySummary[] = [
     companyId: "company-storybook",
     scopeType: "project",
     scopeId: "project-board-ui",
-    scopeName: "Paperclip App",
+    scopeName: "NoralOS App",
     metric: "billed_cents",
     windowKind: "calendar_month_utc",
     amount: 120_000,

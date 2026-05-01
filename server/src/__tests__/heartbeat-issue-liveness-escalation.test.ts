@@ -127,7 +127,7 @@ describeEmbeddedPostgres("heartbeat issue graph liveness escalation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -445,7 +445,7 @@ describeEmbeddedPostgres("heartbeat issue graph liveness escalation", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });

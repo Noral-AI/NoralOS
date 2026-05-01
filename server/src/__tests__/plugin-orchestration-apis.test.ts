@@ -71,7 +71,7 @@ describeEmbeddedPostgres("plugin orchestration APIs", () => {
     const agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: issuePrefix(companyId),
       requireBoardApprovalForNewAgents: false,
     });

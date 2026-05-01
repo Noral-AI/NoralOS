@@ -211,7 +211,7 @@ Instead:
 2. After auth exchange, agent fetches:
    - `GET /api/skills/index`
    - `GET /api/skills/paperclip`
-   - `GET /api/skills/paperclip-create-agent` when needed
+   - `GET /api/skills/noralos-create-agent` when needed
 3. Agent loads full skill content on demand.
 
 Benefits:

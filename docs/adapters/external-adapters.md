@@ -41,7 +41,7 @@ my-adapter/
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
-  "paperclip": {
+  "noralos": {
     "adapterUiParser": "1.0.0"
   },
   "exports": {

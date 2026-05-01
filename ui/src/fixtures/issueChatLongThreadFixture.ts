@@ -191,7 +191,7 @@ export const issueChatLongThreadFixtureContext = {
     title: "Long-thread rendering baseline fixture",
     status: "in_progress",
     priority: "medium",
-    projectName: "Paperclip App",
+    projectName: "NoralOS App",
   },
   documents: [
     "Implementation Plan",

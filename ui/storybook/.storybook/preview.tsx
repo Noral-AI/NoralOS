@@ -21,7 +21,7 @@ import {
   storybookLiveRuns,
   storybookProjects,
   storybookSidebarBadges,
-} from "../fixtures/paperclipData";
+} from "../fixtures/noralosData";
 import "@mdxeditor/editor/style.css";
 import "./tailwind-entry.css";
 import "./styles.css";

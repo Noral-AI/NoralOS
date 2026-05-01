@@ -47,7 +47,7 @@ import {
   storybookIssueRuns,
   storybookIssues,
   storybookProjects,
-} from "../fixtures/paperclipData";
+} from "../fixtures/noralosData";
 
 const companyId = "company-storybook";
 const issueListViewKey = "storybook:issue-management:list";
