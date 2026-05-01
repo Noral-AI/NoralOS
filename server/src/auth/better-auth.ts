@@ -102,7 +102,11 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
   const publicUrl = process.env.NORALOS_PUBLIC_URL ?? baseUrl;
   const isHttpOnly = publicUrl ? publicUrl.startsWith("http://") : false;
 
-  const authConfig = {
+  const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const googleEnabled = Boolean(googleClientId && googleClientSecret);
+
+  const authConfig: Record<string, unknown> = {
     baseURL: baseUrl,
     secret,
     trustedOrigins,
@@ -123,11 +127,20 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
     advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies: isHttpOnly }),
   };
 
-  if (!baseUrl) {
-    delete (authConfig as { baseURL?: string }).baseURL;
+  if (googleEnabled) {
+    authConfig.socialProviders = {
+      google: {
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      },
+    };
   }
 
-  return betterAuth(authConfig);
+  if (!baseUrl) {
+    delete authConfig.baseURL;
+  }
+
+  return betterAuth(authConfig as Parameters<typeof betterAuth>[0]);
 }
 
 export function createBetterAuthHandler(auth: BetterAuthInstance): RequestHandler {
