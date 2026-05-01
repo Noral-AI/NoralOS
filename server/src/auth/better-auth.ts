@@ -134,6 +134,12 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
         clientSecret: googleClientSecret,
       },
     };
+    authConfig.account = {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ["google"],
+      },
+    };
   }
 
   if (!baseUrl) {
