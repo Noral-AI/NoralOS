@@ -119,11 +119,11 @@ function createBasePaperclipEnv(options: TestPaperclipEnv) {
     }
   }
 
-  env.PAPERCLIP_CONFIG = options.configPath;
-  env.PAPERCLIP_HOME = options.paperclipHome;
-  env.PAPERCLIP_INSTANCE_ID = options.instanceId;
-  env.PAPERCLIP_CONTEXT = path.join(options.paperclipHome, "context.json");
-  env.PAPERCLIP_AUTH_STORE = path.join(options.paperclipHome, "auth.json");
+  env.NORALOS_CONFIG = options.configPath;
+  env.NORALOS_HOME = options.paperclipHome;
+  env.NORALOS_INSTANCE_ID = options.instanceId;
+  env.NORALOS_CONTEXT = path.join(options.paperclipHome, "context.json");
+  env.NORALOS_AUTH_STORE = path.join(options.paperclipHome, "auth.json");
   if (options.shellHome) {
     env.HOME = options.shellHome;
   }
@@ -152,10 +152,10 @@ function createServerEnv(
   env.HOST = "127.0.0.1";
   env.PORT = String(port);
   env.SERVE_UI = "false";
-  env.PAPERCLIP_DB_BACKUP_ENABLED = "false";
+  env.NORALOS_DB_BACKUP_ENABLED = "false";
   env.HEARTBEAT_SCHEDULER_ENABLED = "false";
-  env.PAPERCLIP_MIGRATION_AUTO_APPLY = "true";
-  env.PAPERCLIP_UI_DEV_MIDDLEWARE = "false";
+  env.NORALOS_MIGRATION_AUTO_APPLY = "true";
+  env.NORALOS_UI_DEV_MIDDLEWARE = "false";
 
   return env;
 }
@@ -166,10 +166,10 @@ function createCliEnv(options: TestPaperclipEnv) {
   delete env.PORT;
   delete env.HOST;
   delete env.SERVE_UI;
-  delete env.PAPERCLIP_DB_BACKUP_ENABLED;
+  delete env.NORALOS_DB_BACKUP_ENABLED;
   delete env.HEARTBEAT_SCHEDULER_ENABLED;
-  delete env.PAPERCLIP_MIGRATION_AUTO_APPLY;
-  delete env.PAPERCLIP_UI_DEV_MIDDLEWARE;
+  delete env.NORALOS_MIGRATION_AUTO_APPLY;
+  delete env.NORALOS_UI_DEV_MIDDLEWARE;
   return env;
 }
 

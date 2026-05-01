@@ -9,9 +9,9 @@ const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
 function parseArgs(argv) {
   const parsed = {
     keep: false,
-    sourceIssueId: process.env.PAPERCLIP_TASK_ID ?? null,
-    projectId: process.env.PAPERCLIP_PROJECT_ID ?? null,
-    goalId: process.env.PAPERCLIP_GOAL_ID ?? null,
+    sourceIssueId: process.env.NORALOS_TASK_ID ?? null,
+    projectId: process.env.NORALOS_PROJECT_ID ?? null,
+    goalId: process.env.NORALOS_GOAL_ID ?? null,
     runKey: null,
   };
 
@@ -50,9 +50,9 @@ function parseArgs(argv) {
 function printUsage() {
   console.log(`
 Usage:
-  PAPERCLIP_API_URL=http://localhost:3100 \\
-  PAPERCLIP_API_KEY=... \\
-  PAPERCLIP_COMPANY_ID=... \\
+  NORALOS_API_URL=http://localhost:3100 \\
+  NORALOS_API_KEY=... \\
+  NORALOS_COMPANY_ID=... \\
   pnpm smoke:terminal-bench-loop-skill
 
 Options:
@@ -128,10 +128,10 @@ function createApiClient({ apiUrl, apiKey, runId }) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const apiUrl = requireEnv("PAPERCLIP_API_URL");
-  const apiKey = requireEnv("PAPERCLIP_API_KEY");
-  const companyId = requireEnv("PAPERCLIP_COMPANY_ID");
-  const runId = process.env.PAPERCLIP_RUN_ID ?? null;
+  const apiUrl = requireEnv("NORALOS_API_URL");
+  const apiKey = requireEnv("NORALOS_API_KEY");
+  const companyId = requireEnv("NORALOS_COMPANY_ID");
+  const runId = process.env.NORALOS_RUN_ID ?? null;
   const api = createApiClient({ apiUrl, apiKey, runId });
 
   await assertLocalSkillPackage();

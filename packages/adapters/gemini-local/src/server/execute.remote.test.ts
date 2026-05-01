@@ -154,7 +154,7 @@ describe("gemini remote execution", () => {
     const call = runChildProcess.mock.calls[0] as unknown as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
-    expect(call?.[3].env.PAPERCLIP_API_URL).toBe("http://198.51.100.10:3102");
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://198.51.100.10:3102");
     expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
   });

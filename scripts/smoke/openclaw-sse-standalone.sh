@@ -26,16 +26,16 @@ OPENCLAW_TIMEOUT_SEC="${OPENCLAW_TIMEOUT_SEC:-180}"
 OPENCLAW_MODEL="${OPENCLAW_MODEL:-openclaw}"
 OPENCLAW_USER="${OPENCLAW_USER:-paperclip-smoke}"
 
-PAPERCLIP_RUN_ID="${PAPERCLIP_RUN_ID:-smoke-run-$(date +%s)}"
-PAPERCLIP_AGENT_ID="${PAPERCLIP_AGENT_ID:-openclaw-smoke-agent}"
-PAPERCLIP_COMPANY_ID="${PAPERCLIP_COMPANY_ID:-openclaw-smoke-company}"
-PAPERCLIP_API_URL="${PAPERCLIP_API_URL:-http://localhost:3100}"
-PAPERCLIP_TASK_ID="${PAPERCLIP_TASK_ID:-openclaw-smoke-task}"
-PAPERCLIP_WAKE_REASON="${PAPERCLIP_WAKE_REASON:-openclaw_smoke_test}"
-PAPERCLIP_WAKE_COMMENT_ID="${PAPERCLIP_WAKE_COMMENT_ID:-}"
-PAPERCLIP_APPROVAL_ID="${PAPERCLIP_APPROVAL_ID:-}"
-PAPERCLIP_APPROVAL_STATUS="${PAPERCLIP_APPROVAL_STATUS:-}"
-PAPERCLIP_LINKED_ISSUE_IDS="${PAPERCLIP_LINKED_ISSUE_IDS:-}"
+NORALOS_RUN_ID="${NORALOS_RUN_ID:-smoke-run-$(date +%s)}"
+NORALOS_AGENT_ID="${NORALOS_AGENT_ID:-openclaw-smoke-agent}"
+NORALOS_COMPANY_ID="${NORALOS_COMPANY_ID:-openclaw-smoke-company}"
+NORALOS_API_URL="${NORALOS_API_URL:-http://localhost:3100}"
+NORALOS_TASK_ID="${NORALOS_TASK_ID:-openclaw-smoke-task}"
+NORALOS_WAKE_REASON="${NORALOS_WAKE_REASON:-openclaw_smoke_test}"
+NORALOS_WAKE_COMMENT_ID="${NORALOS_WAKE_COMMENT_ID:-}"
+NORALOS_APPROVAL_ID="${NORALOS_APPROVAL_ID:-}"
+NORALOS_APPROVAL_STATUS="${NORALOS_APPROVAL_STATUS:-}"
+NORALOS_LINKED_ISSUE_IDS="${NORALOS_LINKED_ISSUE_IDS:-}"
 OPENCLAW_TEXT_PREFIX="${OPENCLAW_TEXT_PREFIX:-Standalone OpenClaw SSE smoke test.}"
 
 [[ -n "$OPENCLAW_URL" ]] || fail "OPENCLAW_URL is required"
@@ -43,16 +43,16 @@ OPENCLAW_TEXT_PREFIX="${OPENCLAW_TEXT_PREFIX:-Standalone OpenClaw SSE smoke test
 read -r -d '' TEXT_BODY <<EOF || true
 ${OPENCLAW_TEXT_PREFIX}
 
-PAPERCLIP_RUN_ID=${PAPERCLIP_RUN_ID}
-PAPERCLIP_AGENT_ID=${PAPERCLIP_AGENT_ID}
-PAPERCLIP_COMPANY_ID=${PAPERCLIP_COMPANY_ID}
-PAPERCLIP_API_URL=${PAPERCLIP_API_URL}
-PAPERCLIP_TASK_ID=${PAPERCLIP_TASK_ID}
-PAPERCLIP_WAKE_REASON=${PAPERCLIP_WAKE_REASON}
-PAPERCLIP_WAKE_COMMENT_ID=${PAPERCLIP_WAKE_COMMENT_ID}
-PAPERCLIP_APPROVAL_ID=${PAPERCLIP_APPROVAL_ID}
-PAPERCLIP_APPROVAL_STATUS=${PAPERCLIP_APPROVAL_STATUS}
-PAPERCLIP_LINKED_ISSUE_IDS=${PAPERCLIP_LINKED_ISSUE_IDS}
+NORALOS_RUN_ID=${NORALOS_RUN_ID}
+NORALOS_AGENT_ID=${NORALOS_AGENT_ID}
+NORALOS_COMPANY_ID=${NORALOS_COMPANY_ID}
+NORALOS_API_URL=${NORALOS_API_URL}
+NORALOS_TASK_ID=${NORALOS_TASK_ID}
+NORALOS_WAKE_REASON=${NORALOS_WAKE_REASON}
+NORALOS_WAKE_COMMENT_ID=${NORALOS_WAKE_COMMENT_ID}
+NORALOS_APPROVAL_ID=${NORALOS_APPROVAL_ID}
+NORALOS_APPROVAL_STATUS=${NORALOS_APPROVAL_STATUS}
+NORALOS_LINKED_ISSUE_IDS=${NORALOS_LINKED_ISSUE_IDS}
 
 Run your Paperclip heartbeat procedure now.
 EOF
@@ -61,32 +61,32 @@ PAYLOAD="$(jq -nc \
   --arg text "$TEXT_BODY" \
   --arg model "$OPENCLAW_MODEL" \
   --arg user "$OPENCLAW_USER" \
-  --arg runId "$PAPERCLIP_RUN_ID" \
-  --arg agentId "$PAPERCLIP_AGENT_ID" \
-  --arg companyId "$PAPERCLIP_COMPANY_ID" \
-  --arg apiUrl "$PAPERCLIP_API_URL" \
-  --arg taskId "$PAPERCLIP_TASK_ID" \
-  --arg wakeReason "$PAPERCLIP_WAKE_REASON" \
-  --arg wakeCommentId "$PAPERCLIP_WAKE_COMMENT_ID" \
-  --arg approvalId "$PAPERCLIP_APPROVAL_ID" \
-  --arg approvalStatus "$PAPERCLIP_APPROVAL_STATUS" \
-  --arg linkedIssueIds "$PAPERCLIP_LINKED_ISSUE_IDS" \
+  --arg runId "$NORALOS_RUN_ID" \
+  --arg agentId "$NORALOS_AGENT_ID" \
+  --arg companyId "$NORALOS_COMPANY_ID" \
+  --arg apiUrl "$NORALOS_API_URL" \
+  --arg taskId "$NORALOS_TASK_ID" \
+  --arg wakeReason "$NORALOS_WAKE_REASON" \
+  --arg wakeCommentId "$NORALOS_WAKE_COMMENT_ID" \
+  --arg approvalId "$NORALOS_APPROVAL_ID" \
+  --arg approvalStatus "$NORALOS_APPROVAL_STATUS" \
+  --arg linkedIssueIds "$NORALOS_LINKED_ISSUE_IDS" \
   '{
     model: $model,
     user: $user,
     input: $text,
     stream: true,
     metadata: {
-      PAPERCLIP_RUN_ID: $runId,
-      PAPERCLIP_AGENT_ID: $agentId,
-      PAPERCLIP_COMPANY_ID: $companyId,
-      PAPERCLIP_API_URL: $apiUrl,
-      PAPERCLIP_TASK_ID: $taskId,
-      PAPERCLIP_WAKE_REASON: $wakeReason,
-      PAPERCLIP_WAKE_COMMENT_ID: $wakeCommentId,
-      PAPERCLIP_APPROVAL_ID: $approvalId,
-      PAPERCLIP_APPROVAL_STATUS: $approvalStatus,
-      PAPERCLIP_LINKED_ISSUE_IDS: $linkedIssueIds,
+      NORALOS_RUN_ID: $runId,
+      NORALOS_AGENT_ID: $agentId,
+      NORALOS_COMPANY_ID: $companyId,
+      NORALOS_API_URL: $apiUrl,
+      NORALOS_TASK_ID: $taskId,
+      NORALOS_WAKE_REASON: $wakeReason,
+      NORALOS_WAKE_COMMENT_ID: $wakeCommentId,
+      NORALOS_APPROVAL_ID: $approvalId,
+      NORALOS_APPROVAL_STATUS: $approvalStatus,
+      NORALOS_LINKED_ISSUE_IDS: $linkedIssueIds,
       paperclip_session_key: ("paperclip:run:" + $runId)
     }
   }')"
@@ -105,7 +105,7 @@ args=(
   -X "$OPENCLAW_METHOD"
   -H "content-type: application/json"
   -H "accept: text/event-stream"
-  -H "x-openclaw-session-key: paperclip:run:${PAPERCLIP_RUN_ID}"
+  -H "x-openclaw-session-key: paperclip:run:${NORALOS_RUN_ID}"
   -D "$headers_file"
   -o "$body_file"
   --data "$PAYLOAD"

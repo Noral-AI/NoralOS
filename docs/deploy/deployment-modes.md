@@ -84,5 +84,5 @@ pnpm paperclipai configure --section server
 Runtime override via environment variable:
 
 ```sh
-PAPERCLIP_DEPLOYMENT_MODE=authenticated PAPERCLIP_BIND=lan pnpm paperclipai run
+NORALOS_DEPLOYMENT_MODE=authenticated NORALOS_BIND=lan pnpm paperclipai run
 ```

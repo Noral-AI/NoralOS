@@ -38,18 +38,18 @@ describe("dev-runner worktree env bootstrap", () => {
     fs.writeFileSync(
       resolveWorktreeEnvFilePath(root),
       [
-        "PAPERCLIP_HOME=/tmp/paperclip-worktrees",
-        "PAPERCLIP_INSTANCE_ID=feature-worktree",
-        "PAPERCLIP_IN_WORKTREE=true",
-        "PAPERCLIP_WORKTREE_NAME=feature-worktree",
-        "PAPERCLIP_OPTIONAL= # comment-only value",
+        "NORALOS_HOME=/tmp/paperclip-worktrees",
+        "NORALOS_INSTANCE_ID=feature-worktree",
+        "NORALOS_IN_WORKTREE=true",
+        "NORALOS_WORKTREE_NAME=feature-worktree",
+        "NORALOS_OPTIONAL= # comment-only value",
         "",
       ].join("\n"),
       "utf8",
     );
 
     const env: NodeJS.ProcessEnv = {
-      PAPERCLIP_INSTANCE_ID: "already-set",
+      NORALOS_INSTANCE_ID: "already-set",
     };
     const result = bootstrapDevRunnerWorktreeEnv(root, env);
 
@@ -57,10 +57,10 @@ describe("dev-runner worktree env bootstrap", () => {
       envPath: resolveWorktreeEnvFilePath(root),
       missingEnv: false,
     });
-    expect(env.PAPERCLIP_HOME).toBe("/tmp/paperclip-worktrees");
-    expect(env.PAPERCLIP_INSTANCE_ID).toBe("already-set");
-    expect(env.PAPERCLIP_IN_WORKTREE).toBe("true");
-    expect(env.PAPERCLIP_OPTIONAL).toBe("");
+    expect(env.NORALOS_HOME).toBe("/tmp/paperclip-worktrees");
+    expect(env.NORALOS_INSTANCE_ID).toBe("already-set");
+    expect(env.NORALOS_IN_WORKTREE).toBe("true");
+    expect(env.NORALOS_OPTIONAL).toBe("");
   });
 
   it("reports uninitialized linked worktrees so dev runner can fail fast", () => {

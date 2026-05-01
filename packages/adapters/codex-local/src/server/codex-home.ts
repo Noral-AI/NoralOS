@@ -24,15 +24,15 @@ export function resolveSharedCodexHomeDir(
 }
 
 function isWorktreeMode(env: NodeJS.ProcessEnv): boolean {
-  return TRUTHY_ENV_RE.test(env.PAPERCLIP_IN_WORKTREE ?? "");
+  return TRUTHY_ENV_RE.test(env.NORALOS_IN_WORKTREE ?? "");
 }
 
 export function resolveManagedCodexHomeDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-  const paperclipHome = nonEmpty(env.PAPERCLIP_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? DEFAULT_PAPERCLIP_INSTANCE_ID;
+  const paperclipHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
+  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_PAPERCLIP_INSTANCE_ID;
   return companyId
     ? path.resolve(paperclipHome, "instances", instanceId, "companies", companyId, "codex-home")
     : path.resolve(paperclipHome, "instances", instanceId, "codex-home");

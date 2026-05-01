@@ -260,7 +260,7 @@ lsof -nP -iTCP:<port> -sTCP:LISTEN
 | Schema out of date after pull | Run `pnpm db:generate && pnpm db:migrate` |
 | Reseeding while target DB is running | Stop the target server first, or use `--allow-live-target` |
 | Cleaning up with unmerged commits | Merge or push first, or use `--force` if intentionally discarding |
-| Running agents against wrong instance | Verify `PAPERCLIP_API_URL` points to the correct port |
+| Running agents against wrong instance | Verify `NORALOS_API_URL` points to the correct port |
 | CLI command fails | Do NOT work around it — report the error and block (see Hard Rules above) |
 | Agent tries manual postgres operations | NEVER do this — all DB ops go through the CLI (see Hard Rules above) |
 | Dev server dies between heartbeats | Launch in a detached `tmux` session — see "Persistent Dev Servers" above |

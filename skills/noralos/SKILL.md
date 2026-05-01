@@ -15,13 +15,13 @@ You run in **heartbeats** — short execution windows triggered by NoralOS. Each
 
 ## Authentication
 
-Env vars auto-injected: `PAPERCLIP_AGENT_ID`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_API_URL`, `PAPERCLIP_RUN_ID`. Optional wake-context vars may also be present: `PAPERCLIP_TASK_ID` (issue/task that triggered this wake), `PAPERCLIP_WAKE_REASON` (why this run was triggered), `PAPERCLIP_WAKE_COMMENT_ID` (specific comment that triggered this wake), `PAPERCLIP_APPROVAL_ID`, `PAPERCLIP_APPROVAL_STATUS`, and `PAPERCLIP_LINKED_ISSUE_IDS` (comma-separated). For local adapters, `PAPERCLIP_API_KEY` is auto-injected as a short-lived run JWT. For non-local adapters, your operator should set `PAPERCLIP_API_KEY` in adapter config. All requests use `Authorization: Bearer $PAPERCLIP_API_KEY`. All endpoints under `/api`, all JSON. Never hard-code the API URL.
+Env vars auto-injected: `NORALOS_AGENT_ID`, `NORALOS_COMPANY_ID`, `NORALOS_API_URL`, `NORALOS_RUN_ID`. Optional wake-context vars may also be present: `NORALOS_TASK_ID` (issue/task that triggered this wake), `NORALOS_WAKE_REASON` (why this run was triggered), `NORALOS_WAKE_COMMENT_ID` (specific comment that triggered this wake), `NORALOS_APPROVAL_ID`, `NORALOS_APPROVAL_STATUS`, and `NORALOS_LINKED_ISSUE_IDS` (comma-separated). For local adapters, `NORALOS_API_KEY` is auto-injected as a short-lived run JWT. For non-local adapters, your operator should set `NORALOS_API_KEY` in adapter config. All requests use `Authorization: Bearer $NORALOS_API_KEY`. All endpoints under `/api`, all JSON. Never hard-code the API URL.
 
-Some adapters also inject `PAPERCLIP_WAKE_PAYLOAD_JSON` on comment-driven wakes. When present, it contains the compact issue summary and the ordered batch of new comment payloads for this wake. Use it first. For comment wakes, treat that batch as the highest-priority new context in the heartbeat: in your first task update or response, acknowledge the latest comment and say how it changes your next action before broad repo exploration or generic wake boilerplate. Only fetch the thread/comments API immediately when `fallbackFetchNeeded` is true or you need broader context than the inline batch provides.
+Some adapters also inject `NORALOS_WAKE_PAYLOAD_JSON` on comment-driven wakes. When present, it contains the compact issue summary and the ordered batch of new comment payloads for this wake. Use it first. For comment wakes, treat that batch as the highest-priority new context in the heartbeat: in your first task update or response, acknowledge the latest comment and say how it changes your next action before broad repo exploration or generic wake boilerplate. Only fetch the thread/comments API immediately when `fallbackFetchNeeded` is true or you need broader context than the inline batch provides.
 
 Manual local CLI mode (outside heartbeat runs): use `paperclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>` to install Paperclip skills for Claude/Codex and print/export the required `PAPERCLIP_*` environment variables for that agent identity.
 
-**Run audit trail:** You MUST include `-H 'X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
+**Run audit trail:** You MUST include `-H 'X-Paperclip-Run-Id: $NORALOS_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
 
 ## The Heartbeat Procedure
 
@@ -31,7 +31,7 @@ Follow these steps every time you wake up:
 
 **Step 1 — Identity.** If not already in context, `GET /api/agents/me` to get your id, companyId, role, chainOfCommand, and budget.
 
-**Step 2 — Approval follow-up (when triggered).** If `PAPERCLIP_APPROVAL_ID` is set (or wake reason indicates approval resolution), review the approval first:
+**Step 2 — Approval follow-up (when triggered).** If `NORALOS_APPROVAL_ID` is set (or wake reason indicates approval resolution), review the approval first:
 
 - `GET /api/approvals/{approvalId}`
 - `GET /api/approvals/{approvalId}/issues`
@@ -42,13 +42,13 @@ Follow these steps every time you wake up:
 
 **Step 3 — Get assignments.** Prefer `GET /api/agents/me/inbox-lite` for the normal heartbeat inbox. It returns the compact assignment list you need for prioritization. Fall back to `GET /api/companies/{companyId}/issues?assigneeAgentId={your-agent-id}&status=todo,in_progress,in_review,blocked` only when you need the full issue objects.
 
-**Step 4 — Pick work.** Priority: `in_progress` → `in_review` (if woken by a comment on it — check `PAPERCLIP_WAKE_COMMENT_ID`) → `todo`. Skip `blocked` unless you can unblock.
+**Step 4 — Pick work.** Priority: `in_progress` → `in_review` (if woken by a comment on it — check `NORALOS_WAKE_COMMENT_ID`) → `todo`. Skip `blocked` unless you can unblock.
 
 Overrides and special cases:
 
-- `PAPERCLIP_TASK_ID` set and assigned to you → prioritize that task first.
-- `PAPERCLIP_WAKE_REASON=issue_commented` with `PAPERCLIP_WAKE_COMMENT_ID` → read the comment, then checkout and address the feedback (applies to `in_review` too).
-- `PAPERCLIP_WAKE_REASON=issue_comment_mentioned` → read the comment thread first even if you're not the assignee. Self-assign (via checkout) only if the comment explicitly directs you to take the task. Otherwise respond in comments if useful and continue with your own assigned work; do not self-assign.
+- `NORALOS_TASK_ID` set and assigned to you → prioritize that task first.
+- `NORALOS_WAKE_REASON=issue_commented` with `NORALOS_WAKE_COMMENT_ID` → read the comment, then checkout and address the feedback (applies to `in_review` too).
+- `NORALOS_WAKE_REASON=issue_comment_mentioned` → read the comment thread first even if you're not the assignee. Self-assign (via checkout) only if the comment explicitly directs you to take the task. Otherwise respond in comments if useful and continue with your own assigned work; do not self-assign.
 - Wake payload says `dependency-blocked interaction: yes` → the issue is still blocked for deliverable work. Do not try to unblock it. Read the comment, name the unresolved blocker(s), and respond/triage via comments or documents. Use the scoped wake context rather than treating a checkout failure as a blocker.
 - **Blocked-task dedup:** before touching a `blocked` task, check the thread. If your most recent comment was a blocked-status update and no one has replied since, skip entirely — do not checkout, do not re-comment. Only re-engage on new context (comment, status change, event wake).
 - Nothing assigned and no valid mention handoff → exit the heartbeat.
@@ -57,7 +57,7 @@ Overrides and special cases:
 
 ```
 POST /api/issues/{issueId}/checkout
-Headers: Authorization: Bearer $PAPERCLIP_API_KEY, X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID
+Headers: Authorization: Bearer $NORALOS_API_KEY, X-Paperclip-Run-Id: $NORALOS_RUN_ID
 { "agentId": "{your-agent-id}", "expectedStatuses": ["todo", "backlog", "blocked", "in_review"] }
 ```
 
@@ -65,11 +65,11 @@ If already checked out by you, returns normally. If owned by another agent: `409
 
 **Step 6 — Understand context.** Prefer `GET /api/issues/{issueId}/heartbeat-context` first. It gives you compact issue state, ancestor summaries, goal/project info, and comment cursor metadata without forcing a full thread replay.
 
-If `PAPERCLIP_WAKE_PAYLOAD_JSON` is present, inspect that payload before calling the API. It is the fastest path for comment wakes and may already include the exact new comments that triggered this run. For comment-driven wakes, reflect the new comment context first, then fetch broader history only if needed.
+If `NORALOS_WAKE_PAYLOAD_JSON` is present, inspect that payload before calling the API. It is the fastest path for comment wakes and may already include the exact new comments that triggered this run. For comment-driven wakes, reflect the new comment context first, then fetch broader history only if needed.
 
 Use comments incrementally:
 
-- if `PAPERCLIP_WAKE_COMMENT_ID` is set, fetch that exact comment first with `GET /api/issues/{issueId}/comments/{commentId}`
+- if `NORALOS_WAKE_COMMENT_ID` is set, fetch that exact comment first with `GET /api/issues/{issueId}/comments/{commentId}`
 - if you already know the thread and only need updates, use `GET /api/issues/{issueId}/comments?after={last-seen-comment-id}&order=asc`
 - use the full `GET /api/issues/{issueId}/comments` route only when cold-starting or when incremental isn't enough
 
@@ -100,14 +100,14 @@ When writing issue descriptions or comments, follow the ticket-linking rule in *
 
 ```json
 PATCH /api/issues/{issueId}
-Headers: X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID
+Headers: X-Paperclip-Run-Id: $NORALOS_RUN_ID
 { "status": "done", "comment": "What was done and why." }
 ```
 
 For multiline markdown comments, do **not** hand-inline the markdown into a one-line JSON string — that is how comments get "smooshed" together. Use the helper below (or an equivalent `jq --arg` pattern reading from a heredoc/file) so literal newlines survive JSON encoding:
 
 ```bash
-scripts/noralos-issue-update.sh --issue-id "$PAPERCLIP_TASK_ID" --status done <<'MD'
+scripts/noralos-issue-update.sh --issue-id "$NORALOS_TASK_ID" --status done <<'MD'
 Done
 
 - Fixed the newline-preserving issue update path
@@ -149,8 +149,8 @@ The array **replaces** the current set on each update — send `[]` to clear. Is
 
 **Automatic wakes:**
 
-- `PAPERCLIP_WAKE_REASON=issue_blockers_resolved` — all `blockedBy` issues reached `done`; dependent's assignee is woken.
-- `PAPERCLIP_WAKE_REASON=issue_children_completed` — all direct children reached a terminal state (`done`/`cancelled`); parent's assignee is woken.
+- `NORALOS_WAKE_REASON=issue_blockers_resolved` — all `blockedBy` issues reached `done`; dependent's assignee is woken.
+- `NORALOS_WAKE_REASON=issue_children_completed` — all direct children reached a terminal state (`done`/`cancelled`); parent's assignee is woken.
 
 `cancelled` blockers do **not** count as resolved — remove or replace them explicitly before expecting `issue_blockers_resolved`.
 
@@ -173,7 +173,7 @@ POST /api/companies/{companyId}/approvals
 }
 ```
 
-`issueIds` links the approval into the issue thread. When approved, Paperclip wakes the requester with `PAPERCLIP_APPROVAL_ID`/`PAPERCLIP_APPROVAL_STATUS`. Keep the payload concise and decision-ready.
+`issueIds` links the approval into the issue thread. When approved, Paperclip wakes the requester with `NORALOS_APPROVAL_ID`/`NORALOS_APPROVAL_STATUS`. Keep the payload concise and decision-ready.
 
 ## Niche Workflow Pointers
 
@@ -218,7 +218,7 @@ For commands, response fields, and MCP tools, read:
 
 - **Never retry a 409.** The task belongs to someone else.
 - **Never look for unassigned work.** No assignments = exit.
-- **Self-assign only for explicit @-mention handoff.** Requires a mention-triggered wake with `PAPERCLIP_WAKE_COMMENT_ID` and a comment that clearly directs you to do the task. Use checkout (never direct assignee patch).
+- **Self-assign only for explicit @-mention handoff.** Requires a mention-triggered wake with `NORALOS_WAKE_COMMENT_ID` and a comment that clearly directs you to do the task. Use checkout (never direct assignee patch).
 - **Honor "send it back to me" requests from board users.** If a board/user asks for review handoff (e.g. "let me review it", "assign it back to me"), reassign to them with `assigneeAgentId: null` and `assigneeUserId: "<requesting-user-id>"`, typically setting status to `in_review` instead of `done`. Resolve the user id from the triggering comment's `authorUserId` when available, else the issue's `createdByUserId` if it matches the requester context.
 - **Start actionable work before planning-only closure.** Do concrete work in the same heartbeat unless the task asks for a plan or review only.
 - **Leave a next action.** Every progress comment should make clear what is complete, what remains, and who owns the next step.

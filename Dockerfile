@@ -65,13 +65,13 @@ ENV NODE_ENV=production \
   HOST=0.0.0.0 \
   PORT=3100 \
   SERVE_UI=true \
-  PAPERCLIP_HOME=/paperclip \
-  PAPERCLIP_INSTANCE_ID=default \
+  NORALOS_HOME=/paperclip \
+  NORALOS_INSTANCE_ID=default \
   USER_UID=${USER_UID} \
   USER_GID=${USER_GID} \
-  PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
+  NORALOS_CONFIG=/paperclip/instances/default/config.json \
+  NORALOS_DEPLOYMENT_MODE=authenticated \
+  NORALOS_DEPLOYMENT_EXPOSURE=private \
   OPENCODE_ALLOW_ALL_MODELS=true
 
 VOLUME ["/paperclip"]

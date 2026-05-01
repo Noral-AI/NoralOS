@@ -13,9 +13,9 @@ pnpm dev --bind tailnet
 
 Recommended behavior:
 
-- `PAPERCLIP_DEPLOYMENT_MODE=authenticated`
-- `PAPERCLIP_DEPLOYMENT_EXPOSURE=private`
-- `PAPERCLIP_BIND=tailnet`
+- `NORALOS_DEPLOYMENT_MODE=authenticated`
+- `NORALOS_DEPLOYMENT_EXPOSURE=private`
+- `NORALOS_BIND=tailnet`
 
 If you want the old broad private-network behavior instead, use:
 

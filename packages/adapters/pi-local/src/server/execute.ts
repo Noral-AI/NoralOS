@@ -46,7 +46,7 @@ import { ensurePiModelConfiguredAndAvailable } from "./models.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
-const PAPERCLIP_SESSIONS_DIR = path.join(os.homedir(), ".pi", "paperclips");
+const NORALOS_SESSIONS_DIR = path.join(os.homedir(), ".pi", "paperclips");
 const PI_AGENT_SKILLS_DIR = path.join(os.homedir(), ".pi", "agent", "skills");
 
 function firstNonEmptyLine(text: string): string {
@@ -129,13 +129,13 @@ function resolvePiBiller(env: Record<string, string>, provider: string | null): 
 }
 
 async function ensureSessionsDir(): Promise<string> {
-  await fs.mkdir(PAPERCLIP_SESSIONS_DIR, { recursive: true });
-  return PAPERCLIP_SESSIONS_DIR;
+  await fs.mkdir(NORALOS_SESSIONS_DIR, { recursive: true });
+  return NORALOS_SESSIONS_DIR;
 }
 
 function buildSessionPath(agentId: string, timestamp: string): string {
   const safeTimestamp = timestamp.replace(/[:.]/g, "-");
-  return path.join(PAPERCLIP_SESSIONS_DIR, `${safeTimestamp}-${agentId}.jsonl`);
+  return path.join(NORALOS_SESSIONS_DIR, `${safeTimestamp}-${agentId}.jsonl`);
 }
 
 function buildRemoteSessionPath(runtimeRootDir: string, agentId: string, timestamp: string): string {
@@ -195,9 +195,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   // Build environment
   const envConfig = parseObject(config.env);
   const hasExplicitApiKey =
-    typeof envConfig.PAPERCLIP_API_KEY === "string" && envConfig.PAPERCLIP_API_KEY.trim().length > 0;
+    typeof envConfig.NORALOS_API_KEY === "string" && envConfig.NORALOS_API_KEY.trim().length > 0;
   const env: Record<string, string> = { ...buildPaperclipEnv(agent) };
-  env.PAPERCLIP_RUN_ID = runId;
+  env.NORALOS_RUN_ID = runId;
 
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
@@ -224,13 +224,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     : [];
   const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
     
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  if (wakePayloadJson) env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
+  if (wakeTaskId) env.NORALOS_TASK_ID = wakeTaskId;
+  if (wakeReason) env.NORALOS_WAKE_REASON = wakeReason;
+  if (wakeCommentId) env.NORALOS_WAKE_COMMENT_ID = wakeCommentId;
+  if (approvalId) env.NORALOS_APPROVAL_ID = approvalId;
+  if (approvalStatus) env.NORALOS_APPROVAL_STATUS = approvalStatus;
+  if (linkedIssueIds.length > 0) env.NORALOS_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+  if (wakePayloadJson) env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
   applyPaperclipWorkspaceEnv(env, {
     workspaceCwd,
     workspaceSource,
@@ -239,15 +239,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     workspaceRepoRef,
     agentHome,
   });
-  if (workspaceHints.length > 0) env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(workspaceHints);
+  if (workspaceHints.length > 0) env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
   const targetPaperclipApiUrl = adapterExecutionTargetPaperclipApiUrl(executionTarget);
-  if (targetPaperclipApiUrl) env.PAPERCLIP_API_URL = targetPaperclipApiUrl;
+  if (targetPaperclipApiUrl) env.NORALOS_API_URL = targetPaperclipApiUrl;
 
   for (const [key, value] of Object.entries(envConfig)) {
     if (typeof value === "string") env[key] = value;
   }
   if (!hasExplicitApiKey && authToken) {
-    env.PAPERCLIP_API_KEY = authToken;
+    env.NORALOS_API_KEY = authToken;
   }
 
   // Prepend installed skill `bin/` dirs to PATH so an agent's bash tool can
@@ -347,7 +347,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       target: executionTarget,
       runtimeRootDir: remoteRuntimeRootDir,
       adapterKey: "pi",
-      hostApiToken: env.PAPERCLIP_API_KEY,
+      hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
     if (paperclipBridge) {

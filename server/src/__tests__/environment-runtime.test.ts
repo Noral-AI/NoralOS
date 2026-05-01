@@ -347,8 +347,8 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       throw new Error("Expected the test health server to listen on a TCP port.");
     }
     const runtimeApiUrl = `http://127.0.0.1:${address.port}`;
-    const previousCandidates = process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
-    process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
+    const previousCandidates = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
+    process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
     const { companyId, environment, runId } = await seedEnvironment({
       driver: "ssh",
       name: "Fixture SSH",
@@ -382,9 +382,9 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       expect(released[0]?.lease.status).toBe("released");
     } finally {
       if (previousCandidates === undefined) {
-        delete process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
+        delete process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
       } else {
-        process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
+        process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
       }
       await new Promise<void>((resolve) => healthServer.close(() => resolve()));
     }

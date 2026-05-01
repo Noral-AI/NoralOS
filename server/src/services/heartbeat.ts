@@ -151,8 +151,8 @@ const LIVENESS_BOOKKEEPING_ACTIVITY_ACTIONS = [
 ];
 const DEFERRED_WAKE_CONTEXT_KEY = "_paperclipWakeContext";
 const WAKE_COMMENT_IDS_KEY = "wakeCommentIds";
-const PAPERCLIP_WAKE_PAYLOAD_KEY = "paperclipWake";
-const PAPERCLIP_HARNESS_CHECKOUT_KEY = "paperclipHarnessCheckedOut";
+const NORALOS_WAKE_PAYLOAD_KEY = "paperclipWake";
+const NORALOS_HARNESS_CHECKOUT_KEY = "paperclipHarnessCheckedOut";
 const DETACHED_PROCESS_ERROR_CODE = "process_detached";
 const REPO_ONLY_CWD_SENTINEL = "/__paperclip_repo_only__";
 const MANAGED_WORKSPACE_GIT_CLONE_TIMEOUT_MS = 10 * 60 * 1000;
@@ -1708,7 +1708,7 @@ function enrichWakeContextSnapshot(input: {
     contextSnapshot.wakeCommentId = latestCommentId;
     // Once comment ids are normalized into the snapshot, rebuild the structured
     // wake payload from those ids later instead of carrying forward stale data.
-    delete contextSnapshot[PAPERCLIP_WAKE_PAYLOAD_KEY];
+    delete contextSnapshot[NORALOS_WAKE_PAYLOAD_KEY];
   } else if (!readNonEmptyString(contextSnapshot["wakeCommentId"]) && wakeCommentId) {
     contextSnapshot.wakeCommentId = wakeCommentId;
   }
@@ -1746,7 +1746,7 @@ export function mergeCoalescedContextSnapshot(
     merged.wakeCommentId = latestCommentId;
     // The merged context should carry canonical comment ids; the next wake will
     // regenerate any structured payload from those ids.
-    delete merged[PAPERCLIP_WAKE_PAYLOAD_KEY];
+    delete merged[NORALOS_WAKE_PAYLOAD_KEY];
   }
   return merged;
 }
@@ -1886,7 +1886,7 @@ async function buildPaperclipWakePayload(input: {
           instruction: readNonEmptyString(input.contextSnapshot.livenessContinuationInstruction),
         }
       : null,
-    checkedOutByHarness: input.contextSnapshot[PAPERCLIP_HARNESS_CHECKOUT_KEY] === true,
+    checkedOutByHarness: input.contextSnapshot[NORALOS_HARNESS_CHECKOUT_KEY] === true,
     dependencyBlockedInteraction: input.contextSnapshot.dependencyBlockedInteraction === true,
     treeHoldInteraction: input.contextSnapshot.treeHoldInteraction === true,
     activeTreeHold: parseObject(input.contextSnapshot.activeTreeHold),
@@ -4938,10 +4938,10 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     ) {
       try {
         await issuesSvc.checkout(issueId, agent.id, ["todo", "backlog", "blocked"], run.id);
-        context[PAPERCLIP_HARNESS_CHECKOUT_KEY] = true;
+        context[NORALOS_HARNESS_CHECKOUT_KEY] = true;
       } catch (error) {
         if (!isCheckoutConflictError(error)) throw error;
-        context[PAPERCLIP_HARNESS_CHECKOUT_KEY] = false;
+        context[NORALOS_HARNESS_CHECKOUT_KEY] = false;
       }
       issueContext = await getIssueExecutionContext(agent.companyId, issueId);
     }
@@ -5060,9 +5060,9 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         : null,
     });
     if (paperclipWakePayload) {
-      context[PAPERCLIP_WAKE_PAYLOAD_KEY] = paperclipWakePayload;
+      context[NORALOS_WAKE_PAYLOAD_KEY] = paperclipWakePayload;
     } else {
-      delete context[PAPERCLIP_WAKE_PAYLOAD_KEY];
+      delete context[NORALOS_WAKE_PAYLOAD_KEY];
     }
     const taskMarkdown = buildPaperclipTaskMarkdown({
       issue: issueRef
@@ -5753,7 +5753,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
             runId: run.id,
             adapterType: agent.adapterType,
           },
-          "local agent jwt secret missing or invalid; running without injected PAPERCLIP_API_KEY",
+          "local agent jwt secret missing or invalid; running without injected NORALOS_API_KEY",
         );
       }
       const adapterResult = await adapter.execute({
