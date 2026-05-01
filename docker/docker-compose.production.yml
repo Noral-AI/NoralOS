@@ -56,6 +56,8 @@ services:
       NORALOS_DEPLOYMENT_EXPOSURE: "public"
       NORALOS_PUBLIC_URL: "${NORALOS_PUBLIC_URL:?NORALOS_PUBLIC_URL must be set}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
     volumes:
       # Volume name kept as `paperclip-data` for migration safety from
       # legacy deploys that already have data persisted under that name.
