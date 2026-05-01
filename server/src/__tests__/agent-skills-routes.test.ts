@@ -244,7 +244,7 @@ describe.sequential("agent skill routes", () => {
       {
         key: "paperclipai/paperclip/paperclip",
         runtimeName: "paperclip",
-        source: "/tmp/paperclip",
+        source: "/tmp/noralos",
         required: true,
         requiredReason: "required",
       },

@@ -20,7 +20,7 @@ describe("applyDataDirOverride", () => {
 
   it("sets NORALOS_HOME and isolated default config/context paths", () => {
     const home = applyDataDirOverride({
-      dataDir: "~/paperclip-data",
+      dataDir: "~/noralos-data",
       config: undefined,
       context: undefined,
     }, { hasConfigOption: true, hasContextOption: true });
@@ -37,16 +37,16 @@ describe("applyDataDirOverride", () => {
 
   it("uses the provided instance id when deriving default config path", () => {
     const home = applyDataDirOverride({
-      dataDir: "/tmp/paperclip-alt",
+      dataDir: "/tmp/noralos-alt",
       instance: "dev_1",
       config: undefined,
       context: undefined,
     }, { hasConfigOption: true, hasContextOption: true });
 
-    expect(home).toBe(path.resolve("/tmp/paperclip-alt"));
+    expect(home).toBe(path.resolve("/tmp/noralos-alt"));
     expect(process.env.NORALOS_INSTANCE_ID).toBe("dev_1");
     expect(process.env.NORALOS_CONFIG).toBe(
-      path.resolve("/tmp/paperclip-alt", "instances", "dev_1", "config.json"),
+      path.resolve("/tmp/noralos-alt", "instances", "dev_1", "config.json"),
     );
   });
 
@@ -55,7 +55,7 @@ describe("applyDataDirOverride", () => {
     process.env.NORALOS_CONTEXT = "/env/context.json";
 
     applyDataDirOverride({
-      dataDir: "/tmp/paperclip-alt",
+      dataDir: "/tmp/noralos-alt",
       config: "/flag/config.json",
       context: "/flag/context.json",
     }, { hasConfigOption: true, hasContextOption: true });
@@ -67,12 +67,12 @@ describe("applyDataDirOverride", () => {
   it("only applies defaults for options supported by the command", () => {
     applyDataDirOverride(
       {
-        dataDir: "/tmp/paperclip-alt",
+        dataDir: "/tmp/noralos-alt",
       },
       { hasConfigOption: false, hasContextOption: false },
     );
 
-    expect(process.env.NORALOS_HOME).toBe(path.resolve("/tmp/paperclip-alt"));
+    expect(process.env.NORALOS_HOME).toBe(path.resolve("/tmp/noralos-alt"));
     expect(process.env.NORALOS_CONFIG).toBeUndefined();
     expect(process.env.NORALOS_CONTEXT).toBeUndefined();
   });

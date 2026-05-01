@@ -125,7 +125,7 @@ describeEmbeddedPostgres("heartbeat plugin environments", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/noralos-environments",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],

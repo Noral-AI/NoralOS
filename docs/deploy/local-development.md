@@ -84,7 +84,7 @@ curl http://localhost:3100/api/companies
 To wipe local data and start fresh:
 
 ```sh
-rm -rf ~/.paperclip/instances/default/db
+rm -rf ~/.noralos/instances/default/db
 pnpm dev
 ```
 
@@ -92,11 +92,11 @@ pnpm dev
 
 | Data | Path |
 |------|------|
-| Config | `~/.paperclip/instances/default/config.json` |
-| Database | `~/.paperclip/instances/default/db` |
-| Storage | `~/.paperclip/instances/default/data/storage` |
-| Secrets key | `~/.paperclip/instances/default/secrets/master.key` |
-| Logs | `~/.paperclip/instances/default/logs` |
+| Config | `~/.noralos/instances/default/config.json` |
+| Database | `~/.noralos/instances/default/db` |
+| Storage | `~/.noralos/instances/default/data/storage` |
+| Secrets key | `~/.noralos/instances/default/secrets/master.key` |
+| Logs | `~/.noralos/instances/default/logs` |
 
 Override with environment variables:
 

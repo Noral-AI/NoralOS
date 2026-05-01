@@ -104,8 +104,8 @@ describe("resolveCompanyImportApplyConfirmationMode", () => {
 
 describe("buildCompanyDashboardUrl", () => {
   it("preserves the configured base path when building a dashboard URL", () => {
-    expect(buildCompanyDashboardUrl("https://paperclip.example/app/", "PAP")).toBe(
-      "https://paperclip.example/app/PAP/dashboard",
+    expect(buildCompanyDashboardUrl("https://noralos.example/app/", "PAP")).toBe(
+      "https://noralos.example/app/PAP/dashboard",
     );
   });
 });
@@ -322,13 +322,13 @@ describe("renderCompanyImportResult", () => {
       },
       {
         targetLabel: "Imported Co (company-123)",
-        companyUrl: "https://paperclip.example/PAP/dashboard",
+        companyUrl: "https://noralos.example/PAP/dashboard",
         infoMessages: ["Using claude-local adapter"],
       },
     );
 
     expect(rendered).toContain("Company");
-    expect(rendered).toContain("https://paperclip.example/PAP/dashboard");
+    expect(rendered).toContain("https://noralos.example/PAP/dashboard");
     expect(rendered).toContain("3 agents total (1 created, 1 updated, 1 skipped)");
     expect(rendered).toContain("3 projects total (1 created, 1 updated, 1 skipped)");
     expect(rendered).toContain("Agent results");

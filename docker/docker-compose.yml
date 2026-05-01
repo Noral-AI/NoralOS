@@ -22,7 +22,7 @@ services:
     ports:
       - "3100:3100"
     environment:
-      DATABASE_URL: postgres://paperclip:paperclip@db:5432/paperclip
+      DATABASE_URL: postgres://noralos:paperclip@db:5432/noralos
       PORT: "3100"
       SERVE_UI: "true"
       NORALOS_DEPLOYMENT_MODE: "authenticated"
@@ -30,7 +30,7 @@ services:
       NORALOS_PUBLIC_URL: "${NORALOS_PUBLIC_URL:-http://localhost:3100}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
     volumes:
-      - paperclip-data:/paperclip
+      - paperclip-data:/noralos
     depends_on:
       db:
         condition: service_healthy

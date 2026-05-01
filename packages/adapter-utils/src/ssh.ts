@@ -455,7 +455,7 @@ async function importGitWorkspaceToSsh(input: {
 }): Promise<void> {
   const bundleDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-ssh-bundle-"));
   const bundlePath = path.join(bundleDir, "workspace.bundle");
-  const tempRef = "refs/paperclip/ssh-sync/import";
+  const tempRef = "refs/noralos/ssh-sync/import";
 
   try {
     await runLocalGit(input.localDir, ["update-ref", tempRef, input.snapshot.headCommit], {
@@ -503,17 +503,17 @@ async function exportGitWorkspaceFromSsh(input: {
 }): Promise<void> {
   const bundleDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-ssh-bundle-"));
   const bundlePath = path.join(bundleDir, "workspace.bundle");
-  const importedRef = "refs/paperclip/ssh-sync/imported";
+  const importedRef = "refs/noralos/ssh-sync/imported";
 
   try {
     const exportScript = [
       "set -e",
-      `git -C ${shellQuote(input.remoteDir)} update-ref refs/paperclip/ssh-sync/export HEAD`,
+      `git -C ${shellQuote(input.remoteDir)} update-ref refs/noralos/ssh-sync/export HEAD`,
       `mkdir -p ${shellQuote(path.posix.join(input.remoteDir, ".paperclip-runtime"))}`,
       `tmp_bundle=$(mktemp ${shellQuote(path.posix.join(input.remoteDir, ".paperclip-runtime", "export-XXXXXX.bundle"))})`,
-      'cleanup() { rm -f "$tmp_bundle"; git -C ' + shellQuote(input.remoteDir) + ' update-ref -d refs/paperclip/ssh-sync/export >/dev/null 2>&1 || true; }',
+      'cleanup() { rm -f "$tmp_bundle"; git -C ' + shellQuote(input.remoteDir) + ' update-ref -d refs/noralos/ssh-sync/export >/dev/null 2>&1 || true; }',
       'trap cleanup EXIT',
-      `git -C ${shellQuote(input.remoteDir)} bundle create "$tmp_bundle" refs/paperclip/ssh-sync/export >/dev/null`,
+      `git -C ${shellQuote(input.remoteDir)} bundle create "$tmp_bundle" refs/noralos/ssh-sync/export >/dev/null`,
       'cat "$tmp_bundle"',
     ].join("\n");
 
@@ -523,7 +523,7 @@ async function exportGitWorkspaceFromSsh(input: {
       localFile: bundlePath,
     });
 
-    await runLocalGit(input.localDir, ["fetch", "--force", bundlePath, `refs/paperclip/ssh-sync/export:${importedRef}`], {
+    await runLocalGit(input.localDir, ["fetch", "--force", bundlePath, `refs/noralos/ssh-sync/export:${importedRef}`], {
       timeout: 60_000,
       maxBuffer: 1024 * 1024,
     });

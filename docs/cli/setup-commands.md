@@ -103,11 +103,11 @@ pnpm paperclipai allowed-hostname my-tailscale-host
 
 | Data | Default Path |
 |------|-------------|
-| Config | `~/.paperclip/instances/default/config.json` |
-| Database | `~/.paperclip/instances/default/db` |
-| Logs | `~/.paperclip/instances/default/logs` |
-| Storage | `~/.paperclip/instances/default/data/storage` |
-| Secrets key | `~/.paperclip/instances/default/secrets/master.key` |
+| Config | `~/.noralos/instances/default/config.json` |
+| Database | `~/.noralos/instances/default/db` |
+| Logs | `~/.noralos/instances/default/logs` |
+| Storage | `~/.noralos/instances/default/data/storage` |
+| Secrets key | `~/.noralos/instances/default/secrets/master.key` |
 
 Override with:
 

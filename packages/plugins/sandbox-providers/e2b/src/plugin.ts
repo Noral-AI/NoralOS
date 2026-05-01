@@ -314,7 +314,7 @@ const plugin = definePlugin({
       typeof params.lease.metadata?.remoteCwd === "string" &&
       params.lease.metadata.remoteCwd.trim().length > 0
         ? params.lease.metadata.remoteCwd.trim()
-        : params.workspace.remotePath ?? params.workspace.localPath ?? "/paperclip-workspace";
+        : params.workspace.remotePath ?? params.workspace.localPath ?? "/noralos-workspace";
 
     if (params.lease.providerLeaseId) {
       const sandbox = await connectSandbox(config, params.lease.providerLeaseId);

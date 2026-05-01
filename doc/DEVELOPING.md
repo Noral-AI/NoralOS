@@ -140,8 +140,8 @@ docker build -t paperclip-local .
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e NORALOS_HOME=/paperclip \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -e NORALOS_HOME=/noralos \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 
@@ -162,7 +162,7 @@ For a separate review-oriented container that keeps `codex`/`claude` login state
 For local development, leave `DATABASE_URL` unset.
 The server will automatically use embedded PostgreSQL and persist data at:
 
-- `~/.paperclip/instances/default/db`
+- `~/.noralos/instances/default/db`
 
 Override home and instance:
 
@@ -176,7 +176,7 @@ No Docker or external database is required for this mode.
 
 For local development, the default storage provider is `local_disk`, which persists uploaded images/attachments at:
 
-- `~/.paperclip/instances/default/data/storage`
+- `~/.noralos/instances/default/data/storage`
 
 Configure storage provider/settings:
 
@@ -188,13 +188,13 @@ pnpm paperclipai configure --section storage
 
 When a local agent run has no resolved project/session workspace, NoralOS falls back to an agent home workspace under the instance root:
 
-- `~/.paperclip/instances/default/workspaces/<agent-id>`
+- `~/.noralos/instances/default/workspaces/<agent-id>`
 
 This path honors `NORALOS_HOME` and `NORALOS_INSTANCE_ID` in non-default setups.
 
 For `codex_local`, NoralOS also manages a per-company Codex home under the instance root and seeds it from the shared Codex login/config home (`$CODEX_HOME` or `~/.codex`):
 
-- `~/.paperclip/instances/default/companies/<company-id>/codex-home`
+- `~/.noralos/instances/default/companies/<company-id>/codex-home`
 
 If the `codex` CLI is not installed or not on `PATH`, `codex_local` agent runs fail at execution time with a clear adapter error. Quota polling uses a short-lived `codex app-server` subprocess: when `codex` cannot be spawned, that provider reports `ok: false` in aggregated quota results and the API server keeps running (it must not exit on a missing binary).
 
@@ -214,8 +214,8 @@ pnpm paperclipai worktree:make paperclip-pr-432
 
 This command:
 
-- writes repo-local files at `.paperclip/config.json` and `.paperclip/.env`
-- creates an isolated instance under `~/.paperclip-worktrees/instances/<worktree-id>/`
+- writes repo-local files at `.noralos/config.json` and `.noralos/.env`
+- creates an isolated instance under `~/.noralos-worktrees/instances/<worktree-id>/`
 - when run inside a linked git worktree, mirrors the effective git hooks into that worktree's private git dir
 - picks a free app port and embedded PostgreSQL port
 - by default seeds the isolated DB in `minimal` mode from the current effective NoralOS instance/config (repo-local worktree config when present, otherwise the default instance) via a logical SQL snapshot
@@ -228,9 +228,9 @@ Seed modes:
 
 Seeded worktree instances quarantine copied live execution by default for both `minimal` and `full` seeds. During restore, NoralOS disables copied agent timer heartbeats, resets copied `running` agents to `idle`, blocks and unassigns copied agent-owned `in_progress` issues, and unassigns copied agent-owned `todo`/`in_review` issues. This keeps a freshly booted worktree from starting agents for work already owned by the source instance. Pass `--preserve-live-work` only when you intentionally want the isolated worktree to resume copied assignments.
 
-After `worktree init`, both the server and the CLI auto-load the repo-local `.paperclip/.env` when run inside that worktree, so normal commands like `pnpm dev`, `paperclipai doctor`, and `paperclipai db:backup` stay scoped to the worktree instance.
+After `worktree init`, both the server and the CLI auto-load the repo-local `.noralos/.env` when run inside that worktree, so normal commands like `pnpm dev`, `paperclipai doctor`, and `paperclipai db:backup` stay scoped to the worktree instance.
 
-`pnpm dev` now fails fast in a linked git worktree when `.paperclip/.env` is missing, instead of silently booting against the default instance/port. If that happens, run `paperclipai worktree init` in the worktree first.
+`pnpm dev` now fails fast in a linked git worktree when `.noralos/.env` is missing, instead of silently booting against the default instance/port. If that happens, run `paperclipai worktree init` in the worktree first.
 
 Provisioned git worktrees also pause seeded routines that still have enabled schedule triggers in the isolated worktree database by default. This prevents copied daily/cron routines from firing unexpectedly inside the new workspace instance during development without disabling webhook/API-only routines.
 
@@ -260,7 +260,7 @@ eval "$(paperclipai worktree env)"
 |---|---|
 | `--name <name>` | Display name used to derive the instance id |
 | `--instance <id>` | Explicit isolated instance id |
-| `--home <path>` | Home root for worktree instances (default: `~/.paperclip-worktrees`) |
+| `--home <path>` | Home root for worktree instances (default: `~/.noralos-worktrees`) |
 | `--from-config <path>` | Source config.json to seed from |
 | `--from-data-dir <path>` | Source NORALOS_HOME used when deriving the source config |
 | `--from-instance <id>` | Source instance id (default: `default`) |
@@ -276,29 +276,29 @@ Examples:
 paperclipai worktree init --no-seed
 paperclipai worktree init --seed-mode full
 paperclipai worktree init --from-instance default
-paperclipai worktree init --from-data-dir ~/.paperclip
+paperclipai worktree init --from-data-dir ~/.noralos
 paperclipai worktree init --force
 ```
 
 Repair an already-created repo-managed worktree and reseed its isolated instance from the main default install:
 
 ```sh
-cd /path/to/paperclip/.paperclip/worktrees/PAP-884-ai-commits-component
+cd /path/to/noralos/.noralos/worktrees/PAP-884-ai-commits-component
 pnpm paperclipai worktree init --force --seed-mode minimal \
   --name PAP-884-ai-commits-component \
-  --from-config ~/.paperclip/instances/default/config.json
+  --from-config ~/.noralos/instances/default/config.json
 ```
 
-That rewrites the worktree-local `.paperclip/config.json` + `.paperclip/.env`, recreates the isolated instance under `~/.paperclip-worktrees/instances/<worktree-id>/`, and preserves the git worktree contents themselves.
+That rewrites the worktree-local `.noralos/config.json` + `.noralos/.env`, recreates the isolated instance under `~/.noralos-worktrees/instances/<worktree-id>/`, and preserves the git worktree contents themselves.
 
 For an already-created worktree where you want the CLI to decide whether to rebuild missing worktree metadata or just reseed the isolated DB, use `worktree repair`.
 
-**`pnpm paperclipai worktree repair [options]`** — Repair the current linked worktree by default, or create/repair a named linked worktree under `.paperclip/worktrees/` when `--branch` is provided. The command never targets the primary checkout unless you explicitly pass `--branch`.
+**`pnpm paperclipai worktree repair [options]`** — Repair the current linked worktree by default, or create/repair a named linked worktree under `.noralos/worktrees/` when `--branch` is provided. The command never targets the primary checkout unless you explicitly pass `--branch`.
 
 | Option | Description |
 |---|---|
-| `--branch <name>` | Existing branch/worktree selector to repair, or a branch name to create under `.paperclip/worktrees` |
-| `--home <path>` | Home root for worktree instances (default: `~/.paperclip-worktrees`) |
+| `--branch <name>` | Existing branch/worktree selector to repair, or a branch name to create under `.noralos/worktrees` |
+| `--home <path>` | Home root for worktree instances (default: `~/.noralos-worktrees`) |
 | `--from-config <path>` | Source config.json to seed from |
 | `--from-data-dir <path>` | Source `NORALOS_HOME` used when deriving the source config |
 | `--from-instance <id>` | Source instance id when deriving the source config (default: `default`) |
@@ -310,11 +310,11 @@ Examples:
 
 ```sh
 # From inside a linked worktree, rebuild missing .paperclip metadata and reseed it from the default instance.
-cd /path/to/paperclip/.paperclip/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
+cd /path/to/noralos/.noralos/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
 pnpm paperclipai worktree repair
 
-# From the primary checkout, create or repair a linked worktree for a branch under .paperclip/worktrees/.
-cd /path/to/paperclip
+# From the primary checkout, create or repair a linked worktree for a branch under .noralos/worktrees/.
+cd /path/to/noralos
 pnpm paperclipai worktree repair --branch PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
 ```
 
@@ -337,7 +337,7 @@ Examples:
 
 ```sh
 # From the main repo, reseed a worktree from the current default/master instance.
-cd /path/to/paperclip
+cd /path/to/noralos
 pnpm paperclipai worktree reseed \
   --from current \
   --to PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat \
@@ -345,7 +345,7 @@ pnpm paperclipai worktree reseed \
   --yes
 
 # From inside a worktree, reseed it from the default instance config.
-cd /path/to/paperclip/.paperclip/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
+cd /path/to/noralos/.noralos/worktrees/PAP-1132-assistant-ui-pap-1131-make-issues-comments-be-like-a-chat
 pnpm paperclipai worktree reseed \
   --from-instance default \
   --seed-mode full
@@ -357,7 +357,7 @@ pnpm paperclipai worktree reseed \
 |---|---|
 | `--start-point <ref>` | Remote ref to base the new branch on (e.g. `origin/main`) |
 | `--instance <id>` | Explicit isolated instance id |
-| `--home <path>` | Home root for worktree instances (default: `~/.paperclip-worktrees`) |
+| `--home <path>` | Home root for worktree instances (default: `~/.noralos-worktrees`) |
 | `--from-config <path>` | Source config.json to seed from |
 | `--from-data-dir <path>` | Source NORALOS_HOME used when deriving the source config |
 | `--from-instance <id>` | Source instance id (default: `default`) |
@@ -411,7 +411,7 @@ Expected:
 To wipe local dev data and start fresh:
 
 ```sh
-rm -rf ~/.paperclip/instances/default/db
+rm -rf ~/.noralos/instances/default/db
 pnpm dev
 ```
 
@@ -428,7 +428,7 @@ schemas. Defaults:
 - enabled
 - every 60 minutes
 - retain 30 days
-- backup dir: `~/.paperclip/instances/default/data/backups`
+- backup dir: `~/.noralos/instances/default/data/backups`
 
 Configure these in:
 
@@ -459,7 +459,7 @@ those providers are enabled.
 
 Agent env vars now support secret references. By default, secret values are stored with local encryption and only secret refs are persisted in agent config.
 
-- Default local key path: `~/.paperclip/instances/default/secrets/master.key`
+- Default local key path: `~/.noralos/instances/default/secrets/master.key`
 - Override key material directly: `NORALOS_SECRETS_MASTER_KEY`
 - Override key file path: `NORALOS_SECRETS_MASTER_KEY_FILE`
 
@@ -532,7 +532,7 @@ Agent-oriented invite onboarding now exposes machine-readable API docs:
 - `GET /api/invites/:token/onboarding` returns onboarding manifest details (registration endpoint, claim endpoint template, skill install hints).
 - `GET /api/invites/:token/onboarding.txt` returns a plain-text onboarding doc intended for both human operators and agents (llm.txt-style handoff), including optional inviter message and suggested network host candidates.
 - `GET /api/skills/index` lists available skill documents.
-- `GET /api/skills/paperclip` returns the Paperclip heartbeat skill markdown.
+- `GET /api/skills/noralos` returns the Paperclip heartbeat skill markdown.
 
 ## OpenClaw Join Smoke Test
 

@@ -15,7 +15,7 @@ describe("home path resolution", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  it("defaults to ~/.paperclip and default instance", () => {
+  it("defaults to ~/.noralos and default instance", () => {
     delete process.env.NORALOS_HOME;
     delete process.env.NORALOS_INSTANCE_ID;
 
@@ -26,7 +26,7 @@ describe("home path resolution", () => {
   });
 
   it("supports NORALOS_HOME and explicit instance ids", () => {
-    process.env.NORALOS_HOME = "~/paperclip-home";
+    process.env.NORALOS_HOME = "~/noralos-home";
 
     const home = resolvePaperclipHomeDir();
     expect(home).toBe(path.resolve(os.homedir(), "paperclip-home"));

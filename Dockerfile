@@ -10,7 +10,7 @@ RUN apt-get update \
 # Modify the existing node user/group to have the specified UID/GID to match host user
 RUN usermod -u $USER_UID --non-unique node \
   && groupmod -g $USER_GID --non-unique node \
-  && usermod -g $USER_GID -d /paperclip node
+  && usermod -g $USER_GID -d /noralos node
 
 FROM base AS deps
 WORKDIR /app
@@ -54,27 +54,27 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/cod
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /paperclip \
-  && chown node:node /paperclip
+  && mkdir -p /noralos \
+  && chown node:node /noralos
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENV NODE_ENV=production \
-  HOME=/paperclip \
+  HOME=/noralos \
   HOST=0.0.0.0 \
   PORT=3100 \
   SERVE_UI=true \
-  NORALOS_HOME=/paperclip \
+  NORALOS_HOME=/noralos \
   NORALOS_INSTANCE_ID=default \
   USER_UID=${USER_UID} \
   USER_GID=${USER_GID} \
-  NORALOS_CONFIG=/paperclip/instances/default/config.json \
+  NORALOS_CONFIG=/noralos/instances/default/config.json \
   NORALOS_DEPLOYMENT_MODE=authenticated \
   NORALOS_DEPLOYMENT_EXPOSURE=private \
   OPENCODE_ALLOW_ALL_MODELS=true
 
-VOLUME ["/paperclip"]
+VOLUME ["/noralos"]
 EXPOSE 3100
 
 ENTRYPOINT ["docker-entrypoint.sh"]

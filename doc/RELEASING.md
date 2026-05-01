@@ -72,7 +72,7 @@ Users install canaries with:
 ```bash
 npx paperclipai@canary onboard
 # or
-npx paperclipai@canary onboard --data-dir "$(mktemp -d /tmp/paperclip-canary.XXXXXX)"
+npx paperclipai@canary onboard --data-dir "$(mktemp -d /tmp/noralos-canary.XXXXXX)"
 ```
 
 ### Stable

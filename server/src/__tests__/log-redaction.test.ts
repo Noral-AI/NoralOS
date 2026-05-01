@@ -10,7 +10,7 @@ describe("log redaction", () => {
     const userName = "paperclipuser";
     const maskedUserName = maskUserNameForLogs(userName);
     const input = [
-      `cwd=/Users/${userName}/paperclip`,
+      `cwd=/Users/${userName}/noralos`,
       `home=/home/${userName}/workspace`,
       `win=C:\\Users\\${userName}\\paperclip`,
     ].join("\n");
@@ -20,7 +20,7 @@ describe("log redaction", () => {
       homeDirs: [`/Users/${userName}`, `/home/${userName}`, `C:\\Users\\${userName}`],
     });
 
-    expect(result).toContain(`cwd=/Users/${maskedUserName}/paperclip`);
+    expect(result).toContain(`cwd=/Users/${maskedUserName}/noralos`);
     expect(result).toContain(`home=/home/${maskedUserName}/workspace`);
     expect(result).toContain(`win=C:\\Users\\${maskedUserName}\\paperclip`);
     expect(result).not.toContain(userName);
@@ -46,8 +46,8 @@ describe("log redaction", () => {
     const userName = "paperclipuser";
     const maskedUserName = maskUserNameForLogs(userName);
     const result = redactCurrentUserValue({
-      cwd: `/Users/${userName}/paperclip`,
-      prompt: `open /Users/${userName}/paperclip/ui`,
+      cwd: `/Users/${userName}/noralos`,
+      prompt: `open /Users/${userName}/noralos/ui`,
       nested: {
         author: userName,
       },
@@ -58,8 +58,8 @@ describe("log redaction", () => {
     });
 
     expect(result).toEqual({
-      cwd: `/Users/${maskedUserName}/paperclip`,
-      prompt: `open /Users/${maskedUserName}/paperclip/ui`,
+      cwd: `/Users/${maskedUserName}/noralos`,
+      prompt: `open /Users/${maskedUserName}/noralos/ui`,
       nested: {
         author: maskedUserName,
       },
@@ -68,7 +68,7 @@ describe("log redaction", () => {
   });
 
   it("skips redaction when disabled", () => {
-    const input = "cwd=/Users/paperclipuser/paperclip";
+    const input = "cwd=/Users/paperclipuser/noralos";
     expect(redactCurrentUserText(input, { enabled: false })).toBe(input);
   });
 });

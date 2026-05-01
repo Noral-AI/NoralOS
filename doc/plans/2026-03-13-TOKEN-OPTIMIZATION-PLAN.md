@@ -128,7 +128,7 @@ Important `codex_local` nuance:
 
 Current repo skill sizes:
 
-- `skills/paperclip/SKILL.md`: 17,441 bytes
+- `skills/noralos/SKILL.md`: 17,441 bytes
 - `.agents/skills/create-agent-adapter/SKILL.md`: 31,832 bytes
 - `skills/noralos-create-agent/SKILL.md`: 4,718 bytes
 - `skills/para-memory-files/SKILL.md`: 3,978 bytes
@@ -373,7 +373,7 @@ Initial targets:
 3. Change `shouldResetTaskSessionForWake(...)` so timer wakes do not reset by default.
 4. Implement `bootstrapPromptTemplate` end-to-end in adapter execution.
 5. Add compact heartbeat context and incremental comment APIs.
-6. Rewrite `skills/paperclip/SKILL.md` around delta-fetch behavior.
+6. Rewrite `skills/noralos/SKILL.md` around delta-fetch behavior.
 7. Add session rotation with carry-forward summaries.
 8. Replace global skill injection with explicit allowlists.
 9. Fix `codex_local` skill resolution so worktree-local skill changes reliably reach the runtime.

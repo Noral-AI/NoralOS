@@ -14,7 +14,7 @@ All environment variables that NoralOS uses for server configuration.
 | `NORALOS_BIND_HOST` | (unset) | Required when `NORALOS_BIND=custom` |
 | `HOST` | `127.0.0.1` | Legacy host override; prefer `NORALOS_BIND` for new setups |
 | `DATABASE_URL` | (embedded) | PostgreSQL connection string |
-| `NORALOS_HOME` | `~/.paperclip` | Base directory for all Paperclip data |
+| `NORALOS_HOME` | `~/.noralos` | Base directory for all Paperclip data |
 | `NORALOS_INSTANCE_ID` | `default` | Instance identifier (for multiple local instances) |
 | `NORALOS_DEPLOYMENT_MODE` | `local_trusted` | Runtime mode override |
 | `NORALOS_DEPLOYMENT_EXPOSURE` | `private` | Exposure policy when deployment mode is `authenticated` |
@@ -25,7 +25,7 @@ All environment variables that NoralOS uses for server configuration.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NORALOS_SECRETS_MASTER_KEY` | (from file) | 32-byte encryption key (base64/hex/raw) |
-| `NORALOS_SECRETS_MASTER_KEY_FILE` | `~/.paperclip/.../secrets/master.key` | Path to key file |
+| `NORALOS_SECRETS_MASTER_KEY_FILE` | `~/.noralos/.../secrets/master.key` | Path to key file |
 | `NORALOS_SECRETS_STRICT_MODE` | `false` | Require secret refs for sensitive env vars |
 
 ## Agent Runtime (Injected into agent processes)

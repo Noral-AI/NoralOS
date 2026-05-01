@@ -210,7 +210,7 @@ Instead:
 1. Prompt includes a compact instruction to fetch skills from NoralOS.
 2. After auth exchange, agent fetches:
    - `GET /api/skills/index`
-   - `GET /api/skills/paperclip`
+   - `GET /api/skills/noralos`
    - `GET /api/skills/noralos-create-agent` when needed
 3. Agent loads full skill content on demand.
 

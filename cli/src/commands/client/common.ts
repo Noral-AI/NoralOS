@@ -28,7 +28,7 @@ export interface ResolvedClientContext {
 export function addCommonClientOptions(command: Command, opts?: { includeCompany?: boolean }): Command {
   command
     .option("-c, --config <path>", "Path to NoralOS config file")
-    .option("-d, --data-dir <path>", "NoralOS data directory root (isolates state from ~/.paperclip)")
+    .option("-d, --data-dir <path>", "NoralOS data directory root (isolates state from ~/.noralos)")
     .option("--context <path>", "Path to CLI context file")
     .option("--profile <name>", "CLI context profile name")
     .option("--api-base <url>", "Base URL for the NoralOS API")

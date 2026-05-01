@@ -534,7 +534,7 @@ describe("worktree config repair", () => {
       configPath,
       JSON.stringify(
         {
-          ...buildLegacyConfig(instanceRoot, "https://paperclip.example"),
+          ...buildLegacyConfig(instanceRoot, "https://noralos.example"),
           database: {
             mode: "embedded-postgres",
             embeddedPostgresDataDir: path.join(instanceRoot, "db"),
@@ -600,7 +600,7 @@ describe("worktree config repair", () => {
 
     expect(writtenConfig.server.port).toBe(3103);
     expect(writtenConfig.database.embeddedPostgresPort).toBe(54335);
-    expect(writtenConfig.auth.publicBaseUrl).toBe("https://paperclip.example");
+    expect(writtenConfig.auth.publicBaseUrl).toBe("https://noralos.example");
   });
 
   it("can update the in-memory config when auth URL already includes a port", () => {
@@ -622,7 +622,7 @@ describe("worktree config repair", () => {
 
   it("does not rewrite the in-memory config when auth URL has no explicit port", () => {
     const { config, changed } = applyRuntimePortSelectionToConfig(
-      buildLegacyConfig("/tmp/shared", "https://paperclip.example"),
+      buildLegacyConfig("/tmp/shared", "https://noralos.example"),
       {
         serverPort: 3104,
         databasePort: 54340,
@@ -634,6 +634,6 @@ describe("worktree config repair", () => {
     expect(changed).toBe(true);
     expect(config.server.port).toBe(3100);
     expect(config.database.embeddedPostgresPort).toBe(54340);
-    expect(config.auth.publicBaseUrl).toBe("https://paperclip.example");
+    expect(config.auth.publicBaseUrl).toBe("https://noralos.example");
   });
 });

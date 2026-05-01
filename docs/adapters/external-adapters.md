@@ -283,7 +283,7 @@ Local adapters are symlinked into NoralOS's adapter directory. Changes to the so
 
 ### Via adapter-plugins.json
 
-For development, you can also edit `~/.paperclip/adapter-plugins.json` directly:
+For development, you can also edit `~/.noralos/adapter-plugins.json` directly:
 
 ```json
 [

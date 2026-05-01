@@ -31,7 +31,7 @@ For a plugin that lives outside the NoralOS repo:
 pnpm --filter @paperclipai/create-paperclip-plugin build
 node packages/plugins/create-paperclip-plugin/dist/index.js @yourscope/plugin-name \
   --output /absolute/path/to/plugin-repos \
-  --sdk-path /absolute/path/to/paperclip/packages/plugins/sdk
+  --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
 ```
 
 That creates a package with:

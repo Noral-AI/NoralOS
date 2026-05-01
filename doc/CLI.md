@@ -65,7 +65,7 @@ All client commands support:
 
 Company-scoped commands also support `--company-id <id>`.
 
-Use `--data-dir` on any CLI command to isolate all default local state (config/context/db/logs/storage/secrets) away from `~/.paperclip`:
+Use `--data-dir` on any CLI command to isolate all default local state (config/context/db/logs/storage/secrets) away from `~/.noralos`:
 
 ```sh
 pnpm paperclipai run --data-dir ./tmp/noralos-dev
@@ -74,7 +74,7 @@ pnpm paperclipai issue list --data-dir ./tmp/noralos-dev
 
 ## Context Profiles
 
-Store local defaults in `~/.paperclip/context.json`:
+Store local defaults in `~/.noralos/context.json`:
 
 ```sh
 pnpm paperclipai context set --api-base http://localhost:3100 --company-id <company-id>
@@ -178,13 +178,13 @@ pnpm paperclipai heartbeat run --agent-id <agent-id> [--api-base http://localhos
 
 ## Local Storage Defaults
 
-Default local instance root is `~/.paperclip/instances/default`:
+Default local instance root is `~/.noralos/instances/default`:
 
-- config: `~/.paperclip/instances/default/config.json`
-- embedded db: `~/.paperclip/instances/default/db`
-- logs: `~/.paperclip/instances/default/logs`
-- storage: `~/.paperclip/instances/default/data/storage`
-- secrets key: `~/.paperclip/instances/default/secrets/master.key`
+- config: `~/.noralos/instances/default/config.json`
+- embedded db: `~/.noralos/instances/default/db`
+- logs: `~/.noralos/instances/default/logs`
+- storage: `~/.noralos/instances/default/data/storage`
+- secrets key: `~/.noralos/instances/default/secrets/master.key`
 
 Override base home or instance with env vars:
 

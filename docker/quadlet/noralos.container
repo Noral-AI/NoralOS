@@ -7,13 +7,13 @@ After=paperclip-db.service
 Image=paperclip-local
 ContainerName=paperclip
 Pod=paperclip.pod
-Volume=%h/.local/share/paperclip:/paperclip:Z
+Volume=%h/.local/share/noralos:/noralos:Z
 Environment=HOST=0.0.0.0
-Environment=NORALOS_HOME=/paperclip
+Environment=NORALOS_HOME=/noralos
 Environment=NORALOS_DEPLOYMENT_MODE=authenticated
 Environment=NORALOS_DEPLOYMENT_EXPOSURE=private
 Environment=NORALOS_PUBLIC_URL=http://localhost:3100
-EnvironmentFile=%h/.config/containers/systemd/paperclip.env
+EnvironmentFile=%h/.config/containers/systemd/noralos.env
 
 [Service]
 Restart=on-failure

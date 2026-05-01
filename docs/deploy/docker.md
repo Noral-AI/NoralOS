@@ -34,8 +34,8 @@ docker build -t paperclip-local .
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e NORALOS_HOME=/paperclip \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -e NORALOS_HOME=/noralos \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 
@@ -61,10 +61,10 @@ Pass API keys to enable local adapter runs inside the container:
 docker run --name paperclip \
   -p 3100:3100 \
   -e HOST=0.0.0.0 \
-  -e NORALOS_HOME=/paperclip \
+  -e NORALOS_HOME=/noralos \
   -e OPENAI_API_KEY=sk-... \
   -e ANTHROPIC_API_KEY=sk-... \
-  -v "$(pwd)/data/docker-paperclip:/paperclip" \
+  -v "$(pwd)/data/docker-paperclip:/noralos" \
   paperclip-local
 ```
 
