@@ -39,10 +39,10 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (breadcrumbs.length === 0) {
-      document.title = "NoralOS";
+      document.title = "noralAI";
     } else {
       const parts = [...breadcrumbs].reverse().map((b) => b.label);
-      document.title = `${parts.join(" · ")} · NoralOS`;
+      document.title = `${parts.join(" - ")} - noralAI`;
     }
   }, [breadcrumbs]);
 
