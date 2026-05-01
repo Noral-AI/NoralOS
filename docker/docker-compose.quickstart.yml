@@ -1,0 +1,18 @@
+services:
+  paperclip:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "${NORALOS_PORT:-3100}:3100"
+    environment:
+      HOST: "0.0.0.0"
+      NORALOS_HOME: "/noralos"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      NORALOS_DEPLOYMENT_MODE: "authenticated"
+      NORALOS_DEPLOYMENT_EXPOSURE: "private"
+      NORALOS_PUBLIC_URL: "${NORALOS_PUBLIC_URL:-http://localhost:3100}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+    volumes:
+      - "${NORALOS_DATA_DIR:-../data/docker-paperclip}:/noralos"

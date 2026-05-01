@@ -1,0 +1,128 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  collectInternalDependencyProblems,
+  isCanaryVersion,
+  verifyPackageRegistryState,
+} from "./verify-release-registry-state.mjs";
+
+test("isCanaryVersion matches release canaries", () => {
+  assert.equal(isCanaryVersion("2026.427.0-canary.3"), true);
+  assert.equal(isCanaryVersion("2026.427.0"), false);
+});
+
+test("collectInternalDependencyProblems flags missing internal versions", () => {
+  const manifest = {
+    dependencies: {
+      "@noralos/plugin-sdk": "2026.425.0-canary.5",
+      e2b: "^2.19.0",
+    },
+  };
+  const packageDocsByName = new Map([
+    [
+      "@noralos/plugin-sdk",
+      {
+        versions: {
+          "2026.427.0-canary.3": {},
+        },
+      },
+    ],
+  ]);
+
+  assert.deepEqual(collectInternalDependencyProblems(manifest, packageDocsByName), [
+    "dependencies requires @noralos/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+  ]);
+});
+
+test("verifyPackageRegistryState fails when canary latest is left in place by default", () => {
+  const packageDocsByName = new Map([
+    [
+      "@noralos/plugin-e2b",
+      {
+        "dist-tags": {
+          latest: "2026.425.0-canary.5",
+          canary: "2026.427.0-canary.3",
+        },
+        versions: {
+          "2026.425.0-canary.5": {
+            dependencies: {
+              "@noralos/plugin-sdk": "2026.425.0-canary.5",
+            },
+          },
+          "2026.427.0-canary.3": {
+            dependencies: {
+              "@noralos/plugin-sdk": "2026.427.0-canary.3",
+            },
+          },
+        },
+      },
+    ],
+    [
+      "@noralos/plugin-sdk",
+      {
+        versions: {
+          "2026.427.0-canary.3": {},
+        },
+      },
+    ],
+  ]);
+
+  assert.deepEqual(
+    verifyPackageRegistryState({
+      packageName: "@noralos/plugin-e2b",
+      packageDoc: packageDocsByName.get("@noralos/plugin-e2b"),
+      packageDocsByName,
+      channel: "canary",
+      distTag: "canary",
+      targetVersion: "2026.427.0-canary.3",
+      allowCanaryLatest: false,
+    }),
+    [
+      "@noralos/plugin-e2b: latest dist-tag still resolves to canary 2026.425.0-canary.5; rerun with --allow-canary-latest only when that state is intentional",
+      "@noralos/plugin-e2b@2026.425.0-canary.5 via latest: dependencies requires @noralos/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+    ],
+  );
+});
+
+test("verifyPackageRegistryState allows intentional canary latest but still checks dependencies", () => {
+  const packageDocsByName = new Map([
+    [
+      "noralos",
+      {
+        "dist-tags": {
+          latest: "2026.427.0-canary.3",
+          canary: "2026.427.0-canary.3",
+        },
+        versions: {
+          "2026.427.0-canary.3": {
+            dependencies: {
+              "@noralos/server": "2026.427.0-canary.3",
+            },
+          },
+        },
+      },
+    ],
+    [
+      "@noralos/server",
+      {
+        versions: {
+          "2026.427.0-canary.3": {},
+        },
+      },
+    ],
+  ]);
+
+  assert.deepEqual(
+    verifyPackageRegistryState({
+      packageName: "noralos",
+      packageDoc: packageDocsByName.get("noralos"),
+      packageDocsByName,
+      channel: "canary",
+      distTag: "canary",
+      targetVersion: "2026.427.0-canary.3",
+      allowCanaryLatest: true,
+    }),
+    [],
+  );
+});
