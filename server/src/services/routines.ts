@@ -286,7 +286,7 @@ function resolveRoutineVariableValues(
 
   for (const variable of variables) {
     // Workspace-derived automatic values are authoritative for variables that
-    // Paperclip manages from execution context, so callers cannot override them.
+    // NoralOS manages from execution context, so callers cannot override them.
     const candidate = automaticVariables[variable.name] !== undefined
       ? automaticVariables[variable.name]
       : provided[variable.name] !== undefined
@@ -1493,7 +1493,7 @@ export function routineService(
         const secretValue = await resolveTriggerSecret(trigger, routine.companyId);
         const rawBody = input.rawBody ?? Buffer.from(JSON.stringify(input.payload ?? {}));
         // Accept X-Hub-Signature-256 (GitHub/Sentry) or fall back to the
-        // generic X-Paperclip-Signature header so operators can use github_hmac
+        // generic X-NoralOS-Signature header so operators can use github_hmac
         // mode with either header convention.
         const providedSignature = (input.hubSignatureHeader ?? input.signatureHeader)?.trim() ?? "";
         if (!providedSignature) throw unauthorized();

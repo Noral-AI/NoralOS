@@ -6,7 +6,7 @@ Date: 2026-02-23
 
 ## Goal
 
-Keep Paperclip low-friction while making the mode model simpler and safer:
+Keep NoralOS low-friction while making the mode model simpler and safer:
 
 1. `local_trusted` remains the default and easiest path.
 2. one authenticated runtime mode supports both private-network local use and public cloud use.

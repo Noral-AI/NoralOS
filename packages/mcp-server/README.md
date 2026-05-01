@@ -1,8 +1,8 @@
-# Paperclip MCP Server
+# NoralOS MCP Server
 
-Model Context Protocol server for Paperclip.
+Model Context Protocol server for NoralOS.
 
-This package is a thin MCP wrapper over the existing Paperclip REST API. It does
+This package is a thin MCP wrapper over the existing NoralOS REST API. It does
 not talk to the database directly and it does not reimplement business logic.
 
 ## Authentication

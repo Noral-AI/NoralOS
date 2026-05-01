@@ -1,13 +1,13 @@
 # Plugin Authoring Guide
 
-This guide describes the current, implemented way to create a Paperclip plugin in this repo.
+This guide describes the current, implemented way to create a NoralOS plugin in this repo.
 
 It is intentionally narrower than [PLUGIN_SPEC.md](./PLUGIN_SPEC.md). The spec includes future ideas; this guide only covers the alpha surface that exists now.
 
 ## Current reality
 
 - Treat plugin workers and plugin UI as trusted code.
-- Plugin UI runs as same-origin JavaScript inside the main Paperclip app.
+- Plugin UI runs as same-origin JavaScript inside the main NoralOS app.
 - Worker-side host APIs are capability-gated.
 - Plugin UI is not sandboxed by manifest capabilities.
 - Plugin database migrations are restricted to a host-derived plugin namespace.
@@ -25,7 +25,7 @@ pnpm --filter @paperclipai/create-paperclip-plugin build
 node packages/plugins/create-paperclip-plugin/dist/index.js @yourscope/plugin-name --output ./packages/plugins/examples
 ```
 
-For a plugin that lives outside the Paperclip repo:
+For a plugin that lives outside the NoralOS repo:
 
 ```bash
 pnpm --filter @paperclipai/create-paperclip-plugin build
@@ -58,7 +58,7 @@ pnpm test
 pnpm build
 ```
 
-For local development, install it into Paperclip from an absolute local path through the plugin manager or API. The server supports local filesystem installs and watches local-path plugins for file changes so worker restarts happen automatically after rebuilds.
+For local development, install it into NoralOS from an absolute local path through the plugin manager or API. The server supports local filesystem installs and watches local-path plugins for file changes so worker restarts happen automatically after rebuilds.
 
 Example:
 

@@ -354,7 +354,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
 
   if (existingConfig) {
     p.log.message(
-      pc.dim("Existing Paperclip install detected; keeping the current configuration unchanged."),
+      pc.dim("Existing NoralOS install detected; keeping the current configuration unchanged."),
     );
     p.log.message(pc.dim(`Use ${pc.cyan("paperclipai configure")} if you want to change settings.`));
 
@@ -403,7 +403,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     let shouldRunNow = opts.run === true || opts.yes === true;
     if (!shouldRunNow && !opts.invokedByRun && process.stdin.isTTY && process.stdout.isTTY) {
       const answer = await p.confirm({
-        message: "Start Paperclip now?",
+        message: "Start NoralOS now?",
         initialValue: true,
       });
       if (!p.isCancel(answer)) {
@@ -418,7 +418,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
       return;
     }
 
-    p.outro("Existing Paperclip setup is ready.");
+    p.outro("Existing NoralOS setup is ready.");
     return;
   }
 
@@ -663,7 +663,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   let shouldRunNow = opts.run === true || opts.yes === true;
   if (!shouldRunNow && !opts.invokedByRun && process.stdin.isTTY && process.stdout.isTTY) {
     const answer = await p.confirm({
-      message: "Start Paperclip now?",
+      message: "Start NoralOS now?",
       initialValue: true,
     });
     if (!p.isCancel(answer)) {

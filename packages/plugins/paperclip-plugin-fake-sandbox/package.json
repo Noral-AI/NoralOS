@@ -1,7 +1,7 @@
 {
   "name": "@paperclipai/plugin-fake-sandbox",
   "version": "0.1.0",
-  "description": "First-party deterministic fake sandbox provider plugin for Paperclip environments",
+  "description": "First-party deterministic fake sandbox provider plugin for NoralOS environments",
   "type": "module",
   "private": true,
   "exports": {

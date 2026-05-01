@@ -142,7 +142,7 @@ Note:
 
 - use Better Auth canonical table names/types to avoid custom forks
 
-## 5.2 New Paperclip tables
+## 5.2 New NoralOS tables
 
 1. `instance_user_roles`
 

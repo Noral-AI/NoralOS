@@ -44,7 +44,7 @@ async function buildGeminiSkillSnapshot(config: Record<string, unknown>): Promis
     locationLabel: "~/.gemini/skills",
     missingDetail: "Configured but not currently linked into the Gemini skills home.",
     externalConflictDetail: "Skill name is occupied by an external installation.",
-    externalDetail: "Installed outside Paperclip management.",
+    externalDetail: "Installed outside NoralOS management.",
   });
 }
 

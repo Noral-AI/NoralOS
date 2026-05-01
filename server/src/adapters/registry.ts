@@ -278,10 +278,10 @@ const hermesLocalAdapter: ServerAdapterModule = {
         ? existingConfig.promptTemplate
         : "";
     const authGuardPrompt = [
-      "Paperclip API safety rule:",
+      "NoralOS API safety rule:",
       "Use Authorization: Bearer $PAPERCLIP_API_KEY on every Paperclip API request.",
       "Use X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID on every Paperclip API request that writes or mutates data, including comments and issue updates.",
-      "Never use a board, browser, or local-board session for Paperclip API writes.",
+      "Never use a board, browser, or local-board session for NoralOS API writes.",
     ].join("\n");
 
     const patchedConfig: Record<string, unknown> = {

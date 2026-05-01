@@ -9,7 +9,7 @@ description: >
   "create a team of agents", "hire some agents", or when given a repo URL and
   asked to turn it into a company. Do NOT use for importing an existing company
   package (use the CLI import command instead) or for modifying a company that
-  is already running in Paperclip.
+  is already running in NoralOS.
 ---
 
 # Company Creator
@@ -199,9 +199,9 @@ The `.paperclip.yaml` file is the Paperclip vendor extension. It configures adap
 
 ### Adapter Rules
 
-**Do not specify an adapter unless the repo or user context warrants it.** If you don't know what adapter the user wants, omit the adapter block entirely — Paperclip will use its default. Specifying an unknown adapter type causes an import error.
+**Do not specify an adapter unless the repo or user context warrants it.** If you don't know what adapter the user wants, omit the adapter block entirely — NoralOS will use its default. Specifying an unknown adapter type causes an import error.
 
-Paperclip's supported adapter types (these are the ONLY valid values):
+NoralOS's supported adapter types (these are the ONLY valid values):
 - `claude_local` — Claude Code CLI
 - `codex_local` — Codex CLI
 - `opencode_local` — OpenCode CLI

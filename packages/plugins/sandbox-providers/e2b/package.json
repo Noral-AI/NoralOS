@@ -1,7 +1,7 @@
 {
   "name": "@paperclipai/plugin-e2b",
   "version": "0.1.0",
-  "description": "E2B sandbox provider plugin for Paperclip environments",
+  "description": "E2B sandbox provider plugin for NoralOS environments",
   "license": "MIT",
   "homepage": "https://github.com/paperclipai/paperclip",
   "bugs": {

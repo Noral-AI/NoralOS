@@ -704,7 +704,7 @@ function buildSummary(cache: CacheFile, options: CliOptions, shas: string[], fet
 }
 
 function printSummary(summary: Summary) {
-  console.log("Paperclip commit metrics");
+  console.log("NoralOS commit metrics");
   console.log(`Query: ${summary.detectedQuery}`);
   console.log(`Range: ${summary.range.start} -> ${summary.range.end} (${summary.range.searchField})`);
   if (summary.filters.excludedOwners.length > 0) {

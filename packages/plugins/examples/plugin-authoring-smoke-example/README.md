@@ -1,6 +1,6 @@
 # Plugin Authoring Smoke Example
 
-A Paperclip plugin
+A NoralOS plugin
 
 ## Development
 
@@ -11,7 +11,7 @@ pnpm dev:ui         # local dev server with hot-reload events
 pnpm test
 ```
 
-## Install Into Paperclip
+## Install Into NoralOS
 
 ```bash
 pnpm paperclipai plugin install ./

@@ -843,7 +843,7 @@ async function registerToolHandlers(ctx: PluginContext): Promise<void> {
     TOOL_NAMES.companySummary,
     {
       displayName: "Kitchen Sink Company Summary",
-      description: "Summarizes current company counts from the Paperclip APIs.",
+      description: "Summarizes current company counts from the NoralOS APIs.",
       parametersSchema: { type: "object", properties: {} },
     },
     async (_params, runCtx): Promise<ToolResult> => {

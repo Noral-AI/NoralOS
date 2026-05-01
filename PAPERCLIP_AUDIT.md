@@ -98,13 +98,13 @@ All paths are relative to the repo root.
 | 4 | **Skill loader (DB-backed registry)** | `server/src/services/company-skills.ts` (writes `companySkills` table) | Routes: `server/src/routes/company-skills.ts`. Native source types supported: `github`, `skills_sh`, `url`, `local_path` (sub-kind `managed_local`), `catalog`. **paperclipskills.com URLs are NOT a native source type** (matches upstream issue #2766 noted in handoff). Adapter-side skill sync into adapter-specific skill homes is at `packages/adapters/<adapter>/src/server/skills.ts` (e.g. claude-local syncs to `~/.claude/skills/`). |
 | 5 | **Agent runtime / heartbeat** | `server/src/services/heartbeat.ts` (factory `heartbeatService(db, options)` at line 1981) | Heartbeats are routine-driven (cron) plus on-demand wake-ups (`agentWakeupRequests`). Tables: `agents`, `agentRuntimeState`, `agentTaskSessions`, `agentWakeupRequests`, `heartbeatRuns`, `heartbeatRunEvents`. Companion services: `services/heartbeat-stop-metadata.ts`, `services/heartbeat-run-summary.ts`, `services/issue-liveness.ts`, `services/issue-assignment-wakeup.ts`. |
 | 6 | **Routines (cron / scheduled work)** | `server/src/services/routines.ts` + `server/src/services/cron.ts` | Tables: `routines`, `routineTriggers`, `routineRuns`. Drives scheduled heartbeats. |
-| 7 | **Memory subsystem (PARA)** | `skills/para-memory-files/SKILL.md` (a SKILL, not core platform code) | Per `doc/memory-landscape.md`, Paperclip is **not** an opinionated memory engine — it's a "control-plane memory surface" intended to wrap plugin-provided memory providers. PARA is a single skill that uses `$AGENT_HOME/life/{projects,areas,resources,archives}/<entity>/{summary.md,items.yaml}`. The Phase 3 decision in MIGRATION.md ("PARA sufficient or plugin?") simplifies: there's no built-in PARA layer to keep — the choice is between (a) using the para-memory-files skill as-is, or (b) building a memory plugin. |
-| 8 | **Task / mission system** | `server/src/services/issues.ts` + `server/src/routes/issues.ts` | "Issue" is the Paperclip vocabulary for what NoralAI calls a task / mission. Tables: `issues`, `issueApprovals`, `issueAttachments`, `issueComments`, `issueDocuments`, `issueLabels`, `issueRelations`, `issueReadStates`, `issueThreadInteractions`, `issueWorkProducts`, `issueInboxArchives`. Lifecycle statuses: `backlog`, `todo`, `in_progress`, `in_review`, `blocked`, `done`, `cancelled` (per `routines.ts`). |
+| 7 | **Memory subsystem (PARA)** | `skills/para-memory-files/SKILL.md` (a SKILL, not core platform code) | Per `doc/memory-landscape.md`, NoralOS is **not** an opinionated memory engine — it's a "control-plane memory surface" intended to wrap plugin-provided memory providers. PARA is a single skill that uses `$AGENT_HOME/life/{projects,areas,resources,archives}/<entity>/{summary.md,items.yaml}`. The Phase 3 decision in MIGRATION.md ("PARA sufficient or plugin?") simplifies: there's no built-in PARA layer to keep — the choice is between (a) using the para-memory-files skill as-is, or (b) building a memory plugin. |
+| 8 | **Task / mission system** | `server/src/services/issues.ts` + `server/src/routes/issues.ts` | "Issue" is the NoralOS vocabulary for what NoralAI calls a task / mission. Tables: `issues`, `issueApprovals`, `issueAttachments`, `issueComments`, `issueDocuments`, `issueLabels`, `issueRelations`, `issueReadStates`, `issueThreadInteractions`, `issueWorkProducts`, `issueInboxArchives`. Lifecycle statuses: `backlog`, `todo`, `in_progress`, `in_review`, `blocked`, `done`, `cancelled` (per `routines.ts`). |
 | 9 | **Cost / budget tracker** | `server/src/services/costs.ts` (table `costEvents`) + `server/src/services/budgets.ts` | `costEvents` columns include `costCents`, `inputTokens`, `cachedInputTokens`, `outputTokens`, `companyId`, `agentId`, `occurredAt`. Billing types: `metered_api`, `subscription_included`, `subscription_overage`. Routes: `server/src/routes/costs.ts`. |
 | 10 | **Dashboard backend API** | `server/src/routes/dashboard.ts` + `server/src/services/dashboard.ts` | Currently a single endpoint: `GET /companies/:companyId/dashboard` returning a summary aggregating agents, heartbeat runs (last 14 days), approvals, and cost totals. Sparse — most UI panels query other routes (`/issues`, `/agents`, `/costs`, etc.) directly. |
 | 11 | **Dashboard UI components** | `ui/src/components/` + `ui/src/pages/` | Major panels: `IssuesList.tsx`, `IssueDetail.tsx`, `IssueChatThread.tsx`, `IssueRunLedger.tsx`, `Agents.tsx`, `CompanySettings.tsx`, `Routines.tsx`, `PluginSettings.tsx`, `AdapterManager.tsx`. Storybook at `ui/storybook/`. |
 | 12 | **Security: plugin capability validator** (NOT a 7-category skill scanner) | `server/src/services/plugin-capability-validator.ts` | Manifest-time + runtime gating. Maps operations (e.g. `companies.list`, `issues.read`) to required capabilities (e.g. `companies.read`); rejects worker→host bridge calls that lack declared capabilities. **This is a plugin capability model, not a skill threat-classification scanner.** See Open Issue #1. |
-| 13 | **Agent prompt assembly** | `server/src/services/agent-instructions.ts` + `server/src/services/default-agent-instructions.ts` + `server/src/onboarding-assets/{ceo,default}/` | "Instruction bundles" per agent — managed (Paperclip-controlled) or external (user file path). Default templates: `default` agent loads `AGENTS.md`; `ceo` agent loads `AGENTS.md`, `HEARTBEAT.md`, `SOUL.md`, `TOOLS.md`. Prompt content is assembled at heartbeat time. Memory-context injection (Phase 3) plugs in here, not as an output filter. |
+| 13 | **Agent prompt assembly** | `server/src/services/agent-instructions.ts` + `server/src/services/default-agent-instructions.ts` + `server/src/onboarding-assets/{ceo,default}/` | "Instruction bundles" per agent — managed (NoralOS-controlled) or external (user file path). Default templates: `default` agent loads `AGENTS.md`; `ceo` agent loads `AGENTS.md`, `HEARTBEAT.md`, `SOUL.md`, `TOOLS.md`. Prompt content is assembled at heartbeat time. Memory-context injection (Phase 3) plugs in here, not as an output filter. |
 | 14 | **Config layer** | `server/src/config.ts` + `server/src/config-file.ts` | Loads JSON from `PAPERCLIP_CONFIG=/paperclip/instances/<id>/config.json`; sensitive material via `server/src/services/secrets.ts` and the `secrets/` dir. |
 | 15 | **Data / instance dir** | `/paperclip/instances/<instance-id>/` (per Dockerfile envs) | Paperclip data root is `PAPERCLIP_HOME=/paperclip`; the default instance is `/paperclip/instances/default/`. Suggested location for migrated SQLite: `/paperclip/instances/default/data/noralai.db`. |
 
@@ -135,15 +135,15 @@ Recommended: **rebase the fork onto `upstream/master` before starting Phase 1.**
 
 ### Bundled skills (in the fork repo, not user-installed at runtime)
 
-**`skills/` (top-level — Paperclip platform skills, ship with the fork):**
-- `paperclip` — Interact with the Paperclip control plane API (task management, governance)
+**`skills/` (top-level — NoralOS platform skills, ship with the fork):**
+- `paperclip` — Interact with the NoralOS control plane API (task management, governance)
 - `paperclip-converting-plans-to-tasks` — Plan → executable task breakdown
 - `paperclip-create-agent` — Create new agents with governance-aware hiring
 - `paperclip-create-plugin` — Scaffold new Paperclip plugins via the SDK
 - `paperclip-dev` — Operate a local Paperclip instance (start/stop, build, test, worktrees, backup)
 - `para-memory-files` — File-based PARA memory (3 layers: knowledge graph, daily notes, tacit knowledge)
 
-**`.agents/skills/` (Paperclip-internal dev/release skills, used by maintainers):**
+**`.agents/skills/` (NoralOS-internal dev/release skills, used by maintainers):**
 - `company-creator`, `create-agent-adapter`, `deal-with-security-advisory`, `doc-maintenance`, `pr-report`, `prcheckloop`, `release`, `release-changelog`
 
 **`.claude/skills/` (Claude Code skills for working in this repo):**
@@ -162,7 +162,7 @@ There is **no static "agent / org chart config" file** in the repo — agents ar
 | ClawHub bundle (36 skills at `/Users/quentin/Documents/NORALAI/NORALOS/noralOS/clawhub-bundle/`) | None | None |
 | paperclipskills.com bundle (3 skills at `.../paperclip-bundle/`) | None | None |
 
-The fork is a clean Paperclip install with only platform-native skills. None of the 39 curated NoralAI skills are present — they'll be installed as part of Phase 1+ via the skill loader.
+The fork is a clean NoralOS install with only platform-native skills. None of the 39 curated NoralAI skills are present — they'll be installed as part of Phase 1+ via the skill loader.
 
 ### Bundle state verification (responding to user prompt's "36 ClawHub skills" framing vs `_HANDOFF.md`'s "31 final picks")
 
@@ -196,19 +196,19 @@ No breaking changes detected in the 2 fork commits (CI workflow restriction + co
 
 ## 7. Open issues
 
-### #1 — Migration plan's "7-category skill security scan" is not a real Paperclip feature
+### #1 — Migration plan's "7-category skill security scan" is not a real NoralOS feature
 
 The `clawhub-bundle/_HANDOFF.md` and `paperclip-bundle/_FINAL_INSTALL_LIST.md` both reference a "7-category skill security scan" as a Paperclip platform feature whose overlap should be avoided.
 
-**Reality:** Paperclip ships `server/src/services/plugin-capability-validator.ts`, which is a **plugin capability model** (least-privilege gating on worker→host bridge calls based on declared manifest capabilities). It is not a skill threat-classification scanner. The "scan" function in `services/company-skills.ts` (`scanProjectWorkspaces`) discovers existing skill files in the user's project workspaces — not a security scan.
+**Reality:** NoralOS ships `server/src/services/plugin-capability-validator.ts`, which is a **plugin capability model** (least-privilege gating on worker→host bridge calls based on declared manifest capabilities). It is not a skill threat-classification scanner. The "scan" function in `services/company-skills.ts` (`scanProjectWorkspaces`) discovers existing skill files in the user's project workspaces — not a security scan.
 
 The hard-rule list in `_HANDOFF.md` rejected `@paperclip-skills/skill-security` from paperclipskills.com on the basis that "Paperclip already ships a 7-category skill security scan." That premise appears to be incorrect. The rejection may still be correct on other grounds (skill-security is described in the marketplace as a per-install scanner — possibly redundant with the plugin capability model), but the stated reason needs re-examination.
 
-**Action:** confirm with Quentin whether (a) the 7-category scanner exists in a Paperclip code path I missed, (b) the framing came from an external doc / marketing page that doesn't match the code, or (c) it was conflated with the plugin capability validator. If the scan does not exist, the hard-rule list should be revised.
+**Action:** confirm with Quentin whether (a) the 7-category scanner exists in a NoralOS code path I missed, (b) the framing came from an external doc / marketing page that doesn't match the code, or (c) it was conflated with the plugin capability validator. If the scan does not exist, the hard-rule list should be revised.
 
 ### #2 — Phase 4 has no clean output-filter hook in upstream
 
-The migration plan calls for the NoralAI exfiltration guard to be wired in as "a Paperclip output filter at `<TBD: paperclip output filter path>`." The plugin SDK exposes events, jobs, data registration, and state — but no agent-output post-processing slot. There is no `output_filter`, `response.filter`, `postProcess`, or similar hook in the codebase.
+The migration plan calls for the NoralAI exfiltration guard to be wired in as "a NoralOS output filter at `<TBD: paperclip output filter path>`." The plugin SDK exposes events, jobs, data registration, and state — but no agent-output post-processing slot. There is no `output_filter`, `response.filter`, `postProcess`, or similar hook in the codebase.
 
 **Impact:** Phase 4 design needs revisiting before implementation. Three options:
 1. **Per-agent skill** that wraps the agent's tool/output calls — would require the agent to invoke it, not enforced.
@@ -245,7 +245,7 @@ Order matters: if you do (4) before (3), a halfway state breaks builds. If you d
 
 The migration's task spec said "push to main" but caveated "check `git symbolic-ref refs/remotes/origin/HEAD` first." Confirmed: origin default is `master`. Both branches exist on origin (likely a transitional state). The audit was committed to `master`. If you want to switch to `main` as default, that's a separate one-time cutover.
 
-### #7 — Bundled top-level skill `paperclip` is a Paperclip-native skill, NOT the operations skill of the same name from ClawHub
+### #7 — Bundled top-level skill `paperclip` is a NoralOS-native skill, NOT the operations skill of the same name from ClawHub
 
 `clawhub-bundle/_HANDOFF.md` lists `paperclip` (operations skill) in the rejected list. The fork's `skills/paperclip/SKILL.md` is the in-repo "interact with the Paperclip control plane" skill — completely different despite the slug collision. No conflict at install time as long as the install path doesn't try to overwrite the fork's bundled skill.
 
@@ -253,7 +253,7 @@ The migration's task spec said "push to main" but caveated "check `git symbolic-
 
 ## 8. Limitations of this audit
 
-This pass was static / read-only against the cloned fork. The following could not be determined without runtime access to a live Paperclip install:
+This pass was static / read-only against the cloned fork. The following could not be determined without runtime access to a live NoralOS install:
 
 1. **Real `.env` values** — none read by design. Whether the live install has `DATABASE_URL`, `BETTER_AUTH_SECRET`, etc. populated is unknown from this audit.
 2. **Service health** — whether the bot is currently running, what port it's actually listening on, whether the Postgres backend is up, whether heartbeats are scheduled and firing.

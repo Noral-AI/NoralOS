@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add a new first-party example plugin, `Kitchen Sink (Example)`, that demonstrates every currently implemented Paperclip plugin API surface in one place.
+Add a new first-party example plugin, `Kitchen Sink (Example)`, that demonstrates every currently implemented NoralOS plugin API surface in one place.
 
 This plugin is meant to be:
 
@@ -32,7 +32,7 @@ The kitchen-sink plugin should answer those questions by example.
 
 ## Success Criteria
 
-The plugin is successful if a contributor can install it and, without reading the SDK first, discover and exercise the current plugin runtime surface area from inside Paperclip.
+The plugin is successful if a contributor can install it and, without reading the SDK first, discover and exercise the current plugin runtime surface area from inside NoralOS.
 
 Concretely:
 
@@ -171,7 +171,7 @@ Recommended page sections:
   - emit event
   - watch event log
   - stream demo output
-- `Paperclip Domain APIs`
+- `NoralOS Domain APIs`
   - companies
   - projects/workspaces
   - issues
@@ -265,7 +265,7 @@ Demos:
 
 - emit a plugin event
 - subscribe to plugin events
-- subscribe to a core Paperclip event such as `issue.created`
+- subscribe to a core NoralOS event such as `issue.created`
 - show recent received events in a timeline
 
 ### `ctx.jobs`
@@ -291,7 +291,7 @@ Demo:
 - make a simple outbound GET request to a safe endpoint
 - show status code, latency, and JSON result
 
-Recommendation: default to a Paperclip-local endpoint or a stable public echo endpoint to avoid flaky docs.
+Recommendation: default to a NoralOS-local endpoint or a stable public echo endpoint to avoid flaky docs.
 
 ### `ctx.secrets`
 

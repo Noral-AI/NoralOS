@@ -3,7 +3,7 @@ title: Environment Variables
 summary: Full environment variable reference
 ---
 
-All environment variables that Paperclip uses for server configuration.
+All environment variables that NoralOS uses for server configuration.
 
 ## Server Configuration
 

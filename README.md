@@ -1,8 +1,8 @@
-# Noral
+# NoralOS
 
-> **noralAI's agent management OS** — orchestration for autonomous AI companies.
+> **Noral-AI's agent management OS** — orchestration for autonomous AI companies.
 
-Noral is a self-hosted control plane that turns a fleet of AI agents into an organization. Define goals, hire agents (any runtime — Claude Code, Codex, Cursor, OpenCode, OpenClaw, custom HTTP), set budgets, and watch work get done. Tickets, org charts, approvals, cost tracking, and audit trails — built in.
+NoralOS is a self-hosted control plane that turns a fleet of AI agents into an organization. Define goals, hire agents (any runtime — Claude Code, Codex, Cursor, OpenCode, OpenClaw, custom HTTP), set budgets, and watch work get done. Tickets, org charts, approvals, cost tracking, and audit trails — built in.
 
 ---
 
@@ -11,20 +11,22 @@ Noral is a self-hosted control plane that turns a fleet of AI agents into an org
 ### Docker (recommended)
 
 ```sh
-docker run -d --name noral \
+docker run -d --name noralos \
   -p 3100:3100 \
   -e BETTER_AUTH_SECRET=$(openssl rand -hex 32) \
   -v $(pwd)/data:/paperclip \
-  ghcr.io/noral-ai/noralbusiness:latest
+  ghcr.io/noral-ai/noralos:latest
 ```
 
 Open `http://localhost:3100`. The first visitor claims CEO. Embedded Postgres, no setup required.
 
+> The volume path `/paperclip` is the legacy upstream container path. It will be renamed to `/noralos` in a future release; for now, mount your data dir to `/paperclip` for compatibility with the current image.
+
 ### From source
 
 ```sh
-git clone https://github.com/Noral-AI/noralbusiness.git
-cd noralbusiness
+git clone https://github.com/Noral-AI/NoralOS.git
+cd NoralOS
 pnpm install
 pnpm dev
 ```
@@ -67,9 +69,9 @@ See [`doc/DEVELOPING.md`](doc/DEVELOPING.md) for the full guide.
 
 ## Attribution
 
-Noral is built on **[Paperclip](https://github.com/paperclipai/paperclip)** by paperclipai (MIT-licensed). Original copyright and the full license terms are preserved in [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
+NoralOS is built on the upstream open-source project at **[github.com/paperclipai/paperclip](https://github.com/paperclipai/paperclip)** (MIT-licensed). Original copyright and the full license terms are preserved in [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE) per MIT requirements.
 
-If you're looking for the upstream open-source project, vibrant community, and roadmap: → https://github.com/paperclipai/paperclip
+If you're looking for the upstream project, vibrant community, and roadmap: → https://github.com/paperclipai/paperclip
 
 ---
 

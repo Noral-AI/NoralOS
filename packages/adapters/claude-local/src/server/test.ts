@@ -118,7 +118,7 @@ export async function testEnvironment(
     });
   }
 
-  // When probing a remote target, the Paperclip host's process.env does not
+  // When probing a remote target, the NoralOS host's process.env does not
   // reflect what the agent will actually see at runtime. Only consider env
   // vars from the adapter config in that case; the probe itself will surface
   // any auth issues on the remote box.
