@@ -92,8 +92,8 @@ export function resolveManagedClaudeConfigSeedDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-  const paperclipHome = nonEmpty(env.PAPERCLIP_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? DEFAULT_PAPERCLIP_INSTANCE_ID;
+  const paperclipHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
+  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_PAPERCLIP_INSTANCE_ID;
   return companyId
     ? path.resolve(paperclipHome, "instances", instanceId, "companies", companyId, "claude-config-seed")
     : path.resolve(paperclipHome, "instances", instanceId, "claude-config-seed");

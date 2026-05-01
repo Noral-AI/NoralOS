@@ -82,11 +82,11 @@ function runVitest(args, label) {
   const testRoot = mkdtempSync(path.join(os.tmpdir(), `paperclip-vitest-${process.pid}-${invocationIndex}-`));
   const env = {
     ...process.env,
-    PAPERCLIP_HOME: path.join(testRoot, "home"),
-    PAPERCLIP_INSTANCE_ID: `vitest-${process.pid}-${invocationIndex}`,
+    NORALOS_HOME: path.join(testRoot, "home"),
+    NORALOS_INSTANCE_ID: `vitest-${process.pid}-${invocationIndex}`,
     TMPDIR: path.join(testRoot, "tmp"),
   };
-  mkdirSync(env.PAPERCLIP_HOME, { recursive: true });
+  mkdirSync(env.NORALOS_HOME, { recursive: true });
   mkdirSync(env.TMPDIR, { recursive: true });
   const result = spawnSync("pnpm", ["exec", "vitest", "run", ...args], {
     cwd: repoRoot,

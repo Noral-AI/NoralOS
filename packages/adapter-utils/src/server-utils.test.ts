@@ -444,14 +444,14 @@ describe("applyPaperclipWorkspaceEnv", () => {
     );
 
     expect(env).toEqual({
-      PAPERCLIP_WORKSPACE_CWD: "/tmp/workspace",
-      PAPERCLIP_WORKSPACE_SOURCE: "project_primary",
-      PAPERCLIP_WORKSPACE_STRATEGY: "git_worktree",
-      PAPERCLIP_WORKSPACE_ID: "workspace-1",
-      PAPERCLIP_WORKSPACE_REPO_URL: "https://github.com/paperclipai/paperclip.git",
-      PAPERCLIP_WORKSPACE_REPO_REF: "main",
-      PAPERCLIP_WORKSPACE_BRANCH: "feature/test",
-      PAPERCLIP_WORKSPACE_WORKTREE_PATH: "/tmp/worktree",
+      NORALOS_WORKSPACE_CWD: "/tmp/workspace",
+      NORALOS_WORKSPACE_SOURCE: "project_primary",
+      NORALOS_WORKSPACE_STRATEGY: "git_worktree",
+      NORALOS_WORKSPACE_ID: "workspace-1",
+      NORALOS_WORKSPACE_REPO_URL: "https://github.com/paperclipai/paperclip.git",
+      NORALOS_WORKSPACE_REPO_REF: "main",
+      NORALOS_WORKSPACE_BRANCH: "feature/test",
+      NORALOS_WORKSPACE_WORKTREE_PATH: "/tmp/worktree",
       AGENT_HOME: "/tmp/agent-home",
     });
   });

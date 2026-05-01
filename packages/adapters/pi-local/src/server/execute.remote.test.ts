@@ -161,7 +161,7 @@ describe("pi remote execution", () => {
     expect(call?.[2]).toContain("--session");
     expect(call?.[2]).toContain("--skill");
     expect(call?.[2]).toContain("/remote/workspace/.paperclip-runtime/pi/skills");
-    expect(call?.[3].env.PAPERCLIP_API_URL).toBe("http://198.51.100.10:3102");
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://198.51.100.10:3102");
     expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
   });

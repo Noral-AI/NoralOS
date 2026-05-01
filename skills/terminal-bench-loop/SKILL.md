@@ -218,7 +218,7 @@ Run this smoke after installing or changing the skill, before treating it as ope
 pnpm smoke:terminal-bench-loop-skill
 ```
 
-The command uses the current Paperclip API token and company from `PAPERCLIP_API_URL`, `PAPERCLIP_API_KEY`, and `PAPERCLIP_COMPANY_ID`. When `PAPERCLIP_TASK_ID` is set, it attaches the smoke issues under that source issue and inherits its project/goal context. By default it cancels the short-lived smoke issues after verification; pass `-- --keep` to leave the verified `blocked` loop parent, `in_review` iteration child, and pending confirmation available for manual inspection.
+The command uses the current Paperclip API token and company from `NORALOS_API_URL`, `NORALOS_API_KEY`, and `NORALOS_COMPANY_ID`. When `NORALOS_TASK_ID` is set, it attaches the smoke issues under that source issue and inherits its project/goal context. By default it cancels the short-lived smoke issues after verification; pass `-- --keep` to leave the verified `blocked` loop parent, `in_review` iteration child, and pending confirmation available for manual inspection.
 
 The smoke is deterministic and intentionally non-comparable. It does not start Terminal-Bench, Harbor, an agent model, or a provider runtime. It verifies only the control-plane shape:
 

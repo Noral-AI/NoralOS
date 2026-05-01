@@ -161,7 +161,7 @@ export function agentRoutes(
   const companySkills = companySkillService(db);
   const workspaceOperations = workspaceOperationService(db);
   const instanceSettings = instanceSettingsService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.NORALOS_SECRETS_STRICT_MODE === "true";
 
   async function assertAgentEnvironmentSelection(
     companyId: string,

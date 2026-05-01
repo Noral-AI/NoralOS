@@ -12,9 +12,9 @@ const MODELS_DISCOVERY_TIMEOUT_MS = 20_000;
 
 function resolveOpenCodeCommand(input: unknown): string {
   const envOverride =
-    typeof process.env.PAPERCLIP_OPENCODE_COMMAND === "string" &&
-    process.env.PAPERCLIP_OPENCODE_COMMAND.trim().length > 0
-      ? process.env.PAPERCLIP_OPENCODE_COMMAND.trim()
+    typeof process.env.NORALOS_OPENCODE_COMMAND === "string" &&
+    process.env.NORALOS_OPENCODE_COMMAND.trim().length > 0
+      ? process.env.NORALOS_OPENCODE_COMMAND.trim()
       : "opencode";
   return asString(input, envOverride);
 }

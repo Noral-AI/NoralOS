@@ -228,7 +228,7 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
 
       const { remoteCwd } = await ensureSshWorkspaceReady(parsed.config);
       const candidateUrls = (() => {
-        const raw = process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
+        const raw = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
         if (!raw) return [];
         try {
           const parsed = JSON.parse(raw);

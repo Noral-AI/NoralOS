@@ -5,9 +5,9 @@ import { defineConfig } from "@playwright/test";
 
 // Use a dedicated port so e2e tests always start their own server in local_trusted mode,
 // even when the dev server is running on :3100 in authenticated mode.
-const PORT = Number(process.env.PAPERCLIP_E2E_PORT ?? 3199);
+const PORT = Number(process.env.NORALOS_E2E_PORT ?? 3199);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
-const PAPERCLIP_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-e2e-home-"));
+const NORALOS_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-e2e-home-"));
 
 export default defineConfig({
   testDir: ".",
@@ -30,7 +30,7 @@ export default defineConfig({
     },
   ],
   // The webServer directive bootstraps a throwaway instance and then starts it.
-  // `onboard --yes --run` works in a non-interactive temp PAPERCLIP_HOME.
+  // `onboard --yes --run` works in a non-interactive temp NORALOS_HOME.
   webServer: {
     command: `pnpm paperclipai onboard --yes --run`,
     url: `${BASE_URL}/api/health`,
@@ -43,11 +43,11 @@ export default defineConfig({
     env: {
       ...process.env,
       PORT: String(PORT),
-      PAPERCLIP_HOME,
-      PAPERCLIP_INSTANCE_ID: "playwright-e2e",
-      PAPERCLIP_BIND: "loopback",
-      PAPERCLIP_DEPLOYMENT_MODE: "local_trusted",
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private",
+      NORALOS_HOME,
+      NORALOS_INSTANCE_ID: "playwright-e2e",
+      NORALOS_BIND: "loopback",
+      NORALOS_DEPLOYMENT_MODE: "local_trusted",
+      NORALOS_DEPLOYMENT_EXPOSURE: "private",
     },
   },
   outputDir: "./test-results",

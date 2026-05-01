@@ -76,7 +76,7 @@ export const MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 export const MAX_EXCERPT_BYTES = 32 * 1024;
 const TERMINAL_RESULT_SCAN_OVERLAP_CHARS = 64 * 1024;
 const SENSITIVE_ENV_KEY = /(key|token|secret|password|passwd|authorization|cookie)/i;
-const PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
+const NORALOS_SKILL_ROOT_RELATIVE_CANDIDATES = [
   "../../skills",
   "../../../../../skills",
 ];
@@ -806,7 +806,7 @@ export function buildInvocationEnvForLogs(
 
   const resolvedCommand = options.resolvedCommand?.trim();
   if (resolvedCommand) {
-    merged[options.resolvedCommandEnvKey ?? "PAPERCLIP_RESOLVED_COMMAND"] = resolvedCommand;
+    merged[options.resolvedCommandEnvKey ?? "NORALOS_RESOLVED_COMMAND"] = resolvedCommand;
   }
 
   return redactEnvForLogs(merged);
@@ -820,18 +820,18 @@ export function buildPaperclipEnv(agent: { id: string; companyId: string }): Rec
     return host;
   };
   const vars: Record<string, string> = {
-    PAPERCLIP_AGENT_ID: agent.id,
-    PAPERCLIP_COMPANY_ID: agent.companyId,
+    NORALOS_AGENT_ID: agent.id,
+    NORALOS_COMPANY_ID: agent.companyId,
   };
   const runtimeHost = resolveHostForUrl(
-    process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
+    process.env.NORALOS_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
-  const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
+  const runtimePort = process.env.NORALOS_LISTEN_PORT ?? process.env.PORT ?? "3100";
   const apiUrl =
-    process.env.PAPERCLIP_RUNTIME_API_URL ??
-    process.env.PAPERCLIP_API_URL ??
+    process.env.NORALOS_RUNTIME_API_URL ??
+    process.env.NORALOS_API_URL ??
     `http://${runtimeHost}:${runtimePort}`;
-  vars.PAPERCLIP_API_URL = apiUrl;
+  vars.NORALOS_API_URL = apiUrl;
   return vars;
 }
 
@@ -850,14 +850,14 @@ export function applyPaperclipWorkspaceEnv(
   },
 ): Record<string, string> {
   const mappings = [
-    ["PAPERCLIP_WORKSPACE_CWD", input.workspaceCwd],
-    ["PAPERCLIP_WORKSPACE_SOURCE", input.workspaceSource],
-    ["PAPERCLIP_WORKSPACE_STRATEGY", input.workspaceStrategy],
-    ["PAPERCLIP_WORKSPACE_ID", input.workspaceId],
-    ["PAPERCLIP_WORKSPACE_REPO_URL", input.workspaceRepoUrl],
-    ["PAPERCLIP_WORKSPACE_REPO_REF", input.workspaceRepoRef],
-    ["PAPERCLIP_WORKSPACE_BRANCH", input.workspaceBranch],
-    ["PAPERCLIP_WORKSPACE_WORKTREE_PATH", input.workspaceWorktreePath],
+    ["NORALOS_WORKSPACE_CWD", input.workspaceCwd],
+    ["NORALOS_WORKSPACE_SOURCE", input.workspaceSource],
+    ["NORALOS_WORKSPACE_STRATEGY", input.workspaceStrategy],
+    ["NORALOS_WORKSPACE_ID", input.workspaceId],
+    ["NORALOS_WORKSPACE_REPO_URL", input.workspaceRepoUrl],
+    ["NORALOS_WORKSPACE_REPO_REF", input.workspaceRepoRef],
+    ["NORALOS_WORKSPACE_BRANCH", input.workspaceBranch],
+    ["NORALOS_WORKSPACE_WORKTREE_PATH", input.workspaceWorktreePath],
     ["AGENT_HOME", input.agentHome],
   ] as const;
 
@@ -874,9 +874,9 @@ export function sanitizeInheritedPaperclipEnv(baseEnv: NodeJS.ProcessEnv): NodeJ
   const env: NodeJS.ProcessEnv = { ...baseEnv };
   for (const key of Object.keys(env)) {
     if (!key.startsWith("PAPERCLIP_")) continue;
-    if (key === "PAPERCLIP_RUNTIME_API_URL") continue;
-    if (key === "PAPERCLIP_LISTEN_HOST") continue;
-    if (key === "PAPERCLIP_LISTEN_PORT") continue;
+    if (key === "NORALOS_RUNTIME_API_URL") continue;
+    if (key === "NORALOS_LISTEN_HOST") continue;
+    if (key === "NORALOS_LISTEN_PORT") continue;
     delete env[key];
   }
   return env;
@@ -1057,7 +1057,7 @@ export async function resolvePaperclipSkillsDir(
   additionalCandidates: string[] = [],
 ): Promise<string | null> {
   const candidates = [
-    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path.resolve(moduleDir, relativePath)),
+    ...NORALOS_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path.resolve(moduleDir, relativePath)),
     ...additionalCandidates.map((candidate) => path.resolve(candidate)),
   ];
   const seenRoots = new Set<string>();

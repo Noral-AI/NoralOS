@@ -272,15 +272,15 @@ const hermesLocalAdapter: ServerAdapterModule = {
         ? (existingConfig.env as Record<string, string>)
         : {};
     const explicitApiKey =
-      typeof existingEnv.PAPERCLIP_API_KEY === "string" && existingEnv.PAPERCLIP_API_KEY.trim().length > 0;
+      typeof existingEnv.NORALOS_API_KEY === "string" && existingEnv.NORALOS_API_KEY.trim().length > 0;
     const promptTemplate =
       typeof existingConfig.promptTemplate === "string" && existingConfig.promptTemplate.trim().length > 0
         ? existingConfig.promptTemplate
         : "";
     const authGuardPrompt = [
       "NoralOS API safety rule:",
-      "Use Authorization: Bearer $PAPERCLIP_API_KEY on every Paperclip API request.",
-      "Use X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID on every Paperclip API request that writes or mutates data, including comments and issue updates.",
+      "Use Authorization: Bearer $NORALOS_API_KEY on every Paperclip API request.",
+      "Use X-Paperclip-Run-Id: $NORALOS_RUN_ID on every Paperclip API request that writes or mutates data, including comments and issue updates.",
       "Never use a board, browser, or local-board session for NoralOS API writes.",
     ].join("\n");
 
@@ -288,8 +288,8 @@ const hermesLocalAdapter: ServerAdapterModule = {
       ...existingConfig,
       env: {
         ...existingEnv,
-        ...(!explicitApiKey ? { PAPERCLIP_API_KEY: normalizedCtx.authToken } : {}),
-        PAPERCLIP_RUN_ID: normalizedCtx.runId,
+        ...(!explicitApiKey ? { NORALOS_API_KEY: normalizedCtx.authToken } : {}),
+        NORALOS_RUN_ID: normalizedCtx.runId,
       },
     };
 

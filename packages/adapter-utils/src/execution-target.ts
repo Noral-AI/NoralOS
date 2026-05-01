@@ -119,10 +119,10 @@ function resolveHostForUrl(rawHost: string): string {
 
 function resolveDefaultPaperclipApiUrl(): string {
   const runtimeHost = resolveHostForUrl(
-    process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
+    process.env.NORALOS_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
   // 3100 matches the default NoralOS dev server port when the runtime does not provide one.
-  const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
+  const runtimePort = process.env.NORALOS_LISTEN_PORT ?? process.env.PORT ?? "3100";
   return `http://${runtimeHost}:${runtimePort}`;
 }
 
@@ -728,8 +728,8 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
       : DEFAULT_SANDBOX_CALLBACK_BRIDGE_MAX_BODY_BYTES;
   const hostApiUrl =
     input.hostApiUrl?.trim() ||
-    process.env.PAPERCLIP_RUNTIME_API_URL?.trim() ||
-    process.env.PAPERCLIP_API_URL?.trim() ||
+    process.env.NORALOS_RUNTIME_API_URL?.trim() ||
+    process.env.NORALOS_API_URL?.trim() ||
     resolveDefaultPaperclipApiUrl();
 
   await onLog(
@@ -793,9 +793,9 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
 
   return {
     env: {
-      PAPERCLIP_API_URL: server.baseUrl,
-      PAPERCLIP_API_KEY: bridgeToken,
-      PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
+      NORALOS_API_URL: server.baseUrl,
+      NORALOS_API_KEY: bridgeToken,
+      NORALOS_API_BRIDGE_MODE: "queue_v1",
     },
     stop: async () => {
       await Promise.allSettled([
