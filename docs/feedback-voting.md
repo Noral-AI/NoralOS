@@ -26,7 +26,7 @@ When a vote is marked for sharing, NoralOS immediately tries to upload the trace
 ### Quick report (terminal)
 
 ```bash
-pnpm paperclipai feedback report
+pnpm noralos feedback report
 ```
 
 Shows a color-coded summary: vote counts, per-trace details with reasons, and export statuses.
@@ -36,10 +36,10 @@ Shows a color-coded summary: vote counts, per-trace details with reasons, and ex
 paperclipai feedback report
 
 # Point to a different server or company
-pnpm paperclipai feedback report --api-base http://127.0.0.1:3000 --company-id <company-id>
+pnpm noralos feedback report --api-base http://127.0.0.1:3000 --company-id <company-id>
 
 # Include raw payload dumps in the report
-pnpm paperclipai feedback report --payloads
+pnpm noralos feedback report --payloads
 ```
 
 ### API endpoints
@@ -89,7 +89,7 @@ The trace endpoints accept query parameters:
 ### Export to files + zip
 
 ```bash
-pnpm paperclipai feedback export
+pnpm noralos feedback export
 ```
 
 Creates a timestamped directory with:
@@ -112,7 +112,7 @@ Exports are full by default. `traces/` keeps the NoralOS envelope, while `full-t
 
 ```bash
 # Custom server and output directory
-pnpm paperclipai feedback export --api-base http://127.0.0.1:3000 --company-id <company-id> --out ./my-export
+pnpm noralos feedback export --api-base http://127.0.0.1:3000 --company-id <company-id> --out ./my-export
 ```
 
 ### Reading an exported trace

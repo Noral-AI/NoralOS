@@ -8,13 +8,13 @@ import {
   readSshEnvLabFixtureStatus,
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
-} from "@paperclipai/adapter-utils/ssh";
-import { resolvePaperclipInstanceId, resolvePaperclipInstanceRoot } from "../config/home.js";
+} from "@noralos/adapter-utils/ssh";
+import { resolveNoralosInstanceId, resolveNoralosInstanceRoot } from "../config/home.js";
 
 export function resolveEnvLabSshStatePath(instanceId?: string): string {
-  const resolvedInstanceId = resolvePaperclipInstanceId(instanceId);
+  const resolvedInstanceId = resolveNoralosInstanceId(instanceId);
   return path.resolve(
-    resolvePaperclipInstanceRoot(resolvedInstanceId),
+    resolveNoralosInstanceRoot(resolvedInstanceId),
     "env-lab",
     "ssh-fixture",
     "state.json",
@@ -138,7 +138,7 @@ export async function envLabDoctorCommand(opts: { instance?: string; json?: bool
     p.log.message(`State: ${pc.dim(status.statePath)}`);
   }
 
-  p.log.message(`Cleanup: ${pc.dim("pnpm paperclipai env-lab down")}`);
+  p.log.message(`Cleanup: ${pc.dim("pnpm noralos env-lab down")}`);
 }
 
 export function registerEnvLabCommands(program: Command) {

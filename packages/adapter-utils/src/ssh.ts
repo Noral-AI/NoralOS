@@ -21,7 +21,7 @@ export interface SshCommandResult {
 
 export interface SshRemoteExecutionSpec extends SshConnectionConfig {
   remoteCwd: string;
-  paperclipApiUrl?: string | null;
+  noralosApiUrl?: string | null;
 }
 
 export interface SshEnvLabSupport {
@@ -83,9 +83,9 @@ export function parseSshRemoteExecutionSpec(value: unknown): SshRemoteExecutionS
     port: portValue,
     username,
     remoteCwd,
-    paperclipApiUrl:
-      typeof parsed.paperclipApiUrl === "string" && parsed.paperclipApiUrl.trim().length > 0
-        ? parsed.paperclipApiUrl.trim()
+    noralosApiUrl:
+      typeof parsed.noralosApiUrl === "string" && parsed.noralosApiUrl.trim().length > 0
+        ? parsed.noralosApiUrl.trim()
         : null,
     remoteWorkspacePath:
       typeof parsed.remoteWorkspacePath === "string" && parsed.remoteWorkspacePath.trim().length > 0

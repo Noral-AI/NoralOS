@@ -31,7 +31,7 @@ const DATA_DIR_OPTION_HELP =
   "NoralOS data directory root (isolates state from ~/.noralos)";
 
 program
-  .name("paperclipai")
+  .name("noralos")
   .description("NoralOS CLI — setup, diagnose, and configure your instance")
   .version(cliVersion);
 

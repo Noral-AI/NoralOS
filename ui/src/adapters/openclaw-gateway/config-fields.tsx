@@ -139,11 +139,11 @@ export function OpenClawGatewayConfigFields({
               value={
                 eff(
                   "adapterConfig",
-                  "paperclipApiUrl",
-                  String(config.paperclipApiUrl ?? ""),
+                  "noralosApiUrl",
+                  String(config.noralosApiUrl ?? ""),
                 )
               }
-              onCommit={(v) => mark("adapterConfig", "paperclipApiUrl", v || undefined)}
+              onCommit={(v) => mark("adapterConfig", "noralosApiUrl", v || undefined)}
               immediate
               className={inputClass}
               placeholder="https://noralos.example"

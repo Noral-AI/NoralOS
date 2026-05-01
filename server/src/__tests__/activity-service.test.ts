@@ -11,8 +11,8 @@ import {
   issueComments,
   issueDocuments,
   issues,
-} from "@paperclipai/db";
-import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@paperclipai/shared";
+} from "@noralos/db";
+import { ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY } from "@noralos/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,

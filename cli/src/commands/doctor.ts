@@ -1,6 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { NoralosConfig } from "../config/schema.js";
 import { readConfig, resolveConfigPath } from "../config/store.js";
 import {
   agentJwtSecretCheck,
@@ -44,7 +44,7 @@ export async function doctor(opts: {
     return printSummary(results);
   }
 
-  let config: PaperclipConfig;
+  let config: NoralosConfig;
   try {
     config = readConfig(opts.config)!;
   } catch (err) {
@@ -53,7 +53,7 @@ export async function doctor(opts: {
       status: "fail",
       message: `Could not read config: ${err instanceof Error ? err.message : String(err)}`,
       canRepair: false,
-      repairHint: "Run `paperclipai configure --section database` or `paperclipai onboard`",
+      repairHint: "Run `paperclipai configure --section database` or `noralos onboard`",
     };
     results.push(readResult);
     printResult(readResult);

@@ -10,7 +10,7 @@ Instance setup and diagnostics commands.
 One-command bootstrap and start:
 
 ```sh
-pnpm paperclipai run
+pnpm noralos run
 ```
 
 Does:
@@ -22,15 +22,15 @@ Does:
 Choose a specific instance:
 
 ```sh
-pnpm paperclipai run --instance dev
+pnpm noralos run --instance dev
 ```
 
-## `paperclipai onboard`
+## `noralos onboard`
 
 Interactive first-time setup:
 
 ```sh
-pnpm paperclipai onboard
+pnpm noralos onboard
 ```
 
 If NoralOS is already configured, rerunning `onboard` keeps the existing config in place. Use `paperclipai configure` to change settings on an existing install.
@@ -43,13 +43,13 @@ First prompt:
 Start immediately after onboarding:
 
 ```sh
-pnpm paperclipai onboard --run
+pnpm noralos onboard --run
 ```
 
 Non-interactive defaults + immediate start (opens browser on server listen):
 
 ```sh
-pnpm paperclipai onboard --yes
+pnpm noralos onboard --yes
 ```
 
 On an existing install, `--yes` now preserves the current config and just starts NoralOS with that setup.
@@ -59,8 +59,8 @@ On an existing install, `--yes` now preserves the current config and just starts
 Health checks with optional auto-repair:
 
 ```sh
-pnpm paperclipai doctor
-pnpm paperclipai doctor --repair
+pnpm noralos doctor
+pnpm noralos doctor --repair
 ```
 
 Validates:
@@ -76,9 +76,9 @@ Validates:
 Update configuration sections:
 
 ```sh
-pnpm paperclipai configure --section server
-pnpm paperclipai configure --section secrets
-pnpm paperclipai configure --section storage
+pnpm noralos configure --section server
+pnpm noralos configure --section secrets
+pnpm noralos configure --section storage
 ```
 
 ## `paperclipai env`
@@ -86,7 +86,7 @@ pnpm paperclipai configure --section storage
 Show resolved environment configuration:
 
 ```sh
-pnpm paperclipai env
+pnpm noralos env
 ```
 
 This now includes bind-oriented deployment settings such as `NORALOS_BIND` and `NORALOS_BIND_HOST` when configured.
@@ -96,7 +96,7 @@ This now includes bind-oriented deployment settings such as `NORALOS_BIND` and `
 Allow a private hostname for authenticated/private mode:
 
 ```sh
-pnpm paperclipai allowed-hostname my-tailscale-host
+pnpm noralos allowed-hostname my-tailscale-host
 ```
 
 ## Local Storage Paths
@@ -112,12 +112,12 @@ pnpm paperclipai allowed-hostname my-tailscale-host
 Override with:
 
 ```sh
-NORALOS_HOME=/custom/home NORALOS_INSTANCE_ID=dev pnpm paperclipai run
+NORALOS_HOME=/custom/home NORALOS_INSTANCE_ID=dev pnpm noralos run
 ```
 
 Or pass `--data-dir` directly on any command:
 
 ```sh
-pnpm paperclipai run --data-dir ./tmp/noralos-dev
-pnpm paperclipai doctor --data-dir ./tmp/noralos-dev
+pnpm noralos run --data-dir ./tmp/noralos-dev
+pnpm noralos doctor --data-dir ./tmp/noralos-dev
 ```

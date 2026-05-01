@@ -1,10 +1,10 @@
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   issueGraphLivenessAutoRecoveryRequestSchema,
   patchInstanceExperimentalSettingsSchema,
   patchInstanceGeneralSettingsSchema,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { heartbeatService, instanceSettingsService, logActivity } from "../services/index.js";

@@ -39,7 +39,7 @@ export interface AdapterSshExecutionTarget {
   environmentId?: string | null;
   leaseId?: string | null;
   remoteCwd: string;
-  paperclipApiUrl?: string | null;
+  noralosApiUrl?: string | null;
   spec: SshRemoteExecutionSpec;
 }
 
@@ -50,7 +50,7 @@ export interface AdapterSandboxExecutionTarget {
   environmentId?: string | null;
   leaseId?: string | null;
   remoteCwd: string;
-  paperclipApiUrl?: string | null;
+  noralosApiUrl?: string | null;
   paperclipTransport?: "direct" | "bridge";
   timeoutMs?: number | null;
   runner?: CommandManagedRuntimeRunner;
@@ -127,12 +127,12 @@ function resolveDefaultPaperclipApiUrl(): string {
 }
 
 function resolveSandboxPaperclipTransport(
-  target: Pick<AdapterSandboxExecutionTarget, "paperclipTransport" | "paperclipApiUrl">,
+  target: Pick<AdapterSandboxExecutionTarget, "paperclipTransport" | "noralosApiUrl">,
 ): "direct" | "bridge" {
   if (target.paperclipTransport === "direct" || target.paperclipTransport === "bridge") {
     return target.paperclipTransport;
   }
-  return target.paperclipApiUrl ? "direct" : "bridge";
+  return target.noralosApiUrl ? "direct" : "bridge";
 }
 
 function isAdapterExecutionTargetInstance(value: unknown): value is AdapterExecutionTarget {
@@ -184,9 +184,9 @@ export function adapterExecutionTargetPaperclipApiUrl(
   target: AdapterExecutionTarget | null | undefined,
 ): string | null {
   if (target?.kind !== "remote") return null;
-  if (target.transport === "ssh") return target.paperclipApiUrl ?? target.spec.paperclipApiUrl ?? null;
+  if (target.transport === "ssh") return target.noralosApiUrl ?? target.spec.noralosApiUrl ?? null;
   if (resolveSandboxPaperclipTransport(target) === "bridge") return null;
-  return target.paperclipApiUrl ?? null;
+  return target.noralosApiUrl ?? null;
 }
 
 export function adapterExecutionTargetUsesPaperclipBridge(
@@ -466,7 +466,7 @@ export function adapterExecutionTargetSessionIdentity(
     leaseId: target.leaseId ?? null,
     remoteCwd: target.remoteCwd,
     paperclipTransport,
-    ...(paperclipTransport === "direct" && target.paperclipApiUrl ? { paperclipApiUrl: target.paperclipApiUrl } : {}),
+    ...(paperclipTransport === "direct" && target.noralosApiUrl ? { noralosApiUrl: target.noralosApiUrl } : {}),
   };
 }
 
@@ -487,7 +487,7 @@ export function adapterExecutionTargetSessionMatches(
     readStringMeta(parsedSaved, "leaseId") === current?.leaseId &&
     readStringMeta(parsedSaved, "remoteCwd") === current?.remoteCwd &&
     readStringMeta(parsedSaved, "paperclipTransport") === (current?.paperclipTransport ?? null) &&
-    readStringMeta(parsedSaved, "paperclipApiUrl") === (current?.paperclipApiUrl ?? null)
+    readStringMeta(parsedSaved, "noralosApiUrl") === (current?.noralosApiUrl ?? null)
   );
 }
 
@@ -512,7 +512,7 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       environmentId: readStringMeta(parsed, "environmentId"),
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd: spec.remoteCwd,
-      paperclipApiUrl: readStringMeta(parsed, "paperclipApiUrl") ?? spec.paperclipApiUrl ?? null,
+      noralosApiUrl: readStringMeta(parsed, "noralosApiUrl") ?? spec.noralosApiUrl ?? null,
       spec,
     };
   }
@@ -528,7 +528,7 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       environmentId: readStringMeta(parsed, "environmentId"),
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd,
-      paperclipApiUrl: readStringMeta(parsed, "paperclipApiUrl"),
+      noralosApiUrl: readStringMeta(parsed, "noralosApiUrl"),
       paperclipTransport:
         paperclipTransport === "direct" || paperclipTransport === "bridge"
           ? paperclipTransport
@@ -553,7 +553,7 @@ export function adapterExecutionTargetFromRemoteExecution(
       environmentId: metadata.environmentId ?? null,
       leaseId: metadata.leaseId ?? null,
       remoteCwd: ssh.remoteCwd,
-      paperclipApiUrl: ssh.paperclipApiUrl ?? null,
+      noralosApiUrl: ssh.noralosApiUrl ?? null,
       spec: ssh,
     };
   }
@@ -615,7 +615,7 @@ export async function prepareAdapterExecutionTargetRuntime(input: {
       leaseId: target.leaseId,
       remoteCwd: target.remoteCwd,
       timeoutMs: target.timeoutMs,
-      paperclipApiUrl: target.paperclipApiUrl,
+      noralosApiUrl: target.noralosApiUrl,
     },
     adapterKey: input.adapterKey,
     workspaceLocalDir: input.workspaceLocalDir,

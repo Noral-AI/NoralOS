@@ -12,8 +12,8 @@ import {
   pluginDatabaseNamespaces,
   pluginMigrations,
   plugins,
-} from "@paperclipai/db";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+} from "@noralos/db";
+import type { PaperclipPluginManifestV1 } from "@noralos/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,

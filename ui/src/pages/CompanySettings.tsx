@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES,
   MAX_COMPANY_ATTACHMENT_MAX_BYTES,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { companiesApi } from "../api/companies";
@@ -607,13 +607,13 @@ function buildAgentSnippet(input: AgentSnippetInput) {
       ? `No candidate URLs are available. Ask your user to configure a reachable hostname in Paperclip, then retry.
 Suggested steps:
 - choose a hostname that resolves to the NoralOS host from your runtime
-- run: pnpm paperclipai allowed-hostname <host>
+- run: pnpm noralos allowed-hostname <host>
 - restart NoralOS
 - verify with: curl -fsS http://<host>:3100/api/health
 - regenerate this invite snippet`
       : `If none are reachable, ask your user to add a reachable hostname in Paperclip, restart, and retry.
 Suggested command:
-- pnpm paperclipai allowed-hostname <host>
+- pnpm noralos allowed-hostname <host>
 Then verify with: curl -fsS <base-url>/api/health`;
 
   const resolutionLine = resolutionTestUrl

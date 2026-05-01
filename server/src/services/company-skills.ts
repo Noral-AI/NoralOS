@@ -3,10 +3,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { and, asc, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companies, companySkills } from "@paperclipai/db";
-import { readPaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
-import type { PaperclipSkillEntry } from "@paperclipai/adapter-utils/server-utils";
+import type { Db } from "@noralos/db";
+import { companies, companySkills } from "@noralos/db";
+import { readPaperclipSkillSyncPreference } from "@noralos/adapter-utils/server-utils";
+import type { PaperclipSkillEntry } from "@noralos/adapter-utils/server-utils";
 import type {
   CompanySkill,
   CompanySkillCreateRequest,
@@ -25,9 +25,9 @@ import type {
   CompanySkillTrustLevel,
   CompanySkillUpdateStatus,
   CompanySkillUsageAgent,
-} from "@paperclipai/shared";
-import { normalizeAgentUrlKey } from "@paperclipai/shared";
-import { resolvePaperclipInstanceRoot } from "../home-paths.js";
+} from "@noralos/shared";
+import { normalizeAgentUrlKey } from "@noralos/shared";
+import { resolveNoralosInstanceRoot } from "../home-paths.js";
 import { notFound, unprocessable } from "../errors.js";
 import { ghFetch, gitHubApiBase, resolveRawGitHubUrl } from "./github-fetch.js";
 import { agentService } from "./agents.js";
@@ -301,7 +301,7 @@ function uniqueImportedSkillKey(companyId: string, baseSlug: string, usedKeys: S
 }
 
 function buildSkillRuntimeName(key: string, slug: string) {
-  if (key.startsWith("paperclipai/paperclip/")) return slug;
+  if (key.startsWith("noralos/paperclip/")) return slug;
   return `${slug}--${hashSkillValue(key)}`;
 }
 
@@ -332,7 +332,7 @@ function deriveCanonicalSkillKey(
 
   const sourceKind = asString(metadata?.sourceKind);
   if (sourceKind === "paperclip_bundled") {
-    return `paperclipai/paperclip/${slug}`;
+    return `noralos/paperclip/${slug}`;
   }
 
   const owner = normalizeSkillSlug(asString(metadata?.owner));
@@ -1383,7 +1383,7 @@ export async function findMissingLocalSkillIds(
 }
 
 function resolveManagedSkillsRoot(companyId: string) {
-  return path.resolve(resolvePaperclipInstanceRoot(), "skills", companyId);
+  return path.resolve(resolveNoralosInstanceRoot(), "skills", companyId);
 }
 
 function resolveLocalSkillFilePath(skill: CompanySkill, relativePath: string) {
@@ -1434,7 +1434,7 @@ function deriveSkillSourceInfo(skill: SkillSourceInfoTarget): {
       editable: false,
       editableReason: "Bundled NoralOS skills are read-only.",
       sourceLabel: "NoralOS bundled",
-      sourceBadge: "paperclip",
+      sourceBadge: "noralos",
       sourcePath: null,
     };
   }
@@ -1483,7 +1483,7 @@ function deriveSkillSourceInfo(skill: SkillSourceInfoTarget): {
         editable: true,
         editableReason: null,
         sourceLabel: "NoralOS workspace",
-        sourceBadge: "paperclip",
+        sourceBadge: "noralos",
         sourcePath: managedRoot,
       };
     }
@@ -2330,7 +2330,7 @@ export function companySkillService(db: Db) {
         existing
         && existingMeta.sourceKind === "paperclip_bundled"
         && incomingKind === "github"
-        && incomingOwner === "paperclipai"
+        && incomingOwner === "noralos"
         && incomingRepo === "paperclip"
       ) {
         out.push(existing);

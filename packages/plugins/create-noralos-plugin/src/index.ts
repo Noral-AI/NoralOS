@@ -178,7 +178,7 @@ export function scaffoldPluginProject(options: ScaffoldPluginOptions): string {
       ? {
         pnpm: {
           overrides: {
-            "@paperclipai/shared": `file:${toPosixPath(path.relative(outputDir, packedSharedTarball))}`,
+            "@noralos/shared": `file:${toPosixPath(path.relative(outputDir, packedSharedTarball))}`,
           },
         },
       }
@@ -186,10 +186,10 @@ export function scaffoldPluginProject(options: ScaffoldPluginOptions): string {
     devDependencies: {
       ...(packedSharedTarball
         ? {
-          "@paperclipai/shared": `file:${toPosixPath(path.relative(outputDir, packedSharedTarball))}`,
+          "@noralos/shared": `file:${toPosixPath(path.relative(outputDir, packedSharedTarball))}`,
         }
         : {}),
-      "@paperclipai/plugin-sdk": sdkDependency,
+      "@noralos/plugin-sdk": sdkDependency,
       "@rollup/plugin-node-resolve": "^16.0.1",
       "@rollup/plugin-typescript": "^12.1.2",
       "@types/node": "^24.6.0",
@@ -231,7 +231,7 @@ export function scaffoldPluginProject(options: ScaffoldPluginOptions): string {
   writeFile(
     path.join(outputDir, "esbuild.config.mjs"),
     `import esbuild from "esbuild";
-import { createPluginBundlerPresets } from "@paperclipai/plugin-sdk/bundlers";
+import { createPluginBundlerPresets } from "@noralos/plugin-sdk/bundlers";
 
 const presets = createPluginBundlerPresets({ uiEntry: "src/ui/index.tsx" });
 const watch = process.argv.includes("--watch");
@@ -254,7 +254,7 @@ if (watch) {
     path.join(outputDir, "rollup.config.mjs"),
     `import { nodeResolve } from "@rollup/plugin-node-resolve";
 import typescript from "@rollup/plugin-typescript";
-import { createPluginBundlerPresets } from "@paperclipai/plugin-sdk/bundlers";
+import { createPluginBundlerPresets } from "@noralos/plugin-sdk/bundlers";
 
 const presets = createPluginBundlerPresets({ uiEntry: "src/ui/index.tsx" });
 
@@ -299,7 +299,7 @@ export default defineConfig({
   if (template === "environment") {
     writeFile(
       path.join(outputDir, "src", "manifest.ts"),
-      `import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
+      `import type { PaperclipPluginManifestV1 } from "@noralos/plugin-sdk";
 
 const manifest: PaperclipPluginManifestV1 = {
   id: ${quote(manifestId)},
@@ -342,7 +342,7 @@ export default manifest;
 
     writeFile(
       path.join(outputDir, "src", "worker.ts"),
-      `import { definePlugin, runWorker } from "@paperclipai/plugin-sdk";
+      `import { definePlugin, runWorker } from "@noralos/plugin-sdk";
 import type {
   PluginEnvironmentValidateConfigParams,
   PluginEnvironmentProbeParams,
@@ -352,7 +352,7 @@ import type {
   PluginEnvironmentDestroyLeaseParams,
   PluginEnvironmentRealizeWorkspaceParams,
   PluginEnvironmentExecuteParams,
-} from "@paperclipai/plugin-sdk";
+} from "@noralos/plugin-sdk";
 
 const plugin = definePlugin({
   async setup(ctx) {
@@ -422,7 +422,7 @@ runWorker(plugin, import.meta.url);
 
     writeFile(
       path.join(outputDir, "src", "ui", "index.tsx"),
-      `import { usePluginData, type PluginWidgetProps } from "@paperclipai/plugin-sdk/ui";
+      `import { usePluginData, type PluginWidgetProps } from "@noralos/plugin-sdk/ui";
 
 type HealthData = {
   status: "ok" | "degraded" | "error";
@@ -454,7 +454,7 @@ import {
   createFakeEnvironmentDriver,
   assertEnvironmentEventOrder,
   assertLeaseLifecycle,
-} from "@paperclipai/plugin-sdk/testing";
+} from "@noralos/plugin-sdk/testing";
 import manifest from "../src/manifest.js";
 import plugin from "../src/worker.js";
 
@@ -520,7 +520,7 @@ describe("environment plugin scaffold", () => {
   } else {
     writeFile(
       path.join(outputDir, "src", "manifest.ts"),
-      `import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
+      `import type { PaperclipPluginManifestV1 } from "@noralos/plugin-sdk";
 
 const manifest: PaperclipPluginManifestV1 = {
   id: ${quote(manifestId)},
@@ -557,7 +557,7 @@ export default manifest;
 
     writeFile(
       path.join(outputDir, "src", "worker.ts"),
-      `import { definePlugin, runWorker } from "@paperclipai/plugin-sdk";
+      `import { definePlugin, runWorker } from "@noralos/plugin-sdk";
 
 const plugin = definePlugin({
   async setup(ctx) {
@@ -589,7 +589,7 @@ runWorker(plugin, import.meta.url);
 
     writeFile(
       path.join(outputDir, "src", "ui", "index.tsx"),
-      `import { usePluginAction, usePluginData, type PluginWidgetProps } from "@paperclipai/plugin-sdk/ui";
+      `import { usePluginAction, usePluginData, type PluginWidgetProps } from "@noralos/plugin-sdk/ui";
 
 type HealthData = {
   status: "ok" | "degraded" | "error";
@@ -618,7 +618,7 @@ export function DashboardWidget(_props: PluginWidgetProps) {
     writeFile(
       path.join(outputDir, "tests", "plugin.spec.ts"),
       `import { describe, expect, it } from "vitest";
-import { createTestHarness } from "@paperclipai/plugin-sdk/testing";
+import { createTestHarness } from "@noralos/plugin-sdk/testing";
 import manifest from "../src/manifest.js";
 import plugin from "../src/worker.js";
 
@@ -657,7 +657,7 @@ pnpm test
 \`\`\`
 
 ${sdkDependency.startsWith("file:")
-  ? `This scaffold snapshots \`@paperclipai/plugin-sdk\` and \`@paperclipai/shared\` from a local Paperclip checkout at:\n\n\`${toPosixPath(localSdkPath)}\`\n\nThe packed tarballs live in \`.paperclip-sdk/\` for local development. Before publishing this plugin, switch those dependencies to published package versions once they are available on npm.\n\n`
+  ? `This scaffold snapshots \`@noralos/plugin-sdk\` and \`@noralos/shared\` from a local Paperclip checkout at:\n\n\`${toPosixPath(localSdkPath)}\`\n\nThe packed tarballs live in \`.paperclip-sdk/\` for local development. Before publishing this plugin, switch those dependencies to published package versions once they are available on npm.\n\n`
   : ""}
 
 ## Install Into Paperclip
@@ -670,7 +670,7 @@ curl -X POST http://127.0.0.1:3100/api/plugins/install \\
 
 ## Build Options
 
-- \`pnpm build\` uses esbuild presets from \`@paperclipai/plugin-sdk/bundlers\`.
+- \`pnpm build\` uses esbuild presets from \`@noralos/plugin-sdk/bundlers\`.
 - \`pnpm build:rollup\` uses rollup presets from the same SDK.
 `,
   );

@@ -459,7 +459,7 @@ Commands:
 - create bootstrap invite
 - print one-time URL
 
-2. `paperclipai onboard`
+2. `noralos onboard`
 - in cloud mode with `bootstrap_pending`, print bootstrap URL and next steps
 - in local mode, skip bootstrap requirement
 

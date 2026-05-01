@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolvePaperclipConfigPath, resolvePaperclipEnvPath } from "./paths.js";
-import type { BindMode, DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import { resolveNoralosConfigPath, resolveNoralosEnvPath } from "./paths.js";
+import type { BindMode, DeploymentExposure, DeploymentMode } from "@noralos/shared";
 
 import { parse as parseEnvFileContents } from "dotenv";
 
@@ -93,7 +93,7 @@ function resolveAgentJwtSecretStatus(
 
   return {
     status: "warn",
-    message: "missing (run `pnpm paperclipai onboard`)",
+    message: "missing (run `pnpm noralos onboard`)",
   };
 }
 
@@ -102,8 +102,8 @@ export function printStartupBanner(opts: StartupBannerOptions): void {
   const baseUrl = `http://${baseHost}:${opts.listenPort}`;
   const apiUrl = `${baseUrl}/api`;
   const uiUrl = opts.uiMode === "none" ? "disabled" : baseUrl;
-  const configPath = resolvePaperclipConfigPath();
-  const envFilePath = resolvePaperclipEnvPath();
+  const configPath = resolveNoralosConfigPath();
+  const envFilePath = resolveNoralosEnvPath();
   const agentJwtSecret = resolveAgentJwtSecretStatus(envFilePath);
 
   const dbMode =

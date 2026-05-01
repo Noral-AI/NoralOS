@@ -36,7 +36,7 @@ import type {
   IssueAttachment,
   IssueBlockerAttention,
   IssueRelationIssueSummary,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { useNoralosIssueRuntime, type NoralosIssueRuntimeReassignment } from "../hooks/useNoralosIssueRuntime";

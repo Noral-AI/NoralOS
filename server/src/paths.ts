@@ -23,12 +23,12 @@ function findConfigFileFromAncestors(startDir: string): string | null {
   return null;
 }
 
-export function resolvePaperclipConfigPath(overridePath?: string): string {
+export function resolveNoralosConfigPath(overridePath?: string): string {
   if (overridePath) return path.resolve(overridePath);
   if (process.env.NORALOS_CONFIG) return path.resolve(process.env.NORALOS_CONFIG);
   return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath();
 }
 
-export function resolvePaperclipEnvPath(overrideConfigPath?: string): string {
-  return path.resolve(path.dirname(resolvePaperclipConfigPath(overrideConfigPath)), NORALOS_ENV_FILENAME);
+export function resolveNoralosEnvPath(overrideConfigPath?: string): string {
+  return path.resolve(path.dirname(resolveNoralosConfigPath(overrideConfigPath)), NORALOS_ENV_FILENAME);
 }

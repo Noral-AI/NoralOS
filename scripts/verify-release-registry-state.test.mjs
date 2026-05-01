@@ -15,13 +15,13 @@ test("isCanaryVersion matches release canaries", () => {
 test("collectInternalDependencyProblems flags missing internal versions", () => {
   const manifest = {
     dependencies: {
-      "@paperclipai/plugin-sdk": "2026.425.0-canary.5",
+      "@noralos/plugin-sdk": "2026.425.0-canary.5",
       e2b: "^2.19.0",
     },
   };
   const packageDocsByName = new Map([
     [
-      "@paperclipai/plugin-sdk",
+      "@noralos/plugin-sdk",
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -31,14 +31,14 @@ test("collectInternalDependencyProblems flags missing internal versions", () => 
   ]);
 
   assert.deepEqual(collectInternalDependencyProblems(manifest, packageDocsByName), [
-    "dependencies requires @paperclipai/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+    "dependencies requires @noralos/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
   ]);
 });
 
 test("verifyPackageRegistryState fails when canary latest is left in place by default", () => {
   const packageDocsByName = new Map([
     [
-      "@paperclipai/plugin-e2b",
+      "@noralos/plugin-e2b",
       {
         "dist-tags": {
           latest: "2026.425.0-canary.5",
@@ -47,19 +47,19 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
         versions: {
           "2026.425.0-canary.5": {
             dependencies: {
-              "@paperclipai/plugin-sdk": "2026.425.0-canary.5",
+              "@noralos/plugin-sdk": "2026.425.0-canary.5",
             },
           },
           "2026.427.0-canary.3": {
             dependencies: {
-              "@paperclipai/plugin-sdk": "2026.427.0-canary.3",
+              "@noralos/plugin-sdk": "2026.427.0-canary.3",
             },
           },
         },
       },
     ],
     [
-      "@paperclipai/plugin-sdk",
+      "@noralos/plugin-sdk",
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -70,8 +70,8 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
 
   assert.deepEqual(
     verifyPackageRegistryState({
-      packageName: "@paperclipai/plugin-e2b",
-      packageDoc: packageDocsByName.get("@paperclipai/plugin-e2b"),
+      packageName: "@noralos/plugin-e2b",
+      packageDoc: packageDocsByName.get("@noralos/plugin-e2b"),
       packageDocsByName,
       channel: "canary",
       distTag: "canary",
@@ -79,8 +79,8 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
       allowCanaryLatest: false,
     }),
     [
-      "@paperclipai/plugin-e2b: latest dist-tag still resolves to canary 2026.425.0-canary.5; rerun with --allow-canary-latest only when that state is intentional",
-      "@paperclipai/plugin-e2b@2026.425.0-canary.5 via latest: dependencies requires @paperclipai/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+      "@noralos/plugin-e2b: latest dist-tag still resolves to canary 2026.425.0-canary.5; rerun with --allow-canary-latest only when that state is intentional",
+      "@noralos/plugin-e2b@2026.425.0-canary.5 via latest: dependencies requires @noralos/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
     ],
   );
 });
@@ -88,7 +88,7 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
 test("verifyPackageRegistryState allows intentional canary latest but still checks dependencies", () => {
   const packageDocsByName = new Map([
     [
-      "paperclipai",
+      "noralos",
       {
         "dist-tags": {
           latest: "2026.427.0-canary.3",
@@ -97,14 +97,14 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
         versions: {
           "2026.427.0-canary.3": {
             dependencies: {
-              "@paperclipai/server": "2026.427.0-canary.3",
+              "@noralos/server": "2026.427.0-canary.3",
             },
           },
         },
       },
     ],
     [
-      "@paperclipai/server",
+      "@noralos/server",
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -115,8 +115,8 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
 
   assert.deepEqual(
     verifyPackageRegistryState({
-      packageName: "paperclipai",
-      packageDoc: packageDocsByName.get("paperclipai"),
+      packageName: "noralos",
+      packageDoc: packageDocsByName.get("noralos"),
       packageDocsByName,
       channel: "canary",
       distTag: "canary",

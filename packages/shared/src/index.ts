@@ -934,7 +934,7 @@ export {
   secretsLocalEncryptedConfigSchema,
   telemetryConfigSchema,
   type TelemetryConfig,
-  type PaperclipConfig,
+  type NoralosConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,

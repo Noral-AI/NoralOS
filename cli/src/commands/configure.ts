@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { readConfig, writeConfig, configExists, resolveConfigPath } from "../config/store.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { NoralosConfig } from "../config/schema.js";
 import { ensureLocalSecretsKeyFile } from "../config/secrets-key.js";
 import { promptDatabase } from "../prompts/database.js";
 import { promptLlm } from "../prompts/llm.js";
@@ -13,7 +13,7 @@ import {
   resolveDefaultBackupDir,
   resolveDefaultEmbeddedPostgresDir,
   resolveDefaultLogsDir,
-  resolvePaperclipInstanceId,
+  resolveNoralosInstanceId,
 } from "../config/home.js";
 import { printPaperclipCliBanner } from "../utils/banner.js";
 
@@ -28,8 +28,8 @@ const SECTION_LABELS: Record<Section, string> = {
   secrets: "Secrets",
 };
 
-function defaultConfig(): PaperclipConfig {
-  const instanceId = resolvePaperclipInstanceId();
+function defaultConfig(): NoralosConfig {
+  const instanceId = resolveNoralosInstanceId();
   return {
     $meta: {
       version: 1,
@@ -81,12 +81,12 @@ export async function configure(opts: {
   const configPath = resolveConfigPath(opts.config);
 
   if (!configExists(opts.config)) {
-    p.log.error("No config file found. Run `paperclipai onboard` first.");
+    p.log.error("No config file found. Run `noralos onboard` first.");
     p.outro("");
     return;
   }
 
-  let config: PaperclipConfig;
+  let config: NoralosConfig;
   try {
     config = readConfig(opts.config) ?? defaultConfig();
   } catch (err) {

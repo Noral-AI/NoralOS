@@ -8,7 +8,7 @@ Get NoralOS running locally in under 5 minutes.
 ## Quick Start (Recommended)
 
 ```sh
-npx paperclipai onboard --yes
+npx noralos onboard --yes
 ```
 
 This walks you through setup, configures your environment, and gets NoralOS running.
@@ -18,10 +18,10 @@ If you already have a NoralOS install, rerunning `onboard` keeps your current co
 To start NoralOS again later:
 
 ```sh
-npx paperclipai run
+npx noralos run
 ```
 
-> **Note:** If you used `npx` for setup, always use `npx paperclipai` to run commands. The `pnpm paperclipai` form only works inside a cloned copy of the NoralOS repository (see Local Development below).
+> **Note:** If you used `npx` for setup, always use `npx noralos` to run commands. The `pnpm noralos` form only works inside a cloned copy of the NoralOS repository (see Local Development below).
 
 ## Local Development
 
@@ -41,7 +41,7 @@ No external database required — NoralOS uses an embedded PostgreSQL instance b
 When working from the cloned repo, you can also use:
 
 ```sh
-pnpm paperclipai run
+pnpm noralos run
 ```
 
 This auto-onboards if config is missing, runs health checks with auto-repair, and starts the server.

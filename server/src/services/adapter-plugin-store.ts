@@ -14,7 +14,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { resolvePaperclipHomeDir } from "../home-paths.js";
+import { resolveNoralosHomeDir } from "../home-paths.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -44,7 +44,7 @@ interface AdapterSettings {
 // ---------------------------------------------------------------------------
 
 function adapterPluginPaths() {
-  const paperclipDir = resolvePaperclipHomeDir();
+  const paperclipDir = resolveNoralosHomeDir();
   return {
     adapterPluginsDir: path.join(paperclipDir, "adapter-plugins"),
     adapterPluginsStorePath: path.join(paperclipDir, "adapter-plugins.json"),

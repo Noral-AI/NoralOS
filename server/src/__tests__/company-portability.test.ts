@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { CompanyPortabilityFileEntry } from "@paperclipai/shared";
+import type { CompanyPortabilityFileEntry } from "@noralos/shared";
 
 const companySvc = {
   getById: vi.fn(),
@@ -121,7 +121,7 @@ function asTextFile(entry: CompanyPortabilityFileEntry | undefined) {
 }
 
 describe("company portability", () => {
-  const paperclipKey = "paperclipai/paperclip/paperclip";
+  const paperclipKey = "noralos/paperclip/paperclip";
   const companyPlaybookKey = "company/company-1/company-playbook";
 
   beforeEach(() => {
@@ -296,7 +296,7 @@ describe("company portability", () => {
         ],
         metadata: {
           sourceKind: "github",
-          owner: "paperclipai",
+          owner: "noralos",
           repo: "paperclip",
           ref: "0123456789abcdef0123456789abcdef01234567",
           trackingRef: "master",
@@ -392,10 +392,10 @@ describe("company portability", () => {
 
   it("parses canonical GitHub import URLs with explicit ref and package path", () => {
     expect(
-      parseGitHubSourceUrl("https://github.com/paperclipai/companies?ref=feature%2Fdemo&path=gstack"),
+      parseGitHubSourceUrl("https://github.com/noralos/companies?ref=feature%2Fdemo&path=gstack"),
     ).toEqual({
       hostname: "github.com",
-      owner: "paperclipai",
+      owner: "noralos",
       repo: "companies",
       ref: "feature/demo",
       basePath: "gstack",
@@ -406,11 +406,11 @@ describe("company portability", () => {
   it("parses canonical GitHub import URLs with explicit companyPath", () => {
     expect(
       parseGitHubSourceUrl(
-        "https://github.com/paperclipai/companies?ref=abc123&companyPath=gstack%2FCOMPANY.md",
+        "https://github.com/noralos/companies?ref=abc123&companyPath=gstack%2FCOMPANY.md",
       ),
     ).toEqual({
       hostname: "github.com",
-      owner: "paperclipai",
+      owner: "noralos",
       repo: "companies",
       ref: "abc123",
       basePath: "gstack",
@@ -436,9 +436,9 @@ describe("company portability", () => {
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain("skills:");
     expect(asTextFile(exported.files["agents/claudecoder/AGENTS.md"])).toContain(`- "${paperclipKey}"`);
     expect(asTextFile(exported.files["agents/cmo/AGENTS.md"])).not.toContain("skills:");
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/paperclip/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/paperclip/SKILL.md"])).toContain('kind: "github-dir"');
-    expect(exported.files["skills/paperclipai/paperclip/paperclip/references/api.md"]).toBeUndefined();
+    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain('kind: "github-dir"');
+    expect(exported.files["skills/noralos/paperclip/paperclip/references/api.md"]).toBeUndefined();
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/references/checklist.md"])).toContain("# Checklist");
 
@@ -558,9 +558,9 @@ describe("company portability", () => {
       expandReferencedSkills: true,
     });
 
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/paperclip/SKILL.md"])).toContain("# Paperclip");
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/paperclip/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/paperclip/references/api.md"])).toContain("# API");
+    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain("# Paperclip");
+    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/noralos/paperclip/paperclip/references/api.md"])).toContain("# API");
   });
 
   it("exports only selected skills when skills filter is provided", async () => {
@@ -578,7 +578,7 @@ describe("company portability", () => {
 
     expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
     expect(asTextFile(exported.files["skills/company/PAP/company-playbook/SKILL.md"])).toContain("# Company Playbook");
-    expect(exported.files["skills/paperclipai/paperclip/paperclip/SKILL.md"]).toBeUndefined();
+    expect(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"]).toBeUndefined();
   });
 
   it("warns and exports all skills when skills filter matches nothing", async () => {
@@ -596,7 +596,7 @@ describe("company portability", () => {
 
     expect(exported.warnings).toContainEqual(expect.stringContaining("nonexistent-skill"));
     expect(exported.files["skills/company/PAP/company-playbook/SKILL.md"]).toBeDefined();
-    expect(exported.files["skills/paperclipai/paperclip/paperclip/SKILL.md"]).toBeDefined();
+    expect(exported.files["skills/noralos/paperclip/paperclip/SKILL.md"]).toBeDefined();
   });
 
   it("exports the company logo into images/ and references it from .paperclip.yaml", async () => {
@@ -692,7 +692,7 @@ describe("company portability", () => {
       {
         id: "skill-paperclip",
         companyId: "company-1",
-        key: "paperclipai/paperclip/release-changelog",
+        key: "noralos/paperclip/release-changelog",
         slug: "release-changelog",
         name: "release-changelog",
         description: "Bundled release changelog skill",
@@ -705,7 +705,7 @@ describe("company portability", () => {
         fileInventory: [{ path: "SKILL.md", kind: "skill" }],
         metadata: {
           sourceKind: "paperclip_bundled",
-          owner: "paperclipai",
+          owner: "noralos",
           repo: "paperclip",
           ref: "0123456789abcdef0123456789abcdef01234567",
           trackingRef: "master",
@@ -724,8 +724,8 @@ describe("company portability", () => {
     });
 
     expect(asTextFile(exported.files["skills/local/release-changelog/SKILL.md"])).toContain("# Local Release Changelog");
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/release-changelog/SKILL.md"])).toContain("metadata:");
-    expect(asTextFile(exported.files["skills/paperclipai/paperclip/release-changelog/SKILL.md"])).toContain("paperclipai/paperclip/release-changelog");
+    expect(asTextFile(exported.files["skills/noralos/paperclip/release-changelog/SKILL.md"])).toContain("metadata:");
+    expect(asTextFile(exported.files["skills/noralos/paperclip/release-changelog/SKILL.md"])).toContain("noralos/paperclip/release-changelog");
   });
 
   it("builds export previews without tasks by default", async () => {

@@ -13,7 +13,7 @@ import {
   issues,
   projectWorkspaces,
   projects,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,

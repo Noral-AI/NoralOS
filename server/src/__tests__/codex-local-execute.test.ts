@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
-import { execute } from "@paperclipai/adapter-codex-local/server";
+import { runChildProcess } from "@noralos/adapter-utils/server-utils";
+import { execute } from "@noralos/adapter-codex-local/server";
 
 async function writeFakeCodexCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
@@ -15,7 +15,7 @@ const payload = {
   prompt: fs.readFileSync(0, "utf8"),
   codexHome: process.env.CODEX_HOME || null,
   paperclipWakePayloadJson: process.env.NORALOS_WAKE_PAYLOAD_JSON || null,
-  paperclipApiUrl: process.env.NORALOS_API_URL || null,
+  noralosApiUrl: process.env.NORALOS_API_URL || null,
   paperclipApiKey: process.env.NORALOS_API_KEY || null,
   paperclipApiBridgeMode: process.env.NORALOS_API_BRIDGE_MODE || null,
   paperclipEnvKeys: Object.keys(process.env)
@@ -47,7 +47,7 @@ type CapturePayload = {
   prompt: string;
   codexHome: string | null;
   paperclipWakePayloadJson: string | null;
-  paperclipApiUrl?: string | null;
+  noralosApiUrl?: string | null;
   paperclipApiKey?: string | null;
   paperclipApiBridgeMode?: string | null;
   paperclipEnvKeys: string[];
@@ -373,7 +373,7 @@ describe("codex execute", () => {
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "codex", "home"));
-      expect(capture.paperclipApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(capture.noralosApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
       expect(capture.paperclipApiKey).not.toBe("run-jwt-token");
       expect(capture.paperclipApiBridgeMode).toBe("queue_v1");
     } finally {

@@ -14,10 +14,10 @@ pnpm test
 ## Install Into NoralOS
 
 ```bash
-pnpm paperclipai plugin install ./
+pnpm noralos plugin install ./
 ```
 
 ## Build Options
 
-- `pnpm build` uses esbuild presets from `@paperclipai/plugin-sdk/bundlers`.
+- `pnpm build` uses esbuild presets from `@noralos/plugin-sdk/bundlers`.
 - `pnpm build:rollup` uses rollup presets from the same SDK.

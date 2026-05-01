@@ -35,7 +35,7 @@ Important constraints:
 Every stable release has four separate surfaces:
 
 1. **Verification** — the exact git SHA passes typecheck, tests, and build
-2. **npm** — `paperclipai` and public workspace packages are published
+2. **npm** — `noralos` and public workspace packages are published
 3. **GitHub** — the stable release gets a git tag and GitHub Release
 4. **Website / announcements** — the stable changelog is published externally and announced
 
@@ -70,9 +70,9 @@ It:
 Users install canaries with:
 
 ```bash
-npx paperclipai@canary onboard
+npx noralos@canary onboard
 # or
-npx paperclipai@canary onboard --data-dir "$(mktemp -d /tmp/noralos-canary.XXXXXX)"
+npx noralos@canary onboard --data-dir "$(mktemp -d /tmp/noralos-canary.XXXXXX)"
 ```
 
 ### Stable
@@ -162,20 +162,20 @@ The repo intentionally does not run this through GitHub Actions because:
 For a canary:
 
 ```bash
-PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+NORALOS_CLI_VERSION=canary ./scripts/docker-onboard-smoke.sh
 ```
 
 For the current stable:
 
 ```bash
-PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+NORALOS_CLI_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Useful isolated variants:
 
 ```bash
-HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary PAPERCLIPAI_VERSION=canary ./scripts/docker-onboard-smoke.sh
-HOST_PORT=3233 DATA_DIR=./data/release-smoke-stable PAPERCLIPAI_VERSION=latest ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3232 DATA_DIR=./data/release-smoke-canary NORALOS_CLI_VERSION=canary ./scripts/docker-onboard-smoke.sh
+HOST_PORT=3233 DATA_DIR=./data/release-smoke-stable NORALOS_CLI_VERSION=latest ./scripts/docker-onboard-smoke.sh
 ```
 
 Automated browser smoke is also available:
@@ -187,7 +187,7 @@ gh workflow run release-smoke.yml -f paperclip_version=latest
 
 Minimum checks:
 
-- `npx paperclipai@canary onboard` installs
+- `npx noralos@canary onboard` installs
 - onboarding completes without crashes
 - authenticated login works with the smoke credentials
 - the browser lands in onboarding on a fresh instance

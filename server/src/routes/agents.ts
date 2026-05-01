@@ -1,8 +1,8 @@
 import { Router, type Request, type Response } from "express";
 import { generateKeyPairSync, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { Db } from "@paperclipai/db";
-import { agents as agentsTable, companies, heartbeatRuns, issues as issuesTable } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
+import { agents as agentsTable, companies, heartbeatRuns, issues as issuesTable } from "@noralos/db";
 import { and, desc, eq, inArray, not, sql } from "drizzle-orm";
 import {
   agentSkillSyncSchema,
@@ -24,12 +24,12 @@ import {
   wakeAgentSchema,
   updateAgentSchema,
   supportedEnvironmentDriversForAdapter,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   readPaperclipSkillSyncPreference,
   writePaperclipSkillSyncPreference,
-} from "@paperclipai/adapter-utils/server-utils";
-import { trackAgentCreated } from "@paperclipai/shared/telemetry";
+} from "@noralos/adapter-utils/server-utils";
+import { trackAgentCreated } from "@noralos/shared/telemetry";
 import { validate } from "../middleware/validate.js";
 import {
   agentService,
@@ -55,8 +55,8 @@ import {
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import { environmentService } from "../services/environments.js";
 import { resolveEnvironmentExecutionTarget } from "../services/environment-execution-target.js";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-import type { AdapterEnvironmentCheck } from "@paperclipai/adapter-utils";
+import type { AdapterExecutionTarget } from "@noralos/adapter-utils/execution-target";
+import type { AdapterEnvironmentCheck } from "@noralos/adapter-utils";
 import { secretService } from "../services/secrets.js";
 import {
   detectAdapterModel,
@@ -71,14 +71,14 @@ import { redactEventPayload } from "../redaction.js";
 import { redactCurrentUserValue } from "../log-redaction.js";
 import { renderOrgChartSvg, renderOrgChartPng, type OrgNode, type OrgChartStyle, ORG_CHART_STYLES } from "./org-chart-svg.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
-import { runClaudeLogin } from "@paperclipai/adapter-claude-local/server";
+import { runClaudeLogin } from "@noralos/adapter-claude-local/server";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
-} from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { ensureOpenCodeModelConfiguredAndAvailable } from "@paperclipai/adapter-opencode-local/server";
+} from "@noralos/adapter-codex-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
+import { ensureOpenCodeModelConfiguredAndAvailable } from "@noralos/adapter-opencode-local/server";
 import {
   loadDefaultAgentInstructionsBundle,
   resolveDefaultAgentInstructionsBundleRole,

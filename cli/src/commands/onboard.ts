@@ -16,9 +16,9 @@ import {
   type DeploymentMode,
   type SecretProvider,
   type StorageProvider,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { configExists, readConfig, resolveConfigPath, writeConfig } from "../config/store.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { NoralosConfig } from "../config/schema.js";
 import { ensureAgentJwtSecret, resolveAgentJwtEnvFile } from "../config/env.js";
 import { ensureLocalSecretsKeyFile } from "../config/secrets-key.js";
 import { promptDatabase } from "../prompts/database.js";
@@ -34,7 +34,7 @@ import {
   resolveDefaultBackupDir,
   resolveDefaultEmbeddedPostgresDir,
   resolveDefaultLogsDir,
-  resolvePaperclipInstanceId,
+  resolveNoralosInstanceId,
 } from "../config/home.js";
 import { bootstrapCeoInvite } from "./auth-bootstrap-ceo.js";
 import { printPaperclipCliBanner } from "../utils/banner.js";
@@ -54,7 +54,7 @@ type OnboardOptions = {
   bind?: BindMode;
 };
 
-type OnboardDefaults = Pick<PaperclipConfig, "database" | "logging" | "server" | "auth" | "storage" | "secrets">;
+type OnboardDefaults = Pick<NoralosConfig, "database" | "logging" | "server" | "auth" | "storage" | "secrets">;
 
 const TAILNET_BIND_WARNING =
   "No Tailscale address was detected during setup. The saved config will stay on loopback until Tailscale is available or NORALOS_TAILNET_BIND_HOST is set.";
@@ -116,7 +116,7 @@ function resolvePathFromEnv(rawValue: string | undefined): string | null {
   return path.resolve(expandHomePrefix(rawValue.trim()));
 }
 
-function describeServerBinding(server: Pick<PaperclipConfig["server"], "bind" | "customBindHost" | "host" | "port">): string {
+function describeServerBinding(server: Pick<NoralosConfig["server"], "bind" | "customBindHost" | "host" | "port">): string {
   const bind = server.bind ?? inferBindModeFromHost(server.host);
   const detail =
     bind === "custom"
@@ -133,7 +133,7 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
   ignoredEnvKeys: Array<{ key: string; reason: string }>;
 } {
   const preferTrustedLocal = opts?.preferTrustedLocal ?? false;
-  const instanceId = resolvePaperclipInstanceId();
+  const instanceId = resolveNoralosInstanceId();
   const defaultStorage = defaultStorageConfig();
   const defaultSecrets = defaultSecretsConfig();
   const databaseUrl = process.env.DATABASE_URL?.trim() || undefined;
@@ -318,7 +318,7 @@ function quickstartDefaultsFromEnv(opts?: { preferTrustedLocal?: boolean }): {
   return { defaults, usedEnvKeys, ignoredEnvKeys };
 }
 
-function canCreateBootstrapInviteImmediately(config: Pick<PaperclipConfig, "database" | "server">): boolean {
+function canCreateBootstrapInviteImmediately(config: Pick<NoralosConfig, "database" | "server">): boolean {
   return config.server.deploymentMode === "authenticated" && config.database.mode !== "embedded-postgres";
 }
 
@@ -328,16 +328,16 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   }
 
   printPaperclipCliBanner();
-  p.intro(pc.bgCyan(pc.black(" paperclipai onboard ")));
+  p.intro(pc.bgCyan(pc.black(" noralos onboard ")));
   const configPath = resolveConfigPath(opts.config);
-  const instance = describeLocalInstancePaths(resolvePaperclipInstanceId());
+  const instance = describeLocalInstancePaths(resolveNoralosInstanceId());
   p.log.message(
     pc.dim(
       `Local home: ${instance.homeDir} | instance: ${instance.instanceId} | config: ${configPath}`,
     ),
   );
 
-  let existingConfig: PaperclipConfig | null = null;
+  let existingConfig: NoralosConfig | null = null;
   if (configExists(opts.config)) {
     p.log.message(pc.dim(`${configPath} exists`));
 
@@ -458,7 +458,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
   const tc = getTelemetryClient();
   if (tc) trackInstallStarted(tc);
 
-  let llm: PaperclipConfig["llm"] | undefined;
+  let llm: NoralosConfig["llm"] | undefined;
   const { defaults: derivedDefaults, usedEnvKeys, ignoredEnvKeys } = quickstartDefaultsFromEnv({
     preferTrustedLocal: opts.yes === true && !opts.bind,
   });
@@ -492,7 +492,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
       const s = p.spinner();
       s.start("Testing database connection...");
       try {
-        const { createDb } = await import("@paperclipai/db");
+        const { createDb } = await import("@noralos/db");
         const db = createDb(database.connectionString);
         await db.execute("SELECT 1");
         s.stop("Database connection successful");
@@ -600,7 +600,7 @@ export async function onboard(opts: OnboardOptions): Promise<void> {
     p.log.info(`Using existing ${pc.cyan("NORALOS_AGENT_JWT_SECRET")} in ${pc.dim(envFilePath)}`);
   }
 
-  const config: PaperclipConfig = {
+  const config: NoralosConfig = {
     $meta: {
       version: 1,
       updatedAt: new Date().toISOString(),

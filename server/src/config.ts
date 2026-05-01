@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
-import { resolvePaperclipEnvPath } from "./paths.js";
+import { resolveNoralosEnvPath } from "./paths.js";
 import { maybeRepairLegacyWorktreeConfigAndEnvFiles } from "./worktree-config.js";
 import {
   AUTH_BASE_URL_MODES,
@@ -21,7 +21,7 @@ import {
   inferBindModeFromHost,
   resolveRuntimeBind,
   validateConfiguredBindMode,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   resolveDefaultBackupDir,
   resolveDefaultEmbeddedPostgresDir,
@@ -30,7 +30,7 @@ import {
   resolveHomeAwarePath,
 } from "./home-paths.js";
 
-const NORALOS_ENV_FILE_PATH = resolvePaperclipEnvPath();
+const NORALOS_ENV_FILE_PATH = resolveNoralosEnvPath();
 if (existsSync(NORALOS_ENV_FILE_PATH)) {
   loadDotenv({ path: NORALOS_ENV_FILE_PATH, override: false, quiet: true });
 }

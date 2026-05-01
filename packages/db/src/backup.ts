@@ -21,13 +21,13 @@ function expandHomePrefix(value: string): string {
   return value;
 }
 
-function resolvePaperclipHomeDir(): string {
+function resolveNoralosHomeDir(): string {
   const envHome = process.env.NORALOS_HOME?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
   return path.resolve(os.homedir(), ".paperclip");
 }
 
-function resolvePaperclipInstanceId(): string {
+function resolveNoralosInstanceId(): string {
   const raw = process.env.NORALOS_INSTANCE_ID?.trim() || "default";
   if (!/^[a-zA-Z0-9_-]+$/.test(raw)) {
     throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
@@ -36,7 +36,7 @@ function resolvePaperclipInstanceId(): string {
 }
 
 function resolveDefaultConfigPath(): string {
-  return path.resolve(resolvePaperclipHomeDir(), "instances", resolvePaperclipInstanceId(), "config.json");
+  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "config.json");
 }
 
 function readConfig(configPath: string): PartialConfig | null {
@@ -73,7 +73,7 @@ function resolveConnectionString(config: PartialConfig | null): string {
 }
 
 function resolveDefaultBackupDir(): string {
-  return path.resolve(resolvePaperclipHomeDir(), "instances", resolvePaperclipInstanceId(), "data", "backups");
+  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "data", "backups");
 }
 
 function resolveBackupDir(config: PartialConfig | null): string {

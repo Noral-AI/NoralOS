@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@paperclipai/adapter-utils";
+import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
   adapterExecutionTargetPaperclipApiUrl,
@@ -16,7 +16,7 @@ import {
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@noralos/adapter-utils/execution-target";
 import {
   asString,
   asNumber,
@@ -34,7 +34,7 @@ import {
   stringifyPaperclipWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   joinPromptSections,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   parseCodexJsonl,
   extractCodexRetryNotBefore,

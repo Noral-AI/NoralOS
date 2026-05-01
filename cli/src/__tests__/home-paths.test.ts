@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   describeLocalInstancePaths,
   expandHomePrefix,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
+  resolveNoralosHomeDir,
+  resolveNoralosInstanceId,
 } from "../config/home.js";
 
 const ORIGINAL_ENV = { ...process.env };
@@ -28,13 +28,13 @@ describe("home path resolution", () => {
   it("supports NORALOS_HOME and explicit instance ids", () => {
     process.env.NORALOS_HOME = "~/noralos-home";
 
-    const home = resolvePaperclipHomeDir();
+    const home = resolveNoralosHomeDir();
     expect(home).toBe(path.resolve(os.homedir(), "paperclip-home"));
-    expect(resolvePaperclipInstanceId("dev_1")).toBe("dev_1");
+    expect(resolveNoralosInstanceId("dev_1")).toBe("dev_1");
   });
 
   it("rejects invalid instance ids", () => {
-    expect(() => resolvePaperclipInstanceId("bad/id")).toThrow(/Invalid instance id/);
+    expect(() => resolveNoralosInstanceId("bad/id")).toThrow(/Invalid instance id/);
   });
 
   it("expands ~ prefixes", () => {

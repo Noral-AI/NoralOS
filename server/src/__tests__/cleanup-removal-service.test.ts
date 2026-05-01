@@ -15,7 +15,7 @@ import {
   issueExecutionDecisions,
   issueReadStates,
   issues,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -166,7 +166,7 @@ describeEmbeddedPostgres("cleanup removal services", () => {
     await db.insert(companySkills).values({
       id: randomUUID(),
       companyId,
-      key: "paperclipai/paperclip/paperclip",
+      key: "noralos/paperclip/paperclip",
       slug: "paperclip",
       name: "NoralOS",
       markdown: "# Paperclip",

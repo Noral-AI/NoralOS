@@ -2,7 +2,7 @@ import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestContext,
   AdapterEnvironmentTestResult,
-} from "@paperclipai/adapter-utils";
+} from "@noralos/adapter-utils";
 import {
   asString,
   asBoolean,
@@ -10,14 +10,14 @@ import {
   asStringArray,
   parseObject,
   ensurePathInEnv,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetDirectory,
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-} from "@paperclipai/adapter-utils/execution-target";
+} from "@noralos/adapter-utils/execution-target";
 import path from "node:path";
 import { detectClaudeLoginRequired, parseClaudeStreamJson } from "./parse.js";
 import { isBedrockModelId } from "./models.js";
