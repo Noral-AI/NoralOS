@@ -42,7 +42,12 @@ export function Sidebar() {
     enabled: !!selectedCompanyId,
     refetchInterval: 10_000,
   });
-  const liveRunCount = liveRuns?.length ?? 0;
+  // The /live-runs endpoint pads with recent non-live runs (any status,
+  // including failed) for ActiveAgentsPanel; the Dashboard nav badge must
+  // count only currently running or queued runs.
+  const liveRunCount = (liveRuns ?? []).filter(
+    (r) => r.status === "running" || r.status === "queued",
+  ).length;
   const showWorkspacesLink = experimentalSettings?.enableIsolatedWorkspaces === true;
 
   function openSearch() {
