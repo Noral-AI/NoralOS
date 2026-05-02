@@ -1,4 +1,4 @@
-const CACHE_NAME = "noralos-v3-favicon-fix";
+const CACHE_NAME = "noralos-v4-live-runs-filter";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
