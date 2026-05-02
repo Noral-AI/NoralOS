@@ -2072,6 +2072,7 @@ export function agentRoutes(
       entityId: agent.id,
       details: {
         canCreateAgents: agent.permissions?.canCreateAgents ?? false,
+        canCreateDepartments: agent.permissions?.canCreateDepartments ?? false,
         canAssignTasks: effectiveCanAssignTasks,
       },
     });
