@@ -157,9 +157,15 @@ export function CompanyRail() {
     })),
   });
   const hasLiveAgentsByCompanyId = useMemo(() => {
+    // /live-runs pads with recent non-live runs for ActiveAgentsPanel; only
+    // truly running or queued runs should light up the company-rail blue dot.
     const result = new Map<string, boolean>();
     companyIds.forEach((companyId, index) => {
-      result.set(companyId, (liveRunsQueries[index]?.data?.length ?? 0) > 0);
+      const runs = liveRunsQueries[index]?.data ?? [];
+      const hasLive = runs.some(
+        (r) => r.status === "running" || r.status === "queued",
+      );
+      result.set(companyId, hasLive);
     });
     return result;
   }, [companyIds, liveRunsQueries]);
