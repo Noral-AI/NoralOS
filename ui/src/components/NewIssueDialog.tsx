@@ -1125,7 +1125,15 @@ export function NewIssueDialog() {
     <Dialog
       open={newIssueOpen}
       onOpenChange={(open) => {
-        if (!open && !createIssue.isPending) closeNewIssue();
+        if (!open && !createIssue.isPending) {
+          // Clear the persisted draft on any deliberate close (X, Escape,
+          // click-outside). Without this, an abandoned half-typed draft
+          // survives in localStorage and surprises the user the next time
+          // they open New Issue. Browser refresh / page nav don't pass
+          // through here, so crash-recovery still works.
+          clearDraft();
+          closeNewIssue();
+        }
       }}
     >
       <DialogContent
