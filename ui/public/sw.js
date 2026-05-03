@@ -1,4 +1,4 @@
-const CACHE_NAME = "noralos-v5-company-rail-filter";
+const CACHE_NAME = "noralos-v6-issue-draft-clear";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
