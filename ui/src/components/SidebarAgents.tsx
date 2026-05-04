@@ -21,6 +21,13 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useCompany } from "../context/CompanyContext";
 import { useDialog } from "../context/DialogContext";
 import { useSidebar } from "../context/SidebarContext";
@@ -100,12 +107,16 @@ function SidebarAgentItem({
     >
       <button
         type="button"
-        aria-label="Drag to reassign"
+        aria-label="Drag to reassign department"
+        title="Drag to reassign to another department"
         className={cn(
-          "absolute left-0 top-1/2 -translate-y-1/2 px-1 cursor-grab text-muted-foreground/40 hover:text-muted-foreground transition-opacity",
+          "absolute left-0 top-1/2 -translate-y-1/2 px-1 cursor-grab text-muted-foreground/40 hover:text-muted-foreground transition-opacity touch-none",
+          // Always show a faded handle so the affordance is discoverable;
+          // brighten on hover. Touch devices need pointer-events enabled
+          // to drag at all — DnD-kit's PointerSensor handles touch input.
           isMobile
-            ? "opacity-0 pointer-events-none"
-            : "opacity-0 group-hover/agent:opacity-100",
+            ? "opacity-60"
+            : "opacity-30 group-hover/agent:opacity-100",
         )}
         {...attributes}
         {...listeners}
@@ -220,10 +231,25 @@ function DepartmentSection({
 }) {
   const [open, setOpen] = useState(true);
   const droppableId = `department:${department?.id ?? UNASSIGNED_KEY}`;
-  const { isOver, setNodeRef } = useDroppable({
+  // Real departments use useSortable so they can both be reordered AND
+  // accept agents dropped on them. Unassigned is fixed-position so it
+  // only needs useDroppable. The data payload stays compatible either
+  // way: handleDragEnd reads active.type to disambiguate the operation.
+  const sortable = useSortable({
+    id: droppableId,
+    data: { type: "department", departmentId: department?.id ?? null },
+    disabled: !department,
+  });
+  const fallbackDroppable = useDroppable({
     id: droppableId,
     data: { type: "department", departmentId: department?.id ?? null },
   });
+  const setNodeRef = department ? sortable.setNodeRef : fallbackDroppable.setNodeRef;
+  const isOver = department ? sortable.isOver : fallbackDroppable.isOver;
+  const dragStyle = department
+    ? { transform: CSS.Transform.toString(sortable.transform), transition: sortable.transition }
+    : undefined;
+  const isDraggingDept = department ? sortable.isDragging : false;
 
   const label = department ? department.name : "Unassigned";
   const Icon = department ? Building2 : Users;
@@ -232,12 +258,26 @@ function DepartmentSection({
     <Collapsible open={open} onOpenChange={setOpen}>
       <div
         ref={setNodeRef}
+        style={dragStyle}
         className={cn(
           "group/dept rounded-sm transition-colors",
           isOver && "bg-accent/40 ring-1 ring-accent",
+          isDraggingDept && "opacity-60",
         )}
       >
         <div className="flex items-center px-3 py-1 gap-1">
+          {department ? (
+            <button
+              type="button"
+              aria-label={`Drag to reorder ${department.name}`}
+              title="Drag to reorder department"
+              className="cursor-grab text-muted-foreground/40 hover:text-muted-foreground transition-opacity opacity-30 group-hover/dept:opacity-100 touch-none px-0.5"
+              {...sortable.attributes}
+              {...sortable.listeners}
+            >
+              <span className="text-xs leading-none select-none" aria-hidden>⋮⋮</span>
+            </button>
+          ) : null}
           <CollapsibleTrigger className="flex items-center gap-1.5 flex-1 min-w-0 text-left">
             <ChevronRight
               className={cn(
@@ -435,6 +475,58 @@ export function SidebarAgents() {
     },
   });
 
+  const reorderDepartments = useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Persist sortOrder by index. The server orders by sortOrder ASC,
+      // so renumbering 0..N-1 produces the new visual order. We fire
+      // PATCHes in parallel — order is independent and small in practice.
+      if (!selectedCompanyId) return;
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          departmentsApi.update(selectedCompanyId, id, { sortOrder: index }),
+        ),
+      );
+    },
+    onMutate: async (orderedIds) => {
+      // Optimistic reorder so the UI doesn't flicker back.
+      if (!selectedCompanyId) return;
+      const key = queryKeys.departments.list(selectedCompanyId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Department[]>(key);
+      if (previous) {
+        const byId = new Map(previous.map((d) => [d.id, d]));
+        const next = orderedIds
+          .map((id, idx) => {
+            const d = byId.get(id);
+            return d ? { ...d, sortOrder: idx } : null;
+          })
+          .filter((d): d is Department => Boolean(d));
+        queryClient.setQueryData(key, next);
+      }
+      return { previous };
+    },
+    onError: (error, _ids, ctx) => {
+      if (selectedCompanyId && ctx?.previous) {
+        queryClient.setQueryData(
+          queryKeys.departments.list(selectedCompanyId),
+          ctx.previous,
+        );
+      }
+      pushToast({
+        title: "Could not reorder departments",
+        body: error instanceof Error ? error.message : "Unknown error",
+        tone: "error",
+      });
+    },
+    onSettled: () => {
+      if (selectedCompanyId) {
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.departments.list(selectedCompanyId),
+        });
+      }
+    },
+  });
+
   const reassignAgent = useMutation({
     mutationFn: ({ agent, departmentId }: { agent: Agent; departmentId: string | null }) =>
       agentsApi.update(
@@ -503,25 +595,39 @@ export function SidebarAgents() {
 
   function handleDragEnd(event: DragEndEvent) {
     const activeData = event.active.data.current as
-      | { type?: string; agent?: Agent }
+      | { type?: string; agent?: Agent; departmentId?: string | null }
       | undefined;
     const overData = event.over?.data.current as
       | { type?: string; departmentId?: string | null }
       | undefined;
-    if (
-      !activeData ||
-      activeData.type !== "agent" ||
-      !activeData.agent ||
-      !overData ||
-      overData.type !== "department"
-    ) {
+    if (!activeData || !overData) return;
+
+    // Agent → department drop = reassign.
+    if (activeData.type === "agent" && activeData.agent && overData.type === "department") {
+      const agent = activeData.agent;
+      const targetDeptId = overData.departmentId ?? null;
+      const currentDeptId = agent.departmentId ?? null;
+      if (currentDeptId === targetDeptId) return;
+      reassignAgent.mutate({ agent, departmentId: targetDeptId });
       return;
     }
-    const agent = activeData.agent;
-    const targetDeptId = overData.departmentId ?? null;
-    const currentDeptId = agent.departmentId ?? null;
-    if (currentDeptId === targetDeptId) return;
-    reassignAgent.mutate({ agent, departmentId: targetDeptId });
+
+    // Department drag onto another department = reorder. Skip if dropped
+    // on Unassigned (departmentId === null) — Unassigned is fixed last.
+    if (
+      activeData.type === "department"
+      && overData.type === "department"
+      && activeData.departmentId
+      && overData.departmentId
+      && activeData.departmentId !== overData.departmentId
+    ) {
+      const ids = (departments ?? []).map((d) => d.id);
+      const fromIndex = ids.indexOf(activeData.departmentId);
+      const toIndex = ids.indexOf(overData.departmentId);
+      if (fromIndex < 0 || toIndex < 0) return;
+      const next = arrayMove(ids, fromIndex, toIndex);
+      reorderDepartments.mutate(next);
+    }
   }
 
   function handleDeleteDepartment(department: Department) {
@@ -588,7 +694,11 @@ export function SidebarAgents() {
               <Building2 className="h-3 w-3" />
               <span>New department</span>
             </button>
-            {(departments ?? []).map((dept) => (
+            <SortableContext
+              items={(departments ?? []).map((d) => `department:${d.id}`)}
+              strategy={verticalListSortingStrategy}
+            >
+              {(departments ?? []).map((dept) => (
               <DepartmentSection
                 key={dept.id}
                 department={dept}
@@ -613,6 +723,7 @@ export function SidebarAgents() {
                 onDelete={handleDeleteDepartment}
               />
             ))}
+            </SortableContext>
             <DepartmentSection
               department={null}
               agents={groupedAgents.unassigned}
