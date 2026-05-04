@@ -21,6 +21,7 @@
     "db:generate": "pnpm --filter @noralos/db generate",
     "db:migrate": "pnpm --filter @noralos/db migrate",
     "issue-references:backfill": "pnpm run preflight:workspace-links && tsx scripts/backfill-issue-reference-mentions.ts",
+    "cost-events:backfill": "pnpm run preflight:workspace-links && pnpm --filter @noralos/server exec tsx ../scripts/backfill-cost-events-cents.ts",
     "secrets:migrate-inline-env": "tsx scripts/migrate-inline-env-secrets.ts",
     "db:backup": "./scripts/backup-db.sh",
     "noralos": "node cli/node_modules/tsx/dist/cli.mjs cli/src/index.ts",
