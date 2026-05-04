@@ -12,6 +12,7 @@ import { NewIssueDialog } from "./NewIssueDialog";
 import { NewProjectDialog } from "./NewProjectDialog";
 import { NewGoalDialog } from "./NewGoalDialog";
 import { NewAgentDialog } from "./NewAgentDialog";
+import { NewDepartmentDialog } from "./NewDepartmentDialog";
 import { KeyboardShortcutsCheatsheet } from "./KeyboardShortcutsCheatsheet";
 import { ToastViewport } from "./ToastViewport";
 import { MobileBottomNav } from "./MobileBottomNav";
@@ -415,6 +416,7 @@ export function Layout() {
       <NewProjectDialog />
       <NewGoalDialog />
       <NewAgentDialog />
+      <NewDepartmentDialog />
       <KeyboardShortcutsCheatsheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
       <ToastViewport />
       </div>

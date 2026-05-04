@@ -22,6 +22,13 @@ interface NewGoalDefaults {
   parentId?: string;
 }
 
+interface NewDepartmentDefaults {
+  editId?: string;
+  name?: string;
+  description?: string;
+  icon?: string | null;
+}
+
 interface OnboardingOptions {
   initialStep?: 1 | 2 | 3 | 4;
   companyId?: string;
@@ -42,6 +49,10 @@ interface DialogContextValue {
   newAgentOpen: boolean;
   openNewAgent: () => void;
   closeNewAgent: () => void;
+  newDepartmentOpen: boolean;
+  newDepartmentDefaults: NewDepartmentDefaults;
+  openNewDepartment: (defaults?: NewDepartmentDefaults) => void;
+  closeNewDepartment: () => void;
   onboardingOpen: boolean;
   onboardingOptions: OnboardingOptions;
   openOnboarding: (options?: OnboardingOptions) => void;
@@ -56,6 +67,8 @@ type DialogStateValue = Pick<
   | "newGoalOpen"
   | "newGoalDefaults"
   | "newAgentOpen"
+  | "newDepartmentOpen"
+  | "newDepartmentDefaults"
   | "onboardingOpen"
   | "onboardingOptions"
 >;
@@ -72,6 +85,8 @@ export function DialogProvider({ children }: { children: ReactNode }) {
   const [newGoalOpen, setNewGoalOpen] = useState(false);
   const [newGoalDefaults, setNewGoalDefaults] = useState<NewGoalDefaults>({});
   const [newAgentOpen, setNewAgentOpen] = useState(false);
+  const [newDepartmentOpen, setNewDepartmentOpen] = useState(false);
+  const [newDepartmentDefaults, setNewDepartmentDefaults] = useState<NewDepartmentDefaults>({});
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [onboardingOptions, setOnboardingOptions] = useState<OnboardingOptions>({});
 
@@ -111,6 +126,16 @@ export function DialogProvider({ children }: { children: ReactNode }) {
     setNewAgentOpen(false);
   }, []);
 
+  const openNewDepartment = useCallback((defaults: NewDepartmentDefaults = {}) => {
+    setNewDepartmentDefaults(defaults);
+    setNewDepartmentOpen(true);
+  }, []);
+
+  const closeNewDepartment = useCallback(() => {
+    setNewDepartmentOpen(false);
+    setNewDepartmentDefaults({});
+  }, []);
+
   const openOnboarding = useCallback((options: OnboardingOptions = {}) => {
     setOnboardingOptions(options);
     setOnboardingOpen(true);
@@ -129,6 +154,8 @@ export function DialogProvider({ children }: { children: ReactNode }) {
       newGoalOpen,
       newGoalDefaults,
       newAgentOpen,
+      newDepartmentOpen,
+      newDepartmentDefaults,
       onboardingOpen,
       onboardingOptions,
     }),
@@ -139,6 +166,8 @@ export function DialogProvider({ children }: { children: ReactNode }) {
       newGoalOpen,
       newGoalDefaults,
       newAgentOpen,
+      newDepartmentOpen,
+      newDepartmentDefaults,
       onboardingOpen,
       onboardingOptions,
     ],
@@ -154,6 +183,8 @@ export function DialogProvider({ children }: { children: ReactNode }) {
       closeNewGoal,
       openNewAgent,
       closeNewAgent,
+      openNewDepartment,
+      closeNewDepartment,
       openOnboarding,
       closeOnboarding,
     }),
@@ -166,6 +197,8 @@ export function DialogProvider({ children }: { children: ReactNode }) {
       closeNewGoal,
       openNewAgent,
       closeNewAgent,
+      openNewDepartment,
+      closeNewDepartment,
       openOnboarding,
       closeOnboarding,
     ],

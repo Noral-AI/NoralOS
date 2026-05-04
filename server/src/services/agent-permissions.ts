@@ -1,10 +1,12 @@
 export type NormalizedAgentPermissions = Record<string, unknown> & {
   canCreateAgents: boolean;
+  canCreateDepartments: boolean;
 };
 
 export function defaultPermissionsForRole(role: string): NormalizedAgentPermissions {
   return {
     canCreateAgents: role === "ceo",
+    canCreateDepartments: role === "ceo",
   };
 }
 
@@ -23,5 +25,9 @@ export function normalizeAgentPermissions(
       typeof record.canCreateAgents === "boolean"
         ? record.canCreateAgents
         : defaults.canCreateAgents,
+    canCreateDepartments:
+      typeof record.canCreateDepartments === "boolean"
+        ? record.canCreateDepartments
+        : defaults.canCreateDepartments,
   };
 }

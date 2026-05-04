@@ -278,6 +278,7 @@ export type {
   AgentChainOfCommandEntry,
   AgentDetail,
   AgentPermissions,
+  Department,
   AgentInstructionsBundleMode,
   AgentInstructionsFileSummary,
   AgentInstructionsFileDetail,
@@ -879,6 +880,10 @@ export {
   type PluginStateScopeKey,
   type SetPluginState,
   type ListPluginState,
+  createDepartmentSchema,
+  updateDepartmentSchema,
+  type CreateDepartment,
+  type UpdateDepartment,
 } from "./validators/index.js";
 
 export { API_PREFIX, API } from "./api.js";

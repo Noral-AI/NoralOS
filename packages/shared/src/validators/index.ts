@@ -134,6 +134,13 @@ export {
 } from "./agent.js";
 
 export {
+  createDepartmentSchema,
+  updateDepartmentSchema,
+  type CreateDepartment,
+  type UpdateDepartment,
+} from "./department.js";
+
+export {
   createProjectSchema,
   updateProjectSchema,
   createProjectWorkspaceSchema,

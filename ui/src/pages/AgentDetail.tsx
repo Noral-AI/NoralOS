@@ -1597,6 +1597,7 @@ function ConfigurationTab({
   }, [onSavingChange, isConfigSaving]);
 
   const canCreateAgents = Boolean(agent.permissions?.canCreateAgents);
+  const canCreateDepartments = Boolean(agent.permissions?.canCreateDepartments);
   const canAssignTasks = Boolean(agent.access?.canAssignTasks);
   const taskAssignSource = agent.access?.taskAssignSource ?? "none";
   const taskAssignLocked = agent.role === "ceo" || canCreateAgents;
@@ -1641,7 +1642,27 @@ function ConfigurationTab({
               onCheckedChange={() =>
                 updatePermissions.mutate({
                   canCreateAgents: !canCreateAgents,
+                  canCreateDepartments,
                   canAssignTasks: !canCreateAgents ? true : canAssignTasks,
+                })
+              }
+              disabled={updatePermissions.isPending}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <div className="space-y-1">
+              <div>Can create departments</div>
+              <p className="text-xs text-muted-foreground">
+                Lets this agent create, rename, or delete departments and reassign agents.
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={canCreateDepartments}
+              onCheckedChange={() =>
+                updatePermissions.mutate({
+                  canCreateAgents,
+                  canCreateDepartments: !canCreateDepartments,
+                  canAssignTasks,
                 })
               }
               disabled={updatePermissions.isPending}
@@ -1659,6 +1680,7 @@ function ConfigurationTab({
               onCheckedChange={() =>
                 updatePermissions.mutate({
                   canCreateAgents,
+                  canCreateDepartments,
                   canAssignTasks: !canAssignTasks,
                 })
               }
