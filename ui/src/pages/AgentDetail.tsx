@@ -8,6 +8,7 @@ import {
   type AgentPermissionUpdate,
 } from "../api/agents";
 import { companySkillsApi } from "../api/companySkills";
+import { departmentsApi } from "../api/departments";
 import { budgetsApi } from "../api/budgets";
 import { heartbeatsApi } from "../api/heartbeats";
 import { instanceSettingsApi } from "../api/instanceSettings";
@@ -73,6 +74,7 @@ import {
   ArrowLeft,
   HelpCircle,
   FolderOpen,
+  Building2,
 } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -91,6 +93,7 @@ import {
   type AgentRuntimeState,
   type LiveEvent,
   type WorkspaceOperation,
+  type Department,
 } from "@noralos/shared";
 import { redactHomePathUserSegments, redactHomePathUserSegmentsInValue } from "@noralos/adapter-utils";
 import { agentRouteRef } from "../lib/utils";
@@ -826,6 +829,27 @@ export function AgentDetail() {
     },
   });
 
+  // Departments — listed for the assignment selector. Server filters to
+  // the active company; only fetched when we have one resolved.
+  const { data: departments } = useQuery<Department[]>({
+    queryKey: queryKeys.departments.list(resolvedCompanyId ?? ""),
+    queryFn: () => departmentsApi.list(resolvedCompanyId!),
+    enabled: Boolean(resolvedCompanyId),
+  });
+
+  const updateDepartment = useMutation({
+    mutationFn: (departmentId: string | null) =>
+      agentsApi.update(agentLookupRef, { departmentId }, resolvedCompanyId ?? undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(routeAgentRef) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentLookupRef) });
+      if (resolvedCompanyId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(resolvedCompanyId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.departments.list(resolvedCompanyId) });
+      }
+    },
+  });
+
   const resetTaskSession = useMutation({
     mutationFn: (taskKey: string | null) =>
       agentsApi.resetSession(agentLookupRef, taskKey, resolvedCompanyId ?? undefined),
@@ -925,6 +949,29 @@ export function AgentDetail() {
               {roleLabels[agent.role] ?? agent.role}
               {agent.title ? ` - ${agent.title}` : ""}
             </p>
+            {/* Department selector — inline so it's visible without
+                drilling into a tab. Native <select> keeps the markup
+                light and avoids dragging in another shadcn primitive. */}
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Building2 className="h-3 w-3 shrink-0" />
+              <span>Department:</span>
+              <select
+                aria-label="Department"
+                value={agent.departmentId ?? ""}
+                disabled={updateDepartment.isPending}
+                onChange={(e) => {
+                  const next = e.target.value || null;
+                  if (next === (agent.departmentId ?? null)) return;
+                  updateDepartment.mutate(next);
+                }}
+                className="bg-transparent border border-border/50 rounded px-1.5 py-0.5 text-xs text-foreground hover:bg-accent/40 focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer max-w-[180px] truncate"
+              >
+                <option value="">Unassigned</option>
+                {(departments ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
