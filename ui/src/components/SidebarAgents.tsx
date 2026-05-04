@@ -576,6 +576,18 @@ export function SidebarAgents() {
       <CollapsibleContent>
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="flex flex-col gap-0.5 mt-0.5">
+            {/* Explicit "+ New department" CTA so the feature is
+                discoverable without hunting for the dropdown. Always
+                rendered (not just when zero departments) — adding more
+                departments is a primary action in this section. */}
+            <button
+              type="button"
+              onClick={() => openNewDepartment()}
+              className="flex items-center gap-2 mx-2 mb-1 px-2 py-1 rounded text-[11px] font-medium text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 transition-colors"
+            >
+              <Building2 className="h-3 w-3" />
+              <span>New department</span>
+            </button>
             {(departments ?? []).map((dept) => (
               <DepartmentSection
                 key={dept.id}

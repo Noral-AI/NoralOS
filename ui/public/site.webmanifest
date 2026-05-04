@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "Paperclip",
-  "short_name": "Paperclip",
-  "description": "AI-powered project management and agent coordination platform",
+  "name": "noralAI",
+  "short_name": "noralAI",
+  "description": "NoralOS — agent management OS for autonomous AI companies. Hire, deploy, and govern fleets of AI workers.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#18181b",
-  "background_color": "#18181b",
+  "theme_color": "#0A1F2E",
+  "background_color": "#0A1F2E",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
