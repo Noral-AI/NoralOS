@@ -1,21 +1,33 @@
 import type { PluginSidebarProps } from "@noralos/plugin-sdk/ui";
 
-const CONFERENCE_ROOM_URL = "https://platform.noral.ai/conference";
-
 const linkClassName = [
   "flex items-center gap-2.5 px-3 py-2 text-[13px] font-medium transition-colors",
   "text-foreground/80 hover:bg-accent/50 hover:text-foreground",
-  "no-underline",
+  "no-underline cursor-pointer",
 ].join(" ");
 
-export function ConferenceRoomSidebarLink(_props: PluginSidebarProps) {
+export function ConferenceRoomSidebarLink({ context }: PluginSidebarProps) {
+  // Internal navigation. The Conference Room page is rendered as a plugin
+  // `page` slot with routePath "conference-room", so the host route
+  // `<Route path=":pluginRoutePath">` resolves it to <ConferenceRoomPage>.
+  // We use a plain anchor + history.pushState so the plugin bundle doesn't
+  // need to depend on react-router from the host. The host listens for
+  // `popstate`/`pushState` and re-renders.
+  const href = context.companyPrefix
+    ? `/${context.companyPrefix}/conference-room`
+    : "/conference-room";
+
   return (
     <a
-      href={CONFERENCE_ROOM_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={href}
       className={linkClassName}
-      aria-label="Open the Conference Room in a new tab"
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+        event.preventDefault();
+        window.history.pushState({}, "", href);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }}
+      aria-label="Open Conference Room"
     >
       <span className="relative shrink-0">
         <svg
