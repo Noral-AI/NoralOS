@@ -27,6 +27,15 @@ export type MeetingApi = {
   appendSystem: (text: string) => void;
 };
 
+export type UseMeetingOptions = {
+  // Fired right before the agent's TTS audio starts playing. Use to duck the
+  // mic / pause speech recognition so the page doesn't transcribe its own
+  // audio output.
+  onPlayStart?: () => void;
+  // Fired ~400ms after the audio ends (or errors). Use to resume the mic.
+  onPlayEnd?: () => void;
+};
+
 const POLL_INTERVAL_MS = 2000;
 
 function newId(): string {
@@ -36,29 +45,150 @@ function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function decodeBase64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 export function useMeeting(
   companyId: string | null,
   agentLabelLookup: (id: string) => string,
+  options: UseMeetingOptions = {},
 ): MeetingApi {
   const [state, setState] = useState<MeetingState>({ phase: "idle" });
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [awaitingAgentResponse, setAwaitingAgentResponse] = useState(false);
+  // Dedup signature for "we already handled this done-result". Includes the
+  // runId when available, plus a content-hash fallback for the legacy case.
   const lastSeenRunIdRef = useRef<string | null>(null);
   const pollTimerRef = useRef<number | null>(null);
+  // Single shared <audio> element so a new response can interrupt the prior
+  // playback cleanly.
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  // Tracks the URL.createObjectURL handle currently attached so we can revoke
+  // it when playback ends or is replaced.
+  const audioObjectUrlRef = useRef<string | null>(null);
+  // Per-runId send-time, used to compute send→audio-ready latency.
+  const sendStartedAtByRunIdRef = useRef<Map<string, number>>(new Map());
+  // Most recent sendUtterance timestamp; used as a fallback when the bridge
+  // doesn't surface runId on the immediate sendMessage response.
+  const lastSendStartedAtRef = useRef<number | null>(null);
+
+  // Stash the latest callbacks in refs so the polling closure picks up new
+  // values without re-creating the interval.
+  const onPlayStartRef = useRef(options.onPlayStart);
+  const onPlayEndRef = useRef(options.onPlayEnd);
+  useEffect(() => {
+    onPlayStartRef.current = options.onPlayStart;
+    onPlayEndRef.current = options.onPlayEnd;
+  }, [options.onPlayStart, options.onPlayEnd]);
 
   const append = useCallback((entry: TranscriptEntry) => {
     setTranscript((prev) => [...prev, entry]);
   }, []);
 
-  const appendSystem = useCallback((text: string) => {
-    append({
-      id: newId(),
-      speaker: "system",
-      speakerLabel: "System",
-      text,
-      ts: Date.now(),
-    });
-  }, [append]);
+  const appendSystem = useCallback(
+    (text: string) => {
+      append({
+        id: newId(),
+        speaker: "system",
+        speakerLabel: "System",
+        text,
+        ts: Date.now(),
+      });
+    },
+    [append],
+  );
+
+  const releaseAudioObjectUrl = useCallback(() => {
+    if (audioObjectUrlRef.current) {
+      URL.revokeObjectURL(audioObjectUrlRef.current);
+      audioObjectUrlRef.current = null;
+    }
+  }, []);
+
+  const playAgentAudio = useCallback(
+    (
+      audioBase64: string,
+      mimeType: string,
+      meta: {
+        runId: string | null;
+        provider: string | null;
+        voiceId: string | null;
+        sendToAudioReadyMs: number | null;
+        audioBytes: number;
+      },
+    ) => {
+      if (typeof window === "undefined") return;
+      let bytes: Uint8Array;
+      try {
+        bytes = decodeBase64ToBytes(audioBase64);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("[CR-METRICS] base64 decode failed", err);
+        // eslint-disable-next-line no-console
+        console.log("[CR-METRICS]", {
+          ...meta,
+          played: false,
+          endedReason: "decode-failed",
+        });
+        return;
+      }
+      // Cast through BlobPart: TS 5.7's Uint8Array<ArrayBufferLike> isn't
+      // assignable to ArrayBufferView<ArrayBuffer> because of SharedArrayBuffer.
+      const blob = new Blob([bytes as unknown as BlobPart], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+
+      // Tear down any prior playback before swapping in the new clip.
+      if (audioElRef.current) {
+        try {
+          audioElRef.current.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+      releaseAudioObjectUrl();
+      audioObjectUrlRef.current = url;
+
+      const audio = audioElRef.current ?? new Audio();
+      audioElRef.current = audio;
+
+      let endedFired = false;
+      const finish = (endedReason: "ended" | "error") => {
+        if (endedFired) return;
+        endedFired = true;
+        // eslint-disable-next-line no-console
+        console.log("[CR-METRICS]", {
+          ...meta,
+          played: true,
+          endedReason,
+        });
+        // Revoke synchronously; the element no longer needs the blob URL.
+        if (audioObjectUrlRef.current === url) {
+          URL.revokeObjectURL(url);
+          audioObjectUrlRef.current = null;
+        }
+        // Fire end callback immediately. Caller decides whether to debounce
+        // (e.g. the page sets a 400ms gap before resuming the mic).
+        onPlayEndRef.current?.();
+      };
+
+      audio.onended = () => finish("ended");
+      audio.onerror = () => finish("error");
+      audio.src = url;
+
+      onPlayStartRef.current?.();
+      void audio.play().catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[CR-METRICS] audio.play() rejected", err);
+        finish("error");
+      });
+    },
+    [releaseAudioObjectUrl],
+  );
 
   // ---- polling ----------------------------------------------------------
   const stopPolling = useCallback(() => {
@@ -79,8 +209,12 @@ export function useMeeting(
             conferenceSessionId,
           );
           if (result.status === "done" && result.responseText) {
-            // Avoid double-appending across multiple polls; tag by responseText hash.
-            const sig = `${result.conferenceSessionId}::${result.responseText.slice(0, 32)}::${result.responseText.length}`;
+            // Dedup: prefer runId when present, otherwise fall back to a
+            // content sig. Same dedup gate covers both transcript append
+            // and audio playback so neither double-fires across polls.
+            const sig = result.runId
+              ? `${result.conferenceSessionId}::run::${result.runId}`
+              : `${result.conferenceSessionId}::sig::${result.responseText.slice(0, 32)}::${result.responseText.length}`;
             if (lastSeenRunIdRef.current !== sig) {
               lastSeenRunIdRef.current = sig;
               setTranscript((prev) => [
@@ -94,6 +228,50 @@ export function useMeeting(
                 },
               ]);
               setAwaitingAgentResponse(false);
+
+              const tts = result.ttsResult;
+              const provider = tts?.providerUsed ?? null;
+              const voiceId = tts?.voiceId ?? null;
+              const audioBase64 =
+                tts && tts.ok && typeof tts.audioBase64 === "string"
+                  ? tts.audioBase64
+                  : null;
+              const mimeType =
+                tts && tts.ok && typeof tts.mimeType === "string"
+                  ? tts.mimeType
+                  : "audio/mpeg";
+              const audioBytes = audioBase64
+                ? Math.floor((audioBase64.length * 3) / 4)
+                : 0;
+              const startedAt = result.runId
+                ? sendStartedAtByRunIdRef.current.get(result.runId) ?? null
+                : lastSendStartedAtRef.current;
+              const sendToAudioReadyMs =
+                startedAt != null ? Date.now() - startedAt : null;
+              if (result.runId) {
+                sendStartedAtByRunIdRef.current.delete(result.runId);
+              }
+
+              if (audioBase64) {
+                playAgentAudio(audioBase64, mimeType, {
+                  runId: result.runId ?? null,
+                  provider,
+                  voiceId,
+                  sendToAudioReadyMs,
+                  audioBytes,
+                });
+              } else {
+                // eslint-disable-next-line no-console
+                console.log("[CR-METRICS]", {
+                  runId: result.runId ?? null,
+                  provider,
+                  voiceId,
+                  sendToAudioReadyMs,
+                  audioBytes: 0,
+                  played: false,
+                  endedReason: tts?.reason ?? "no-audio",
+                });
+              }
             }
           } else if (result.status === "error") {
             setAwaitingAgentResponse(false);
@@ -107,12 +285,23 @@ export function useMeeting(
         }
       }, POLL_INTERVAL_MS) as unknown as number;
     },
-    [companyId, stopPolling, appendSystem],
+    [companyId, stopPolling, appendSystem, playAgentAudio],
   );
 
   useEffect(() => {
-    return () => stopPolling();
-  }, [stopPolling]);
+    return () => {
+      stopPolling();
+      // Tear down audio on unmount.
+      if (audioElRef.current) {
+        try {
+          audioElRef.current.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+      releaseAudioObjectUrl();
+    };
+  }, [stopPolling, releaseAudioObjectUrl]);
 
   // ---- actions ----------------------------------------------------------
 
@@ -161,12 +350,17 @@ export function useMeeting(
         ts: Date.now(),
       });
       setAwaitingAgentResponse(true);
+      const startedAt = Date.now();
+      lastSendStartedAtRef.current = startedAt;
       try {
-        await conferenceApi.sendMessage(
+        const sendResp = await conferenceApi.sendMessage(
           companyId,
           state.conferenceSessionId,
           trimmed,
         );
+        if (sendResp.runId) {
+          sendStartedAtByRunIdRef.current.set(sendResp.runId, startedAt);
+        }
       } catch (err) {
         setAwaitingAgentResponse(false);
         appendSystem(
@@ -186,6 +380,14 @@ export function useMeeting(
     setState({ phase: "ending" });
     stopPolling();
     setAwaitingAgentResponse(false);
+    if (audioElRef.current) {
+      try {
+        audioElRef.current.pause();
+      } catch {
+        /* ignore */
+      }
+    }
+    releaseAudioObjectUrl();
     try {
       if (companyId) await conferenceApi.closeSession(companyId, id);
     } catch (err) {
@@ -195,7 +397,7 @@ export function useMeeting(
     }
     appendSystem("Meeting ended.");
     setState({ phase: "idle" });
-  }, [state, companyId, stopPolling, appendSystem]);
+  }, [state, companyId, stopPolling, appendSystem, releaseAudioObjectUrl]);
 
   // Latest agent text for status lines.
   const lastAgentText =

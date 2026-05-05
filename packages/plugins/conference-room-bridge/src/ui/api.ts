@@ -59,8 +59,21 @@ export type SendMessageResponse = {
 export type LastResultResponse = {
   conferenceSessionId: string;
   status: "pending" | "done" | "error";
+  runId?: string;
   responseText?: string;
-  ttsResult?: { ok: boolean; reason?: string };
+  // Subset of responseText handed to TTS (sentence/word-boundary truncation).
+  // Empty when no TTS was attempted.
+  spokenText?: string;
+  ttsResult?: {
+    ok: boolean;
+    reason?: string;
+    // Present only when ok=true.
+    audioBase64?: string;
+    mimeType?: string;
+    providerUsed?: "elevenlabs" | "google_tts";
+    voiceId?: string;
+    durationMs?: number | null;
+  };
   reason?: string;
 };
 

@@ -135,6 +135,10 @@ export interface LastResultDone {
   runId: string;
   agentId: string;
   responseText: string;
+  // Subset of responseText actually handed to TTS — truncated at the nearest
+  // sentence/word boundary <= SPOKEN_RESPONSE_CAP_CHARS. Equals responseText
+  // when no truncation was needed; empty string when no TTS attempt was made.
+  spokenText: string;
   ttsResult: SynthesisResult;
 }
 

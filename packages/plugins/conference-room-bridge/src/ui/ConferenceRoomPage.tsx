@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PluginPageProps } from "@noralos/plugin-sdk/ui";
 import { Header } from "./components/Header.js";
 import { YourTeamPanel } from "./components/YourTeamPanel.js";
@@ -38,13 +38,47 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
     [agents],
   );
 
-  const meeting = useMeeting(companyId, agentLabelLookup);
+  // Forward refs so the meeting hook's audio playback can duck the mic. We
+  // reach into speech via a ref because useSpeechRecognition is created
+  // below useMeeting, and we want the meeting hook's play callbacks to see
+  // the latest start/stop without re-creating the hook on each render.
+  const speechRef = useRef<{
+    stop: () => void;
+    start: () => void;
+    listening: boolean;
+  } | null>(null);
+  const meetingActiveRef = useRef(false);
+
+  const meeting = useMeeting(companyId, agentLabelLookup, {
+    onPlayStart: () => {
+      speechRef.current?.stop();
+    },
+    onPlayEnd: () => {
+      // Wait 400ms after audio ends before resuming the mic, so the tail of
+      // playback (or any echo from the speakers) doesn't get transcribed.
+      window.setTimeout(() => {
+        if (meetingActiveRef.current) speechRef.current?.start();
+      }, 400);
+    },
+  });
+
+  useEffect(() => {
+    meetingActiveRef.current = meeting.state.phase === "active";
+  }, [meeting.state.phase]);
 
   const speech = useSpeechRecognition({
     onFinalUtterance: (text) => {
       void meeting.sendUtterance(text);
     },
   });
+
+  useEffect(() => {
+    speechRef.current = {
+      stop: speech.stop,
+      start: speech.start,
+      listening: speech.listening,
+    };
+  }, [speech.stop, speech.start, speech.listening]);
 
   // Auto-stop the mic when the meeting ends.
   useEffect(() => {

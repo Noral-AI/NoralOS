@@ -36,7 +36,30 @@ import type {
 import { fetchEffectiveConfig } from "./voiceConfigClient.js";
 import { callSynthesize } from "./voiceCascadeClient.js";
 import { extractAssistantResponse } from "./responseExtractor.js";
-import { BRIDGE_RESPONSE_CAP_CHARS } from "./constants.js";
+import {
+  BRIDGE_RESPONSE_CAP_CHARS,
+  SPOKEN_RESPONSE_CAP_CHARS,
+} from "./constants.js";
+
+// Truncate text to <= SPOKEN_RESPONSE_CAP_CHARS at the nearest sentence
+// boundary, falling back to the nearest word boundary, and finally to a
+// hard cut. Used to keep TTS input short for A/B latency testing.
+function truncateForSpeech(text: string): string {
+  if (text.length <= SPOKEN_RESPONSE_CAP_CHARS) return text;
+  const window = text.slice(0, SPOKEN_RESPONSE_CAP_CHARS);
+  const sentenceEnd = Math.max(
+    window.lastIndexOf(". "),
+    window.lastIndexOf("! "),
+    window.lastIndexOf("? "),
+    window.lastIndexOf(".\n"),
+    window.lastIndexOf("!\n"),
+    window.lastIndexOf("?\n"),
+  );
+  if (sentenceEnd > 0) return window.slice(0, sentenceEnd + 1);
+  const wordEnd = window.lastIndexOf(" ");
+  if (wordEnd > 0) return window.slice(0, wordEnd);
+  return window;
+}
 
 // ---------------------------------------------------------------------------
 // Module-scope context (kitchen-sink pattern).
@@ -316,6 +339,7 @@ interface RunState {
   chunks: string[];
   status: "pending" | "done" | "error";
   responseText?: string;
+  spokenText?: string;
   ttsResult?: SynthesisResult;
   error?: { reason: FailureReason; message: string };
   startedAt: number;
@@ -418,6 +442,15 @@ async function finalizeRun(
   // the user-facing reply, not the 100KB raw transcript.
   state.responseText = extractedText;
 
+  // Compute the spoken subset (<= SPOKEN_RESPONSE_CAP_CHARS, sentence/word
+  // boundary). Empty when there's nothing to speak or TTS is being skipped.
+  const spokenText = preTtsBlock
+    ? ""
+    : extractedText.length > 0
+      ? truncateForSpeech(extractedText)
+      : "";
+  state.spokenText = spokenText;
+
   await ctx.events.emit(EVENT_KEYS.responseCompleted, state.companyId, {
     companyId: state.companyId,
     conferenceSessionId: state.conferenceSessionId,
@@ -458,7 +491,7 @@ async function finalizeRun(
         agentToken: voiceCascadeToken,
         companyId: state.companyId,
         agentId: state.agentId,
-        text: extractedText,
+        text: spokenText,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -792,6 +825,7 @@ async function handleGetLastResult(
     runId,
     agentId: state.agentId,
     responseText: state.responseText ?? "",
+    spokenText: state.spokenText ?? "",
     ttsResult:
       state.ttsResult ??
       ({
