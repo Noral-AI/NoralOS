@@ -35,6 +35,7 @@ export const manifest: NoralosPluginManifestV1 = {
 
   entrypoints: {
     worker: "./dist/worker.js",
+    ui: "./dist/ui",
   },
 
   database: {
