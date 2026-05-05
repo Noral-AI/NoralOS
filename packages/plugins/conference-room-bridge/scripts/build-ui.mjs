@@ -1,9 +1,24 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import esbuild from "esbuild";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const uiDir = path.join(packageRoot, "dist", "ui");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageRoot = path.resolve(__dirname, "..");
 
-mkdirSync(uiDir, { recursive: true });
-writeFileSync(path.join(uiDir, "index.js"), "export {};\n");
+await esbuild.build({
+  entryPoints: [path.join(packageRoot, "src/ui/index.tsx")],
+  outfile: path.join(packageRoot, "dist/ui/index.js"),
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  target: ["es2022"],
+  sourcemap: true,
+  external: [
+    "react",
+    "react-dom",
+    "react/jsx-runtime",
+    "@noralos/plugin-sdk/ui",
+  ],
+  logLevel: "info",
+});
