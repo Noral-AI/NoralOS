@@ -211,6 +211,18 @@ export function deduplicateAgentName(
   return `${candidateName} ${Date.now()}`;
 }
 
+
+// Service accounts (e.g., "Voice Cascade Service", "Conference Room Service")
+// are tagged with metadata.systemManaged === true. They exist only to issue
+// API keys for plugin↔plugin auth and should not appear in normal agent UI
+// (sidebar, lists, org chart). Callers that genuinely need them — admin
+// service-account management, audit, plugin bootstrap — pass
+// `{ includeSystemManaged: true }` to opt back in.
+function isSystemManagedAgent(row: typeof agents.$inferSelect): boolean {
+  const m = row.metadata as Record<string, unknown> | null;
+  return Boolean(m && m["systemManaged"] === true);
+}
+
 export function agentService(db: Db) {
   function currentUtcMonthWindow(now = new Date()) {
     const year = now.getUTCFullYear();
@@ -398,13 +410,19 @@ export function agentService(db: Db) {
   }
 
   return {
-    list: async (companyId: string, options?: { includeTerminated?: boolean }) => {
+    list: async (
+      companyId: string,
+      options?: { includeTerminated?: boolean; includeSystemManaged?: boolean },
+    ) => {
       const conditions = [eq(agents.companyId, companyId)];
       if (!options?.includeTerminated) {
         conditions.push(ne(agents.status, "terminated"));
       }
       const rows = await db.select().from(agents).where(and(...conditions));
-      const hydrated = await hydrateAgentSpend(rows);
+      const filtered = options?.includeSystemManaged
+        ? rows
+        : rows.filter((row) => !isSystemManagedAgent(row));
+      const hydrated = await hydrateAgentSpend(filtered);
       return hydrated.map(normalizeAgentRow);
     },
 
@@ -672,12 +690,18 @@ export function agentService(db: Db) {
       return rows[0] ?? null;
     },
 
-    orgForCompany: async (companyId: string) => {
-      const rows = await db
+    orgForCompany: async (
+      companyId: string,
+      options?: { includeSystemManaged?: boolean },
+    ) => {
+      const rawRows = await db
         .select()
         .from(agents)
         .where(and(eq(agents.companyId, companyId), ne(agents.status, "terminated")));
-      const normalizedRows = rows.map(normalizeAgentRow);
+      const filteredRows = options?.includeSystemManaged
+        ? rawRows
+        : rawRows.filter((row) => !isSystemManagedAgent(row));
+      const normalizedRows = filteredRows.map(normalizeAgentRow);
       const byManager = new Map<string | null, typeof normalizedRows>();
       for (const row of normalizedRows) {
         const key = row.reportsTo ?? null;

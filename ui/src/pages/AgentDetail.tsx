@@ -48,6 +48,7 @@ import { describeRunRetryState } from "../lib/runRetryState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
+import { PluginSlotMount, usePluginSlots } from "@/plugins/slots";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Popover,
@@ -231,7 +232,14 @@ function scrollToContainerBottom(container: ScrollContainer, behavior: ScrollBeh
   container.scrollTo({ top: container.scrollHeight, behavior });
 }
 
-type AgentDetailView = "dashboard" | "instructions" | "configuration" | "skills" | "runs" | "budget";
+type AgentDetailView =
+  | "dashboard"
+  | "instructions"
+  | "configuration"
+  | "skills"
+  | "runs"
+  | "budget"
+  | `plugin:${string}`;
 
 function parseAgentDetailView(value: string | null): AgentDetailView {
   if (value === "instructions" || value === "prompts") return "instructions";
@@ -239,6 +247,7 @@ function parseAgentDetailView(value: string | null): AgentDetailView {
   if (value === "skills") return "skills";
   if (value === "budget") return "budget";
   if (value === "runs") return value;
+  if (value && value.startsWith("plugin:")) return value as `plugin:${string}`;
   return "dashboard";
 }
 
@@ -662,6 +671,23 @@ export function AgentDetail() {
   });
   const resolvedCompanyId = agent?.companyId ?? selectedCompanyId;
   const canonicalAgentRef = agent ? agentRouteRef(agent) : routeAgentRef;
+  const { slots: agentPluginDetailSlots } = usePluginSlots({
+    slotTypes: ["detailTab"],
+    entityType: "agent",
+    companyId: resolvedCompanyId,
+    enabled: !!resolvedCompanyId,
+  });
+  const agentPluginTabItems = useMemo(
+    () =>
+      agentPluginDetailSlots.map((slot) => ({
+        value: `plugin:${slot.pluginKey}:${slot.id}` as const,
+        label: slot.displayName,
+        slot,
+      })),
+    [agentPluginDetailSlots],
+  );
+  const activePluginTab =
+    agentPluginTabItems.find((it) => it.value === activeView) ?? null;
   const agentLookupRef = agent?.id ?? routeAgentRef;
   const resolvedAgentId = agent?.id ?? null;
 
@@ -1064,6 +1090,7 @@ export function AgentDetail() {
               { value: "configuration", label: "Configuration" },
               { value: "runs", label: "Runs" },
               { value: "budget", label: "Budget" },
+              ...agentPluginTabItems.map(({ value, label }) => ({ value, label })),
             ]}
             value={activeView}
             onValueChange={(value) => navigate(`/agents/${canonicalAgentRef}/${value}`)}
@@ -1200,6 +1227,19 @@ export function AgentDetail() {
             variant="plain"
           />
         </div>
+      ) : null}
+
+      {activePluginTab && agent && resolvedCompanyId ? (
+        <PluginSlotMount
+          slot={activePluginTab.slot}
+          context={{
+            companyId: resolvedCompanyId,
+            projectId: null,
+            entityId: agent.id,
+            entityType: "agent",
+          }}
+          missingBehavior="placeholder"
+        />
       ) : null}
     </div>
   );
