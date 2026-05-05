@@ -9,11 +9,12 @@
   },
   "noralosPlugin": {
     "manifest": "./dist/manifest.js",
-    "worker": "./dist/worker.js"
+    "worker": "./dist/worker.js",
+    "ui": "./dist/ui/"
   },
   "scripts": {
     "prebuild": "pnpm --filter @noralos/plugin-sdk ensure-build-deps",
-    "build": "tsc",
+    "build": "tsc && node ./scripts/build-ui.mjs",
     "clean": "rm -rf dist",
     "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit"
   },
