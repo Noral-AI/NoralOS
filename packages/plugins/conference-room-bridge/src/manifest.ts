@@ -46,19 +46,17 @@ export const manifest: NoralosPluginManifestV1 = {
   },
 
   ui: {
-    launchers: [
+    // Sidebar launchers (placementZone:"sidebar") aren't currently surfaced by
+    // the host — Sidebar.tsx mounts <PluginSlotOutlet slotTypes={["sidebar"]}>
+    // but no <PluginLauncherOutlet placementZones={["sidebar"]}>. Until that
+    // host gap is filled, we ship a sidebar SLOT with a tiny external-link
+    // component that visually matches a SidebarNavItem.
+    slots: [
       {
-        id: "conference-room-launcher",
+        type: "sidebar",
+        id: "conference-room-sidebar-link",
         displayName: "Conference Room",
-        description:
-          "Start a live voice session with Brooklyn and your agent team",
-        placementZone: "sidebar",
-        order: 65,
-        action: {
-          type: "deepLink",
-          target: "https://platform.noral.ai/conference",
-        },
-        render: { environment: "external" },
+        exportName: "ConferenceRoomSidebarLink",
       },
     ],
   },
