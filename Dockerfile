@@ -32,6 +32,9 @@ COPY packages/adapters/pi-local/package.json packages/adapters/pi-local/
 COPY packages/plugins/sdk/package.json packages/plugins/sdk/
 COPY --parents packages/plugins/sandbox-providers/./*/package.json packages/plugins/sandbox-providers/
 COPY packages/plugins/noralos-plugin-fake-sandbox/package.json packages/plugins/noralos-plugin-fake-sandbox/
+COPY packages/plugins/voice-config/package.json packages/plugins/voice-config/
+COPY packages/plugins/voice-cascade/package.json packages/plugins/voice-cascade/
+COPY packages/plugins/conference-room-bridge/package.json packages/plugins/conference-room-bridge/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
@@ -43,7 +46,13 @@ COPY . .
 RUN pnpm --filter @noralos/ui build
 RUN pnpm --filter @noralos/plugin-sdk build
 RUN pnpm --filter @noralos/server build
+RUN pnpm --filter @noralos-plugins/voice-config build
+RUN pnpm --filter @noralos-plugins/voice-cascade build
+RUN pnpm --filter @noralos-plugins/conference-room-bridge build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
+RUN test -f packages/plugins/voice-config/dist/worker.js || (echo "ERROR: voice-config build output missing" && exit 1)
+RUN test -f packages/plugins/voice-cascade/dist/worker.js || (echo "ERROR: voice-cascade build output missing" && exit 1)
+RUN test -f packages/plugins/conference-room-bridge/dist/worker.js || (echo "ERROR: conference-room-bridge build output missing" && exit 1)
 
 FROM base AS production
 ARG USER_UID=1000
