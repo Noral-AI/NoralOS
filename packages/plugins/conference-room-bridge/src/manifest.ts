@@ -31,6 +31,7 @@ export const manifest: NoralosPluginManifestV1 = {
     "database.namespace.write",
     "database.namespace.migrate",
     "activity.log.write",
+    "ui.sidebar.register",
   ],
 
   entrypoints: {
