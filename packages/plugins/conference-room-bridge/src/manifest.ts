@@ -32,6 +32,7 @@ export const manifest: NoralosPluginManifestV1 = {
     "database.namespace.migrate",
     "activity.log.write",
     "ui.sidebar.register",
+    "ui.page.register",
   ],
 
   entrypoints: {
@@ -57,6 +58,15 @@ export const manifest: NoralosPluginManifestV1 = {
         id: "conference-room-sidebar-link",
         displayName: "Conference Room",
         exportName: "ConferenceRoomSidebarLink",
+      },
+      {
+        type: "page",
+        id: "conference-room-page",
+        displayName: "Conference Room",
+        exportName: "ConferenceRoomPage",
+        // Reachable at /<companyPrefix>/conference-room — gives the sidebar a
+        // stable, human-readable URL that doesn't depend on plugin UUIDs.
+        routePath: "conference-room",
       },
     ],
   },
@@ -118,6 +128,51 @@ export const manifest: NoralosPluginManifestV1 = {
       routeKey: API_ROUTE_KEYS.health,
       method: "GET",
       path: "/health",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+
+    // Browser-callable proxies. The NoralOS-native Conference Room page
+    // (rendered as a plugin `page` slot) calls these using only the user's
+    // NoralOS session cookie. Each handler delegates to the same internal
+    // helper as its agent-auth twin; service-agent tokens stay server-side.
+    {
+      routeKey: API_ROUTE_KEYS.uiState,
+      method: "GET",
+      path: "/ui/state",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      routeKey: API_ROUTE_KEYS.uiCreateSession,
+      method: "POST",
+      path: "/ui/sessions",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      routeKey: API_ROUTE_KEYS.uiSendMessage,
+      method: "POST",
+      path: "/ui/sessions/:conferenceSessionId/messages",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      routeKey: API_ROUTE_KEYS.uiLastResult,
+      method: "GET",
+      path: "/ui/sessions/:conferenceSessionId/last-result",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      routeKey: API_ROUTE_KEYS.uiCloseSession,
+      method: "DELETE",
+      path: "/ui/sessions/:conferenceSessionId",
       auth: "board-or-agent",
       capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },

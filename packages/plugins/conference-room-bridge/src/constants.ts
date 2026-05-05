@@ -21,6 +21,15 @@ export const API_ROUTE_KEYS = {
   closeSession: "close-session",
   getSession: "get-session",
   health: "health",
+  // Browser-callable proxies (auth: "board-or-agent"). The host page calls
+  // these using only the user's NoralOS session cookie — no service-agent
+  // tokens leave the server. Each /ui/* route delegates to the same internal
+  // handler as its agent-auth twin.
+  uiState: "ui-state",
+  uiCreateSession: "ui-create-session",
+  uiSendMessage: "ui-send-message",
+  uiLastResult: "ui-last-result",
+  uiCloseSession: "ui-close-session",
 } as const;
 
 // Bare event names. Host prepends `plugin.<pluginId>.` automatically.

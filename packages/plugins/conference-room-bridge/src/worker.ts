@@ -14,6 +14,7 @@ import {
   PLUGIN_DB_SCHEMA,
   PLUGIN_ID,
   TRANSPORTS,
+  VOICE_CASCADE_PLUGIN_ID,
   type FailureReason,
   type LatencyHint,
   type SessionStatus,
@@ -982,6 +983,97 @@ async function dispatchApi(
 
     case API_ROUTE_KEYS.health: {
       const result = await handleHealth(ctx, config, companyId);
+      return { status: 200, body: result };
+    }
+
+    // -------------------------------------------------------------------------
+    // /ui/* routes: browser-callable proxies. Same internal helpers, but
+    // exposed to board-auth callers (the NoralOS user session). The browser
+    // never receives a service-agent token; server-side hops to voice-config
+    // and voice-cascade still use the configured token refs.
+    // -------------------------------------------------------------------------
+
+    case API_ROUTE_KEYS.uiState: {
+      // Aggregate the bits the page needs at mount: bridge health + voice-cascade
+      // ttsMode (so the page can render the dry-run badge correctly).
+      const health = await handleHealth(ctx, config, companyId);
+      let ttsMode: string | null = null;
+      let providers: Record<string, string> | null = null;
+      try {
+        const tokenRef = config.voiceCascadeCallerTokenRef;
+        if (tokenRef) {
+          const vcUrl = `${config.voiceCascadeBaseUrl ?? "http://localhost:3100"}/api/plugins/${VOICE_CASCADE_PLUGIN_ID}/api/health?companyId=${encodeURIComponent(companyId)}`;
+          const token = await ctx.secrets.resolve(tokenRef);
+          const res = await fetch(vcUrl, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const j = (await res.json()) as { ttsMode?: string; providers?: Record<string, string> };
+            ttsMode = j.ttsMode ?? null;
+            providers = j.providers ?? null;
+          }
+        }
+      } catch (err) {
+        ctx.logger.warn("ui-state: voice-cascade health unreachable", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+      return {
+        status: 200,
+        body: { bridge: health, voiceCascade: { ttsMode, providers } },
+      };
+    }
+
+    case API_ROUTE_KEYS.uiCreateSession: {
+      try {
+        const body = asObjectBody(input.body) as unknown as CreateSessionBody;
+        const result = await handleCreateSession(ctx, config, companyId, body);
+        return { status: 200, body: result };
+      } catch (err) {
+        if (err instanceof ValidationError) {
+          return { status: 400, body: bridgeError("invalid-input", err.message) };
+        }
+        ctx.logger.error("ui-create-session failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return { status: 500, body: bridgeError("internal-error", "Internal error") };
+      }
+    }
+
+    case API_ROUTE_KEYS.uiSendMessage: {
+      const conferenceSessionId = input.params.conferenceSessionId;
+      if (!conferenceSessionId) {
+        return { status: 400, body: bridgeError("invalid-input", "missing conferenceSessionId") };
+      }
+      try {
+        const body = asObjectBody(input.body) as unknown as SendMessageBody;
+        const result = await handleSendMessage(ctx, config, companyId, conferenceSessionId, body);
+        return { status: 200, body: result };
+      } catch (err) {
+        if (err instanceof ValidationError) {
+          return { status: 400, body: bridgeError("invalid-input", err.message, conferenceSessionId) };
+        }
+        ctx.logger.error("ui-send-message failed", {
+          conferenceSessionId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return { status: 500, body: bridgeError("internal-error", "Internal error", conferenceSessionId) };
+      }
+    }
+
+    case API_ROUTE_KEYS.uiLastResult: {
+      const conferenceSessionId = input.params.conferenceSessionId;
+      if (!conferenceSessionId) {
+        return { status: 400, body: bridgeError("invalid-input", "missing conferenceSessionId") };
+      }
+      const result = await handleGetLastResult(ctx, companyId, conferenceSessionId);
+      return { status: 200, body: result };
+    }
+
+    case API_ROUTE_KEYS.uiCloseSession: {
+      const conferenceSessionId = input.params.conferenceSessionId;
+      if (!conferenceSessionId) {
+        return { status: 400, body: bridgeError("invalid-input", "missing conferenceSessionId") };
+      }
+      const result = await handleCloseSession(ctx, companyId, conferenceSessionId);
       return { status: 200, body: result };
     }
 
