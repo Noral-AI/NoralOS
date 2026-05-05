@@ -43,6 +43,24 @@ export const manifest: NoralosPluginManifestV1 = {
     coreReadTables: ["agents", "companies"],
   },
 
+  ui: {
+    launchers: [
+      {
+        id: "conference-room-launcher",
+        displayName: "Conference Room",
+        description:
+          "Start a live voice session with Brooklyn and your agent team",
+        placementZone: "sidebar",
+        order: 65,
+        action: {
+          type: "deepLink",
+          target: "https://platform.noral.ai/conference",
+        },
+        render: { environment: "external" },
+      },
+    ],
+  },
+
   apiRoutes: [
     // Pipecat creates a conference session and tells us which agent it should
     // be bound to. Bridge resolves the target (defaulting to CEO), checks
