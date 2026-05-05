@@ -84,3 +84,9 @@ export const DEFAULT_AGENT_RUN_TIMEOUT_MS = 60_000;
 // SKIPS TTS entirely, sets ttsResult.reason = "bridge-response-too-long",
 // and still returns the full extracted text for textual fallback.
 export const BRIDGE_RESPONSE_CAP_CHARS = 2000;
+
+// Spoken-response cap: text handed to TTS is truncated at the nearest
+// sentence/word boundary <= this many chars. The full extracted text is
+// still returned as `responseText` for display; only `spokenText` is what
+// gets synthesized. Keeps voice replies short for A/B latency comparison.
+export const SPOKEN_RESPONSE_CAP_CHARS = 600;
