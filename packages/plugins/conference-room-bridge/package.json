@@ -1,0 +1,28 @@
+{
+  "name": "@noralos-plugins/conference-room-bridge",
+  "version": "0.1.0",
+  "description": "Bridges Pipecat-based Conference Room sessions to NoralOS Paperclip agent sessions and voice-cascade. Routes user transcripts to a target agent (default: company CEO/Brooklyn), enforces voice-config eligibility, and hands the response text to voice-cascade for TTS. Workers are not selectable by default.",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "noralosPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @noralos/plugin-sdk ensure-build-deps",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit"
+  },
+  "dependencies": {
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.7.3"
+  }
+}
