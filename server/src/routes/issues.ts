@@ -59,7 +59,7 @@ import {
 } from "../services/index.js";
 import { logger } from "../middleware/logger.js";
 import { conflict, forbidden, HttpError, notFound, unauthorized } from "../errors.js";
-import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+import { actorCanViewAllCompanyIssues, assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import {
   assertNoAgentHostWorkspaceCommandMutation,
   collectIssueWorkspaceCommandPaths,
@@ -954,12 +954,41 @@ export function issueRoutes(
     }
     const offset = parsedOffset ?? 0;
 
+    // Visibility gate: only owner/admin (and instance admins, agents in the
+    // same company, local_implicit) can browse every company issue. Non-
+    // leadership board users (operator/viewer) are constrained to issues
+    // they personally touched. They can still narrow further with
+    // assigneeUserId=me / touchedByUserId=me, but cannot peek at other users.
+    const canViewAll = actorCanViewAllCompanyIssues(req, companyId);
+    let effectiveTouchedByUserId = touchedByUserId;
+    if (!canViewAll) {
+      if (req.actor.type !== "board" || !req.actor.userId) {
+        res.status(403).json({ error: "Listing company issues requires board authentication" });
+        return;
+      }
+      const selfUserId = req.actor.userId;
+      const peeksAtOtherUser =
+        (assigneeUserId && assigneeUserId !== selfUserId) ||
+        (touchedByUserId && touchedByUserId !== selfUserId) ||
+        (inboxArchivedByUserId && inboxArchivedByUserId !== selfUserId) ||
+        (unreadForUserId && unreadForUserId !== selfUserId);
+      if (peeksAtOtherUser) {
+        res.status(403).json({ error: "Cannot browse another user's issues without leadership access" });
+        return;
+      }
+      // Default the personal-scope filter so the response only contains
+      // issues this user touched, even when no explicit user filter was sent.
+      if (!touchedByUserId && !assigneeUserId) {
+        effectiveTouchedByUserId = selfUserId;
+      }
+    }
+
     const result = await svc.list(companyId, {
       status: req.query.status as string | undefined,
       assigneeAgentId: req.query.assigneeAgentId as string | undefined,
       participantAgentId: req.query.participantAgentId as string | undefined,
       assigneeUserId,
-      touchedByUserId,
+      touchedByUserId: effectiveTouchedByUserId,
       inboxArchivedByUserId,
       unreadForUserId,
       projectId: req.query.projectId as string | undefined,

@@ -39,6 +39,28 @@ export function assertInstanceAdmin(req: Request) {
   throw forbidden("Instance admin access required");
 }
 
+/**
+ * True when the actor may browse every issue in the company without
+ * narrowing filters (regardless of personal involvement). Owner/admin
+ * (plus instance_admin and local_implicit) qualify; operator/viewer do not.
+ * Agents authenticated for the same company are treated as full-visibility:
+ * the agent platform itself needs to enumerate company work.
+ *
+ * Inbox routing is a separate concern — see `touchedByUserCondition` in
+ * the issues service. This gate only governs the broad "All Company Issues"
+ * browse layer.
+ */
+export function actorCanViewAllCompanyIssues(req: Request, companyId: string): boolean {
+  if (req.actor.type === "agent") return req.actor.companyId === companyId;
+  if (req.actor.type !== "board") return false;
+  if (req.actor.source === "local_implicit") return true;
+  if (req.actor.isInstanceAdmin) return true;
+  const memberships = req.actor.memberships ?? [];
+  const membership = memberships.find((item) => item.companyId === companyId);
+  if (!membership || membership.status !== "active") return false;
+  return membership.membershipRole === "owner" || membership.membershipRole === "admin";
+}
+
 export function assertCompanyAccess(req: Request, companyId: string) {
   assertAuthenticated(req);
   if (req.actor.type === "agent" && req.actor.companyId !== companyId) {
