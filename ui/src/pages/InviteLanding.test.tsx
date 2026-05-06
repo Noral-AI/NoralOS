@@ -146,7 +146,10 @@ describe("InviteLandingPage", () => {
     await flushReact();
     await flushReact();
 
-    expect(container.textContent).toContain("You've been invited to join NoralOS");
+    // The invite copy renders the noralAI brand wordmark, which produces the
+    // text "noralAI" (the company brand). Product strings elsewhere use
+    // "NoralOS" — the wordmark is intentionally the company logo.
+    expect(container.textContent).toContain("You've been invited to join noralAI");
     expect(container.textContent).toContain("Join Acme Robotics");
     expect(container.textContent).toContain("Create account");
     expect(container.textContent).toContain("I already have an account");

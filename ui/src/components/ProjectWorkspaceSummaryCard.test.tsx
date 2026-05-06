@@ -148,7 +148,7 @@ describe("ProjectWorkspaceSummaryCard", () => {
     act(() => {
       root.render(
         <ProjectWorkspaceSummaryCard
-          projectRef="paperclip-app"
+          projectRef="noralos-app"
           summary={createSummary({
             key: "project:workspace-2",
             kind: "project_workspace",
