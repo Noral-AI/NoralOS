@@ -659,16 +659,14 @@ async function handlePreviewVoice(
   }
 
   const config = (await ctx.config.get()) as PluginConfig;
-  const ttsMode = resolveTtsMode(config);
-  if (ttsMode === "dry_run") {
-    return {
-      ok: false,
-      provider,
-      voiceId,
-      reason: "dry-run",
-      message: "voice-cascade is in dry_run; preview synthesis is disabled.",
-    };
-  }
+
+  // Preview deliberately bypasses the dry_run gate that protects /synthesize.
+  // Rationale: previews are constrained to a fixed server-owned phrase
+  // (PREVIEW_TEXT, capped by PREVIEW_MAX_CHARS, run through the exfiltration
+  // guard above). The browser cannot inject text. Letting admins audition
+  // voices without flipping ttsMode globally is the explicit goal — this
+  // route is the only safe way to produce audio while Conference Room and
+  // every other surface served by /synthesize remain dry_run.
 
   const ref =
     provider === "google_tts" ? config.googleTtsApiKeyRef : config.elevenLabsApiKeyRef;

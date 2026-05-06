@@ -258,8 +258,9 @@ export function VoicePickerModal(props: Props) {
 
         {ttsMode === "dry_run" && (
           <div style={dryRunBannerStyle}>
-            voice-cascade is in <strong>dry_run</strong>. Selecting a voice does not enable
-            live audio — an admin must flip ttsMode separately.
+            voice-cascade is in <strong>dry_run</strong>. Previews still play normally,
+            but selecting a voice here does not enable live audio in Conference Room
+            or other surfaces — an admin must flip ttsMode separately.
           </div>
         )}
       </div>
