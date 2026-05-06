@@ -95,6 +95,41 @@ export function googleVoiceStyle(name: string): string | null {
   return m ? m[1] : null;
 }
 
+// Normalize a /voices row into Voice-Picker fields (voiceId for synthesis,
+// displayName for the UI, style for the row caption).
+//
+// Background: most Google voices are returned with a fully namespaced name
+// like "en-US-Neural2-F" that /text:synthesize accepts as-is. The newer
+// Chirp3-HD generation is returned with a bare "star name" like "Achernar"
+// or "Aoede" — synthesizing with that bare name fails with HTTP 400
+// "This voice requires a model name to be specified." For Chirp3-HD the
+// synthesize-ready id is `${language}-Chirp3-HD-${bare}`.
+//
+// Detection: a name that already starts with `xx-XX-` is a fully namespaced
+// voice; anything else is treated as a Chirp3-HD bare name. The language
+// prefix is taken from the row's languageCodes (which Google fills in for
+// every voice it returns), defaulting to "en-US" if absent.
+export function normalizeGoogleVoiceForList(row: GoogleTtsVoiceRow): {
+  voiceId: string;
+  displayName: string;
+  style: string | null;
+} {
+  const looksNamespaced = /^[a-z]{2}-[A-Z]{2}-/.test(row.name);
+  if (!looksNamespaced) {
+    const lang = row.languageCodes?.[0] ?? "en-US";
+    return {
+      voiceId: `${lang}-Chirp3-HD-${row.name}`,
+      displayName: row.name,
+      style: "Chirp3-HD",
+    };
+  }
+  return {
+    voiceId: row.name,
+    displayName: row.name,
+    style: googleVoiceStyle(row.name),
+  };
+}
+
 export function normalizeGoogleGender(
   ssml: GoogleTtsVoiceRow["ssmlGender"],
 ): "male" | "female" | "neutral" | null {

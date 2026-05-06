@@ -44,9 +44,9 @@ import {
   synthesizeElevenLabs,
 } from "./providers/elevenlabs.js";
 import {
-  googleVoiceStyle,
   listGoogleTtsVoices,
   normalizeGoogleGender,
+  normalizeGoogleVoiceForList,
   synthesizeGoogleTts,
 } from "./providers/google_tts.js";
 
@@ -587,15 +587,18 @@ async function handleListVoices(
         languageCode ?? config.googleTtsDefaultLanguageCode ?? DEFAULT_GOOGLE_TTS_LANGUAGE_CODE,
         (url, init) => ctx.http.fetch(url, init),
       );
-      const voices: Voice[] = rows.map((r) => ({
-        voiceId: r.name,
-        displayName: r.name,
-        provider: "google_tts",
-        languageCodes: r.languageCodes ?? [],
-        gender: normalizeGoogleGender(r.ssmlGender),
-        style: googleVoiceStyle(r.name),
-        previewUrl: null,
-      }));
+      const voices: Voice[] = rows.map((r) => {
+        const normalized = normalizeGoogleVoiceForList(r);
+        return {
+          voiceId: normalized.voiceId,
+          displayName: normalized.displayName,
+          provider: "google_tts",
+          languageCodes: r.languageCodes ?? [],
+          gender: normalizeGoogleGender(r.ssmlGender),
+          style: normalized.style,
+          previewUrl: null,
+        };
+      });
       return { ok: true, provider, voices, ttsMode };
     }
 
@@ -688,6 +691,7 @@ async function handlePreviewVoice(
     return {
       ok: true,
       provider,
+      providerUsed: provider,
       voiceId,
       audioBase64: audio.audioBase64,
       mimeType: audio.mimeType,

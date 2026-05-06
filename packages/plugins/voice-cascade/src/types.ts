@@ -125,7 +125,12 @@ export type PreviewReason =
 
 export interface PreviewOk {
   ok: true;
+  // `provider` is the requested provider; `providerUsed` is the one that
+  // actually served the synthesis. They're equal today (preview never falls
+  // back), but mirroring `AudioResult.providerUsed` from /synthesize keeps
+  // the response shape consistent across surfaces.
   provider: Provider;
+  providerUsed: Provider;
   voiceId: string;
   audioBase64: string;
   mimeType: string;
