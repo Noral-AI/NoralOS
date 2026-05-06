@@ -197,7 +197,7 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
   it("relinks stale server workspace dependencies inside the current repo root", async () => {
     const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-"));
     const staleRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-stale-"));
-    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@paperclipai");
+    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@noralos");
     const expectedPackageDir = path.join(repoRoot, "packages", "db");
     const stalePackageDir = path.join(staleRoot, "db");
 
@@ -235,7 +235,7 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
 
   it("skips relinking when server workspace dependencies already point at the repo", async () => {
     const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-current-"));
-    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@paperclipai");
+    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@noralos");
     const expectedPackageDir = path.join(repoRoot, "packages", "db");
 
     await fs.mkdir(path.join(repoRoot, "server"), { recursive: true });
@@ -266,7 +266,7 @@ describe("ensureServerWorkspaceLinksCurrent", () => {
   it("skips relinking outside linked git worktrees", async () => {
     const repoRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-non-worktree-"));
     const staleRoot = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-runtime-links-non-worktree-stale-"));
-    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@paperclipai");
+    const serverNodeModulesScopeDir = path.join(repoRoot, "server", "node_modules", "@noralos");
     const expectedPackageDir = path.join(repoRoot, "packages", "db");
     const stalePackageDir = path.join(staleRoot, "db");
 
@@ -1194,10 +1194,10 @@ describe("realizeExecutionWorkspace", () => {
         fakePnpmPath,
         [
           "#!/bin/sh",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"--help\" ]; then",
+          "if [ \"$1\" = \"noralos\" ] && [ \"$2\" = \"--help\" ]; then",
           "  exit 0",
           "fi",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"worktree\" ] && [ \"$3\" = \"init\" ]; then",
+          "if [ \"$1\" = \"noralos\" ] && [ \"$2\" = \"worktree\" ] && [ \"$3\" = \"init\" ]; then",
           "  echo \"simulated init failure\" >&2",
           "  exit 42",
           "fi",
@@ -1268,7 +1268,7 @@ describe("realizeExecutionWorkspace", () => {
         fakePnpmPath,
         [
           "#!/bin/sh",
-          "if [ \"$1\" = \"paperclipai\" ] && [ \"$2\" = \"--help\" ]; then",
+          "if [ \"$1\" = \"noralos\" ] && [ \"$2\" = \"--help\" ]; then",
           "  exit 1",
           "fi",
           "if [ \"$1\" = \"install\" ] && [ \"$2\" = \"--frozen-lockfile\" ]; then",
@@ -2265,10 +2265,10 @@ describe("ensureRuntimeServicesForRun", () => {
     expect(executionServices[0]?.url).not.toBe(primaryServices[0]?.url);
 
     const primaryResponse = await fetch(primaryServices[0]!.url!);
-    expect(await primaryResponse.text()).toBe(path.join(primaryWorkspaceRoot, ".paperclip", "runtime-services"));
+    expect(await primaryResponse.text()).toBe(path.join(primaryWorkspaceRoot, ".noralos", "runtime-services"));
 
     const executionResponse = await fetch(executionServices[0]!.url!);
-    expect(await executionResponse.text()).toBe(path.join(worktreeWorkspaceRoot, ".paperclip", "runtime-services"));
+    expect(await executionResponse.text()).toBe(path.join(worktreeWorkspaceRoot, ".noralos", "runtime-services"));
   });
 
   it("does not leak parent NoralOS instance env into runtime service commands", async () => {
