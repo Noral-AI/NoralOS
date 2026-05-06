@@ -109,7 +109,7 @@ async function ensureEmbeddedPostgresConnection(
       if (!matchesDataDir) {
         throw new Error("reachable postgres does not use the expected embedded data directory");
       }
-      await ensurePostgresDatabase(preferredAdminConnectionString, "paperclip");
+      await ensurePostgresDatabase(preferredAdminConnectionString, "noralos");
       process.emitWarning(
         `Adopting an existing PostgreSQL instance on port ${preferredPort} for embedded data dir ${dataDir} because postmaster.pid is missing.`,
       );
@@ -126,7 +126,7 @@ async function ensureEmbeddedPostgresConnection(
   if (runningPid) {
     const port = runningPort ?? preferredPort;
     const adminConnectionString = `postgres://noralos:paperclip@127.0.0.1:${port}/postgres`;
-    await ensurePostgresDatabase(adminConnectionString, "paperclip");
+    await ensurePostgresDatabase(adminConnectionString, "noralos");
     return {
       connectionString: `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`,
       source: `embedded-postgres@${port}`,
@@ -136,7 +136,7 @@ async function ensureEmbeddedPostgresConnection(
 
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
-    user: "paperclip",
+    user: "noralos",
     password: "paperclip",
     port: selectedPort,
     persistent: true,
@@ -169,7 +169,7 @@ async function ensureEmbeddedPostgresConnection(
   }
 
   const adminConnectionString = `postgres://noralos:paperclip@127.0.0.1:${selectedPort}/postgres`;
-  await ensurePostgresDatabase(adminConnectionString, "paperclip");
+  await ensurePostgresDatabase(adminConnectionString, "noralos");
 
   return {
     connectionString: `postgres://noralos:paperclip@127.0.0.1:${selectedPort}/noralos`,

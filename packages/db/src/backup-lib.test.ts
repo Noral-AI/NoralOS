@@ -126,7 +126,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-test",
+          filenamePrefix: "noralos-test",
           backupEngine: "javascript",
         });
 
