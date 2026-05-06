@@ -14,7 +14,6 @@ const nonServerProjects = [
   "@noralos/adapter-codex-local",
   "@noralos/adapter-opencode-local",
   "@noralos/ui",
-  "noralos",
 ];
 const routeTestPattern = /[^/]*(?:route|routes|authz)[^/]*\.test\.ts$/;
 const additionalSerializedServerTests = new Set([
