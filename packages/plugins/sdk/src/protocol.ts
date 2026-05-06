@@ -652,9 +652,27 @@ export interface WorkerToHostMethods {
   ];
 
   // HTTP
+  //
+  // `body` is always a string on the wire. `bodyEncoding` tells the worker
+  // how to interpret it:
+  //   - "base64" — body is base64-encoded raw bytes. Worker decodes and
+  //     hands a binary Response to the plugin so .arrayBuffer() / .blob()
+  //     preserve the original byte stream (required for non-text payloads
+  //     like audio/image/PDF responses). .text() decodes as UTF-8 the same
+  //     way `fetch` does for any binary body interpreted as text.
+  //   - "utf8" or absent — legacy: body is already a UTF-8 string. Worker
+  //     passes it through to `new Response(...)` unchanged. Kept so a new
+  //     worker can talk to an older host without breaking; new hosts always
+  //     emit "base64" because UTF-8 transcoding corrupts non-ASCII bytes.
   "http.fetch": [
     params: { url: string; init?: Record<string, unknown> },
-    result: { status: number; statusText: string; headers: Record<string, string>; body: string },
+    result: {
+      status: number;
+      statusText: string;
+      headers: Record<string, string>;
+      body: string;
+      bodyEncoding?: "utf8" | "base64";
+    },
   ];
 
   // Secrets

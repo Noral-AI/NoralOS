@@ -474,8 +474,16 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
             init: Object.keys(serializedInit).length > 0 ? serializedInit : undefined,
           });
 
-          // Reconstruct a Response-like object from the serialized result
-          return new Response(result.body, {
+          // Reconstruct a Response from the serialized result. The host emits
+          // base64 bytes for binary fidelity (so .arrayBuffer() / .blob()
+          // preserve raw response bytes for audio, images, PDFs, etc.). We
+          // also accept the legacy "utf8" encoding (or no encoding hint) so
+          // a new worker can talk to an older host without breaking.
+          const responseBody: BodyInit =
+            result.bodyEncoding === "base64"
+              ? Buffer.from(result.body, "base64")
+              : result.body;
+          return new Response(responseBody, {
             status: result.status,
             statusText: result.statusText,
             headers: result.headers,
