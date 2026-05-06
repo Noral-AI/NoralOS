@@ -46,7 +46,7 @@ describe("gemini local skill sync", () => {
 
     const after = await syncGeminiSkills(ctx, [noralosKey]);
     expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".gemini", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(home, ".gemini", "skills", "noralos"))).isSymbolicLink()).toBe(true);
   });
 
   it("keeps required bundled NoralOS skills installed even when the desired set is emptied", async () => {
@@ -84,6 +84,6 @@ describe("gemini local skill sync", () => {
     const after = await syncGeminiSkills(clearedCtx, []);
     expect(after.desiredSkills).toContain(noralosKey);
     expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".gemini", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(home, ".gemini", "skills", "noralos"))).isSymbolicLink()).toBe(true);
   });
 });
