@@ -71,6 +71,10 @@ vi.mock("./NewAgentDialog", () => ({
   NewAgentDialog: () => null,
 }));
 
+vi.mock("./NewDepartmentDialog", () => ({
+  NewDepartmentDialog: () => null,
+}));
+
 vi.mock("./KeyboardShortcutsCheatsheet", () => ({
   KeyboardShortcutsCheatsheet: () => null,
 }));

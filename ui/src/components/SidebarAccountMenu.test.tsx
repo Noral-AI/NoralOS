@@ -107,7 +107,9 @@ describe("SidebarAccountMenu", () => {
 
     expect(document.body.textContent).toContain("Edit profile");
     expect(document.body.textContent).toContain("Documentation");
-    expect(document.body.textContent).toContain("NoralOS v1.2.3");
+    // The version line renders the noralAI brand wordmark followed by " v"
+    // and the version string, so textContent reads "noralAI v1.2.3".
+    expect(document.body.textContent).toContain("noralAI v1.2.3");
     expect(document.body.textContent).toContain("jane@example.com");
 
     await act(async () => {
