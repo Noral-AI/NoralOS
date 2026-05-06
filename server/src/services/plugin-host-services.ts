@@ -1773,6 +1773,16 @@ export function buildHostServices(
           .then((rows) => rows[0] ?? null);
         if (!session) throw new Error(`Session not found: ${params.sessionId}`);
 
+        // Per-call adapter override (Conference Room and any future plugin
+        // surface that wants a lightweight runtime profile for THIS run only).
+        // The override is shallow-merged on top of agents.adapter_config inside
+        // executeRun and never persisted back to the agent's stored config.
+        const adapterConfigOverrides =
+          params.adapterConfigOverrides &&
+          typeof params.adapterConfigOverrides === "object" &&
+          !Array.isArray(params.adapterConfigOverrides)
+            ? (params.adapterConfigOverrides as Record<string, unknown>)
+            : null;
         const run = await heartbeat.wakeup(session.agentId, {
           source: "automation",
           triggerDetail: "system",
@@ -1785,6 +1795,7 @@ export function buildHostServices(
           },
           requestedByActorType: "system",
           requestedByActorId: pluginId,
+          adapterConfigOverrides,
         });
         if (!run) throw new Error("Agent wakeup was skipped by heartbeat policy");
 

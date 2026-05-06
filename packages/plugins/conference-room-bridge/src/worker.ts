@@ -38,6 +38,7 @@ import { callSynthesize } from "./voiceCascadeClient.js";
 import { extractAssistantResponse } from "./responseExtractor.js";
 import {
   BRIDGE_RESPONSE_CAP_CHARS,
+  CONFERENCE_ROOM_ADAPTER_OVERRIDES,
   SPOKEN_RESPONSE_CAP_CHARS,
 } from "./constants.js";
 
@@ -726,7 +727,14 @@ async function handleSendMessage(
     sendResult = await ctx.agents.sessions.sendMessage(
       mapping.paperclip_session_id,
       companyId,
-      { prompt: transcript, onEvent },
+      {
+        prompt: transcript,
+        onEvent,
+        // Lightweight runtime profile for conversational voice — applied
+        // for this run only by the host. Brooklyn's stored adapter_config
+        // (chrome+long-loop) stays untouched for issue/heartbeat work.
+        adapterConfigOverrides: CONFERENCE_ROOM_ADAPTER_OVERRIDES,
+      },
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

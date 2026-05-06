@@ -969,7 +969,18 @@ export interface WorkerToHostMethods {
     result: Array<{ sessionId: string; agentId: string; companyId: string; status: "active" | "closed"; createdAt: string }>,
   ];
   "agents.sessions.sendMessage": [
-    params: { sessionId: string; companyId: string; prompt: string; reason?: string },
+    params: {
+      sessionId: string;
+      companyId: string;
+      prompt: string;
+      reason?: string;
+      // Optional shallow override applied on top of the agent's stored
+      // adapter_config for THIS run only. Host shallow-merges via
+      // mergeModelProfileAdapterConfig with highest precedence (after
+      // model-profile and issue-assignee overrides). Never persisted to
+      // agents.adapter_config.
+      adapterConfigOverrides?: Record<string, unknown>;
+    },
     result: { runId: string },
   ];
   "agents.sessions.close": [
