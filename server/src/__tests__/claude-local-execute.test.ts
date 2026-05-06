@@ -661,7 +661,7 @@ describe("claude execute", () => {
       expect(capture1.instructionsFilePath?.startsWith(expectedRoot)).toBe(true);
       expect(capture1.instructionsContents).toContain("You are managed instructions.");
       expect(capture1.instructionsContents).toContain(`The above agent instructions were loaded from ${instructionsPath}.`);
-      expect(capture1.skillEntries).toContain("paperclip");
+      expect(capture1.skillEntries).toContain("noralos");
       expect(capture2.argv).toContain("--resume");
       expect(capture2.argv).toContain("claude-session-1");
       expect(capture2.prompt).toContain("## NoralOS Resume Delta");

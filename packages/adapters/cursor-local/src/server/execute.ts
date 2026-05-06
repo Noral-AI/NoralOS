@@ -98,7 +98,7 @@ function normalizeMode(rawMode: string): "plan" | "ask" | null {
 
 function renderNoralosEnvNote(env: Record<string, string>): string {
   const noralosKeys = Object.keys(env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+    .filter((key) => key.startsWith("NORALOS_"))
     .sort();
   if (noralosKeys.length === 0) return "";
   return [
