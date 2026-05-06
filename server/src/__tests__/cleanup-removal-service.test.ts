@@ -151,6 +151,52 @@ describeEmbeddedPostgres("cleanup removal services", () => {
     await expect(db.select().from(activityLog).where(eq(activityLog.companyId, companyId))).resolves.toHaveLength(0);
   });
 
+  it("clears stale issue checkout / execution run-locks when removing an assigned agent", async () => {
+    // Regression for the e2e-visible "Issue checkout conflict" cascade
+    // surfaced after PR #31 unblocked embedded-postgres CI auth.
+    // Without this cleanup, deleting an agent leaves the issue holding
+    // checkoutRunId / executionRunId references to a now-deleted heartbeat
+    // run, and adoptStaleCheckoutRun cannot recover (it requires
+    // assigneeAgentId === actor, which we just nulled).
+    const { agentId, companyId, issueId, runId } = await seedFixture();
+
+    await db
+      .update(issues)
+      .set({
+        checkoutRunId: runId,
+        executionRunId: runId,
+        executionAgentNameKey: "codex-coder",
+        executionLockedAt: new Date(),
+        status: "in_progress",
+      })
+      .where(eq(issues.id, issueId));
+
+    const removed = await agentService(db).remove(agentId);
+
+    expect(removed?.id).toBe(agentId);
+    const issueAfter = await db
+      .select({
+        assigneeAgentId: issues.assigneeAgentId,
+        checkoutRunId: issues.checkoutRunId,
+        executionRunId: issues.executionRunId,
+        executionAgentNameKey: issues.executionAgentNameKey,
+        executionLockedAt: issues.executionLockedAt,
+      })
+      .from(issues)
+      .where(eq(issues.id, issueId))
+      .then((rows) => rows[0] ?? null);
+
+    expect(issueAfter).not.toBeNull();
+    expect(issueAfter?.assigneeAgentId).toBeNull();
+    expect(issueAfter?.checkoutRunId).toBeNull();
+    expect(issueAfter?.executionRunId).toBeNull();
+    expect(issueAfter?.executionAgentNameKey).toBeNull();
+    expect(issueAfter?.executionLockedAt).toBeNull();
+    await expect(
+      db.select().from(heartbeatRuns).where(eq(heartbeatRuns.id, runId)),
+    ).resolves.toHaveLength(0);
+  });
+
   it("removes issue read states and activity rows before deleting the company", async () => {
     const { companyId, issueId, runId } = await seedFixture();
     const documentId = randomUUID();
