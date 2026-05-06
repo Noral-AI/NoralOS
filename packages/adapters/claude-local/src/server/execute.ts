@@ -554,11 +554,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
   const sessionHandoffNote = asString(context.noralosSessionHandoffMarkdown, "").trim();
   const taskContextNote = asString(context.noralosTaskMarkdown, "").trim();
+  const userMessageNote = asString(context.noralosUserMessageMarkdown, "").trim();
   const prompt = joinPromptSections([
     renderedBootstrapPrompt,
     wakePrompt,
     sessionHandoffNote,
     taskContextNote,
+    userMessageNote,
     renderedPrompt,
   ]);
   const promptMetrics = {
@@ -567,6 +569,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     wakePromptChars: wakePrompt.length,
     sessionHandoffChars: sessionHandoffNote.length,
     taskContextChars: taskContextNote.length,
+    userMessageChars: userMessageNote.length,
     heartbeatPromptChars: renderedPrompt.length,
   };
 
