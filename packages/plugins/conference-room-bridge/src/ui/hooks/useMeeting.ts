@@ -21,6 +21,29 @@ export type MeetingApi = {
   transcript: TranscriptEntry[];
   lastAgentText: string | null;
   awaitingAgentResponse: boolean;
+  /**
+   * User-controlled audio toggle. Defaults to true. When false, agent
+   * replies still arrive as text, but `playAgentAudio` skips playback.
+   */
+  audioEnabled: boolean;
+  /**
+   * Set the audio-enabled flag. Calling this with `true` from a click /
+   * touch handler also opportunistically primes the browser's autoplay
+   * token (WebAudio resume + a muted HTMLAudio play() round-trip).
+   */
+  setAudioEnabled: (enabled: boolean) => void;
+  /**
+   * Toggle the audio-enabled flag. Same gesture-priming behavior as
+   * `setAudioEnabled(true)` when the result is true.
+   */
+  toggleAudio: () => void;
+  /**
+   * Best-effort autoplay primer. Safe to call from any click / touch
+   * handler in the page. Idempotent. Does not change `audioEnabled`.
+   * Kept on the API so the Start-Meeting button can prime audio without
+   * flipping the toggle.
+   */
+  primeAudio: () => Promise<void>;
   startMeeting: (targetAgentId: string | null) => Promise<void>;
   sendUtterance: (text: string) => Promise<void>;
   endMeeting: () => Promise<void>;
@@ -61,6 +84,27 @@ export function useMeeting(
   const [state, setState] = useState<MeetingState>({ phase: "idle" });
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [awaitingAgentResponse, setAwaitingAgentResponse] = useState(false);
+  // Audio defaults ON. The polling closure reads via the ref so we don't
+  // re-bind the interval when the user toggles.
+  const [audioEnabled, setAudioEnabledState] = useState(true);
+  const audioEnabledRef = useRef(true);
+  useEffect(() => {
+    audioEnabledRef.current = audioEnabled;
+  }, [audioEnabled]);
+  // WebAudio context, lazily created on the first user gesture. Used as the
+  // ACTUAL playback path: HTMLAudioElement.play() promises were observed
+  // hanging pending forever in production (Chrome on macOS) even after a
+  // muted-play primer; WebAudio's decodeAudioData + BufferSourceNode bypass
+  // the HTMLAudioElement autoplay heuristic entirely. Once `ctx.resume()`
+  // succeeds during a user gesture, subsequent BufferSourceNode.start()
+  // calls play without further interaction.
+  const audioContextRef = useRef<AudioContext | null>(null);
+  // The currently-playing AudioBufferSourceNode, so a new reply can stop
+  // the previous one cleanly.
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  // Whether we've already attempted (and succeeded at) priming the browser
+  // for autoplay. Once true, subsequent prime() calls short-circuit.
+  const audioPrimedRef = useRef(false);
   // Dedup signature for "we already handled this done-result". Includes the
   // runId when available, plus a content-hash fallback for the legacy case.
   const lastSeenRunIdRef = useRef<string | null>(null);
@@ -110,6 +154,104 @@ export function useMeeting(
     }
   }, []);
 
+  const primeAudio = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    if (audioPrimedRef.current) return;
+    let webAudioOk = false;
+    let htmlAudioOk = false;
+    let webAudioError: string | null = null;
+    let htmlAudioError: string | null = null;
+
+    // Step 1: WebAudio resume. Calling resume() on a freshly-created
+    // AudioContext from inside a user gesture grants user activation for
+    // audio playback in the page. Even though we use HTMLAudioElement for
+    // real playback, this satisfies Chrome's "user activation persists"
+    // heuristic for the next ~5s, and on iOS Safari it's the canonical
+    // unlock primitive.
+    try {
+      const AudioCtxCtor =
+        (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtxCtor) {
+        const ctx = audioContextRef.current ?? new AudioCtxCtor();
+        audioContextRef.current = ctx;
+        if (ctx.state === "suspended") {
+          await ctx.resume();
+        }
+        // Schedule a 1-sample silent buffer so iOS treats the context as
+        // "having played" rather than dormant.
+        const buffer = ctx.createBuffer(1, 1, 22050);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.start(0);
+        webAudioOk = true;
+      } else {
+        webAudioError = "AudioContext not supported";
+      }
+    } catch (err) {
+      webAudioError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    }
+
+    // Step 2: muted HTMLAudioElement primer. Browsers always allow muted
+    // playback regardless of user gesture, but having one successful
+    // play()/pause() round-trip on the SAME element we'll use for real
+    // audio also helps in some Safari scenarios. We never load a real
+    // source here — `audio.play()` with no src is allowed and treated as
+    // a no-op success in modern browsers.
+    try {
+      const audio = audioElRef.current ?? new Audio();
+      audioElRef.current = audio;
+      audio.muted = true;
+      // Calling play() on an element with no src returns a resolved promise
+      // in current browsers. If the browser objects, we'll catch and
+      // continue — WebAudio resume above is the load-bearing step anyway.
+      const playResult = audio.play();
+      if (playResult && typeof playResult.then === "function") {
+        await playResult;
+      }
+      try {
+        audio.pause();
+      } catch {
+        /* ignore */
+      }
+      audio.muted = false;
+      htmlAudioOk = true;
+    } catch (err) {
+      htmlAudioError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    }
+
+    if (webAudioOk || htmlAudioOk) {
+      audioPrimedRef.current = true;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log("[CR-METRICS] audio primed", {
+      webAudio: webAudioOk ? "ok" : webAudioError ?? "failed",
+      htmlAudio: htmlAudioOk ? "ok" : htmlAudioError ?? "failed",
+      primed: audioPrimedRef.current,
+    });
+  }, []);
+
+  const setAudioEnabled = useCallback(
+    (enabled: boolean) => {
+      setAudioEnabledState(enabled);
+      audioEnabledRef.current = enabled;
+      // eslint-disable-next-line no-console
+      console.log("[CR-METRICS] audio toggle", { enabled });
+      // Turning audio ON from a click handler is also a great moment to
+      // prime, since browsers count the click as user activation.
+      if (enabled) {
+        void primeAudio();
+      }
+    },
+    [primeAudio],
+  );
+
+  const toggleAudio = useCallback(() => {
+    setAudioEnabled(!audioEnabledRef.current);
+  }, [setAudioEnabled]);
+
   const playAgentAudio = useCallback(
     (
       audioBase64: string,
@@ -123,6 +265,23 @@ export function useMeeting(
       },
     ) => {
       if (typeof window === "undefined") return;
+      // eslint-disable-next-line no-console
+      console.log("[CR-METRICS] received audio payload", {
+        ...meta,
+        mimeType,
+        base64Length: audioBase64.length,
+        audioEnabled: audioEnabledRef.current,
+        primed: audioPrimedRef.current,
+      });
+      if (!audioEnabledRef.current) {
+        // eslint-disable-next-line no-console
+        console.log("[CR-METRICS] playback suppressed — audio toggle off", {
+          ...meta,
+          played: false,
+          endedReason: "audio-disabled",
+        });
+        return;
+      }
       let bytes: Uint8Array;
       try {
         bytes = decodeBase64ToBytes(audioBase64);
@@ -137,24 +296,24 @@ export function useMeeting(
         });
         return;
       }
-      // Cast through BlobPart: TS 5.7's Uint8Array<ArrayBufferLike> isn't
-      // assignable to ArrayBufferView<ArrayBuffer> because of SharedArrayBuffer.
-      const blob = new Blob([bytes as unknown as BlobPart], { type: mimeType });
-      const url = URL.createObjectURL(blob);
 
-      // Tear down any prior playback before swapping in the new clip.
-      if (audioElRef.current) {
-        try {
-          audioElRef.current.pause();
-        } catch {
-          /* ignore */
-        }
+      // Resolve / lazy-create the AudioContext. primeAudio (called from the
+      // Start-Meeting click handler) normally gets here first and resumes
+      // it; if the user typed straight into the chat without clicking
+      // anything the context might still be suspended, in which case
+      // `start()` won't actually emit until the next gesture. The
+      // decodeAudioData / start sequence below still runs so the failure
+      // mode is visible in logs rather than silent.
+      const AudioCtxCtor =
+        (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtxCtor) {
+        // eslint-disable-next-line no-console
+        console.warn("[CR-METRICS] AudioContext not supported", { ...meta });
+        return;
       }
-      releaseAudioObjectUrl();
-      audioObjectUrlRef.current = url;
-
-      const audio = audioElRef.current ?? new Audio();
-      audioElRef.current = audio;
+      const ctx = audioContextRef.current ?? new AudioCtxCtor();
+      audioContextRef.current = ctx;
 
       let endedFired = false;
       const finish = (endedReason: "ended" | "error") => {
@@ -166,28 +325,105 @@ export function useMeeting(
           played: true,
           endedReason,
         });
-        // Revoke synchronously; the element no longer needs the blob URL.
-        if (audioObjectUrlRef.current === url) {
-          URL.revokeObjectURL(url);
-          audioObjectUrlRef.current = null;
-        }
-        // Fire end callback immediately. Caller decides whether to debounce
-        // (e.g. the page sets a 400ms gap before resuming the mic).
         onPlayEndRef.current?.();
       };
 
-      audio.onended = () => finish("ended");
-      audio.onerror = () => finish("error");
-      audio.src = url;
+      // Stop any in-flight playback before we decode the new clip.
+      if (audioSourceRef.current) {
+        try {
+          audioSourceRef.current.onended = null;
+          audioSourceRef.current.stop();
+        } catch {
+          /* ignore — already finished */
+        }
+        audioSourceRef.current = null;
+      }
 
-      onPlayStartRef.current?.();
-      void audio.play().catch((err) => {
-        // eslint-disable-next-line no-console
-        console.warn("[CR-METRICS] audio.play() rejected", err);
-        finish("error");
-      });
+      // decodeAudioData consumes the underlying ArrayBuffer; copy the slice
+      // we own so subsequent calls aren't aliasing the same buffer. Cast
+      // through `ArrayBuffer` because TS 5.7 widens `Uint8Array.buffer` to
+      // `ArrayBufferLike` (covers SharedArrayBuffer); ours is always plain.
+      const arrayBuffer = bytes.buffer.slice(
+        bytes.byteOffset,
+        bytes.byteOffset + bytes.byteLength,
+      ) as ArrayBuffer;
+
+      const beginPlayback = () => {
+        ctx.decodeAudioData(
+          arrayBuffer,
+          (audioBuffer) => {
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(ctx.destination);
+            source.onended = () => finish("ended");
+            try {
+              source.start(0);
+              audioSourceRef.current = source;
+              // eslint-disable-next-line no-console
+              console.log("[CR-METRICS] audio.play() success", {
+                runId: meta.runId,
+                audioBytes: meta.audioBytes,
+                mimeType,
+                durationSec: audioBuffer.duration,
+                channels: audioBuffer.numberOfChannels,
+                sampleRate: audioBuffer.sampleRate,
+                ctxState: ctx.state,
+              });
+              onPlayStartRef.current?.();
+            } catch (err) {
+              const name = err instanceof Error ? err.name : "Error";
+              const message = err instanceof Error ? err.message : String(err);
+              // eslint-disable-next-line no-console
+              console.warn("[CR-METRICS] audio.play() rejected", {
+                name,
+                message,
+                ...meta,
+                mimeType,
+                ctxState: ctx.state,
+              });
+              if (name === "NotAllowedError") {
+                audioPrimedRef.current = false;
+              }
+              finish("error");
+            }
+          },
+          (err) => {
+            const message = err instanceof Error ? err.message : String(err);
+            // eslint-disable-next-line no-console
+            console.warn("[CR-METRICS] decodeAudioData failed", {
+              message,
+              ...meta,
+              mimeType,
+            });
+            finish("error");
+          },
+        );
+      };
+
+      if (ctx.state === "suspended") {
+        // Best-effort resume; if browser refuses (no user gesture), the
+        // start() below will still run but stay silent until the next
+        // user interaction. Surface that in logs so it's diagnosable.
+        ctx.resume().then(beginPlayback, (err) => {
+          const name = err instanceof Error ? err.name : "Error";
+          const message = err instanceof Error ? err.message : String(err);
+          // eslint-disable-next-line no-console
+          console.warn("[CR-METRICS] AudioContext.resume() rejected", {
+            name,
+            message,
+            ...meta,
+          });
+          if (name === "NotAllowedError") {
+            audioPrimedRef.current = false;
+          }
+          // Try anyway — start() might queue and play once unblocked.
+          beginPlayback();
+        });
+      } else {
+        beginPlayback();
+      }
     },
-    [releaseAudioObjectUrl],
+    [],
   );
 
   // ---- polling ----------------------------------------------------------
@@ -292,6 +528,15 @@ export function useMeeting(
     return () => {
       stopPolling();
       // Tear down audio on unmount.
+      if (audioSourceRef.current) {
+        try {
+          audioSourceRef.current.onended = null;
+          audioSourceRef.current.stop();
+        } catch {
+          /* ignore */
+        }
+        audioSourceRef.current = null;
+      }
       if (audioElRef.current) {
         try {
           audioElRef.current.pause();
@@ -304,6 +549,53 @@ export function useMeeting(
   }, [stopPolling, releaseAudioObjectUrl]);
 
   // ---- actions ----------------------------------------------------------
+
+  /**
+   * One-shot enumeration of the browser's audio devices, surfaced both in
+   * DevTools and as a system line in the transcript. Diagnoses Continuity /
+   * Handoff routing on macOS — when an iPhone shows up in the output list
+   * the user knows the OS is offering it as an option, even though
+   * `navigator.mediaDevices` doesn't expose which one is currently active
+   * (Chrome doesn't surface the active output for security reasons; the
+   * user has to check macOS Control Center → Sound).
+   *
+   * Labels only appear once the page has been granted mic permission, so
+   * we run this AFTER `speech.start()` triggers the permission prompt.
+   */
+  const logAudioDevices = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+      return;
+    }
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices
+        .filter((d) => d.kind === "audioinput")
+        .map((d) => ({ id: d.deviceId, label: d.label || "(unknown — needs mic permission)" }));
+      const outputs = devices
+        .filter((d) => d.kind === "audiooutput")
+        .map((d) => ({ id: d.deviceId, label: d.label || "(unknown — needs mic permission)" }));
+      // eslint-disable-next-line no-console
+      console.log("[CR-METRICS] audio devices", {
+        ctxState: audioContextRef.current?.state ?? "no-context",
+        ctxSampleRate: audioContextRef.current?.sampleRate ?? null,
+        inputs,
+        outputs,
+      });
+      const outputLabels = outputs.map((o) => o.label).filter(Boolean);
+      if (outputLabels.length > 0) {
+        const iphoneOutput = outputLabels.find((l) => /iphone|continuity|handoff/i.test(l));
+        const summary = `Audio outputs: ${outputLabels.join(" · ")}`;
+        appendSystem(
+          iphoneOutput
+            ? `${summary}. ⚠ macOS may route through "${iphoneOutput}" via Continuity — check Control Center → Sound if you don't hear replies on this Mac.`
+            : summary,
+        );
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[CR-METRICS] audio devices enumeration failed", err);
+    }
+  }, [appendSystem]);
 
   const startMeeting = useCallback(
     async (targetAgentId: string | null) => {
@@ -327,6 +619,13 @@ export function useMeeting(
           `Meeting started with ${agentLabelLookup(result.agentId)}.`,
         );
         startPolling(result.conferenceSessionId);
+        // Fire-and-forget; first call may show empty labels until the mic
+        // permission prompt resolves, but the page side starts speech
+        // recognition in `onStart` immediately after this returns, which
+        // primes labels for the next render. Re-run after a short delay
+        // to capture the post-permission label set as well.
+        void logAudioDevices();
+        window.setTimeout(() => void logAudioDevices(), 1500);
       } catch (err) {
         setState({
           phase: "error",
@@ -334,7 +633,7 @@ export function useMeeting(
         });
       }
     },
-    [companyId, startPolling, appendSystem, agentLabelLookup],
+    [companyId, startPolling, appendSystem, agentLabelLookup, logAudioDevices],
   );
 
   const sendUtterance = useCallback(
@@ -380,6 +679,15 @@ export function useMeeting(
     setState({ phase: "ending" });
     stopPolling();
     setAwaitingAgentResponse(false);
+    if (audioSourceRef.current) {
+      try {
+        audioSourceRef.current.onended = null;
+        audioSourceRef.current.stop();
+      } catch {
+        /* ignore */
+      }
+      audioSourceRef.current = null;
+    }
     if (audioElRef.current) {
       try {
         audioElRef.current.pause();
@@ -408,6 +716,10 @@ export function useMeeting(
     transcript,
     lastAgentText,
     awaitingAgentResponse,
+    audioEnabled,
+    setAudioEnabled,
+    toggleAudio,
+    primeAudio,
     startMeeting,
     sendUtterance,
     endMeeting,

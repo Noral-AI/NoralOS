@@ -89,6 +89,10 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
 
   const onStart = useCallback(async () => {
     if (!speech.supported) return;
+    // Click handler = user gesture — prime browser audio playback NOW so
+    // subsequent polling-driven plays are allowed. Fire-and-forget; failure
+    // is logged inside primeAudio.
+    void meeting.primeAudio();
     await meeting.startMeeting(mode === "direct" ? pinnedAgentId : null);
     // The phase transition to "active" is async — start the mic on next tick
     // by piggybacking on a microtask.
@@ -103,9 +107,11 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
   const speakingAgentId =
     meeting.state.phase === "active" ? meeting.state.agentId : null;
 
+  const ttsMode = uiState?.voiceCascade.ttsMode ?? null;
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
-      <Header ttsMode={uiState?.voiceCascade.ttsMode ?? null} />
+      <Header ttsMode={ttsMode} />
 
       <div className="flex flex-1 overflow-hidden">
         <YourTeamPanel
@@ -128,15 +134,32 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
               onChange={setMode}
               disabled={meeting.state.phase === "active"}
             />
-            <MeetingControls
-              meetingState={meeting.state}
-              micSupported={speech.supported}
-              micListening={speech.listening}
-              micError={speech.error}
-              awaitingAgent={meeting.awaitingAgentResponse}
-              onStart={() => void onStart()}
-              onStop={() => void onStop()}
-            />
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => meeting.toggleAudio()}
+                aria-pressed={meeting.audioEnabled}
+                title={meeting.audioEnabled ? "Click to mute audio replies" : "Click to enable audio replies"}
+                className={
+                  "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors " +
+                  (meeting.audioEnabled
+                    ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-300"
+                    : "border-border bg-muted text-muted-foreground hover:bg-muted/70")
+                }
+              >
+                <span aria-hidden="true">{meeting.audioEnabled ? "🔊" : "🔇"}</span>
+                <span>Audio: {meeting.audioEnabled ? "ON" : "OFF"}</span>
+              </button>
+              <MeetingControls
+                meetingState={meeting.state}
+                micSupported={speech.supported}
+                micListening={speech.listening}
+                micError={speech.error}
+                awaitingAgent={meeting.awaitingAgentResponse}
+                onStart={() => void onStart()}
+                onStop={() => void onStop()}
+              />
+            </div>
           </div>
 
           {agentsError ? (
