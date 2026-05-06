@@ -871,7 +871,30 @@ interface WakeupOptions {
   requestedByActorType?: "user" | "agent" | "system";
   requestedByActorId?: string | null;
   contextSnapshot?: Record<string, unknown>;
+  /**
+   * Per-call shallow override applied on top of the agent's stored
+   * `adapterConfig` for this wakeup only. Persisted onto the run's
+   * `contextSnapshot` (under the reserved key `wakeupAdapterConfigOverrides`)
+   * so it survives the queue → claim → execute path, then merged in
+   * `mergeModelProfileAdapterConfig` with highest precedence (after
+   * model-profile and issue-assignee overrides).
+   *
+   * The agent's stored `agents.adapter_config` is never modified.
+   *
+   * Use case: the Conference Room bridge wants Brooklyn to run with a
+   * lightweight profile (no chrome, low maxTurnsPerRun) without changing
+   * Brooklyn's base config used for issue/heartbeat work.
+   */
+  adapterConfigOverrides?: Record<string, unknown> | null;
 }
+
+/**
+ * Reserved contextSnapshot key used to round-trip per-call adapter overrides
+ * from enqueueWakeup → heartbeat_runs.context_snapshot → executeRun.
+ * Kept as a constant so the producer and consumer agree on the spelling
+ * without exporting it broadly.
+ */
+const WAKEUP_ADAPTER_CONFIG_OVERRIDES_KEY = "wakeupAdapterConfigOverrides";
 
 type UsageTotals = {
   inputTokens: number;
@@ -1046,11 +1069,20 @@ export function mergeModelProfileAdapterConfig(input: {
   baseConfig: Record<string, unknown>;
   modelProfile: ModelProfileApplication;
   issueAdapterConfig: Record<string, unknown> | null | undefined;
+  /**
+   * Highest-precedence override layer, supplied per-wakeup via
+   * WakeupOptions.adapterConfigOverrides and persisted on the run's
+   * contextSnapshot. Wins over base, model-profile, and issue-assignee
+   * overrides because it represents intent specific to this run only
+   * (e.g. Conference Room asking for a lightweight profile).
+   */
+  wakeupAdapterOverrides?: Record<string, unknown> | null | undefined;
 }): Record<string, unknown> {
   return {
     ...input.baseConfig,
     ...(input.modelProfile.adapterConfig ?? {}),
     ...(input.issueAdapterConfig ?? {}),
+    ...(input.wakeupAdapterOverrides ?? {}),
   };
 }
 
@@ -5167,10 +5199,32 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     } else {
       delete context.noralosModelProfile;
     }
+    // Per-call adapter overrides (highest precedence). Stamped into the run's
+    // contextSnapshot by enqueueWakeup; never persisted to agents.adapter_config.
+    // We deliberately log only the override KEYS (not values) so operators can
+    // see which fields were swapped without leaking secrets that might have
+    // been routed through this layer in the future.
+    const wakeupAdapterOverrides = parseObject(
+      context[WAKEUP_ADAPTER_CONFIG_OVERRIDES_KEY],
+    );
+    const wakeupAdapterOverrideKeys = Object.keys(wakeupAdapterOverrides);
+    if (wakeupAdapterOverrideKeys.length > 0) {
+      logger.info(
+        {
+          runId: run.id,
+          agentId: agent.id,
+          adapterType: agent.adapterType,
+          overrideKeys: wakeupAdapterOverrideKeys,
+        },
+        "heartbeat: applying per-call adapter config overrides for this run",
+      );
+    }
     const mergedConfig = mergeModelProfileAdapterConfig({
       baseConfig: persistedWorkspaceManagedConfig,
       modelProfile: modelProfileApplication,
       issueAdapterConfig: issueAssigneeOverrides?.adapterConfig ?? null,
+      wakeupAdapterOverrides:
+        wakeupAdapterOverrideKeys.length > 0 ? wakeupAdapterOverrides : null,
     });
     const configSnapshot = buildExecutionWorkspaceConfigSnapshot(mergedConfig, selectedEnvironmentId);
     const executionRunConfig = stripWorkspaceRuntimeFromExecutionRunConfig(mergedConfig);
@@ -6595,6 +6649,13 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     const source = opts.source ?? "on_demand";
     const triggerDetail = opts.triggerDetail ?? null;
     const contextSnapshot: Record<string, unknown> = { ...(opts.contextSnapshot ?? {}) };
+    // Per-call adapter override (Conference Room / future surfaces) — round-trip
+    // via contextSnapshot under a reserved key. Caller-supplied values for the
+    // same key in `opts.contextSnapshot` are intentionally overwritten; this
+    // is the only sanctioned producer of the field.
+    if (opts.adapterConfigOverrides && typeof opts.adapterConfigOverrides === "object") {
+      contextSnapshot[WAKEUP_ADAPTER_CONFIG_OVERRIDES_KEY] = opts.adapterConfigOverrides;
+    }
     const reason = opts.reason ?? null;
     const payload = opts.payload ?? null;
     const {

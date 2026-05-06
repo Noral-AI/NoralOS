@@ -1308,6 +1308,19 @@ export interface PluginAgentSessionsClient {
     prompt: string;
     reason?: string;
     onEvent?: (event: AgentSessionEvent) => void;
+    /**
+     * Optional shallow override applied on top of the agent's stored
+     * `adapter_config` for THIS run only. Host shallow-merges with highest
+     * precedence in `mergeModelProfileAdapterConfig` (after model-profile
+     * and issue-assignee overrides). Never persisted to
+     * `agents.adapter_config`.
+     *
+     * Use case: the Conference Room bridge sends a lightweight runtime
+     * profile (e.g. `chrome:false`, low `maxTurnsPerRun`) for
+     * conversational voice without changing the agent's base config used
+     * for issue/heartbeat work.
+     */
+    adapterConfigOverrides?: Record<string, unknown>;
   }): Promise<AgentSessionSendResult>;
 
   /** Close a session, releasing resources. Requires `agent.sessions.close`. */

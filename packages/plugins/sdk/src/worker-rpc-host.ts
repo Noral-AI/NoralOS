@@ -889,6 +889,13 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
             prompt: string;
             reason?: string;
             onEvent?: (event: AgentSessionEvent) => void;
+            /**
+             * Optional per-call shallow override applied on top of the
+             * agent's stored `adapter_config` for THIS run only. Host
+             * shallow-merges with highest precedence in
+             * `mergeModelProfileAdapterConfig`. Never persisted.
+             */
+            adapterConfigOverrides?: Record<string, unknown>;
           }) {
             if (opts.onEvent) {
               sessionEventCallbacks.set(sessionId, opts.onEvent);
@@ -899,6 +906,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
                 companyId,
                 prompt: opts.prompt,
                 reason: opts.reason,
+                adapterConfigOverrides: opts.adapterConfigOverrides,
               });
             } catch (err) {
               sessionEventCallbacks.delete(sessionId);

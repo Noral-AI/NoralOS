@@ -90,3 +90,19 @@ export const BRIDGE_RESPONSE_CAP_CHARS = 2000;
 // still returned as `responseText` for display; only `spokenText` is what
 // gets synthesized. Keeps voice replies short for A/B latency comparison.
 export const SPOKEN_RESPONSE_CAP_CHARS = 600;
+
+// Per-call adapter_config override applied for Conference Room runs only.
+// Shallow-merged on top of the agent's stored adapter_config inside the
+// host (heartbeat.executeRun), never persisted. The agent retains its
+// full base config (`chrome:true`, large `maxTurnsPerRun`, no timeout)
+// for issue/heartbeat work; only the conversational Conference Room run
+// uses this lightweight profile.
+//
+// Values are kept as strings where the existing adapter parser already
+// accepts strings for these fields (timeoutSec, maxTurnsPerRun in
+// claude_local) so we don't perturb the parser path.
+export const CONFERENCE_ROOM_ADAPTER_OVERRIDES: Record<string, unknown> = {
+  chrome: false,
+  timeoutSec: "90",
+  maxTurnsPerRun: "4",
+};
