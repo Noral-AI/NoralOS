@@ -50,3 +50,62 @@ export async function synthesizeGoogleTts(
   if (!json.audioContent) throw new Error("google_tts response missing audioContent");
   return { audioBase64: json.audioContent, mimeType: "audio/mpeg" };
 }
+
+// ---------------------------------------------------------------------------
+// Voice catalogue
+// ---------------------------------------------------------------------------
+
+const GOOGLE_VOICES_URL = "https://texttospeech.googleapis.com/v1/voices";
+
+export interface GoogleTtsVoiceRow {
+  name: string;
+  languageCodes: string[];
+  ssmlGender: "MALE" | "FEMALE" | "NEUTRAL" | "SSML_VOICE_GENDER_UNSPECIFIED";
+}
+
+export async function listGoogleTtsVoices(
+  apiKey: string,
+  languageCode: string | null,
+  fetchImpl: SimpleFetch = fetch,
+): Promise<GoogleTtsVoiceRow[]> {
+  // languageCode is optional; passing it filters server-side. Caller passes
+  // null to mean "all languages".
+  const qs = languageCode
+    ? `?languageCode=${encodeURIComponent(languageCode)}&key=${encodeURIComponent(apiKey)}`
+    : `?key=${encodeURIComponent(apiKey)}`;
+  const res = await fetchImpl(`${GOOGLE_VOICES_URL}${qs}`, { method: "GET" });
+
+  if (!res.ok) {
+    const body = await res.text();
+    const err: ProviderError = new Error(
+      `google_tts voices HTTP ${res.status}: ${body.slice(0, 200)}`,
+    );
+    if (res.status === 429) err.rateLimited = true;
+    throw err;
+  }
+
+  const json = (await res.json()) as { voices?: GoogleTtsVoiceRow[] };
+  return Array.isArray(json.voices) ? json.voices : [];
+}
+
+// Derive a coarse "tier" (Neural2 / Wavenet / Studio / Standard / Chirp3-HD)
+// from the voice name. Used as Voice.style. Pure string parsing — no API call.
+export function googleVoiceStyle(name: string): string | null {
+  const m = name.match(/-(Chirp3-HD|Neural2|Wavenet|Studio|Standard|Polyglot|News|Casual|Journey)-/);
+  return m ? m[1] : null;
+}
+
+export function normalizeGoogleGender(
+  ssml: GoogleTtsVoiceRow["ssmlGender"],
+): "male" | "female" | "neutral" | null {
+  switch (ssml) {
+    case "MALE":
+      return "male";
+    case "FEMALE":
+      return "female";
+    case "NEUTRAL":
+      return "neutral";
+    default:
+      return null;
+  }
+}

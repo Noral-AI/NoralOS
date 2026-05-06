@@ -12,6 +12,8 @@ import {
   DEFAULT_MAX_TEXT_CHARS,
   EVENT_KEYS,
   PLUGIN_ID,
+  PREVIEW_MAX_CHARS,
+  PREVIEW_TEXT,
   PROVIDERS,
   SURFACES,
   TTS_MODES,
@@ -27,13 +29,26 @@ import type {
   EffectiveOrFailClosed,
   EffectiveVoiceConfig,
   HealthResult,
+  ListVoicesResult,
   NoAudioResult,
+  PreviewResult,
   ProviderHealth,
   SynthesisResult,
+  Voice,
 } from "./types.js";
 import { scanForSecrets } from "./exfiltrationGuard.js";
-import { synthesizeElevenLabs } from "./providers/elevenlabs.js";
-import { synthesizeGoogleTts } from "./providers/google_tts.js";
+import {
+  elevenLabsStyle,
+  listElevenLabsVoices,
+  normalizeElevenLabsGender,
+  synthesizeElevenLabs,
+} from "./providers/elevenlabs.js";
+import {
+  googleVoiceStyle,
+  listGoogleTtsVoices,
+  normalizeGoogleGender,
+  synthesizeGoogleTts,
+} from "./providers/google_tts.js";
 
 // ---------------------------------------------------------------------------
 // Module-scope context (kitchen-sink pattern — set in setup, read elsewhere).
@@ -495,6 +510,208 @@ async function emitFailed(
 }
 
 // ---------------------------------------------------------------------------
+// Voice Picker handlers (read-only catalogue + bounded preview)
+// ---------------------------------------------------------------------------
+
+function asProvider(value: unknown): Provider {
+  if (typeof value !== "string" || !PROVIDERS.includes(value as Provider)) {
+    throw new ValidationError(`Invalid provider: ${String(value)}`);
+  }
+  return value as Provider;
+}
+
+async function handleListVoices(
+  ctx: PluginContext,
+  rawProvider: unknown,
+  rawLanguageCode: unknown,
+): Promise<ListVoicesResult> {
+  const provider = asProvider(rawProvider);
+  const config = (await ctx.config.get()) as PluginConfig;
+  const ttsMode = resolveTtsMode(config);
+
+  // languageCode is google_tts-only; "all" or absent means no server-side
+  // filter. ElevenLabs does not filter server-side; we ignore the param.
+  const languageCode =
+    typeof rawLanguageCode === "string" && rawLanguageCode && rawLanguageCode !== "all"
+      ? rawLanguageCode
+      : null;
+
+  const ref =
+    provider === "google_tts" ? config.googleTtsApiKeyRef : config.elevenLabsApiKeyRef;
+  if (!ref) {
+    return {
+      ok: false,
+      provider,
+      reason: "provider-key-missing",
+      message:
+        provider === "google_tts"
+          ? "Google Cloud TTS key is not configured yet."
+          : "ElevenLabs key is not configured yet.",
+      ttsMode,
+    };
+  }
+
+  let apiKey: string;
+  try {
+    apiKey = await ctx.secrets.resolve(ref);
+  } catch (err) {
+    ctx.logger.warn("listVoices: secret resolution failed", {
+      provider,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return {
+      ok: false,
+      provider,
+      reason: "provider-key-missing",
+      message: "Provider key reference could not be resolved.",
+      ttsMode,
+    };
+  }
+  if (!apiKey) {
+    return {
+      ok: false,
+      provider,
+      reason: "provider-key-missing",
+      message:
+        provider === "google_tts"
+          ? "Google Cloud TTS key is not configured yet."
+          : "ElevenLabs key is not configured yet.",
+      ttsMode,
+    };
+  }
+
+  try {
+    if (provider === "google_tts") {
+      const rows = await listGoogleTtsVoices(
+        apiKey,
+        languageCode ?? config.googleTtsDefaultLanguageCode ?? DEFAULT_GOOGLE_TTS_LANGUAGE_CODE,
+        (url, init) => ctx.http.fetch(url, init),
+      );
+      const voices: Voice[] = rows.map((r) => ({
+        voiceId: r.name,
+        displayName: r.name,
+        provider: "google_tts",
+        languageCodes: r.languageCodes ?? [],
+        gender: normalizeGoogleGender(r.ssmlGender),
+        style: googleVoiceStyle(r.name),
+        previewUrl: null,
+      }));
+      return { ok: true, provider, voices, ttsMode };
+    }
+
+    // elevenlabs
+    const rows = await listElevenLabsVoices(apiKey, (url, init) => ctx.http.fetch(url, init));
+    const voices: Voice[] = rows.map((r) => ({
+      voiceId: r.voice_id,
+      displayName: r.name || r.voice_id,
+      provider: "elevenlabs",
+      // ElevenLabs voices are mostly multilingual and the API doesn't
+      // declare language-codes per voice in a stable way. We surface an
+      // empty array; the modal renders "multi" when length === 0.
+      languageCodes: r.fine_tuning?.language ? [r.fine_tuning.language] : [],
+      gender: normalizeElevenLabsGender(r.labels),
+      style: elevenLabsStyle(r.labels),
+      previewUrl: r.preview_url ?? null,
+    }));
+    return { ok: true, provider, voices, ttsMode };
+  } catch (err) {
+    const rateLimited =
+      typeof err === "object" && err !== null && "rateLimited" in err
+        ? Boolean((err as { rateLimited?: boolean }).rateLimited)
+        : false;
+    const message = err instanceof Error ? err.message : String(err);
+    ctx.logger.warn("listVoices: provider call failed", { provider, error: message });
+    return {
+      ok: false,
+      provider,
+      reason: rateLimited ? "rate-limited" : "provider-unreachable",
+      message,
+      ttsMode,
+    };
+  }
+}
+
+async function handlePreviewVoice(
+  ctx: PluginContext,
+  body: Record<string, unknown>,
+): Promise<PreviewResult> {
+  const provider = asProvider(body.provider);
+  const voiceId = asString(body.voiceId, "voiceId");
+
+  // Server-owned text. Caller cannot inject; even if PREVIEW_TEXT is later
+  // changed to something that incorporates user input, PREVIEW_MAX_CHARS
+  // caps the size before the provider call.
+  const text = PREVIEW_TEXT.slice(0, PREVIEW_MAX_CHARS);
+
+  // Run the same exfiltration guard as /synthesize so a future
+  // PREVIEW_TEXT containing secret-shaped content can't leak.
+  const matches = scanForSecrets(text);
+  if (matches.length > 0) {
+    return {
+      ok: false,
+      provider,
+      voiceId,
+      reason: "exfiltration-blocked",
+      message: `Preview text blocked by exfiltration guard (${matches
+        .map((m) => m.type)
+        .join(", ")})`,
+    };
+  }
+
+  const config = (await ctx.config.get()) as PluginConfig;
+  const ttsMode = resolveTtsMode(config);
+  if (ttsMode === "dry_run") {
+    return {
+      ok: false,
+      provider,
+      voiceId,
+      reason: "dry-run",
+      message: "voice-cascade is in dry_run; preview synthesis is disabled.",
+    };
+  }
+
+  const ref =
+    provider === "google_tts" ? config.googleTtsApiKeyRef : config.elevenLabsApiKeyRef;
+  if (!ref) {
+    return {
+      ok: false,
+      provider,
+      voiceId,
+      reason: "provider-key-missing",
+      message:
+        provider === "google_tts"
+          ? "Google Cloud TTS key is not configured yet."
+          : "ElevenLabs key is not configured yet.",
+    };
+  }
+
+  try {
+    const audio = await callProvider(ctx, config, provider, voiceId, text);
+    return {
+      ok: true,
+      provider,
+      voiceId,
+      audioBase64: audio.audioBase64,
+      mimeType: audio.mimeType,
+    };
+  } catch (err) {
+    const rateLimited =
+      typeof err === "object" && err !== null && "rateLimited" in err
+        ? Boolean((err as { rateLimited?: boolean }).rateLimited)
+        : false;
+    const message = err instanceof Error ? err.message : String(err);
+    ctx.logger.warn("previewVoice: provider call failed", { provider, voiceId, error: message });
+    return {
+      ok: false,
+      provider,
+      voiceId,
+      reason: rateLimited ? "provider-rate-limited" : "provider-failed",
+      message,
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // API request dispatch
 // ---------------------------------------------------------------------------
 
@@ -525,6 +742,43 @@ async function dispatchApi(
     case API_ROUTE_KEYS.health: {
       const result = await handleHealth(ctx);
       return { status: 200, body: result };
+    }
+
+    case API_ROUTE_KEYS.listVoices: {
+      if (!companyId) return { status: 400, body: { error: "missing companyId" } };
+      try {
+        const result = await handleListVoices(
+          ctx,
+          input.query?.provider,
+          input.query?.languageCode,
+        );
+        return { status: 200, body: result };
+      } catch (err) {
+        if (err instanceof ValidationError) {
+          return { status: 400, body: { error: err.message } };
+        }
+        ctx.logger.error("listVoices failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return { status: 500, body: { error: "Internal error" } };
+      }
+    }
+
+    case API_ROUTE_KEYS.previewVoice: {
+      if (!companyId) return { status: 400, body: { error: "missing companyId" } };
+      try {
+        const body = asObjectBody(input.body);
+        const result = await handlePreviewVoice(ctx, body);
+        return { status: 200, body: result };
+      } catch (err) {
+        if (err instanceof ValidationError) {
+          return { status: 400, body: { error: err.message } };
+        }
+        ctx.logger.error("previewVoice failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return { status: 500, body: { error: "Internal error" } };
+      }
     }
 
     default:

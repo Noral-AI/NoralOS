@@ -19,6 +19,11 @@ import type {
   CompanyVoiceDefaults,
   EffectiveOrFailClosed,
 } from "../types.js";
+import {
+  VoicePickerModal,
+  type VoicePickerSelection,
+} from "./VoicePickerModal.js";
+import type { VoicePickerProvider } from "./voiceCascadeClient.js";
 
 type VoiceSettingsData = {
   raw: AgentVoiceConfig | null;
@@ -131,9 +136,17 @@ export function VoiceSettingsTab(_props: PluginDetailTabProps) {
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Display name for the most-recently-picked voice. Local UI hint only;
+  // not persisted to voice-config (the schema doesn't carry it). Cleared
+  // when the form is reloaded from the server.
+  const [pickedDisplayName, setPickedDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
-    if (data) setForm(fromEffective(data));
+    if (data) {
+      setForm(fromEffective(data));
+      setPickedDisplayName(null);
+    }
   }, [data]);
 
   if (error) return <div>Failed to load voice settings: {error.message}</div>;
@@ -232,19 +245,38 @@ export function VoiceSettingsTab(_props: PluginDetailTabProps) {
           </label>
 
           {form.provider !== "default" && (
-            <label>
-              Voice ID
-              <input
-                type="text"
-                value={form.voiceId}
-                onChange={(e) => setField("voiceId", e.target.value)}
-                placeholder={
-                  form.provider === "elevenlabs"
-                    ? "ElevenLabs voice ID"
-                    : "Google Cloud TTS voice name (e.g. en-US-Neural2-J)"
-                }
-              />
-            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span>Voice ID</span>
+                <input
+                  type="text"
+                  value={form.voiceId}
+                  onChange={(e) => {
+                    setField("voiceId", e.target.value);
+                    setPickedDisplayName(null);
+                  }}
+                  placeholder={
+                    form.provider === "elevenlabs"
+                      ? "ElevenLabs voice ID"
+                      : "Google Cloud TTS voice name (e.g. en-US-Neural2-J)"
+                  }
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  Choose Voice…
+                </button>
+              </label>
+              {pickedDisplayName && (
+                <span style={{ fontSize: 12, opacity: 0.7 }}>
+                  Selected: <strong>{pickedDisplayName}</strong>
+                  {" · "}{form.provider === "elevenlabs" ? "ElevenLabs" : "Google Cloud TTS"}
+                  {" · "}<em>unsaved — click Save to persist.</em>
+                </span>
+              )}
+            </div>
           )}
 
           <label>
@@ -341,6 +373,29 @@ export function VoiceSettingsTab(_props: PluginDetailTabProps) {
           Reset to defaults
         </button>
       </div>
+
+      <VoicePickerModal
+        companyId={companyId}
+        // The picker only handles real providers; if the form is on "default"
+        // we send google_tts as a sane initial tab — the button is disabled
+        // in that case so this branch is unreachable in practice.
+        initialProvider={
+          form.provider === "elevenlabs"
+            ? ("elevenlabs" as VoicePickerProvider)
+            : ("google_tts" as VoicePickerProvider)
+        }
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(sel: VoicePickerSelection) => {
+          setForm((prev) =>
+            prev
+              ? { ...prev, provider: sel.provider, voiceId: sel.voiceId }
+              : prev,
+          );
+          setPickedDisplayName(sel.displayName);
+          setPickerOpen(false);
+        }}
+      />
     </form>
   );
 }

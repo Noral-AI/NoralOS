@@ -54,6 +54,28 @@ export const manifest: NoralosPluginManifestV1 = {
       capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
+    // List available voices for one provider. board-or-agent so the in-app
+    // Voice Picker modal can call it with only the user's NoralOS session
+    // cookie — provider keys never reach the browser.
+    {
+      routeKey: API_ROUTE_KEYS.listVoices,
+      method: "GET",
+      path: "/voices",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    // Synthesize a fixed, server-owned preview phrase for a chosen voice.
+    // Caller cannot influence the text. Reuses the same provider impls and
+    // exfiltration guard as /synthesize.
+    {
+      routeKey: API_ROUTE_KEYS.previewVoice,
+      method: "POST",
+      path: "/voices/preview",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
   ],
 
   instanceConfigSchema: {
