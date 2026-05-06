@@ -12,7 +12,7 @@ const capturePath = process.env.NORALOS_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   noralosEnvKeys: Object.keys(process.env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
+    .filter((key) => key.startsWith("NORALOS_"))
     .sort(),
 };
 if (capturePath) {
