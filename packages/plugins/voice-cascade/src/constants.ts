@@ -10,6 +10,11 @@ export const VOICE_CONFIG_API_BASE = `/api/plugins/${VOICE_CONFIG_PLUGIN_ID}/api
 export const API_ROUTE_KEYS = {
   synthesize: "synthesize",
   health: "health",
+  // Read-only voice catalogue + bounded preview. Both are board-or-agent so
+  // the in-app Voice Picker modal can call them with the user's session
+  // cookie alone — provider keys never leave the server.
+  listVoices: "list-voices",
+  previewVoice: "preview-voice",
 } as const;
 
 export const SURFACES = ["dashboard", "conference_room", "slack", "phone"] as const;
@@ -67,3 +72,12 @@ export const DEFAULT_GOOGLE_TTS_LANGUAGE_CODE = "en-US";
 // Audio limit caps inline base64 response payload to ~10 MB raw audio.
 export const DEFAULT_MAX_TEXT_CHARS = 5000;
 export const DEFAULT_MAX_AUDIO_BYTES = 10 * 1024 * 1024;
+
+// Voice Picker preview: fixed phrase, server-owned. The browser cannot
+// inject text — closing prompt-injection / TTS-as-arbitrary-narration
+// concerns. Length is intentionally short to keep cost negligible across
+// dozens of voice auditions.
+export const PREVIEW_TEXT = "Brooklyn here. This is a voice preview.";
+// Hard upper bound on preview text size in case PREVIEW_TEXT is changed
+// to something user-influenced in the future. Kept small on purpose.
+export const PREVIEW_MAX_CHARS = 200;
