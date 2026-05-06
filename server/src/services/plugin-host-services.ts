@@ -236,7 +236,13 @@ async function executePinnedHttpRequest(
   target: ValidatedFetchTarget,
   init: RequestInit | undefined,
   signal: AbortSignal,
-): Promise<{ status: number; statusText: string; headers: Record<string, string>; body: string }> {
+): Promise<{
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  body: string;
+  bodyEncoding: "utf8" | "base64";
+}> {
   const { options, body } = buildPinnedRequestOptions(target, init);
 
   const response = await new Promise<IncomingMessage>((resolve, reject) => {
@@ -278,11 +284,18 @@ async function executePinnedHttpRequest(
     }
   }
 
+  // Always base64-encode the response body. Until this fix the host did
+  // `.toString("utf8")` here, which corrupts every non-ASCII byte of a binary
+  // response (replaced with U+FFFD) — broke ElevenLabs MP3 audio for the
+  // Voice Cascade plugin and any other plugin reading a binary response. The
+  // worker side decodes based on `bodyEncoding` and reconstructs a Response
+  // whose `.text()` and `.arrayBuffer()` both behave correctly.
   return {
     status: response.statusCode ?? 500,
     statusText: response.statusMessage ?? "",
     headers,
-    body: Buffer.concat(chunks).toString("utf8"),
+    body: Buffer.concat(chunks).toString("base64"),
+    bodyEncoding: "base64" as const,
   };
 }
 
