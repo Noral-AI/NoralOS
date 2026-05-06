@@ -522,9 +522,24 @@ export function agentService(db: Db) {
 
       return db.transaction(async (tx) => {
         await tx.update(agents).set({ reportsTo: null }).where(eq(agents.reportsTo, id));
+        // Clear assignment AND run-lock state on issues this agent owned.
+        // Without clearing checkoutRunId/executionRunId, post-delete issues
+        // retain orphan run id references (the heartbeat_runs rows are
+        // deleted below) and the next checkout attempt fails with
+        // "Issue checkout conflict" — adoptStaleCheckoutRun can't recover
+        // because it requires assigneeAgentId === actor, which we just
+        // nulled. assigneeUserId is intentionally untouched.
         await tx
           .update(issues)
-          .set({ assigneeAgentId: null, createdByAgentId: null })
+          .set({
+            assigneeAgentId: null,
+            createdByAgentId: null,
+            checkoutRunId: null,
+            executionRunId: null,
+            executionAgentNameKey: null,
+            executionLockedAt: null,
+            updatedAt: new Date(),
+          })
           .where(or(eq(issues.assigneeAgentId, id), eq(issues.createdByAgentId, id)));
         await tx.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.agentId, id));
         await tx.delete(agentTaskSessions).where(eq(agentTaskSessions.agentId, id));
