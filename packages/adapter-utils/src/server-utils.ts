@@ -1300,13 +1300,20 @@ export function readNoralosSkillSyncPreference(config: Record<string, unknown>):
   };
 }
 
-function canonicalizeDesiredNoralosSkillReference(
-  reference: string,
-  availableEntries: Array<{ key: string; runtimeName?: string | null }>,
-): string {
-  const normalizedReference = reference.trim().toLowerCase();
-  if (!normalizedReference) return "";
+// Legacy NoralOS skill name aliases. Pre-rebrand, the bundled "default"
+// company-skill was distributed as "paperclip"; post-rebrand it lives at
+// ./skills/noralos/. User configs from before the rebrand may still
+// reference "paperclip" in their `noralosSkillSync.desiredSkills` array,
+// so we transparently remap the legacy alias to whatever canonical key
+// the bundled-noralos entry resolves to in `availableEntries`.
+const LEGACY_NORALOS_SKILL_ALIASES: Record<string, string> = {
+  paperclip: "noralos",
+};
 
+function findCanonicalKeyForReference(
+  normalizedReference: string,
+  availableEntries: Array<{ key: string; runtimeName?: string | null }>,
+): string | null {
   const exactKey = availableEntries.find((entry) => entry.key.trim().toLowerCase() === normalizedReference);
   if (exactKey) return exactKey.key;
 
@@ -1319,6 +1326,25 @@ function canonicalizeDesiredNoralosSkillReference(
     entry.key.trim().toLowerCase().split("/").pop() === normalizedReference,
   );
   if (slugMatches.length === 1) return slugMatches[0]!.key;
+
+  return null;
+}
+
+function canonicalizeDesiredNoralosSkillReference(
+  reference: string,
+  availableEntries: Array<{ key: string; runtimeName?: string | null }>,
+): string {
+  const normalizedReference = reference.trim().toLowerCase();
+  if (!normalizedReference) return "";
+
+  const directMatch = findCanonicalKeyForReference(normalizedReference, availableEntries);
+  if (directMatch) return directMatch;
+
+  const aliased = LEGACY_NORALOS_SKILL_ALIASES[normalizedReference];
+  if (aliased) {
+    const aliasMatch = findCanonicalKeyForReference(aliased, availableEntries);
+    if (aliasMatch) return aliasMatch;
+  }
 
   return normalizedReference;
 }

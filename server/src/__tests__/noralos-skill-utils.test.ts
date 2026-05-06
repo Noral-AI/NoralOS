@@ -25,7 +25,7 @@ describe("noralos skill utils", () => {
 
     const moduleDir = path.join(root, "a", "b", "c", "d", "e");
     await fs.mkdir(moduleDir, { recursive: true });
-    await fs.mkdir(path.join(root, "skills", "paperclip"), { recursive: true });
+    await fs.mkdir(path.join(root, "skills", "noralos"), { recursive: true });
     await fs.mkdir(path.join(root, "skills", "noralos-create-agent"), { recursive: true });
     await fs.mkdir(path.join(root, ".agents", "skills", "release"), { recursive: true });
 
@@ -36,10 +36,10 @@ describe("noralos skill utils", () => {
       "noralos/noralos/noralos-create-agent",
     ]);
     expect(entries.map((entry) => entry.runtimeName)).toEqual([
-      "paperclip",
+      "noralos",
       "noralos-create-agent",
     ]);
-    expect(entries[0]?.source).toBe(path.join(root, "skills", "paperclip"));
+    expect(entries[0]?.source).toBe(path.join(root, "skills", "noralos"));
     expect(entries[1]?.source).toBe(path.join(root, "skills", "noralos-create-agent"));
   });
 
@@ -51,9 +51,9 @@ describe("noralos skill utils", () => {
     await fs.mkdir(moduleDir, { recursive: true });
 
     // Required skill (no frontmatter flag)
-    const requiredDir = path.join(root, "skills", "paperclip");
+    const requiredDir = path.join(root, "skills", "noralos");
     await fs.mkdir(requiredDir, { recursive: true });
-    await fs.writeFile(path.join(requiredDir, "SKILL.md"), "---\nname: paperclip\n---\n\n# NoralOS\n");
+    await fs.writeFile(path.join(requiredDir, "SKILL.md"), "---\nname: noralos\n---\n\n# NoralOS\n");
 
     // Optional skill (required: false)
     const optionalDir = path.join(root, "skills", "noralos-dev");
@@ -64,7 +64,7 @@ describe("noralos skill utils", () => {
     entries.sort((a, b) => a.runtimeName.localeCompare(b.runtimeName));
 
     expect(entries).toHaveLength(2);
-    expect(entries[0]?.runtimeName).toBe("paperclip");
+    expect(entries[0]?.runtimeName).toBe("noralos");
     expect(entries[0]?.required).toBe(true);
     expect(entries[1]?.runtimeName).toBe("noralos-dev");
     expect(entries[1]?.required).toBe(false);

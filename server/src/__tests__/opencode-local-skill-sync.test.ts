@@ -47,7 +47,7 @@ describe("opencode local skill sync", () => {
 
     const after = await syncOpenCodeSkills(ctx, [noralosKey]);
     expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".claude", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(home, ".claude", "skills", "noralos"))).isSymbolicLink()).toBe(true);
   });
 
   it("keeps required bundled NoralOS skills installed even when the desired set is emptied", async () => {
@@ -85,6 +85,6 @@ describe("opencode local skill sync", () => {
     const after = await syncOpenCodeSkills(clearedCtx, []);
     expect(after.desiredSkills).toContain(noralosKey);
     expect(after.entries.find((entry) => entry.key === noralosKey)?.state).toBe("installed");
-    expect((await fs.lstat(path.join(home, ".claude", "skills", "paperclip"))).isSymbolicLink()).toBe(true);
+    expect((await fs.lstat(path.join(home, ".claude", "skills", "noralos"))).isSymbolicLink()).toBe(true);
   });
 });
