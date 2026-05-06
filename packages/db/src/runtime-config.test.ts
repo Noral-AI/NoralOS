@@ -100,7 +100,7 @@ describe("resolveDatabaseTarget", () => {
 
     expect(target).toMatchObject({
       mode: "embedded-postgres",
-      dataDir: path.resolve(os.homedir(), "paperclip-test-db"),
+      dataDir: path.resolve(os.homedir(), "noralos-test-db"),
       port: 55444,
       source: "embedded-postgres@55444",
     });

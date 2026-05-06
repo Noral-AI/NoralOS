@@ -88,7 +88,7 @@ async function createEmbeddedPostgresTestInstance(tempDirPrefix: string) {
   const EmbeddedPostgres = await getEmbeddedPostgresCtor();
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
-    user: "paperclip",
+    user: "noralos",
     password: "paperclip",
     port,
     persistent: true,
@@ -147,7 +147,7 @@ export async function startEmbeddedPostgresTestDatabase(
     await instance.start();
 
     const adminConnectionString = `postgres://noralos:paperclip@127.0.0.1:${port}/postgres`;
-    await ensurePostgresDatabase(adminConnectionString, "paperclip");
+    await ensurePostgresDatabase(adminConnectionString, "noralos");
     const connectionString = `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`;
     await applyPendingMigrations(connectionString);
 

@@ -368,7 +368,7 @@ export async function startServer(): Promise<StartedServer> {
         ) {
           throw new Error("reachable postgres does not use the expected embedded data directory");
         }
-        await ensurePostgresDatabase(configuredAdminConnectionString, "paperclip");
+        await ensurePostgresDatabase(configuredAdminConnectionString, "noralos");
         logger.warn(
           `Embedded PostgreSQL appears to already be reachable without a pid file; reusing existing server on configured port ${configuredPort}`,
         );
@@ -381,7 +381,7 @@ export async function startServer(): Promise<StartedServer> {
         logger.info(`Using embedded PostgreSQL because no DATABASE_URL set (dataDir=${dataDir}, port=${port})`);
         embeddedPostgres = new EmbeddedPostgres({
           databaseDir: dataDir,
-          user: "paperclip",
+          user: "noralos",
           password: "paperclip",
           port,
           persistent: true,
@@ -422,9 +422,9 @@ export async function startServer(): Promise<StartedServer> {
     }
   
     const embeddedAdminConnectionString = `postgres://noralos:paperclip@127.0.0.1:${port}/postgres`;
-    const dbStatus = await ensurePostgresDatabase(embeddedAdminConnectionString, "paperclip");
+    const dbStatus = await ensurePostgresDatabase(embeddedAdminConnectionString, "noralos");
     if (dbStatus === "created") {
-      logger.info("Created embedded PostgreSQL database: paperclip");
+      logger.info("Created embedded PostgreSQL database: noralos");
     }
   
     const embeddedConnectionString = `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`;
