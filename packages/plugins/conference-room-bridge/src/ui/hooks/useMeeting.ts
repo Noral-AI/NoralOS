@@ -21,6 +21,13 @@ export type MeetingApi = {
   transcript: TranscriptEntry[];
   lastAgentText: string | null;
   awaitingAgentResponse: boolean;
+  // ms timestamp when the latest sendUtterance went out; null when not
+  // waiting. Consumers tick a 1-second timer against this to render
+  // elapsed seconds in the thinking indicator.
+  awaitingSinceMs: number | null;
+  // Streamed chunk count from the bridge's last pending poll; 0 when not
+  // waiting or before the first chunk arrives.
+  partialChunkCount: number;
   startMeeting: (targetAgentId: string | null) => Promise<void>;
   sendUtterance: (text: string) => Promise<void>;
   endMeeting: () => Promise<void>;
@@ -61,6 +68,8 @@ export function useMeeting(
   const [state, setState] = useState<MeetingState>({ phase: "idle" });
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [awaitingAgentResponse, setAwaitingAgentResponse] = useState(false);
+  const [awaitingSinceMs, setAwaitingSinceMs] = useState<number | null>(null);
+  const [partialChunkCount, setPartialChunkCount] = useState(0);
   // Dedup signature for "we already handled this done-result". Includes the
   // runId when available, plus a content-hash fallback for the legacy case.
   const lastSeenRunIdRef = useRef<string | null>(null);
@@ -208,6 +217,13 @@ export function useMeeting(
             companyId,
             conferenceSessionId,
           );
+          // Surface chunk progress for the in-flight run so the UI can show
+          // "N chunks" alongside the elapsed seconds. Cheap; only changes
+          // state when the count actually moves.
+          if (result.status === "pending") {
+            const next = result.partialChunkCount ?? 0;
+            setPartialChunkCount((prev) => (prev === next ? prev : next));
+          }
           if (result.status === "done" && result.responseText) {
             // Dedup: prefer runId when present, otherwise fall back to a
             // content sig. Same dedup gate covers both transcript append
@@ -228,6 +244,8 @@ export function useMeeting(
                 },
               ]);
               setAwaitingAgentResponse(false);
+              setAwaitingSinceMs(null);
+              setPartialChunkCount(0);
 
               const tts = result.ttsResult;
               const provider = tts?.providerUsed ?? null;
@@ -275,6 +293,8 @@ export function useMeeting(
             }
           } else if (result.status === "error") {
             setAwaitingAgentResponse(false);
+            setAwaitingSinceMs(null);
+            setPartialChunkCount(0);
             appendSystem(`Bridge error: ${result.reason ?? "unknown"}`);
           }
         } catch (err) {
@@ -351,6 +371,8 @@ export function useMeeting(
       });
       setAwaitingAgentResponse(true);
       const startedAt = Date.now();
+      setAwaitingSinceMs(startedAt);
+      setPartialChunkCount(0);
       lastSendStartedAtRef.current = startedAt;
       try {
         const sendResp = await conferenceApi.sendMessage(
@@ -363,6 +385,8 @@ export function useMeeting(
         }
       } catch (err) {
         setAwaitingAgentResponse(false);
+        setAwaitingSinceMs(null);
+        setPartialChunkCount(0);
         appendSystem(
           `Send failed: ${err instanceof Error ? err.message : "unknown"}`,
         );
@@ -380,6 +404,8 @@ export function useMeeting(
     setState({ phase: "ending" });
     stopPolling();
     setAwaitingAgentResponse(false);
+    setAwaitingSinceMs(null);
+    setPartialChunkCount(0);
     if (audioElRef.current) {
       try {
         audioElRef.current.pause();
@@ -408,6 +434,8 @@ export function useMeeting(
     transcript,
     lastAgentText,
     awaitingAgentResponse,
+    awaitingSinceMs,
+    partialChunkCount,
     startMeeting,
     sendUtterance,
     endMeeting,

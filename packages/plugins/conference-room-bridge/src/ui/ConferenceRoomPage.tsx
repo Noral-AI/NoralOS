@@ -134,6 +134,8 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
               micListening={speech.listening}
               micError={speech.error}
               awaitingAgent={meeting.awaitingAgentResponse}
+              awaitingSinceMs={meeting.awaitingSinceMs}
+              partialChunkCount={meeting.partialChunkCount}
               onStart={() => void onStart()}
               onStop={() => void onStop()}
             />

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { MeetingState } from "../hooks/useMeeting.js";
 
 type MeetingControlsProps = {
@@ -6,15 +7,63 @@ type MeetingControlsProps = {
   micListening: boolean;
   micError: string | null;
   awaitingAgent: boolean;
+  // Wall-clock ms when the agent run was kicked off; null when not waiting.
+  awaitingSinceMs: number | null;
+  // Streamed-chunk count from the most recent pending poll. 0 when the
+  // bridge hasn't reported any chunks yet.
+  partialChunkCount: number;
   onStart: () => void;
   onStop: () => void;
 };
 
-function statusLabel(props: MeetingControlsProps): {
+// Cheap once-per-second ticker — only re-renders this component while the
+// caller is awaiting a response. Returns elapsed seconds since `sinceMs`.
+function useElapsedSeconds(sinceMs: number | null): number {
+  const [elapsed, setElapsed] = useState(() =>
+    sinceMs == null ? 0 : Math.max(0, Math.floor((Date.now() - sinceMs) / 1000)),
+  );
+  useEffect(() => {
+    if (sinceMs == null) {
+      setElapsed(0);
+      return;
+    }
+    const tick = () =>
+      setElapsed(Math.max(0, Math.floor((Date.now() - sinceMs) / 1000)));
+    tick(); // immediate sync so the first paint isn't 0s late
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [sinceMs]);
+  return elapsed;
+}
+
+function thinkingLabel(elapsedSec: number, partialChunkCount: number): string {
+  // Tiered copy: gives users a clear signal that long runs are normal.
+  // Numbers picked to match Brooklyn's typical 60–90s claude_local latency.
+  if (elapsedSec >= 75) {
+    return `Still working… ${elapsedSec}s · keep this session open for the response`;
+  }
+  if (elapsedSec >= 30) {
+    return `Still working… ${elapsedSec}s · longer agent runs can take about a minute`;
+  }
+  const base = `Brooklyn is working… ${elapsedSec}s`;
+  return partialChunkCount > 0 ? `${base} · ${partialChunkCount} chunks` : base;
+}
+
+function statusLabel(
+  props: MeetingControlsProps,
+  elapsedSec: number,
+): {
   text: string;
   tone: "idle" | "live" | "thinking" | "error";
 } {
-  const { meetingState, micListening, micError, awaitingAgent, micSupported } = props;
+  const {
+    meetingState,
+    micListening,
+    micError,
+    awaitingAgent,
+    micSupported,
+    partialChunkCount,
+  } = props;
   if (meetingState.phase === "error") return { text: meetingState.message, tone: "error" };
   if (!micSupported && meetingState.phase === "idle") {
     return {
@@ -25,7 +74,9 @@ function statusLabel(props: MeetingControlsProps): {
   if (meetingState.phase === "starting") return { text: "Starting…", tone: "thinking" };
   if (meetingState.phase === "ending") return { text: "Ending…", tone: "thinking" };
   if (meetingState.phase === "active") {
-    if (awaitingAgent) return { text: "Agent thinking…", tone: "thinking" };
+    if (awaitingAgent) {
+      return { text: thinkingLabel(elapsedSec, partialChunkCount), tone: "thinking" };
+    }
     if (micError) return { text: `Mic: ${micError}`, tone: "error" };
     if (micListening) return { text: "Listening", tone: "live" };
     return { text: "Ready", tone: "live" };
@@ -34,8 +85,11 @@ function statusLabel(props: MeetingControlsProps): {
 }
 
 export function MeetingControls(props: MeetingControlsProps) {
-  const { meetingState, micListening, onStart, onStop } = props;
-  const status = statusLabel(props);
+  const { meetingState, micListening, onStart, onStop, awaitingSinceMs } = props;
+  // Only ticks while a run is in flight; otherwise sinceMs is null and the
+  // hook's interval isn't installed.
+  const elapsedSec = useElapsedSeconds(awaitingSinceMs);
+  const status = statusLabel(props, elapsedSec);
   const active = meetingState.phase === "active" || meetingState.phase === "ending";
   const transitioning = meetingState.phase === "starting" || meetingState.phase === "ending";
 

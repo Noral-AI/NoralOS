@@ -60,6 +60,10 @@ export type LastResultResponse = {
   conferenceSessionId: string;
   status: "pending" | "done" | "error";
   runId?: string;
+  // Number of streamed chunks the bridge has accumulated so far. Present on
+  // pending responses; surfaced in the UI's progress indicator so users can
+  // tell the agent is still working during a long run.
+  partialChunkCount?: number;
   responseText?: string;
   // Subset of responseText handed to TTS (sentence/word-boundary truncation).
   // Empty when no TTS was attempted.
