@@ -91,6 +91,21 @@ export const BRIDGE_RESPONSE_CAP_CHARS = 2000;
 // gets synthesized. Keeps voice replies short for A/B latency comparison.
 export const SPOKEN_RESPONSE_CAP_CHARS = 600;
 
+// Task-key prefixes that isolate Conference Room model sessions per
+// participant. Lives inside the plugin's reserved
+// `plugin:<pluginId>:session:*` namespace so the host's existing per-plugin
+// list/sendMessage filters keep matching.
+//
+// USER = authenticated participant — same human across browser tabs and
+//        refreshes converges on a single Claude session for that user
+//        (within-user continuity, cross-user isolation).
+// ANON = unauthenticated — keyed by the per-tab conferenceSessionId so an
+//        anonymous session never inherits another user's prior agent state.
+export const ISOLATION_TASK_KEY_PREFIX_USER =
+  "plugin:noralos.conference-room-bridge:session:user:";
+export const ISOLATION_TASK_KEY_PREFIX_ANON =
+  "plugin:noralos.conference-room-bridge:session:anon:";
+
 // Per-call adapter_config override applied for Conference Room runs only.
 // Shallow-merged on top of the agent's stored adapter_config inside the
 // host (heartbeat.executeRun), never persisted. The agent retains its

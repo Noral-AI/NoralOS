@@ -1701,9 +1701,24 @@ export function buildHostServices(
         await ensurePluginAvailableForCompany(companyId);
         const agent = await agents.getById(params.agentId);
         requireInCompany("Agent", agent, companyId);
-        const taskKey = params.taskKey ?? `plugin:${pluginKey}:session:${randomUUID()}`;
+        // Constrain plugin-provided taskKey to the plugin's reserved
+        // `plugin:<pluginKey>:session:*` namespace so a plugin cannot
+        // address another plugin's, or the system's, agent task sessions.
+        const requiredPrefix = `plugin:${pluginKey}:session:`;
+        if (params.taskKey != null && !params.taskKey.startsWith(requiredPrefix)) {
+          throw new Error(
+            `agents.sessions.create: taskKey must start with "${requiredPrefix}"`,
+          );
+        }
+        const taskKey = params.taskKey ?? `${requiredPrefix}${randomUUID()}`;
 
-        const row = await db
+        // Find-or-create on (company, agent, adapter, taskKey). The unique
+        // index on agent_task_sessions guarantees that two callers passing
+        // the same taskKey converge on a single row — required so a single
+        // authenticated participant's Conference Room sessions across
+        // browser tabs share one Claude session instead of colliding on the
+        // unique constraint.
+        const inserted = await db
           .insert(agentTaskSessionsTable)
           .values({
             companyId,
@@ -1715,15 +1730,44 @@ export function buildHostServices(
             lastRunId: null,
             lastError: null,
           })
+          .onConflictDoNothing({
+            target: [
+              agentTaskSessionsTable.companyId,
+              agentTaskSessionsTable.agentId,
+              agentTaskSessionsTable.adapterType,
+              agentTaskSessionsTable.taskKey,
+            ],
+          })
           .returning()
-          .then((rows) => rows[0]);
+          .then((rows) => rows[0] ?? null);
+
+        const row =
+          inserted ??
+          (await db
+            .select()
+            .from(agentTaskSessionsTable)
+            .where(
+              and(
+                eq(agentTaskSessionsTable.companyId, companyId),
+                eq(agentTaskSessionsTable.agentId, params.agentId),
+                eq(agentTaskSessionsTable.adapterType, agent!.adapterType),
+                eq(agentTaskSessionsTable.taskKey, taskKey),
+              ),
+            )
+            .then((rows) => rows[0] ?? null));
+
+        if (!row) {
+          throw new Error(
+            `agents.sessions.create: failed to upsert task session for taskKey="${taskKey}"`,
+          );
+        }
 
         return {
-          sessionId: row!.id,
+          sessionId: row.id,
           agentId: params.agentId,
           companyId,
           status: "active" as const,
-          createdAt: row!.createdAt.toISOString(),
+          createdAt: row.createdAt.toISOString(),
         };
       },
 
