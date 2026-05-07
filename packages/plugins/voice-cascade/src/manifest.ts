@@ -83,16 +83,19 @@ export const manifest: NoralosPluginManifestV1 = {
     properties: {
       voiceConfigAgentTokenRef: {
         type: "string",
+        format: "secret-ref",
         title: "Voice-Config Agent Token (secret reference)",
         description:
           "Reference to a Paperclip agent API key with read access to voice-config. Used for HTTP fallback when the local cache misses.",
       },
       elevenLabsApiKeyRef: {
         type: "string",
+        format: "secret-ref",
         title: "ElevenLabs API Key (secret reference)",
       },
       googleTtsApiKeyRef: {
         type: "string",
+        format: "secret-ref",
         title: "Google Cloud TTS API Key (secret reference)",
       },
       googleTtsDefaultLanguageCode: {

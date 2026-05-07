@@ -533,6 +533,13 @@
       "when": 1777679548017,
       "tag": "0075_quick_shiver_man",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1778457600000,
+      "tag": "0076_settings_integrations",
+      "breakpoints": true
     }
   ]
 }

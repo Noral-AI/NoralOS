@@ -179,4 +179,12 @@ export const queryKeys = {
   adapters: {
     all: ["adapters"] as const,
   },
+  integrations: {
+    credentials: (companyId: string) => ["integrations", companyId, "credentials"] as const,
+    credential: (companyId: string, id: string) => ["integrations", companyId, "credentials", id] as const,
+    unmanagedSecrets: (companyId: string) => ["integrations", companyId, "unmanaged-secrets"] as const,
+    assignments: (companyId: string) => ["integrations", companyId, "assignments"] as const,
+    providerRegistry: (companyId: string) => ["integrations", companyId, "provider-registry"] as const,
+    health: (companyId: string) => ["integrations", companyId, "health"] as const,
+  },
 };
