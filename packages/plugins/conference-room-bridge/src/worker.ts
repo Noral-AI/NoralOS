@@ -20,6 +20,7 @@ import {
   type SessionStatus,
   type Transport,
 } from "./constants.js";
+import { deriveParticipantContext } from "./participant-isolation.js";
 import type {
   BridgeError,
   CloseSessionResult,
@@ -552,18 +553,25 @@ async function handleCreateSession(
   config: PluginConfig,
   companyId: string,
   body: CreateSessionBody,
+  actor: PluginApiRequestInput["actor"] | undefined,
 ): Promise<CreateSessionResult> {
   const conferenceSessionId = asString(body.conferenceSessionId, "conferenceSessionId");
   const transport = asTransport(body.transport);
   const latencyHint = asLatencyHint(body.latencyHint);
-  const participantId =
-    typeof body.participantId === "string" && body.participantId.length > 0
-      ? body.participantId
-      : null;
+  const isolation = deriveParticipantContext(actor, body, conferenceSessionId);
+  const participantId = isolation.participantId;
 
   // Idempotency: if a mapping already exists, return it (resumed=true).
   const existing = await loadMapping(ctx, companyId, conferenceSessionId);
   if (existing && existing.status === "active") {
+    ctx.logger.info("conference-room: session resumed", {
+      companyId,
+      conferenceSessionId,
+      agentId: existing.target_agent_id,
+      participantPresent: existing.participant_id !== null,
+      isolationKeyType: isolation.isolationKeyType,
+      resumed: true,
+    });
     return {
       ok: true,
       conferenceSessionId,
@@ -623,10 +631,18 @@ async function handleCreateSession(
   }
 
   // Create the Paperclip agent session.
+  //
+  // The host's `agents.sessions.create` is now find-or-create on the
+  // (company, agent, adapter, taskKey) tuple — so two different conference
+  // sessions belonging to the same authenticated user converge on the same
+  // agent_task_sessions row, and the second one resumes the user's Claude
+  // session instead of starting fresh. Anonymous sessions get a per-session
+  // taskKey and therefore never resume each other.
   let paperclipSessionId: string;
   try {
     const session = await ctx.agents.sessions.create(agentId, companyId, {
       reason: `Conference Room session ${conferenceSessionId} (${transport})`,
+      taskKey: isolation.taskKey,
     });
     paperclipSessionId = session.sessionId;
   } catch (err) {
@@ -646,6 +662,18 @@ async function handleCreateSession(
     transport,
     status: "active",
     latency_hint: latencyHint ?? null,
+  });
+
+  // Structured metadata only — never include transcript text. Lets prod
+  // logs answer "did this run get the right isolation key for the right
+  // participant?" without leaking conversation content.
+  ctx.logger.info("conference-room: session created", {
+    companyId,
+    conferenceSessionId,
+    agentId,
+    participantPresent: participantId !== null,
+    isolationKeyType: isolation.isolationKeyType,
+    resumed: false,
   });
 
   await ctx.events.emit(EVENT_KEYS.sessionStarted, companyId, {
@@ -962,7 +990,7 @@ async function dispatchApi(
     case API_ROUTE_KEYS.createSession: {
       try {
         const body = asObjectBody(input.body) as unknown as CreateSessionBody;
-        const result = await handleCreateSession(ctx, config, companyId, body);
+        const result = await handleCreateSession(ctx, config, companyId, body, input.actor);
         return { status: 200, body: result };
       } catch (err) {
         if (err instanceof ValidationError) {
@@ -1067,7 +1095,7 @@ async function dispatchApi(
     case API_ROUTE_KEYS.uiCreateSession: {
       try {
         const body = asObjectBody(input.body) as unknown as CreateSessionBody;
-        const result = await handleCreateSession(ctx, config, companyId, body);
+        const result = await handleCreateSession(ctx, config, companyId, body, input.actor);
         return { status: 200, body: result };
       } catch (err) {
         if (err instanceof ValidationError) {
