@@ -1,19 +1,32 @@
 /**
  * Settings → Integrations admin API.
  *
- * All routes are gated by `assertInstanceAdmin` per Phase 1 decision: read
- * and write both require instance-admin. Agents cannot access this surface.
+ * Credentials and their assignments are *company-scoped*: the underlying
+ * `company_secrets` rows belong to a company, the metadata wrapper is
+ * keyed by `company_id`, and the UI lives under `/<companyPrefix>/company/
+ * settings/integrations`. The `voice-cascade` plugin config it writes to
+ * is currently a single instance-wide row — that nuance is surfaced
+ * directly to operators in the Voice Cascade assignment card copy.
+ *
+ * Authorization (per Phase 1 decision):
+ *   - owner ✅
+ *   - admin ✅
+ *   - operator ❌
+ *   - viewer ❌
+ *   - member ❌
+ *   - agent ❌
+ *   - unauthenticated ❌
+ * Enforced by `assertCompanyAdminAccess(req, companyId)` on every route.
  *
  * The router is mounted alongside the other per-company route families in
  * `server/src/app.ts`. Endpoints follow the existing `/companies/:companyId/...`
- * convention used by `routes/secrets.ts` (no parent group; full path on each
- * route).
+ * convention used by `routes/secrets.ts`.
  */
 import { Router } from "express";
 import { z } from "zod";
 import type { Db } from "@noralos/db";
 import { validate } from "../middleware/validate.js";
-import { assertInstanceAdmin } from "./authz.js";
+import { assertCompanyAdminAccess } from "./authz.js";
 import { logActivity } from "../services/activity-log.js";
 import { secretService } from "../services/secrets.js";
 import { integrationCredentialsService } from "../services/integrations/credentials-service.js";
@@ -148,14 +161,15 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.get(
     "/companies/:companyId/integrations/provider-registry",
     (req, res) => {
-      assertInstanceAdmin(req);
+      const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       res.json(publicProviderRegistry());
     },
   );
 
   router.get("/companies/:companyId/integrations/health", async (req, res) => {
-    assertInstanceAdmin(req);
     const companyId = req.params.companyId as string;
+    assertCompanyAdminAccess(req, companyId);
     const list = await credentials.list(companyId);
     const byProvider: Record<
       string,
@@ -185,8 +199,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.get(
     "/companies/:companyId/integrations/credentials",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const list = await credentials.list(companyId);
       res.json(list);
     },
@@ -195,8 +209,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.get(
     "/companies/:companyId/integrations/unmanaged-secrets",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const list = await credentials.listUnmanagedSecrets(companyId);
       res.json(list);
     },
@@ -205,8 +219,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.get(
     "/companies/:companyId/integrations/credentials/:id",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
       const credential = await credentials.getById(companyId, id);
       if (!credential) {
@@ -222,8 +236,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials",
     validate(createCredentialSchema),
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const provider = getProvider(req.body.provider as string);
       if (!provider) throw unprocessable("Unknown provider");
       if (!provider.enabled) throw unprocessable("Provider is not enabled");
@@ -261,8 +275,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials/import",
     validate(importSecretSchema),
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const created = await credentials.importExistingSecret(
         companyId,
         {
@@ -298,8 +312,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials/:id",
     validate(updateCredentialSchema),
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
       const updated = await credentials.updateMetadata(
         companyId,
@@ -337,8 +351,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials/:id/rotate",
     validate(rotateCredentialSchema),
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
       const updated = await credentials.rotate(
         companyId,
@@ -365,8 +379,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.delete(
     "/companies/:companyId/integrations/credentials/:id",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
       const existing = await credentials.getById(companyId, id);
       if (!existing) {
@@ -397,8 +411,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.post(
     "/companies/:companyId/integrations/credentials/:id/test",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
 
       const credential = await credentials.getById(companyId, id);
@@ -469,8 +483,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.get(
     "/companies/:companyId/integrations/assignments",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const list = await assignments.listForCompany(companyId);
       res.json(list);
     },
@@ -480,8 +494,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials/:id/assign",
     validate(assignCredentialSchema),
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
       const result = await assignments.assign(
         companyId,
@@ -508,8 +522,8 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
   router.delete(
     "/companies/:companyId/integrations/credentials/:id/assignments/:assignmentId",
     async (req, res) => {
-      assertInstanceAdmin(req);
       const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
       const id = req.params.id as string;
       const assignmentId = req.params.assignmentId as string;
       const result = await assignments.unassign(companyId, id, assignmentId);

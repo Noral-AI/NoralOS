@@ -69,6 +69,7 @@ function boardRoutes() {
       <Route path="company/settings/environments" element={<CompanyEnvironments />} />
       <Route path="company/settings/access" element={<CompanyAccess />} />
       <Route path="company/settings/invites" element={<CompanyInvites />} />
+      <Route path="company/settings/integrations" element={<IntegrationsSettings />} />
       <Route path="company/export/*" element={<CompanyExport />} />
       <Route path="company/import" element={<CompanyImport />} />
       <Route path="skills/*" element={<CompanySkills />} />
@@ -278,7 +279,6 @@ export function App() {
             <Route path="experimental" element={<InstanceExperimentalSettings />} />
             <Route path="plugins" element={<PluginManager />} />
             <Route path="plugins/:pluginId" element={<PluginSettings />} />
-            <Route path="integrations" element={<IntegrationsSettings />} />
             <Route path="adapters" element={<AdapterManager />} />
           </Route>
           <Route path="companies" element={<UnprefixedBoardRedirect />} />

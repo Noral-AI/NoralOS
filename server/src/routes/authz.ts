@@ -63,6 +63,46 @@ export function assertCompanyAccess(req: Request, companyId: string) {
   }
 }
 
+/**
+ * Stricter sibling of `assertCompanyAccess` for company-scoped admin
+ * surfaces (e.g. Settings → Integrations).
+ *
+ * Allows: instance admins (board, including local_implicit), and board
+ * users whose membership for the given company is `owner` or `admin`.
+ *
+ * Rejects: agents, operators, viewers, members, unauthenticated callers,
+ * and board users who lack visibility on the target company.
+ */
+export function assertCompanyAdminAccess(req: Request, companyId: string) {
+  assertAuthenticated(req);
+  if (req.actor.type === "agent") {
+    throw forbidden("Agent tokens cannot access this surface");
+  }
+  if (req.actor.type !== "board") {
+    throw forbidden("Board access required");
+  }
+  // Local-trusted single-machine mode bypasses (no auth at all).
+  if (req.actor.source === "local_implicit") return;
+  const allowedCompanies = req.actor.companyIds ?? [];
+  if (!allowedCompanies.includes(companyId)) {
+    throw forbidden("User does not have access to this company");
+  }
+  // Instance admins are allowed without a role check, matching the
+  // pattern used elsewhere for instance-level overrides.
+  if (req.actor.isInstanceAdmin) return;
+  const memberships = Array.isArray(req.actor.memberships) ? req.actor.memberships : [];
+  const membership = memberships.find((item) => item.companyId === companyId);
+  if (!membership || membership.status !== "active") {
+    throw forbidden("Active company membership required");
+  }
+  if (
+    membership.membershipRole !== "owner" &&
+    membership.membershipRole !== "admin"
+  ) {
+    throw forbidden("Owner or admin role required");
+  }
+}
+
 export function getActorInfo(req: Request) {
   assertAuthenticated(req);
   if (req.actor.type === "agent") {
