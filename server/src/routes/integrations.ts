@@ -2,6 +2,8 @@ import { Router, type Request } from "express";
 import type { Db } from "@noralos/db";
 import { integrationCredentialAssignments } from "@noralos/db";
 import { eq } from "drizzle-orm";
+import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
+import type { PluginLifecycleManager } from "../services/plugin-lifecycle.js";
 import {
   ASSIGNMENT_TARGETS,
   INTEGRATION_PROVIDERS,
@@ -35,10 +37,18 @@ function assertCompanyAdmin(req: Request, companyId: string) {
   }
 }
 
-export function integrationRoutes(db: Db) {
+export interface IntegrationRoutesDeps {
+  workerManager?: Pick<PluginWorkerManager, "isRunning" | "call">;
+  lifecycle?: Pick<PluginLifecycleManager, "restartWorker">;
+}
+
+export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   const router = Router();
   const credentials = integrationCredentialService(db);
-  const assignments = integrationAssignmentService(db);
+  const assignments = integrationAssignmentService(db, {
+    workerManager: deps.workerManager,
+    lifecycle: deps.lifecycle,
+  });
 
   // ---------------------------------------------------------------------
   // Provider registry — UI consumes this to render Add Credential drawer.

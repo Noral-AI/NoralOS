@@ -206,7 +206,6 @@ export async function createApp(
   api.use(goalRoutes(db));
   api.use(approvalRoutes(db, { pluginWorkerManager: workerManager }));
   api.use(secretRoutes(db));
-  api.use(integrationRoutes(db));
   api.use(costRoutes(db, { pluginWorkerManager: workerManager }));
   api.use(activityRoutes(db));
   api.use(dashboardRoutes(db));
@@ -285,6 +284,10 @@ export async function createApp(
       { workerManager },
     ),
   );
+  // Integrations routes need the worker manager + lifecycle so credential
+  // assignment can notify the running worker (or fall back to a restart)
+  // after patching `plugin_config.config_json`.
+  api.use(integrationRoutes(db, { workerManager, lifecycle }));
   api.use(adapterRoutes());
   api.use(
     accessRoutes(db, {
