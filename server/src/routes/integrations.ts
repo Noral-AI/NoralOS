@@ -14,7 +14,13 @@ import {
   updateIntegrationCredentialSchema,
 } from "@noralos/shared";
 import { validate } from "../middleware/validate.js";
-import { actorCanViewAllCompanyIssues, assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+import {
+  actorCanViewAllCompanyIssues,
+  assertAuthenticated,
+  assertBoard,
+  assertCompanyAccess,
+  getActorInfo,
+} from "./authz.js";
 import { logActivity } from "../services/activity-log.js";
 import { integrationCredentialService } from "../services/integrations/credentials.js";
 import { integrationAssignmentService } from "../services/integrations/assignments.js";
@@ -24,12 +30,18 @@ import { forbidden } from "../errors.js";
 /**
  * Routes powering Settings → Integrations.
  *
- * Read paths require any board access to the company. Write paths require
- * owner/admin (reuses `actorCanViewAllCompanyIssues` semantically, which
- * resolves to owner/admin/instance-admin).
+ * **All routes — read AND write — require company owner/admin** (or an
+ * instance-admin). Operators, viewers, agents, and unauthenticated
+ * callers are rejected at every endpoint. The integrations surface
+ * exposes provider/credential metadata and writes plugin config that
+ * controls which secret keys downstream voice/LLM/CRM workers will use,
+ * so even read access is treated as security-sensitive. Reuses the
+ * `actorCanViewAllCompanyIssues` semantic helper from PR #41 which
+ * resolves to owner/admin/instance-admin/local-implicit.
  *
- * NEVER returns secret values. The `IntegrationCredentialDto` type is the
- * gate — the service layer is the only thing that ever holds plaintext.
+ * NEVER returns secret values. The `IntegrationCredentialDto` type is
+ * the gate — the service layer is the only thing that ever holds
+ * plaintext.
  */
 function assertCompanyAdmin(req: Request, companyId: string) {
   if (!actorCanViewAllCompanyIssues(req, companyId)) {
@@ -55,9 +67,10 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   // No secrets, just static metadata.
   // ---------------------------------------------------------------------
   router.get("/companies/:companyId/integrations/provider-registry", (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
+    assertCompanyAdmin(req, companyId);
     res.json({
       providers: Object.values(INTEGRATION_PROVIDERS).map((p) => ({
         id: p.id,
@@ -76,17 +89,19 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   // Credentials
   // ---------------------------------------------------------------------
   router.get("/companies/:companyId/integrations/credentials", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
+    assertCompanyAdmin(req, companyId);
     const list = await credentials.list(companyId);
     res.json(list);
   });
 
   router.get("/companies/:companyId/integrations/unmanaged-secrets", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
+    assertCompanyAdmin(req, companyId);
     const list = await credentials.listUnmanaged(companyId);
     res.json(list);
   });
@@ -95,7 +110,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials",
     validate(createIntegrationCredentialSchema),
     async (req, res) => {
-      assertBoard(req);
+      assertAuthenticated(req); assertBoard(req);
       const companyId = req.params.companyId as string;
       assertCompanyAccess(req, companyId);
       assertCompanyAdmin(req, companyId);
@@ -139,7 +154,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
     "/companies/:companyId/integrations/credentials/import",
     validate(importIntegrationCredentialSchema),
     async (req, res) => {
-      assertBoard(req);
+      assertAuthenticated(req); assertBoard(req);
       const companyId = req.params.companyId as string;
       assertCompanyAccess(req, companyId);
       assertCompanyAdmin(req, companyId);
@@ -182,7 +197,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
     "/integrations/credentials/:id",
     validate(updateIntegrationCredentialSchema),
     async (req, res) => {
-      assertBoard(req);
+      assertAuthenticated(req); assertBoard(req);
       const id = req.params.id as string;
       const existing = await credentials.loadCredentialRow(id);
       if (!existing) {
@@ -228,7 +243,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
     "/integrations/credentials/:id/rotate",
     validate(rotateIntegrationCredentialSchema),
     async (req, res) => {
-      assertBoard(req);
+      assertAuthenticated(req); assertBoard(req);
       const id = req.params.id as string;
       const existing = await credentials.loadCredentialRow(id);
       if (!existing) {
@@ -261,7 +276,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   );
 
   router.post("/integrations/credentials/:id/test", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const id = req.params.id as string;
     const existing = await credentials.loadCredentialRow(id);
     if (!existing) {
@@ -315,7 +330,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   });
 
   router.post("/integrations/credentials/:id/disable", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const id = req.params.id as string;
     const existing = await credentials.loadCredentialRow(id);
     if (!existing) {
@@ -341,7 +356,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   });
 
   router.delete("/integrations/credentials/:id", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const id = req.params.id as string;
     const existing = await credentials.loadCredentialRow(id);
     if (!existing) {
@@ -367,9 +382,10 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   // Assignments — friendly per-plugin cards + assign/unassign
   // ---------------------------------------------------------------------
   router.get("/companies/:companyId/integrations/assignments", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
+    assertCompanyAdmin(req, companyId);
     const board = await assignments.listAssignmentBoard(companyId);
     res.json({ board });
   });
@@ -378,7 +394,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
     "/integrations/credentials/:id/assignments",
     validate(assignIntegrationCredentialSchema),
     async (req, res) => {
-      assertBoard(req);
+      assertAuthenticated(req); assertBoard(req);
       const id = req.params.id as string;
       const existing = await credentials.loadCredentialRow(id);
       if (!existing) {
@@ -417,7 +433,7 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
   );
 
   router.delete("/integrations/assignments/:assignmentId", async (req, res) => {
-    assertBoard(req);
+    assertAuthenticated(req); assertBoard(req);
     const assignmentId = req.params.assignmentId as string;
     const row = await db
       .select()
