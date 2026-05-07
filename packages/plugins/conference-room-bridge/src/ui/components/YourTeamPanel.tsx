@@ -8,11 +8,8 @@ type YourTeamPanelProps = {
   onPin: (agentId: string) => void;
 };
 
-function roleFromMetadata(a: AgentSummary): string | null {
-  const m = a.metadata as Record<string, unknown> | null | undefined;
-  if (!m) return null;
-  const role = m["role"] ?? m["title"] ?? m["jobTitle"];
-  return typeof role === "string" ? role : null;
+function roleLabel(role: AgentSummary["role"]): string {
+  return role === "host" ? "Host" : "Director";
 }
 
 export function YourTeamPanel({
@@ -28,17 +25,17 @@ export function YourTeamPanel({
       </span>
       {agents.length === 0 ? (
         <span className="px-1 text-xs text-muted-foreground">
-          No agents found.
+          No agents are configured for the Conference Room.
         </span>
       ) : null}
       {agents.map((a) => (
         <AgentCard
           key={a.id}
           name={a.name}
-          role={roleFromMetadata(a)}
+          role={roleLabel(a.role)}
           pinned={pinnedAgentId === a.id}
           speaking={speakingAgentId === a.id}
-          online={a.status !== "terminated" && a.status !== "paused"}
+          online
           onClick={() => onPin(a.id)}
         />
       ))}

@@ -127,24 +127,27 @@ export const conferenceApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Core /api/companies/<id>/agents — already filters service agents server-side.
+// Conference Room team list — already filtered by voice-config visibility on
+// the backend. The UI never sees workers, specialists, or system-managed
+// service agents.
 // ---------------------------------------------------------------------------
+
+export type ConferenceRoomTeamRole = "host" | "director";
 
 export type AgentSummary = {
   id: string;
   name: string;
-  metadata?: Record<string, unknown> | null;
-  status?: string;
+  /** Long-term explicit role label from voice-config. */
+  role: ConferenceRoomTeamRole;
+  /** True iff this agent is the room's default target when no pin is set. */
+  isDefaultTarget: boolean;
 };
 
 export async function fetchAgents(companyId: string): Promise<AgentSummary[]> {
-  const res = await fetch(
-    `/api/companies/${encodeURIComponent(companyId)}/agents`,
-    { credentials: "include" },
-  );
-  if (!res.ok) {
-    throw new Error(`fetchAgents failed: ${res.status}`);
+  type Response = { ok: true; team: AgentSummary[] } | { ok: false; reason?: string; message?: string };
+  const data = await call<Response>("/ui/team", { method: "GET", companyId });
+  if (!data.ok) {
+    throw new Error(`fetchAgents failed: ${data.reason ?? "unknown"} ${data.message ?? ""}`.trim());
   }
-  const rows = (await res.json()) as AgentSummary[];
-  return Array.isArray(rows) ? rows : [];
+  return Array.isArray(data.team) ? data.team : [];
 }

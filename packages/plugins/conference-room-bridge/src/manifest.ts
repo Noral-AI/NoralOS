@@ -177,6 +177,17 @@ export const manifest: NoralosPluginManifestV1 = {
       capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
+    {
+      // Filtered Conference Room team list. Returns only agents whose
+      // voice-config resolves to a visible CR role; the browser UI uses
+      // this instead of the raw company agents list.
+      routeKey: API_ROUTE_KEYS.uiTeam,
+      method: "GET",
+      path: "/ui/team",
+      auth: "board-or-agent",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
   ],
 
   instanceConfigSchema: {

@@ -10,20 +10,21 @@ import { useUiState } from "./hooks/useUiState.js";
 import { useMeeting } from "./hooks/useMeeting.js";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition.js";
 
-const DEFAULT_PINNED_NAME = "Brooklyn";
-
 export function ConferenceRoomPage({ context }: PluginPageProps) {
   const companyId = context.companyId;
   const { agents, loading: agentsLoading, error: agentsError } = useAgents(companyId);
   const { data: uiState } = useUiState(companyId);
 
-  // Pin Brooklyn by default, fall back to first agent. No persistence in v1.
+  // Default pin = whichever agent voice-config marks as the explicit default
+  // target; otherwise the first host (typically the CEO); otherwise the
+  // first director. No legacy name-matching.
   const defaultPinnedAgentId = useMemo(() => {
     if (agents.length === 0) return null;
-    const brooklyn = agents.find(
-      (a) => a.name.toLowerCase() === DEFAULT_PINNED_NAME.toLowerCase(),
-    );
-    return brooklyn?.id ?? agents[0]?.id ?? null;
+    const explicit = agents.find((a) => a.isDefaultTarget);
+    if (explicit) return explicit.id;
+    const host = agents.find((a) => a.role === "host");
+    if (host) return host.id;
+    return agents[0]?.id ?? null;
   }, [agents]);
 
   const [pinnedAgentId, setPinnedAgentId] = useState<string | null>(null);

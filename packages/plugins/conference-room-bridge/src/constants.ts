@@ -30,6 +30,11 @@ export const API_ROUTE_KEYS = {
   uiSendMessage: "ui-send-message",
   uiLastResult: "ui-last-result",
   uiCloseSession: "ui-close-session",
+  // Long-term Conference Room team listing — already filtered by
+  // voice-config visibility/role rules. Browser UI calls this instead of
+  // the raw `/api/companies/<id>/agents` endpoint so workers/specialists/
+  // system-managed agents never reach the page.
+  uiTeam: "ui-team",
 } as const;
 
 // Bare event names. Host prepends `plugin.<pluginId>.` automatically.

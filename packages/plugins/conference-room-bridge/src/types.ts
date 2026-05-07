@@ -9,6 +9,8 @@ import type {
 // voice-config response shape (mirror of subset we use)
 // ---------------------------------------------------------------------------
 
+export type ConferenceRoomRole = "host" | "director" | "hidden";
+
 export interface EffectiveVoiceConfig {
   resolved: true;
   companyId: string;
@@ -20,6 +22,12 @@ export interface EffectiveVoiceConfig {
   voiceId: string;
   conferenceRoomEnabled: boolean;
   ttsRepliesEnabled: boolean;
+  /** Long-term explicit Conference Room visibility (PR #45). */
+  conferenceRoomVisible: boolean;
+  /** Long-term explicit Conference Room role label (PR #45). */
+  conferenceRoomRole: ConferenceRoomRole;
+  /** True iff this agent is the room's default target (PR #45). */
+  conferenceRoomDefaultTarget: boolean;
 }
 
 export interface FailClosedVoiceConfig {
@@ -31,6 +39,9 @@ export interface FailClosedVoiceConfig {
   effectiveVisibility: "hidden";
   conferenceRoomEnabled: false;
   ttsRepliesEnabled: false;
+  conferenceRoomVisible: false;
+  conferenceRoomRole: "hidden";
+  conferenceRoomDefaultTarget: false;
 }
 
 export type EffectiveOrFailClosed = EffectiveVoiceConfig | FailClosedVoiceConfig;

@@ -165,6 +165,7 @@ function baseUrls(config: PluginConfig) {
 
 async function resolveTargetAgentId(
   ctx: PluginContext,
+  config: PluginConfig,
   companyId: string,
   explicitTargetAgentId: string | null | undefined,
 ): Promise<{ agentId: string; agentName: string } | { error: BridgeError }> {
@@ -177,15 +178,27 @@ async function resolveTargetAgentId(
     }
     return { agentId: agent.id, agentName: agent.name };
   }
-  // Default target = CEO. List CEOs in this company; pick the first by created order.
-  const allAgents = await ctx.agents.list({ companyId });
-  const ceos = allAgents
-    .filter((a) => a.role === "ceo")
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  if (ceos.length === 0) {
-    return { error: bridgeError("ceo-not-found", "No agent with role=ceo in this company") };
+
+  // Long-term default target picker:
+  // 1. Walk the visible team list (already filtered by voice-config role).
+  // 2. Prefer the agent whose voice-config marks `conferenceRoomDefaultTarget`.
+  // 3. Fall back to the first `host` (typically the CEO).
+  // 4. Fall back to the first `director`.
+  // 5. Error if nothing visible.
+  const team = await loadVisibleTeam(ctx, config, companyId);
+  if (team.length === 0) {
+    return {
+      error: bridgeError(
+        "agent-not-voice-eligible",
+        "No agent in this company is configured as Conference Room visible",
+      ),
+    };
   }
-  return { agentId: ceos[0].id, agentName: ceos[0].name };
+  const explicitDefault = team.find((entry) => entry.isDefaultTarget);
+  const host = team.find((entry) => entry.role === "host");
+  const director = team.find((entry) => entry.role === "director");
+  const chosen = explicitDefault ?? host ?? director ?? team[0]!;
+  return { agentId: chosen.id, agentName: chosen.name };
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +224,73 @@ function isEligibleForConferenceRoom(eff: EffectiveOrFailClosed): boolean {
   if (!eff.voiceEnabled) return false;
   if (eff.effectiveVisibility === "hidden") return false;
   if (!eff.conferenceRoomEnabled) return false;
+  // Long-term explicit visibility — voice-config decides who shows up
+  // in the room, not the legacy tier heuristic. An agent must clear all
+  // three checks: voice enabled, voice-config visibility shown, AND the
+  // explicit Conference Room visibility resolution.
+  if (!eff.conferenceRoomVisible) return false;
+  if (eff.conferenceRoomRole === "hidden") return false;
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Visible-team listing — used both by the /ui/team browser route and the
+// default-target picker. Voice-config is the authoritative source.
+// ---------------------------------------------------------------------------
+
+export interface VisibleTeamEntry {
+  id: string;
+  name: string;
+  role: "host" | "director";
+  isDefaultTarget: boolean;
+}
+
+async function loadVisibleTeam(
+  ctx: PluginContext,
+  config: PluginConfig,
+  companyId: string,
+): Promise<VisibleTeamEntry[]> {
+  const tokens = await resolveCallerTokens(ctx, config);
+  const baseUrl = baseUrls(config).voiceConfig;
+  const allAgents = await ctx.agents.list({ companyId });
+  // Resolve effective configs in parallel; cap concurrency by relying on
+  // the runtime's outbound HTTP fan-in.
+  const effective = await Promise.all(
+    allAgents.map((agent) =>
+      fetchEffectiveConfig({
+        baseUrl,
+        agentToken: tokens.voiceConfigToken,
+        companyId,
+        agentId: agent.id,
+      }).catch((err) => {
+        ctx.logger.warn("conference-room: voice-config lookup failed", {
+          agentId: agent.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return null;
+      }),
+    ),
+  );
+  const visible: VisibleTeamEntry[] = [];
+  for (let i = 0; i < allAgents.length; i++) {
+    const agent = allAgents[i]!;
+    const eff = effective[i];
+    if (!eff || !eff.resolved) continue;
+    if (!eff.conferenceRoomVisible) continue;
+    if (eff.conferenceRoomRole !== "host" && eff.conferenceRoomRole !== "director") continue;
+    visible.push({
+      id: agent.id,
+      name: agent.name,
+      role: eff.conferenceRoomRole,
+      isDefaultTarget: eff.conferenceRoomDefaultTarget,
+    });
+  }
+  // Stable sort: hosts before directors, then by name.
+  visible.sort((a, b) => {
+    if (a.role !== b.role) return a.role === "host" ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  return visible;
 }
 
 // ---------------------------------------------------------------------------
@@ -584,7 +663,7 @@ async function handleCreateSession(
   }
 
   // Resolve target agent.
-  const targetResult = await resolveTargetAgentId(ctx, companyId, body.targetAgentId ?? null);
+  const targetResult = await resolveTargetAgentId(ctx, config, companyId, body.targetAgentId ?? null);
   if ("error" in targetResult) return { ...targetResult.error, conferenceSessionId };
   const { agentId, agentName } = targetResult;
 
@@ -1181,6 +1260,25 @@ async function dispatchApi(
       }
       const result = await handleCloseSession(ctx, companyId, conferenceSessionId);
       return { status: 200, body: result };
+    }
+
+    case API_ROUTE_KEYS.uiTeam: {
+      try {
+        const team = await loadVisibleTeam(ctx, config, companyId);
+        return { status: 200, body: { ok: true, team } };
+      } catch (err) {
+        ctx.logger.error("ui-team failed", {
+          companyId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        return {
+          status: 500,
+          body: bridgeError(
+            "internal-error",
+            "Failed to load Conference Room team",
+          ),
+        };
+      }
     }
 
     default:

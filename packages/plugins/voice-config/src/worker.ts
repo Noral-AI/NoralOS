@@ -18,12 +18,14 @@ import {
   type Tier,
   type Visibility,
 } from "./constants.js";
-import type {
-  AgentVoiceConfig,
-  CompanyVoiceDefaults,
-  EffectiveOrFailClosed,
-  EffectiveVoiceConfig,
-  FailClosedVoiceConfig,
+import {
+  CONFERENCE_ROOM_ROLES,
+  type AgentVoiceConfig,
+  type CompanyVoiceDefaults,
+  type ConferenceRoomRole,
+  type EffectiveOrFailClosed,
+  type EffectiveVoiceConfig,
+  type FailClosedVoiceConfig,
 } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -73,6 +75,30 @@ function asVisibilityOrNull(value: unknown): Visibility | null {
   return value as Visibility;
 }
 
+function asConferenceRoomVisibleOrNull(value: unknown): boolean | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "boolean") {
+    throw new ValidationError(`Invalid conferenceRoomVisible: ${String(value)}`);
+  }
+  return value;
+}
+
+function asConferenceRoomRoleOrNull(value: unknown): ConferenceRoomRole | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string" || !CONFERENCE_ROOM_ROLES.includes(value as ConferenceRoomRole)) {
+    throw new ValidationError(`Invalid conferenceRoomRole: ${String(value)}`);
+  }
+  return value as ConferenceRoomRole;
+}
+
+function asConferenceRoomDefaultTarget(value: unknown): boolean {
+  if (value === undefined) return false;
+  if (typeof value !== "boolean") {
+    throw new ValidationError(`Invalid conferenceRoomDefaultTarget: ${String(value)}`);
+  }
+  return value;
+}
+
 class ValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -104,6 +130,9 @@ type AgentRow = {
   tts_replies_enabled: boolean;
   tier_override: Tier | null;
   visibility_override: Visibility | null;
+  conference_room_visible: boolean | null;
+  conference_room_role: ConferenceRoomRole | null;
+  conference_room_default_target: boolean;
   updated_by_principal_id: string | null;
   updated_by_kind: "board" | "agent" | "plugin" | null;
   created_at: string;
@@ -136,6 +165,9 @@ function rowToAgentConfig(row: AgentRow): AgentVoiceConfig {
     ttsRepliesEnabled: row.tts_replies_enabled,
     tierOverride: row.tier_override,
     visibilityOverride: row.visibility_override,
+    conferenceRoomVisible: row.conference_room_visible,
+    conferenceRoomRole: row.conference_room_role,
+    conferenceRoomDefaultTarget: row.conference_room_default_target,
     updatedByPrincipalId: row.updated_by_principal_id,
     updatedByKind: row.updated_by_kind,
     createdAt: row.created_at,
@@ -158,28 +190,145 @@ function rowToCompanyDefaults(row: CompanyDefaultsRow): CompanyVoiceDefaults {
 }
 
 // ---------------------------------------------------------------------------
-// Tier derivation (against public.agents)
+// Agent identity probe (against public.agents)
 // ---------------------------------------------------------------------------
 
-async function deriveTier(
+interface AgentIdentity {
+  role: string;
+  hasDirectReports: boolean;
+  isSystemManaged: boolean;
+}
+
+async function loadAgentIdentity(
   ctx: PluginContext,
   companyId: string,
   agentId: string,
-): Promise<Tier> {
-  const agentRows = await ctx.db.query<{ role: string }>(
-    `SELECT role FROM public.agents WHERE id = $1 AND company_id = $2`,
+): Promise<AgentIdentity> {
+  const agentRows = await ctx.db.query<{ role: string; metadata: unknown }>(
+    `SELECT role, metadata FROM public.agents WHERE id = $1 AND company_id = $2`,
     [agentId, companyId],
   );
   if (agentRows.length === 0) throw new Error("Agent not found");
-  if (agentRows[0].role === "ceo") return "exec";
-
   const reportRows = await ctx.db.query<{ count: string }>(
     `SELECT COUNT(*)::int AS count
        FROM public.agents
        WHERE reports_to = $1 AND company_id = $2`,
     [agentId, companyId],
   );
-  return Number(reportRows[0]?.count ?? 0) > 0 ? "manager" : "worker";
+  const metadata = agentRows[0]?.metadata;
+  const isSystemManaged =
+    metadata !== null &&
+    typeof metadata === "object" &&
+    !Array.isArray(metadata) &&
+    (metadata as Record<string, unknown>).systemManaged === true;
+  return {
+    role: agentRows[0]!.role,
+    hasDirectReports: Number(reportRows[0]?.count ?? 0) > 0,
+    isSystemManaged,
+  };
+}
+
+function tierForIdentity(identity: AgentIdentity): Tier {
+  if (identity.role === "ceo") return "exec";
+  return identity.hasDirectReports ? "manager" : "worker";
+}
+
+// ---------------------------------------------------------------------------
+// Conference Room visibility resolution — pure, exhaustively unit-tested.
+// ---------------------------------------------------------------------------
+
+export interface ConferenceRoomResolutionInput {
+  isSystemManaged: boolean;
+  role: string; // public.agents.role (e.g. "ceo", "engineer", ...)
+  hasDirectReports: boolean;
+  /** Explicit admin override; null means inherit. */
+  conferenceRoomVisible: boolean | null;
+  /** Explicit admin override; null means inherit. */
+  conferenceRoomRole: ConferenceRoomRole | null;
+  /** Explicit admin override; defaults to false. */
+  conferenceRoomDefaultTarget: boolean;
+  /**
+   * Whether another agent in the same company has the explicit
+   * default-target flag set. Used so a CEO without an explicit row only
+   * becomes the default target when no one else is already wearing that
+   * crown.
+   */
+  someoneElseIsExplicitDefaultTarget: boolean;
+}
+
+export interface ConferenceRoomResolution {
+  visible: boolean;
+  role: ConferenceRoomRole;
+  defaultTarget: boolean;
+}
+
+/**
+ * Resolve Conference Room visibility per the long-term precedence chain
+ * described in the original chip:
+ *
+ *   if systemManaged                 -> hidden, never default target
+ *   else if role === "ceo"           -> host, default target if no other claim
+ *   else if explicit row             -> use admin values
+ *   else if has direct reports       -> visible director (migration default)
+ *   else                             -> hidden
+ *
+ * The function is pure — easy to fork into a follow-up "policy file" if
+ * the rules need company-level overrides later.
+ */
+export function resolveConferenceRoomVisibility(
+  input: ConferenceRoomResolutionInput,
+): ConferenceRoomResolution {
+  if (input.isSystemManaged) {
+    return { visible: false, role: "hidden", defaultTarget: false };
+  }
+  if (input.role === "ceo") {
+    // CEO is always host; default target unless explicitly demoted or another
+    // agent has the explicit default-target flag set.
+    const explicitDemotion =
+      input.conferenceRoomRole === "hidden" || input.conferenceRoomVisible === false;
+    if (explicitDemotion) {
+      // Admin explicitly hid the CEO — extremely unusual but supported. They
+      // can still appear as default target only if explicitly flagged.
+      return {
+        visible: input.conferenceRoomDefaultTarget,
+        role: input.conferenceRoomDefaultTarget ? "host" : "hidden",
+        defaultTarget: input.conferenceRoomDefaultTarget,
+      };
+    }
+    return {
+      visible: true,
+      role: "host",
+      defaultTarget:
+        input.conferenceRoomDefaultTarget ||
+        !input.someoneElseIsExplicitDefaultTarget,
+    };
+  }
+  // Explicit values win after the systemManaged + CEO short-circuits.
+  if (input.conferenceRoomVisible !== null || input.conferenceRoomRole !== null) {
+    const explicitRole: ConferenceRoomRole =
+      input.conferenceRoomRole ??
+      (input.conferenceRoomVisible === false ? "hidden" : "director");
+    const explicitVisible =
+      input.conferenceRoomVisible !== null
+        ? input.conferenceRoomVisible
+        : explicitRole !== "hidden";
+    return {
+      visible: explicitVisible,
+      role: explicitVisible ? explicitRole : "hidden",
+      defaultTarget: explicitVisible && input.conferenceRoomDefaultTarget,
+    };
+  }
+  // Fall-through migration heuristic: anyone with direct reports defaults
+  // to a visible director; everyone else is hidden until an admin opts
+  // them in.
+  if (input.hasDirectReports) {
+    return {
+      visible: true,
+      role: "director",
+      defaultTarget: input.conferenceRoomDefaultTarget,
+    };
+  }
+  return { visible: false, role: "hidden", defaultTarget: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -223,13 +372,30 @@ const FALLBACK_DEFAULTS: Omit<CompanyVoiceDefaults, "companyId" | "createdAt" | 
 // Effective config resolution
 // ---------------------------------------------------------------------------
 
+async function someoneElseHasDefaultTarget(
+  ctx: PluginContext,
+  companyId: string,
+  selfAgentId: string,
+): Promise<boolean> {
+  const rows = await ctx.db.query<{ count: string }>(
+    `SELECT COUNT(*)::int AS count
+       FROM ${PLUGIN_DB_SCHEMA}.agent_voice_config
+       WHERE company_id = $1
+         AND conference_room_default_target = true
+         AND agent_id <> $2`,
+    [companyId, selfAgentId],
+  );
+  return Number(rows[0]?.count ?? 0) > 0;
+}
+
 async function resolveEffective(
   ctx: PluginContext,
   companyId: string,
   agentId: string,
 ): Promise<EffectiveOrFailClosed> {
   try {
-    const derivedTier = await deriveTier(ctx, companyId, agentId);
+    const identity = await loadAgentIdentity(ctx, companyId, agentId);
+    const derivedTier = tierForIdentity(identity);
     const row = await loadAgentRow(ctx, companyId, agentId);
     const defaults = (await loadCompanyDefaults(ctx, companyId)) ?? {
       companyId,
@@ -242,9 +408,23 @@ async function resolveEffective(
     const effectiveVisibility: Visibility =
       row?.visibilityOverride ?? (effectiveTier === "worker" ? "hidden" : "shown");
 
+    const otherDefaultTarget = await someoneElseHasDefaultTarget(ctx, companyId, agentId);
+    const crResolution = resolveConferenceRoomVisibility({
+      isSystemManaged: identity.isSystemManaged,
+      role: identity.role,
+      hasDirectReports: identity.hasDirectReports,
+      conferenceRoomVisible: row?.conferenceRoomVisible ?? null,
+      conferenceRoomRole: row?.conferenceRoomRole ?? null,
+      conferenceRoomDefaultTarget: row?.conferenceRoomDefaultTarget ?? false,
+      someoneElseIsExplicitDefaultTarget: otherDefaultTarget,
+    });
+
     if (row) {
       const effectiveProvider =
         row.provider === "default" ? defaults.defaultProvider : row.provider;
+      // The CR feature flag (`conference_room_enabled`) is gated by the
+      // visibility resolution: a hidden agent must not be CR-enabled even
+      // if the boolean is true.
       return buildEffective({
         companyId,
         agentId,
@@ -255,10 +435,13 @@ async function resolveEffective(
         effectiveProvider,
         voiceId: row.voiceId,
         dashboardVoiceEnabled: row.dashboardVoiceEnabled,
-        conferenceRoomEnabled: row.conferenceRoomEnabled,
+        conferenceRoomEnabled: crResolution.visible && row.conferenceRoomEnabled,
         slackVoiceEnabled: row.slackVoiceEnabled,
         phoneVoiceEnabled: row.phoneVoiceEnabled,
         ttsRepliesEnabled: row.ttsRepliesEnabled,
+        conferenceRoomVisible: crResolution.visible,
+        conferenceRoomRole: crResolution.role,
+        conferenceRoomDefaultTarget: crResolution.defaultTarget,
       });
     }
 
@@ -276,10 +459,16 @@ async function resolveEffective(
       effectiveProvider: defaults.defaultProvider,
       voiceId: "",
       dashboardVoiceEnabled: enabledByTier && eligible ? defaults.defaultDashboardVoiceEnabled : false,
-      conferenceRoomEnabled: enabledByTier && eligible ? defaults.defaultConferenceRoomEnabled : false,
+      conferenceRoomEnabled:
+        crResolution.visible && enabledByTier && eligible
+          ? defaults.defaultConferenceRoomEnabled
+          : false,
       slackVoiceEnabled: enabledByTier && eligible ? defaults.defaultSlackVoiceEnabled : false,
       phoneVoiceEnabled: enabledByTier && eligible ? defaults.defaultPhoneVoiceEnabled : false,
       ttsRepliesEnabled: enabledByTier && eligible ? defaults.defaultTtsRepliesEnabled : false,
+      conferenceRoomVisible: crResolution.visible,
+      conferenceRoomRole: crResolution.role,
+      conferenceRoomDefaultTarget: crResolution.defaultTarget,
     });
   } catch (err) {
     ctx.logger.error("voice-config: resolve failed, returning fail-closed", {
@@ -308,6 +497,9 @@ function failClosed(companyId: string, agentId: string, reason: string): FailClo
     slackVoiceEnabled: false,
     phoneVoiceEnabled: false,
     ttsRepliesEnabled: false,
+    conferenceRoomVisible: false,
+    conferenceRoomRole: "hidden",
+    conferenceRoomDefaultTarget: false,
   };
 }
 
@@ -344,6 +536,28 @@ async function upsertAgentConfig(
   const ttsRepliesEnabled = asBool(body.ttsRepliesEnabled, "ttsRepliesEnabled");
   const tierOverride = asTierOrNull(body.tierOverride);
   const visibilityOverride = asVisibilityOrNull(body.visibilityOverride);
+  const conferenceRoomVisible = asConferenceRoomVisibleOrNull(
+    body.conferenceRoomVisible,
+  );
+  const conferenceRoomRole = asConferenceRoomRoleOrNull(body.conferenceRoomRole);
+  const conferenceRoomDefaultTarget = asConferenceRoomDefaultTarget(
+    body.conferenceRoomDefaultTarget,
+  );
+
+  // The migration's partial unique index guarantees at most one default
+  // target per company. Clear any previous claim before promoting this row
+  // so the admin doesn't have to do a two-step.
+  if (conferenceRoomDefaultTarget) {
+    await ctx.db.execute(
+      `UPDATE ${PLUGIN_DB_SCHEMA}.agent_voice_config
+         SET conference_room_default_target = false,
+             updated_at = now()
+         WHERE company_id = $1
+           AND agent_id <> $2
+           AND conference_room_default_target = true`,
+      [companyId, agentId],
+    );
+  }
 
   await ctx.db.execute(
     `INSERT INTO ${PLUGIN_DB_SCHEMA}.agent_voice_config (
@@ -352,6 +566,7 @@ async function upsertAgentConfig(
        dashboard_voice_enabled, conference_room_enabled,
        slack_voice_enabled, phone_voice_enabled, tts_replies_enabled,
        tier_override, visibility_override,
+       conference_room_visible, conference_room_role, conference_room_default_target,
        updated_by_principal_id, updated_by_kind,
        created_at, updated_at
      ) VALUES (
@@ -360,23 +575,27 @@ async function upsertAgentConfig(
        $6, $7,
        $8, $9, $10,
        $11, $12,
-       $13, $14,
+       $13, $14, $15,
+       $16, $17,
        now(), now()
      )
      ON CONFLICT (company_id, agent_id) DO UPDATE SET
-       voice_enabled           = EXCLUDED.voice_enabled,
-       provider                = EXCLUDED.provider,
-       voice_id                = EXCLUDED.voice_id,
-       dashboard_voice_enabled = EXCLUDED.dashboard_voice_enabled,
-       conference_room_enabled = EXCLUDED.conference_room_enabled,
-       slack_voice_enabled     = EXCLUDED.slack_voice_enabled,
-       phone_voice_enabled     = EXCLUDED.phone_voice_enabled,
-       tts_replies_enabled     = EXCLUDED.tts_replies_enabled,
-       tier_override           = EXCLUDED.tier_override,
-       visibility_override     = EXCLUDED.visibility_override,
-       updated_by_principal_id = EXCLUDED.updated_by_principal_id,
-       updated_by_kind         = EXCLUDED.updated_by_kind,
-       updated_at              = now()`,
+       voice_enabled                  = EXCLUDED.voice_enabled,
+       provider                       = EXCLUDED.provider,
+       voice_id                       = EXCLUDED.voice_id,
+       dashboard_voice_enabled        = EXCLUDED.dashboard_voice_enabled,
+       conference_room_enabled        = EXCLUDED.conference_room_enabled,
+       slack_voice_enabled            = EXCLUDED.slack_voice_enabled,
+       phone_voice_enabled            = EXCLUDED.phone_voice_enabled,
+       tts_replies_enabled            = EXCLUDED.tts_replies_enabled,
+       tier_override                  = EXCLUDED.tier_override,
+       visibility_override            = EXCLUDED.visibility_override,
+       conference_room_visible        = EXCLUDED.conference_room_visible,
+       conference_room_role           = EXCLUDED.conference_room_role,
+       conference_room_default_target = EXCLUDED.conference_room_default_target,
+       updated_by_principal_id        = EXCLUDED.updated_by_principal_id,
+       updated_by_kind                = EXCLUDED.updated_by_kind,
+       updated_at                     = now()`,
     [
       companyId,
       agentId,
@@ -390,6 +609,9 @@ async function upsertAgentConfig(
       ttsRepliesEnabled,
       tierOverride,
       visibilityOverride,
+      conferenceRoomVisible,
+      conferenceRoomRole,
+      conferenceRoomDefaultTarget,
       actor.principalId,
       actor.kind,
     ],
@@ -560,7 +782,9 @@ const plugin = definePlugin({
 
       const [raw, derivedTier, effective, companyDefaults] = await Promise.all([
         loadAgentRow(ctx, companyId, agentId),
-        deriveTier(ctx, companyId, agentId).catch(() => null),
+        loadAgentIdentity(ctx, companyId, agentId)
+          .then(tierForIdentity)
+          .catch(() => null),
         resolveEffective(ctx, companyId, agentId),
         loadCompanyDefaults(ctx, companyId),
       ]);

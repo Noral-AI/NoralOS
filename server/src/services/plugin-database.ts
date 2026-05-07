@@ -126,11 +126,22 @@ function extractQualifiedRefs(statement: string): SqlRef[] {
   const patterns = [
     /\b(from|join|references|into|update)\s+"?([A-Za-z_][A-Za-z0-9_]*)"?\."?([A-Za-z_][A-Za-z0-9_]*)"?/gi,
     /\b(alter\s+table|create\s+table|create\s+view|drop\s+table|truncate\s+table)\s+(?:if\s+(?:not\s+)?exists\s+)?"?([A-Za-z_][A-Za-z0-9_]*)"?\."?([A-Za-z_][A-Za-z0-9_]*)"?/gi,
+    // CREATE [UNIQUE] INDEX [IF NOT EXISTS] <name> ON <schema>.<table>.
+    // Also covers `CREATE INDEX CONCURRENTLY` even though plugin migrations
+    // run inside a transaction so that flag is rejected at apply time.
+    /\bcreate\s+(?:unique\s+)?index\s+(?:concurrently\s+)?(?:if\s+(?:not\s+)?exists\s+)?(?:[A-Za-z_][A-Za-z0-9_]*\s+)?on\s+"?([A-Za-z_][A-Za-z0-9_]*)"?\."?([A-Za-z_][A-Za-z0-9_]*)"?/gi,
   ];
 
   for (const pattern of patterns) {
     for (const match of statement.matchAll(pattern)) {
-      refs.push({ keyword: match[1]!.toLowerCase(), schema: match[2]!, table: match[3]! });
+      // The third pattern doesn't capture a leading keyword token (it has
+      // two capture groups, not three) — fold both shapes into the same
+      // SqlRef record by checking the group count.
+      if (match.length === 4) {
+        refs.push({ keyword: match[1]!.toLowerCase(), schema: match[2]!, table: match[3]! });
+      } else if (match.length === 3) {
+        refs.push({ keyword: "create_index", schema: match[1]!, table: match[2]! });
+      }
     }
   }
   return refs;
