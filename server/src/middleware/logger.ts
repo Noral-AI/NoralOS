@@ -27,9 +27,43 @@ const sharedOpts = {
   singleLine: true,
 };
 
+// Pino redact paths covering every place a secret material value could
+// otherwise land. Pino accepts wildcards via `*`, so `req.body.value`
+// covers any request body shape that uses `value` as the top-level key,
+// and `*.material` traverses nested record-like structures from agent /
+// plugin payloads. Extending this list when new secret-bearing fields
+// land elsewhere in the codebase is cheap and safe; missing one is not.
+const SECRET_REDACT_PATHS = [
+  "req.headers.authorization",
+  "req.headers.cookie",
+  "req.headers['xi-api-key']",
+  "req.body.value",
+  "req.body.material",
+  "req.body.apiKey",
+  "req.body.authToken",
+  "req.body.bearerToken",
+  "req.body.password",
+  "req.body.clientSecret",
+  "req.body.refreshToken",
+  "req.body.signingSecret",
+  "req.body.hmacSecret",
+  "req.body.privateKey",
+  "*.value",
+  "*.material",
+  "*.apiKey",
+  "*.authToken",
+  "*.bearerToken",
+  "*.password",
+  "*.clientSecret",
+  "*.refreshToken",
+  "*.signingSecret",
+  "*.hmacSecret",
+  "*.privateKey",
+];
+
 export const logger = pino({
   level: "debug",
-  redact: ["req.headers.authorization"],
+  redact: SECRET_REDACT_PATHS,
 }, pino.transport({
   targets: [
     {

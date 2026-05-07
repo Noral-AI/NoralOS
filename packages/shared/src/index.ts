@@ -538,6 +538,46 @@ export {
 } from "./validators/sidebar-preferences.js";
 
 export { workspaceRuntimeControlTargetSchema } from "./validators/execution-workspace.js";
+
+export {
+  INTEGRATION_CATEGORIES,
+  INTEGRATION_CATEGORY_LABELS,
+  INTEGRATION_CATEGORY_ORDER,
+  INTEGRATION_CREDENTIAL_TYPES,
+  INTEGRATION_ENVIRONMENTS,
+  INTEGRATION_LAST_TEST_STATUSES,
+  INTEGRATION_PROVIDERS,
+  INTEGRATION_STATUSES,
+  ASSIGNMENT_TARGETS,
+  type IntegrationAssignableSlot,
+  type IntegrationAssignmentDto,
+  type IntegrationCategory,
+  type IntegrationCredentialDto,
+  type IntegrationCredentialType,
+  type IntegrationEnvironment,
+  type IntegrationField,
+  type IntegrationLastTestStatus,
+  type IntegrationProvider,
+  type IntegrationProviderId,
+  type IntegrationProviderTestResult,
+  type IntegrationStatus,
+  type IntegrationTestSpec,
+  type ImportUnmanagedSecretInput,
+  type UnmanagedSecretDto,
+} from "./integration-providers.js";
+
+export {
+  assignIntegrationCredentialSchema,
+  createIntegrationCredentialSchema,
+  importIntegrationCredentialSchema,
+  rotateIntegrationCredentialSchema,
+  updateIntegrationCredentialSchema,
+  type AssignIntegrationCredentialInput,
+  type CreateIntegrationCredentialInput,
+  type ImportIntegrationCredentialInput,
+  type RotateIntegrationCredentialInput,
+  type UpdateIntegrationCredentialInput,
+} from "./validators/integrations.js";
 export {
   findWorkspaceCommandDefinition,
   listWorkspaceCommandDefinitions,

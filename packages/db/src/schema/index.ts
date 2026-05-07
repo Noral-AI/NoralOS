@@ -62,6 +62,8 @@ export { approvalComments } from "./approval_comments.js";
 export { activityLog } from "./activity_log.js";
 export { companySecrets } from "./company_secrets.js";
 export { companySecretVersions } from "./company_secret_versions.js";
+export { integrationCredentials } from "./integration_credentials.js";
+export { integrationCredentialAssignments } from "./integration_credential_assignments.js";
 export { companySkills } from "./company_skills.js";
 export { plugins } from "./plugins.js";
 export { pluginConfig } from "./plugin_config.js";

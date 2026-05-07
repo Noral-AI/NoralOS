@@ -12,6 +12,7 @@ import {
   Repeat,
   GitBranch,
   Settings,
+  Plug,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -121,6 +122,7 @@ export function Sidebar() {
           <SidebarNavItem to="/costs" label="Costs" icon={DollarSign} />
           <SidebarNavItem to="/activity" label="Activity" icon={History} />
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
+          <SidebarNavItem to="/company/settings/integrations" label="Integrations" icon={Plug} />
         </SidebarSection>
 
         <PluginSlotOutlet
