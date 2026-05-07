@@ -186,12 +186,14 @@ export const manifest: NoralosPluginManifestV1 = {
       // Same value can serve both purposes if a single service-agent is used.
       voiceConfigCallerTokenRef: {
         type: "string",
+        format: "secret-ref",
         title: "Voice-Config Caller Agent Token (secret reference)",
         description:
           "Secret reference to a Paperclip agent API key the bridge uses to call voice-config /effective-config. Required.",
       },
       voiceCascadeCallerTokenRef: {
         type: "string",
+        format: "secret-ref",
         title: "Voice-Cascade Caller Agent Token (secret reference)",
         description:
           "Secret reference to a Paperclip agent API key the bridge uses to call voice-cascade /synthesize. Required. May be the same secret as voiceConfigCallerTokenRef.",

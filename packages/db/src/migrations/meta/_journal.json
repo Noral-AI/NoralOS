@@ -540,6 +540,13 @@
       "when": 1778075376100,
       "tag": "0076_harsh_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1778145000000,
+      "tag": "0077_integration_credentials",
+      "breakpoints": true
     }
   ]
 }
