@@ -22,6 +22,7 @@ import type {
   PluginIssueOrchestrationSummary,
 } from "@noralos/plugin-sdk";
 import type { CreateIssueThreadInteraction, IssueDocumentSummary } from "@noralos/shared";
+import { resolveDefaultAgentWorkspaceDir } from "../home-paths.js";
 import { companyService } from "./companies.js";
 import { agentService } from "./agents.js";
 import { projectService } from "./projects.js";
@@ -1821,12 +1822,66 @@ export function buildHostServices(
         // surface that wants a lightweight runtime profile for THIS run only).
         // The override is shallow-merged on top of agents.adapter_config inside
         // executeRun and never persisted back to the agent's stored config.
-        const adapterConfigOverrides =
+        const rawAdapterConfigOverrides =
           params.adapterConfigOverrides &&
           typeof params.adapterConfigOverrides === "object" &&
           !Array.isArray(params.adapterConfigOverrides)
             ? (params.adapterConfigOverrides as Record<string, unknown>)
             : null;
+
+        // Sandbox guard: plugin workers don't get NORALOS_HOME, so they cannot
+        // build absolute filesystem paths themselves. Instead they request a
+        // per-participant working directory by setting a relative subpath under
+        // a special key the host strips and resolves here. This keeps the cwd
+        // — and therefore the Claude Code SDK auto-memory tree — scoped to a
+        // per-participant directory under the agent's existing workspace root.
+        let adapterConfigOverrides = rawAdapterConfigOverrides;
+        if (rawAdapterConfigOverrides) {
+          const subPath = rawAdapterConfigOverrides.__participantSubPath;
+          if (typeof subPath === "string" && subPath.length > 0) {
+            // Validate the subpath is a relative path made of safe segments.
+            // Reject anything with `..`, leading `/`, or non-allowlisted chars.
+            const safeSegment = /^[a-zA-Z0-9_-]+$/;
+            const segments = subPath.split("/");
+            const allSafe =
+              segments.length > 0 && segments.every((s) => safeSegment.test(s));
+            if (!allSafe) {
+              throw new Error(
+                "agents.sessions.sendMessage: invalid __participantSubPath",
+              );
+            }
+            const agentWorkspaceDir = resolveDefaultAgentWorkspaceDir(
+              session.agentId,
+            );
+            const participantCwd = `${agentWorkspaceDir}/${segments.join("/")}`;
+            const { __participantSubPath: _stripped, ...rest } =
+              rawAdapterConfigOverrides;
+            adapterConfigOverrides = { ...rest, cwd: participantCwd };
+
+            // If the saved task session was previously running in a different
+            // cwd (e.g. the pre-isolation shared agent home, or a different
+            // participant's directory), clear the resume metadata so the next
+            // run starts a fresh Claude session in the correct per-participant
+            // cwd. Without this the saved sessionParams.cwd wins via
+            // `resolveWorkspaceForRun`'s task_session branch and the override
+            // is silently dropped after the first run.
+            const savedParams = session.sessionParamsJson as
+              | Record<string, unknown>
+              | null;
+            const savedCwd =
+              typeof savedParams?.cwd === "string" ? savedParams.cwd : null;
+            if (savedCwd && savedCwd !== participantCwd) {
+              await db
+                .update(agentTaskSessionsTable)
+                .set({
+                  sessionParamsJson: null,
+                  sessionDisplayId: null,
+                  lastError: null,
+                })
+                .where(eq(agentTaskSessionsTable.id, session.id));
+            }
+          }
+        }
         const run = await heartbeat.wakeup(session.agentId, {
           source: "automation",
           triggerDetail: "system",

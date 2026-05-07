@@ -750,6 +750,30 @@ async function handleSendMessage(
   // looks up the state by event.runId — the host always tags events with it.
   const onEvent = buildAgentEventHandler(ctx, config, companyId, conferenceSessionId);
 
+  // Per-participant working directory so the Claude Code SDK auto-memory
+  // tree (which is keyed on the subprocess cwd) isolates per user instead
+  // of writing into a shared agent home. The plugin worker is sandboxed
+  // and does not have NORALOS_HOME, so it can only describe the relative
+  // subpath; the host translates it to an absolute cwd under the agent's
+  // workspace root inside `agents.sessions.sendMessage`.
+  const sanitizeSegment = (s: string) =>
+    s.replace(/[^a-zA-Z0-9_-]/g, "_") || "_safe";
+  const participantSubPath = mapping.participant_id
+    ? `participants/users/${sanitizeSegment(mapping.participant_id)}`
+    : `participants/anon/${sanitizeSegment(conferenceSessionId)}`;
+  const adapterOverrides: Record<string, unknown> = {
+    ...CONFERENCE_ROOM_ADAPTER_OVERRIDES,
+    __participantSubPath: participantSubPath,
+  };
+
+  ctx.logger.info("conference-room: dispatching run", {
+    companyId,
+    conferenceSessionId,
+    agentId: mapping.target_agent_id,
+    participantPresent: mapping.participant_id !== null,
+    participantSubPath,
+  });
+
   let sendResult: { runId: string };
   try {
     sendResult = await ctx.agents.sessions.sendMessage(
@@ -758,10 +782,11 @@ async function handleSendMessage(
       {
         prompt: transcript,
         onEvent,
-        // Lightweight runtime profile for conversational voice — applied
-        // for this run only by the host. Brooklyn's stored adapter_config
-        // (chrome+long-loop) stays untouched for issue/heartbeat work.
-        adapterConfigOverrides: CONFERENCE_ROOM_ADAPTER_OVERRIDES,
+        // Lightweight runtime profile for conversational voice plus the
+        // per-participant cwd above. Brooklyn's stored adapter_config
+        // (chrome+long-loop, agent-home cwd) stays untouched for issue/
+        // heartbeat work.
+        adapterConfigOverrides: adapterOverrides,
       },
     );
   } catch (err) {
