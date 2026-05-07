@@ -106,6 +106,52 @@ export const ISOLATION_TASK_KEY_PREFIX_USER =
 export const ISOLATION_TASK_KEY_PREFIX_ANON =
   "plugin:noralos.conference-room-bridge:session:anon:";
 
+// Privacy directive prepended to every Conference Room user message before
+// the agent sees it. This is the temporary, prompt-level mitigation for
+// the agent-home leak described in the audit on PR #43: NoralOS agents
+// store durable facts under `<agent_home>/life/` and `<agent_home>/memory/`
+// (or "alongside their instructions" per their AGENTS.md), and that tree
+// is keyed by `companyId + agentId` only — not by participant. Without
+// this directive a fact one Conference Room participant tells the agent
+// is auto-extracted into the shared tree and surfaces in the next
+// participant's prompt.
+//
+// Pair with the `__participantSubPath` plumbing in PR #43: the host also
+// redirects the run's `AGENT_HOME` env var and pre-creates a per-
+// participant `life/`+`memory/` tree, so even if the agent ignores the
+// directive the writes land in a per-participant filesystem location.
+//
+// Structural scoping (per-participant instructions bundle root, with
+// per-participant siblings of the bundle) is the durable fix and is
+// flagged for follow-up.
+export const CONFERENCE_ROOM_PRIVACY_DIRECTIVE = [
+  "[Conference Room — private session]",
+  "",
+  "You are speaking with one authenticated participant in a private session. Multiple",
+  "users share your agent identity, so you must not let this conversation leak into",
+  "any cross-user store:",
+  "",
+  "1. Do NOT write to `$AGENT_HOME/life/`, `$AGENT_HOME/memory/`, or any \"personal",
+  "   files\" directory next to your instructions during this session. Those paths",
+  "   are reachable by every participant and would expose this conversation to",
+  "   other users.",
+  "2. Do NOT invoke the `para-memory-files` skill, fact extraction, or any other",
+  "   durable-memory write in this session.",
+  "3. If the participant says \"remember this\" / \"save this fact\" / similar,",
+  "   acknowledge that you'll keep it within the current Conference Room session",
+  "   only. Do NOT perform a filesystem write.",
+  "4. Do NOT read `$AGENT_HOME/life/areas/people/user/`, `$AGENT_HOME/memory/`,",
+  "   or sibling-of-instructions personal-fact stores to answer questions in this",
+  "   session. Treat their contents as off-limits, even if previously populated.",
+  "5. The session itself (your in-context conversation history) is your memory for",
+  "   this Conference Room exchange. Lean on that instead.",
+  "",
+  "User message follows below.",
+  "",
+  "---",
+  "",
+].join("\n");
+
 // Per-call adapter_config override applied for Conference Room runs only.
 // Shallow-merged on top of the agent's stored adapter_config inside the
 // host (heartbeat.executeRun), never persisted. The agent retains its

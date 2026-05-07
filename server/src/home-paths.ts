@@ -62,6 +62,92 @@ export function resolveDefaultAgentWorkspaceDir(agentId: string): string {
   return path.resolve(resolveNoralosInstanceRoot(), "workspaces", trimmed);
 }
 
+/**
+ * Company-scoped agent home root —
+ * `<instance>/companies/<companyId>/agents/<agentId>/`. This is where
+ * Brooklyn-class agents store durable facts (`life/`, `memory/`,
+ * `instructions/` etc.). Use the participant variant below for
+ * Conference Room runs so private facts don't leak across users.
+ */
+export function resolveDefaultAgentCompanyHomeDir(
+  companyId: string,
+  agentId: string,
+): string {
+  const trimmedCompanyId = companyId.trim();
+  const trimmedAgentId = agentId.trim();
+  if (!PATH_SEGMENT_RE.test(trimmedCompanyId)) {
+    throw new Error(`Invalid company id for agent-home path '${companyId}'.`);
+  }
+  if (!PATH_SEGMENT_RE.test(trimmedAgentId)) {
+    throw new Error(`Invalid agent id for agent-home path '${agentId}'.`);
+  }
+  return path.resolve(
+    resolveNoralosInstanceRoot(),
+    "companies",
+    trimmedCompanyId,
+    "agents",
+    trimmedAgentId,
+  );
+}
+
+/**
+ * Translate a relative `participantSubPath` (validated to safe segments
+ * only) into the absolute filesystem layout the host should pass through
+ * to a Conference Room run:
+ *
+ * - `cwd`: under the agent workspace, used by the Claude Code SDK to
+ *   isolate its auto-memory tree. (PR #43 plumbing.)
+ * - `agentHome`: under the agent's company-scoped home, used as the
+ *   `AGENT_HOME` env var so durable-fact paths the agent's instructions
+ *   describe (`$AGENT_HOME/life/`, `$AGENT_HOME/memory/`) land in a
+ *   per-participant directory instead of the shared one. (PR #44.)
+ *
+ * Returns null if any segment fails the safe-segment allowlist; callers
+ * must surface that as an error to the plugin worker.
+ */
+export interface ParticipantRunPaths {
+  cwd: string;
+  agentHome: string;
+  agentHomeLifeDir: string;
+  agentHomeMemoryDir: string;
+}
+
+const PARTICIPANT_SAFE_SEGMENT = /^[a-zA-Z0-9_-]+$/;
+
+export function resolveParticipantRunPaths(input: {
+  companyId: string;
+  agentId: string;
+  participantSubPath: string;
+}): ParticipantRunPaths | null {
+  // Accept ONLY the well-formed shapes the bridge plugin produces:
+  //   participants/users/<idSafe>
+  //   participants/anon/<idSafe>
+  // No leading or trailing slash, no `..`, no empty segments anywhere.
+  // Reject anything else so a malicious caller can't widen the persistence
+  // root by passing e.g. `/etc/passwd`, `..`, or `participants/users/u/x`.
+  const trimmed = input.participantSubPath;
+  if (trimmed.startsWith("/") || trimmed.endsWith("/")) return null;
+  const segments = trimmed.split("/");
+  if (segments.length !== 3) return null;
+  if (segments[0] !== "participants") return null;
+  if (segments[1] !== "users" && segments[1] !== "anon") return null;
+  if (!PARTICIPANT_SAFE_SEGMENT.test(segments[2])) return null;
+  const cwd = path.join(
+    resolveDefaultAgentWorkspaceDir(input.agentId),
+    ...segments,
+  );
+  const agentHome = path.join(
+    resolveDefaultAgentCompanyHomeDir(input.companyId, input.agentId),
+    ...segments,
+  );
+  return {
+    cwd,
+    agentHome,
+    agentHomeLifeDir: path.join(agentHome, "life"),
+    agentHomeMemoryDir: path.join(agentHome, "memory"),
+  };
+}
+
 function sanitizeFriendlyPathSegment(value: string | null | undefined, fallback = "_default"): string {
   const trimmed = value?.trim() ?? "";
   if (!trimmed) return fallback;

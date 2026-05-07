@@ -22,7 +22,12 @@ import type {
   PluginIssueOrchestrationSummary,
 } from "@noralos/plugin-sdk";
 import type { CreateIssueThreadInteraction, IssueDocumentSummary } from "@noralos/shared";
-import { resolveDefaultAgentWorkspaceDir } from "../home-paths.js";
+import { mkdir as fsMkdir, symlink as fsSymlink } from "node:fs/promises";
+import path from "node:path";
+import {
+  resolveDefaultAgentWorkspaceDir,
+  resolveParticipantRunPaths,
+} from "../home-paths.js";
 import { companyService } from "./companies.js";
 import { agentService } from "./agents.js";
 import { projectService } from "./projects.js";
@@ -1833,30 +1838,130 @@ export function buildHostServices(
         // build absolute filesystem paths themselves. Instead they request a
         // per-participant working directory by setting a relative subpath under
         // a special key the host strips and resolves here. This keeps the cwd
-        // — and therefore the Claude Code SDK auto-memory tree — scoped to a
-        // per-participant directory under the agent's existing workspace root.
+        // — and therefore the Claude Code SDK auto-memory tree AND the
+        // `$AGENT_HOME/life,memory` durable-fact stores — scoped to a
+        // per-participant directory under the agent's existing workspace and
+        // company-scoped agent-home roots.
         let adapterConfigOverrides = rawAdapterConfigOverrides;
         if (rawAdapterConfigOverrides) {
           const subPath = rawAdapterConfigOverrides.__participantSubPath;
           if (typeof subPath === "string" && subPath.length > 0) {
-            // Validate the subpath is a relative path made of safe segments.
-            // Reject anything with `..`, leading `/`, or non-allowlisted chars.
-            const safeSegment = /^[a-zA-Z0-9_-]+$/;
-            const segments = subPath.split("/");
-            const allSafe =
-              segments.length > 0 && segments.every((s) => safeSegment.test(s));
-            if (!allSafe) {
+            const runPaths = resolveParticipantRunPaths({
+              companyId: session.companyId,
+              agentId: session.agentId,
+              participantSubPath: subPath,
+            });
+            if (!runPaths) {
               throw new Error(
                 "agents.sessions.sendMessage: invalid __participantSubPath",
               );
             }
-            const agentWorkspaceDir = resolveDefaultAgentWorkspaceDir(
-              session.agentId,
-            );
-            const participantCwd = `${agentWorkspaceDir}/${segments.join("/")}`;
+
             const { __participantSubPath: _stripped, ...rest } =
               rawAdapterConfigOverrides;
-            adapterConfigOverrides = { ...rest, cwd: participantCwd };
+
+            // Preserve any caller-supplied `env`; layer AGENT_HOME on top
+            // so the override always wins. Brooklyn-class agents store
+            // durable facts under `$AGENT_HOME/life/` + `$AGENT_HOME/memory/`,
+            // which is the second leak surface PR #43 audited.
+            const callerEnv =
+              rest.env && typeof rest.env === "object" && !Array.isArray(rest.env)
+                ? (rest.env as Record<string, unknown>)
+                : null;
+            const mergedEnv: Record<string, unknown> = {
+              ...(callerEnv ?? {}),
+              AGENT_HOME: runPaths.agentHome,
+            };
+
+            // Brooklyn-class agents read "your personal files live alongside
+            // these instructions" out of their AGENTS.md and write next to
+            // the instructions bundle. Without an instructions-path override
+            // those writes still land in the shared agent home. Compute a
+            // per-participant instructions path that mirrors the original
+            // basename so the bundle content is unchanged but its siblings
+            // are per-participant. We symlink `participant/instructions/`
+            // -> shared `instructions/` so the agent reads the same source
+            // of truth in read-only fashion.
+            //
+            // Looking up the agent record here is a small extra DB hit; it
+            // only fires when the bridge requests participant scoping.
+            const [agentRow] = await db
+              .select()
+              .from(agentsTable)
+              .where(eq(agentsTable.id, session.agentId));
+            const callerInstructionsPath =
+              typeof rest.instructionsFilePath === "string" && rest.instructionsFilePath.length > 0
+                ? rest.instructionsFilePath
+                : null;
+            const storedAdapterConfig =
+              agentRow?.adapterConfig &&
+              typeof agentRow.adapterConfig === "object" &&
+              !Array.isArray(agentRow.adapterConfig)
+                ? (agentRow.adapterConfig as Record<string, unknown>)
+                : null;
+            const storedInstructionsPath =
+              storedAdapterConfig &&
+              typeof storedAdapterConfig.instructionsFilePath === "string" &&
+              storedAdapterConfig.instructionsFilePath.length > 0
+                ? storedAdapterConfig.instructionsFilePath
+                : null;
+            const originalInstructionsPath =
+              callerInstructionsPath ?? storedInstructionsPath;
+
+            const overrideOut: Record<string, unknown> = {
+              ...rest,
+              cwd: runPaths.cwd,
+              env: mergedEnv,
+            };
+
+            let participantInstructionsPath: string | null = null;
+            if (originalInstructionsPath) {
+              const basename = path.basename(originalInstructionsPath);
+              const sharedInstructionsDir = path.dirname(originalInstructionsPath);
+              const participantInstructionsDir = path.join(
+                runPaths.agentHome,
+                "instructions",
+              );
+              participantInstructionsPath = path.join(
+                participantInstructionsDir,
+                basename,
+              );
+              overrideOut.instructionsFilePath = participantInstructionsPath;
+              try {
+                // Ensure parent of the instructions symlink exists, then create
+                // the symlink. If it already exists, `symlink` rejects with
+                // EEXIST — that's fine, we just want to ensure it's present.
+                await fsMkdir(runPaths.agentHome, { recursive: true });
+                await fsSymlink(
+                  sharedInstructionsDir,
+                  participantInstructionsDir,
+                  "dir",
+                ).catch((err: NodeJS.ErrnoException) => {
+                  if (err.code !== "EEXIST") throw err;
+                });
+              } catch {
+                /* best-effort; if symlink fails the agent will still find its
+                   bundle at the original path — the leak is just not closed
+                   for this run. We do not log transcript-derivable text. */
+              }
+            }
+
+            adapterConfigOverrides = overrideOut;
+
+            // Pre-create per-participant cwd + per-participant
+            // `$AGENT_HOME/life` + `$AGENT_HOME/memory` so the agent has a
+            // writable target. Defense in depth: even if the agent ignores
+            // the privacy directive AND the per-participant instructions
+            // path, the env-var-driven writes still land per-participant.
+            try {
+              await Promise.all([
+                fsMkdir(runPaths.cwd, { recursive: true }),
+                fsMkdir(runPaths.agentHomeLifeDir, { recursive: true }),
+                fsMkdir(runPaths.agentHomeMemoryDir, { recursive: true }),
+              ]);
+            } catch {
+              /* best-effort; intentionally swallowed, never log transcript-derivable text */
+            }
 
             // If the saved task session was previously running in a different
             // cwd (e.g. the pre-isolation shared agent home, or a different
@@ -1870,7 +1975,7 @@ export function buildHostServices(
               | null;
             const savedCwd =
               typeof savedParams?.cwd === "string" ? savedParams.cwd : null;
-            if (savedCwd && savedCwd !== participantCwd) {
+            if (savedCwd && savedCwd !== runPaths.cwd) {
               await db
                 .update(agentTaskSessionsTable)
                 .set({

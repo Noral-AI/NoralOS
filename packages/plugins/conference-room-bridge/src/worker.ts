@@ -774,6 +774,17 @@ async function handleSendMessage(
     participantSubPath,
   });
 
+  // No prompt-level privacy directive: Brooklyn-class agents flag any
+  // user-message-prepended "policy" as a prompt-injection attempt and
+  // refuse to act on it (verified against Brooklyn). Cross-user isolation
+  // is instead enforced structurally by the host's `__participantSubPath`
+  // translation in plugin-host-services: per-participant cwd, per-
+  // participant `AGENT_HOME` env var, and a per-participant symlink of
+  // the instructions bundle so "alongside the instructions" resolves to
+  // per-participant `life/` + `memory/`. The constant
+  // `CONFERENCE_ROOM_PRIVACY_DIRECTIVE` is retained for follow-up work
+  // that injects the same content via the heartbeat-level system prompt.
+
   let sendResult: { runId: string };
   try {
     sendResult = await ctx.agents.sessions.sendMessage(
