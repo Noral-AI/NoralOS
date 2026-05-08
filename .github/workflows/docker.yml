@@ -44,6 +44,16 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
+      - name: Compute build args (git sha, build time)
+        id: build_args
+        run: |
+          # GIT_SHA / BUILD_TIME are surfaced inside the image via OCI labels
+          # AND runtime env vars (NORALOS_GIT_SHA / NORALOS_BUILD_TIME) so the
+          # /api/version endpoint can answer "what is actually running" without
+          # depending on registry inspection.
+          echo "git_sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -54,3 +64,6 @@ jobs:
           cache-to: type=gha,mode=max
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{ steps.build_args.outputs.git_sha }}
+            BUILD_TIME=${{ steps.build_args.outputs.build_time }}
