@@ -186,5 +186,6 @@ export const queryKeys = {
     assignments: (companyId: string) => ["integrations", companyId, "assignments"] as const,
     providerRegistry: (companyId: string) => ["integrations", companyId, "provider-registry"] as const,
     health: (companyId: string) => ["integrations", companyId, "health"] as const,
+    voiceCascadeStatus: (companyId: string) => ["integrations", companyId, "voice-cascade-status"] as const,
   },
 };

@@ -95,6 +95,12 @@ export interface ProviderHealthSummary {
   lastTestedAt: string | null;
 }
 
+export interface VoiceCascadeStatus {
+  pluginKey: "voice-cascade";
+  installed: boolean;
+  ttsMode: "live" | "dry_run" | null;
+}
+
 export interface CredentialTestResult {
   status: "ok" | "fail";
   statusCode?: number;
@@ -186,4 +192,7 @@ export const integrationsApi = {
 
   getHealth: (companyId: string) =>
     api.get<{ providers: ProviderHealthSummary[] }>(`${base(companyId)}/health`),
+
+  getVoiceCascadeStatus: (companyId: string) =>
+    api.get<VoiceCascadeStatus>(`${base(companyId)}/voice-cascade-status`),
 };

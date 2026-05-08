@@ -31,6 +31,7 @@ import { logActivity } from "../services/activity-log.js";
 import { secretService } from "../services/secrets.js";
 import { integrationCredentialsService } from "../services/integrations/credentials-service.js";
 import { integrationAssignmentsService } from "../services/integrations/assignments-service.js";
+import { voiceCascadeStatusService } from "../services/integrations/voice-cascade-status.js";
 import {
   getProvider,
   providerRegistry,
@@ -137,6 +138,7 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
     lifecycle: deps.lifecycle,
   });
   const secrets = secretService(db);
+  const voiceCascadeStatus = voiceCascadeStatusService(db);
   // Max 1 test per credential every 10s — keep enthusiastic admins from
   // hammering provider rate limits.
   const testRateLimiter = createRateLimiter(1, 10_000);
@@ -164,6 +166,16 @@ export function integrationsRoutes(db: Db, deps: IntegrationsRoutesDeps = {}) {
       const companyId = req.params.companyId as string;
       assertCompanyAdminAccess(req, companyId);
       res.json(publicProviderRegistry());
+    },
+  );
+
+  router.get(
+    "/companies/:companyId/integrations/voice-cascade-status",
+    async (req, res) => {
+      const companyId = req.params.companyId as string;
+      assertCompanyAdminAccess(req, companyId);
+      const status = await voiceCascadeStatus.get();
+      res.json(status);
     },
   );
 

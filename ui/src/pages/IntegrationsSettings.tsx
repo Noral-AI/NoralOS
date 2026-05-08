@@ -89,6 +89,7 @@ import {
   type ProviderCategory,
   type ProviderRegistryEntry,
   type UnmanagedSecret,
+  type VoiceCascadeStatus,
 } from "@/api/integrations";
 import { ApiError } from "@/api/client";
 
@@ -146,6 +147,10 @@ function IntegrationsBody({ companyId }: { companyId: string }) {
   const healthQuery = useQuery({
     queryKey: queryKeys.integrations.health(companyId),
     queryFn: () => integrationsApi.getHealth(companyId),
+  });
+  const voiceCascadeStatusQuery = useQuery({
+    queryKey: queryKeys.integrations.voiceCascadeStatus(companyId),
+    queryFn: () => integrationsApi.getVoiceCascadeStatus(companyId),
   });
 
   const [activeTab, setActiveTab] = useState<"overview" | "credentials" | "assignments" | "providers">(
@@ -226,6 +231,7 @@ function IntegrationsBody({ companyId }: { companyId: string }) {
             credentials={credentials}
             registry={registry}
             assignments={assignments}
+            voiceCascadeStatus={voiceCascadeStatusQuery.data ?? null}
           />
         </TabsContent>
 
@@ -663,8 +669,9 @@ function AssignmentsTab(props: {
   credentials: IntegrationCredential[];
   registry: ProviderRegistryEntry[];
   assignments: IntegrationAssignment[];
+  voiceCascadeStatus: VoiceCascadeStatus | null;
 }) {
-  const { companyId, credentials, registry, assignments } = props;
+  const { companyId, credentials, registry, assignments, voiceCascadeStatus } = props;
 
   const voiceCascadeFields: Array<{
     field: string;
@@ -706,12 +713,12 @@ function AssignmentsTab(props: {
               TTS execution layer for Conference Room and other voice surfaces.
             </p>
           </div>
-          <Badge variant="outline">Mode: dry_run</Badge>
+          <VoiceCascadeModeBadge status={voiceCascadeStatus} />
         </header>
         <div className="px-4 py-3 text-xs text-muted-foreground border-b bg-muted/30">
-          This integration applies to the whole instance. Assigning a credential
-          does not enable live voice — Voice Cascade stays in <code>dry_run</code>{" "}
-          until live mode is enabled separately in plugin settings.
+          This integration applies to the whole instance. Voice Cascade&apos;s
+          TTS mode is configured separately in plugin settings — assigning a
+          credential here does not by itself change the plugin mode.
         </div>
         <ul className="divide-y">
           {voiceCascadeFields.map((f) => {
@@ -737,6 +744,27 @@ function AssignmentsTab(props: {
       </section>
     </div>
   );
+}
+
+/**
+ * Renders the *actual* `voice-cascade` ttsMode value pulled from the
+ * server. Never claim `dry_run` unless the plugin is really configured
+ * that way — the badge variant shifts so live mode stands out.
+ */
+function VoiceCascadeModeBadge({ status }: { status: VoiceCascadeStatus | null }) {
+  if (!status) {
+    return <Badge variant="secondary">Mode: loading…</Badge>;
+  }
+  if (!status.installed) {
+    return <Badge variant="secondary">Plugin not installed</Badge>;
+  }
+  if (status.ttsMode === "live") {
+    return <Badge variant="default">Mode: live</Badge>;
+  }
+  if (status.ttsMode === "dry_run") {
+    return <Badge variant="outline">Mode: dry_run</Badge>;
+  }
+  return <Badge variant="secondary">Mode: unset</Badge>;
 }
 
 function AssignmentRow(props: {
