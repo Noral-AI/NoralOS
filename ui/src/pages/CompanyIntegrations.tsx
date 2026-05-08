@@ -16,6 +16,7 @@ import {
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { integrationsApi } from "../api/integrations";
+import { voiceCascadeApi, type VoiceCascadeTtsMode } from "../api/voiceCascade";
 import { Button } from "@/components/ui/button";
 import { Plug } from "lucide-react";
 
@@ -753,6 +754,53 @@ function Field({
 // ---------------------------------------------------------------------------
 // Assignments tab
 // ---------------------------------------------------------------------------
+
+// `mode` is `null` until the voice-cascade /health probe resolves, OR
+// after a fetch failure. Both cases render the verification warning so
+// admins never see a stale claim about dry_run while the real value is
+// in flight or unknown.
+type VoiceCascadeModeState = VoiceCascadeTtsMode | null;
+
+export function VoiceCascadeModeBanner({
+  mode,
+  testId,
+}: {
+  mode: VoiceCascadeModeState;
+  testId?: string;
+}) {
+  if (mode === "dry_run") {
+    return (
+      <p
+        data-testid={testId}
+        data-mode="dry_run"
+        className="max-w-2xl text-xs text-muted-foreground"
+      >
+        Current mode: <span className="font-mono">dry_run</span>. Assigning credentials updates stored refs but does not enable live TTS.
+      </p>
+    );
+  }
+  if (mode === "live") {
+    return (
+      <p
+        data-testid={testId}
+        data-mode="live"
+        className="max-w-2xl text-xs font-medium text-amber-700 dark:text-amber-400"
+      >
+        Current mode: <span className="font-mono">live</span>. Assigning or replacing credentials can affect live TTS behavior immediately.
+      </p>
+    );
+  }
+  return (
+    <p
+      data-testid={testId}
+      data-mode="unknown"
+      className="max-w-2xl text-xs text-muted-foreground"
+    >
+      Current mode could not be verified. Confirm Voice Cascade mode before assigning production credentials.
+    </p>
+  );
+}
+
 function AssignmentsTab({
   companyId,
   board,
@@ -775,7 +823,22 @@ function AssignmentsTab({
   isLoading: boolean;
   refresh: () => void;
 }) {
-  void companyId;
+  const hasVoiceCascade = board.some((c) => c.pluginKey === "noralos.voice-cascade");
+
+  // Probe voice-cascade /health for the actual ttsMode. Only fires when the
+  // assignment board includes a voice-cascade card AND a company is selected.
+  // The banner falls back to the "unknown" copy on failure or while loading,
+  // so we never show a stale dry_run/live claim that doesn't match reality.
+  const ttsModeQuery = useQuery({
+    queryKey: ["voice-cascade", "ttsMode", companyId],
+    queryFn: () => voiceCascadeApi.health(companyId),
+    enabled: hasVoiceCascade && !!companyId,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const ttsMode: VoiceCascadeModeState = ttsModeQuery.data?.ttsMode ?? null;
+
   if (isLoading && board.length === 0) {
     return <div className="text-sm text-muted-foreground">Loading assignments…</div>;
   }
@@ -783,8 +846,12 @@ function AssignmentsTab({
   return (
     <div className="flex flex-col gap-6">
       <p className="max-w-2xl text-xs text-muted-foreground">
-        Assign saved credentials to the plugins that use them. Voice Cascade stays in <span className="font-mono">dry_run</span> after assignment — assigning a key alone does not enable live TTS.
+        Assign saved credentials to the plugins that use them.
       </p>
+
+      {hasVoiceCascade ? (
+        <VoiceCascadeModeBanner mode={ttsMode} testId="voice-cascade-mode-banner" />
+      ) : null}
 
       {board.map((card) => (
         <section key={card.pluginKey} className="rounded-lg border border-border bg-card p-5">
@@ -794,8 +861,12 @@ function AssignmentsTab({
               <p className="text-xs text-muted-foreground">{card.pluginKey}</p>
             </div>
             {card.pluginKey === "noralos.voice-cascade" ? (
-              <span className="rounded bg-muted px-2 py-1 font-mono text-[11px]">
-                Mode: dry_run
+              <span
+                data-testid="voice-cascade-mode-badge"
+                data-mode={ttsMode ?? "unknown"}
+                className="rounded bg-muted px-2 py-1 font-mono text-[11px]"
+              >
+                Mode: {ttsMode ?? "unknown"}
               </span>
             ) : null}
           </header>
