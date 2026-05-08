@@ -57,6 +57,12 @@ RUN test -f packages/plugins/conference-room-bridge/dist/worker.js || (echo "ERR
 FROM base AS production
 ARG USER_UID=1000
 ARG USER_GID=1000
+# Build-time provenance metadata. Plumbed in by .github/workflows/docker.yml
+# (and locally by `docker build --build-arg`). Both default to empty so an
+# unconfigured local build still succeeds; the runtime version endpoint
+# treats empty values as "unknown" rather than as a build error.
+ARG GIT_SHA=""
+ARG BUILD_TIME=""
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
@@ -68,6 +74,16 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/cod
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# OCI image annotations for image-level provenance. Read by registry tooling
+# (docker manifest inspect, ghcr.io UI, container scanners) and useful when
+# auditing "what is actually deployed". Kept consistent with the runtime env
+# values below so an operator sees the same git SHA whether they inspect the
+# image or call /api/version on the running container.
+LABEL org.opencontainers.image.revision=$GIT_SHA \
+      org.opencontainers.image.created=$BUILD_TIME \
+      org.opencontainers.image.source="https://github.com/Noral-AI/NoralOS" \
+      org.opencontainers.image.title="NoralOS Server"
 
 ENV NODE_ENV=production \
   HOME=/noralos \
@@ -81,7 +97,9 @@ ENV NODE_ENV=production \
   NORALOS_CONFIG=/noralos/instances/default/config.json \
   NORALOS_DEPLOYMENT_MODE=authenticated \
   NORALOS_DEPLOYMENT_EXPOSURE=private \
-  OPENCODE_ALLOW_ALL_MODELS=true
+  OPENCODE_ALLOW_ALL_MODELS=true \
+  NORALOS_GIT_SHA=${GIT_SHA} \
+  NORALOS_BUILD_TIME=${BUILD_TIME}
 
 VOLUME ["/noralos"]
 EXPOSE 3100
