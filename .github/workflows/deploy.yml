@@ -126,7 +126,13 @@ jobs:
           echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
 
       - name: GHCR login on VPS (if private image)
-        if: ${{ secrets.GHCR_READ_TOKEN != '' }}
+        # NOTE: do NOT gate this step with `if: ${{ secrets.X != '' }}`. GitHub
+        # Actions does not allow the `secrets` context inside step-level `if`
+        # expressions, and using it there causes the workflow file to fail
+        # validation BEFORE any job is scheduled (the run shows up as failed
+        # with zero jobs and the "workflow file issue" diagnostic). Instead,
+        # we always run the step and let the shell decide whether the token
+        # is present — same observable behaviour, no parser violation.
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -137,6 +143,10 @@ jobs:
           # Pipe the token over SSH stdin → docker login --password-stdin.
           # The token never lands on disk and is never echoed.
           set -euo pipefail
+          if [ -z "${GHCR_READ_TOKEN:-}" ]; then
+            echo "GHCR_READ_TOKEN not set — skipping VPS docker-login refresh (image is presumably public, or login was performed out-of-band)"
+            exit 0
+          fi
           printf '%s' "$GHCR_READ_TOKEN" | ssh -p "$VPS_SSH_PORT" \
             -o BatchMode=yes -o ConnectTimeout=10 \
             "$VPS_USER@$VPS_HOST" \
