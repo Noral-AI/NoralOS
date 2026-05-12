@@ -102,6 +102,13 @@ services:
       # Optional default keeps this compose runnable on hosts that don't
       # have Claude Code agents (the CLI just stays unauthenticated).
       CLAUDE_CODE_OAUTH_TOKEN: "${CLAUDE_CODE_OAUTH_TOKEN:-}"
+      # Google OAuth credentials used by better-auth for "Sign in with
+      # Google" on the operator dashboard. Missing means the Google
+      # auth provider stays unregistered and the social-login button
+      # 404s/302s. Both vars are optional defaults so the compose stays
+      # runnable on hosts that only use email/password or other providers.
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
       # Internal URL the NoralSign plugin uses to reach the bundled
       # DocuSeal service. Override only if you run a dedicated cluster.
       DOCUSEAL_INTERNAL_URL: "${DOCUSEAL_INTERNAL_URL:-http://docuseal:3000}"
