@@ -212,6 +212,37 @@ export function CompanySettings() {
     }
   });
 
+  // Permanent delete is staged behind a typed-name confirmation
+  // (`deleteConfirmText`) because the underlying DELETE removes every
+  // child row (agents, issues, projects, runs, costs, integrations…) in
+  // a single transaction and is not reversible from the UI.
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const removeMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      nextCompanyId
+    }: {
+      companyId: string;
+      nextCompanyId: string | null;
+    }) => companiesApi.remove(companyId).then(() => ({ nextCompanyId })),
+    onSuccess: async ({ nextCompanyId }) => {
+      setDeleteConfirmText("");
+      // If there's another non-archived company, switch to it. When
+      // there isn't, leave the selection alone — invalidating queries
+      // below will drop the now-stale company from the switcher and
+      // the empty-state branches in dependent pages will take over.
+      if (nextCompanyId) {
+        setSelectedCompanyId(nextCompanyId);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.companies.all
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.companies.stats
+      });
+    }
+  });
+
   useEffect(() => {
     setBreadcrumbs([
       { label: selectedCompany?.name ?? "Company", href: "/dashboard" },
@@ -584,6 +615,63 @@ export function CompanySettings() {
                 {archiveMutation.error instanceof Error
                   ? archiveMutation.error.message
                   : "Failed to archive company"}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="space-y-3 rounded-md border border-destructive/60 bg-destructive/10 px-4 py-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-destructive">
+              Permanently delete this company
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Removes the company and every agent, issue, project, run, cost
+              event, document, integration credential, and approval that
+              belongs to it. This action cannot be undone. Type the company
+              name below to enable the delete button.
+            </p>
+          </div>
+          <input
+            type="text"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder={selectedCompany.name}
+            disabled={removeMutation.isPending}
+            className="w-full max-w-sm rounded-md border border-destructive/40 bg-background px-3 py-2 text-sm font-mono focus:border-destructive focus:outline-none"
+            aria-label="Type the company name to confirm delete"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={
+                removeMutation.isPending ||
+                deleteConfirmText !== selectedCompany.name
+              }
+              onClick={() => {
+                if (!selectedCompanyId) return;
+                if (deleteConfirmText !== selectedCompany.name) return;
+                const nextCompanyId =
+                  companies.find(
+                    (company) =>
+                      company.id !== selectedCompanyId &&
+                      company.status !== "archived"
+                  )?.id ?? null;
+                removeMutation.mutate({
+                  companyId: selectedCompanyId,
+                  nextCompanyId
+                });
+              }}
+            >
+              {removeMutation.isPending
+                ? "Deleting..."
+                : "Delete company permanently"}
+            </Button>
+            {removeMutation.isError && (
+              <span className="text-xs text-destructive">
+                {removeMutation.error instanceof Error
+                  ? removeMutation.error.message
+                  : "Failed to delete company"}
               </span>
             )}
           </div>
