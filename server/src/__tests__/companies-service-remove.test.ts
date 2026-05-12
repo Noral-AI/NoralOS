@@ -33,12 +33,16 @@ import {
   budgetIncidents,
   budgetPolicies,
   companies,
+  costEvents,
   createDb,
   feedbackVotes,
+  goals,
+  heartbeatRuns,
   inboxDismissals,
   issueInboxArchives,
   issueThreadInteractions,
   issues,
+  projects,
   routines,
   workspaceOperations,
   workspaceRuntimeServices,
@@ -84,8 +88,12 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
     await db.delete(inboxDismissals);
     await db.delete(budgetIncidents);
     await db.delete(budgetPolicies);
+    await db.delete(costEvents);
     await db.delete(issues);
+    await db.delete(heartbeatRuns);
     await db.delete(agents);
+    await db.delete(projects);
+    await db.delete(goals);
     await db.delete(companies);
   });
 
@@ -222,6 +230,49 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
       companyId,
       title: "Fixture routine",
       assigneeAgentId: agentId,
+    });
+
+    // costEvents.heartbeatRunId references heartbeatRuns.id WITHOUT
+    // `onDelete`. The agents.noral.ai TBRS delete kept failing on
+    // this exact constraint until the cascade was reordered to drop
+    // costEvents before heartbeatRuns. Seeding a heartbeat run plus
+    // a cost event pointing at it reproduces the real-world block
+    // and locks the new ordering in place.
+    const runId = randomUUID();
+    await db.insert(heartbeatRuns).values({
+      id: runId,
+      companyId,
+      agentId,
+      invocationSource: "assignment",
+      status: "completed",
+    });
+    await db.insert(costEvents).values({
+      id: randomUUID(),
+      companyId,
+      agentId,
+      provider: "fixture",
+      model: "fixture",
+      costCents: 0,
+      occurredAt: new Date(),
+      heartbeatRunId: runId,
+    });
+
+    // projects.goalId references goals.id WITHOUT `onDelete`. Before
+    // the reorder, `goals` was deleted before `projects`, so any
+    // project still pointing at a company goal blocked the goals
+    // delete with a constraint error. Seeding a goal-linked project
+    // ensures the cascade keeps `projects` first.
+    const goalId = randomUUID();
+    await db.insert(goals).values({
+      id: goalId,
+      companyId,
+      title: "Fixture goal",
+    });
+    await db.insert(projects).values({
+      id: randomUUID(),
+      companyId,
+      name: "Fixture project",
+      goalId,
     });
 
     return { companyId, agentId, issueId, policyId };

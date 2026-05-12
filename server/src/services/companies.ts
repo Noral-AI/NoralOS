@@ -292,13 +292,20 @@ export function companyService(db: Db) {
         await tx.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.companyId, id));
         await tx.delete(agentTaskSessions).where(eq(agentTaskSessions.companyId, id));
         await tx.delete(activityLog).where(eq(activityLog.companyId, id));
+        // costEvents and financeEvents each have a non-cascade
+        // `heartbeatRunId` FK to heartbeatRuns. Before this reorder
+        // they were deleted AFTER heartbeatRuns, which meant the
+        // heartbeatRuns delete blocked on any company that had ever
+        // recorded usage — the symptom on agent.noral.ai was an
+        // opaque 500 on every real-world delete. Drop them first so
+        // heartbeatRuns has nothing pointing at it.
+        await tx.delete(costEvents).where(eq(costEvents.companyId, id));
+        await tx.delete(financeEvents).where(eq(financeEvents.companyId, id));
         await tx.delete(heartbeatRuns).where(eq(heartbeatRuns.companyId, id));
         await tx.delete(agentWakeupRequests).where(eq(agentWakeupRequests.companyId, id));
         await tx.delete(agentApiKeys).where(eq(agentApiKeys.companyId, id));
         await tx.delete(agentRuntimeState).where(eq(agentRuntimeState.companyId, id));
         await tx.delete(issueComments).where(eq(issueComments.companyId, id));
-        await tx.delete(costEvents).where(eq(costEvents.companyId, id));
-        await tx.delete(financeEvents).where(eq(financeEvents.companyId, id));
         await tx.delete(approvalComments).where(eq(approvalComments.companyId, id));
         // budgetIncidents has FKs to budgetPolicies AND approvals, both
         // without cascade, so it must precede both of those deletes.
@@ -323,7 +330,6 @@ export function companyService(db: Db) {
         await tx.delete(issues).where(eq(issues.companyId, id));
         await tx.delete(companyLogos).where(eq(companyLogos.companyId, id));
         await tx.delete(assets).where(eq(assets.companyId, id));
-        await tx.delete(goals).where(eq(goals.companyId, id));
         // workspaceRuntimeServices and workspaceOperations both have
         // only set-null FKs to their parent tables (projects /
         // executionWorkspaces / heartbeatRuns), so they do NOT
@@ -335,6 +341,12 @@ export function companyService(db: Db) {
         await tx.delete(workspaceRuntimeServices).where(eq(workspaceRuntimeServices.companyId, id));
         await tx.delete(workspaceOperations).where(eq(workspaceOperations.companyId, id));
         await tx.delete(projects).where(eq(projects.companyId, id));
+        // goals must follow projects: `projects.goalId` has no
+        // onDelete clause, so an outstanding goal-linked project
+        // would block the goals delete. Same shape as the
+        // costEvents/heartbeatRuns ordering fix above — just the
+        // opposite direction (parent delete preceding the dependent).
+        await tx.delete(goals).where(eq(goals.companyId, id));
         // routines auto-cleans via FK-cascade to companies, but that
         // trigger only fires when the companies row drops at the end
         // of this transaction — which is AFTER the agents delete.
