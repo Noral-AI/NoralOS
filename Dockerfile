@@ -45,6 +45,13 @@ COPY packages/plugins/conference-room-bridge/package.json packages/plugins/confe
 # with a newer npm-installed copy via POST /api/adapters; that path
 # wins over the workspace fallback.
 COPY packages/plugins/noralai-brooklyn/package.json packages/plugins/noralai-brooklyn/
+# noralai-twilio is a worker-based plugin (uses @noralos/plugin-sdk,
+# not the adapter plugin contract). For PR 2 the package ships
+# tool-only: manifest + send_sms client + worker shell. The host
+# integration (DB plugin row, worker auto-start, issueApprovals
+# gating) lands in PR 2b. Same Dockerfile shape as Brooklyn: only
+# package.json in the deps stage; src/ comes via `COPY . .` in build.
+COPY packages/plugins/noralai-twilio/package.json packages/plugins/noralai-twilio/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile

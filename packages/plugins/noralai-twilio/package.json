@@ -1,0 +1,27 @@
+{
+  "name": "@noralos-plugins/noralai-twilio",
+  "version": "0.1.0",
+  "description": "Twilio SMS plugin for NoralOS. Exposes a `send_sms` agent tool that posts to the Twilio Messages API using a per-company `integration_credentials` Twilio credential. Host wiring (DB plugin row, worker auto-start, issueApproval gating) lands in a follow-up PR.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  }
+}
