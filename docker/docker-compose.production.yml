@@ -96,6 +96,12 @@ services:
       NORALOS_DEPLOYMENT_EXPOSURE: "public"
       NORALOS_PUBLIC_URL: "${NORALOS_PUBLIC_URL:?NORALOS_PUBLIC_URL must be set}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      # OAuth token for the Claude Code CLI bundled into the server image.
+      # Required for every agent run that uses the claude-local adapter —
+      # missing means runs fail immediately with `claude_auth_required`.
+      # Optional default keeps this compose runnable on hosts that don't
+      # have Claude Code agents (the CLI just stays unauthenticated).
+      CLAUDE_CODE_OAUTH_TOKEN: "${CLAUDE_CODE_OAUTH_TOKEN:-}"
       # Internal URL the NoralSign plugin uses to reach the bundled
       # DocuSeal service. Override only if you run a dedicated cluster.
       DOCUSEAL_INTERNAL_URL: "${DOCUSEAL_INTERNAL_URL:-http://docuseal:3000}"
