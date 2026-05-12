@@ -34,6 +34,7 @@ import {
   companyMemberships,
   companySkills,
   documents,
+  workspaceOperations,
   workspaceRuntimeServices,
 } from "@noralos/db";
 import { notFound, unprocessable } from "../errors.js";
@@ -322,10 +323,16 @@ export function companyService(db: Db) {
         await tx.delete(companyLogos).where(eq(companyLogos.companyId, id));
         await tx.delete(assets).where(eq(assets.companyId, id));
         await tx.delete(goals).where(eq(goals.companyId, id));
-        // workspaceRuntimeServices has only set-null FKs to project /
-        // workspace tables, so it does NOT auto-clean from the projects
-        // cascade — it must be dropped explicitly.
+        // workspaceRuntimeServices and workspaceOperations both have
+        // only set-null FKs to their parent tables (projects /
+        // executionWorkspaces / heartbeatRuns), so they do NOT
+        // auto-clean from any cascade chain — they must be dropped
+        // explicitly. workspaceOperations is deleted before
+        // executionWorkspaces auto-cleans via projects to keep the
+        // intent clear, but the order between the two doesn't matter
+        // because their only meaningful FKs are set-null.
         await tx.delete(workspaceRuntimeServices).where(eq(workspaceRuntimeServices.companyId, id));
+        await tx.delete(workspaceOperations).where(eq(workspaceOperations.companyId, id));
         await tx.delete(projects).where(eq(projects.companyId, id));
         await tx.delete(agents).where(eq(agents.companyId, id));
         const rows = await tx

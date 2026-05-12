@@ -39,6 +39,7 @@ import {
   issueInboxArchives,
   issueThreadInteractions,
   issues,
+  workspaceOperations,
   workspaceRuntimeServices,
 } from "@noralos/db";
 import {
@@ -74,6 +75,7 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
     // Belt-and-braces: cascade should have cleaned everything, but a
     // failing test could leak rows that block the next iteration.
     await db.delete(workspaceRuntimeServices);
+    await db.delete(workspaceOperations);
     await db.delete(issueThreadInteractions);
     await db.delete(issueInboxArchives);
     await db.delete(feedbackVotes);
@@ -195,6 +197,19 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
       provider: "local",
     });
 
+    // workspace_operations has its `executionWorkspaceId` and
+    // `heartbeatRunId` FKs declared with `onDelete: "set null"`, so it
+    // does not auto-clean from the projects or heartbeatRuns cascade
+    // chains. Seeding a row here proves the explicit delete in
+    // `services/companies.ts` is correct — and was the missing
+    // table that produced the live 500 on agent.noral.ai delete that
+    // the fix-up PR addresses.
+    await db.insert(workspaceOperations).values({
+      id: randomUUID(),
+      companyId,
+      phase: "checkout",
+    });
+
     return { companyId, agentId, issueId, policyId };
   }
 
@@ -231,6 +246,9 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
     ).resolves.toHaveLength(0);
     await expect(
       db.select().from(workspaceRuntimeServices).where(eq(workspaceRuntimeServices.companyId, companyId)),
+    ).resolves.toHaveLength(0);
+    await expect(
+      db.select().from(workspaceOperations).where(eq(workspaceOperations.companyId, companyId)),
     ).resolves.toHaveLength(0);
 
     // Sanity: the parents the cascade depends on are gone too.
