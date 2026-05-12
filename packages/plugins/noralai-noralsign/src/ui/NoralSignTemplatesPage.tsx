@@ -44,12 +44,19 @@ function formatUpdatedAt(iso: string): string {
   return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-export function NoralSignTemplatesPage(_props: PluginPageProps) {
+export function NoralSignTemplatesPage({ context }: PluginPageProps) {
   const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const companyId = context.companyId;
 
   useEffect(() => {
+    if (!companyId) {
+      // No active company yet (rare — the page is rendered behind a
+      // companyPrefix route). Wait rather than hit the API and 400.
+      setState({ kind: "loading" });
+      return;
+    }
     let cancelled = false;
-    const url = `/api/plugins/${encodeURIComponent(PLUGIN_ID)}/api/templates?limit=100`;
+    const url = `/api/plugins/${encodeURIComponent(PLUGIN_ID)}/api/templates?limit=100&companyId=${encodeURIComponent(companyId)}`;
     fetch(url, { credentials: "include", headers: { Accept: "application/json" } })
       .then(async (response) => {
         const body = (await response.json().catch(() => ({}))) as ApiResponse;
@@ -71,7 +78,7 @@ export function NoralSignTemplatesPage(_props: PluginPageProps) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [companyId]);
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">

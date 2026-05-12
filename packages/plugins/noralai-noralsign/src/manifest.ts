@@ -166,11 +166,15 @@ export const manifest: NoralosPluginManifestV1 = {
       // Used by the Documents → NoralSign dashboard page to render the
       // template list without round-tripping through an agent. Host
       // auth: `board` = NoralOS-authenticated operator session.
+      // Board-scoped routes don't carry an implicit companyId (unlike
+      // agent-scoped runs), so the host needs an explicit hint about
+      // where to read it from. The UI passes ?companyId=<uuid>.
       routeKey: "list_templates",
       method: "GET",
       path: "/templates",
       auth: "board",
       capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
     },
   ],
 
