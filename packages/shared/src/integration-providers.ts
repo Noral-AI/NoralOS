@@ -172,6 +172,49 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       },
     ],
   },
+  // ── Brooklyn LLM (NORALAI) ──────────────────────────────────────
+  // Phase 2 LLM provider. The credential is the API key for the
+  // RunPod-hosted OpenAI-compatible endpoint that backs Brooklyn LLM
+  // today. The endpoint URL is stored per-agent in adapterConfig, not
+  // in the credential; only the API key is encrypted here.
+  //
+  // The test probe targets RunPod's REST API (the same key authorizes
+  // both the management API and the per-endpoint OpenAI-compatible
+  // chat completions). 200 = key is valid. Other statuses surface
+  // through the safeErrorPrefix.
+  noralai_brooklyn: {
+    id: "noralai_brooklyn",
+    category: "llm",
+    credentialType: "api_key",
+    displayName: "Brooklyn LLM (NORALAI)",
+    description:
+      "API key for the NORALAI-managed Brooklyn LLM endpoint. Assigned per-company; consumed by the noralai_brooklyn adapter when an agent is configured to run on Brooklyn.",
+    fields: [
+      {
+        key: "apiKey",
+        label: "API Key",
+        inputType: "secret",
+        required: true,
+        helpText:
+          "Provided by NORALAI operations. NoralOS only ever stores this encrypted; admins never see the value back. The same key authorizes both the management API (for credential testing) and the chat-completion endpoint at execute time.",
+      },
+    ],
+    test: {
+      kind: "http",
+      method: "GET",
+      url: "https://rest.runpod.io/v1/endpoints",
+      headers: { Authorization: "Bearer {{apiKey}}" },
+      okStatuses: [200],
+      safeErrorPrefix: "Brooklyn LLM provider rejected the key",
+    },
+    assignableSlots: [
+      {
+        pluginKey: "noralai.brooklyn",
+        configPath: "apiKeyRef",
+        label: "Brooklyn LLM — API key",
+      },
+    ],
+  },
 };
 
 export type IntegrationProviderId = keyof typeof INTEGRATION_PROVIDERS;
@@ -216,6 +259,17 @@ export const ASSIGNMENT_TARGETS: Array<{
         configPath: "elevenLabsApiKeyRef",
         label: "ElevenLabs",
         expectsProvider: "elevenlabs",
+      },
+    ],
+  },
+  {
+    pluginKey: "noralai.brooklyn",
+    pluginDisplayName: "Brooklyn LLM",
+    slots: [
+      {
+        configPath: "apiKeyRef",
+        label: "Brooklyn LLM — API key",
+        expectsProvider: "noralai_brooklyn",
       },
     ],
   },

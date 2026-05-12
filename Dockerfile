@@ -35,6 +35,12 @@ COPY packages/plugins/noralos-plugin-fake-sandbox/package.json packages/plugins/
 COPY packages/plugins/voice-config/package.json packages/plugins/voice-config/
 COPY packages/plugins/voice-cascade/package.json packages/plugins/voice-cascade/
 COPY packages/plugins/conference-room-bridge/package.json packages/plugins/conference-room-bridge/
+# noralai-brooklyn is an external adapter plugin: workspace member for
+# `pnpm install` consistency, but NOT bundled into the runtime image.
+# It is installed post-deploy into ~/.noralos/adapter-plugins/ and
+# discovered by buildExternalAdapters() at server start. No build
+# step here, no worker.js verification.
+COPY packages/plugins/noralai-brooklyn/package.json packages/plugins/noralai-brooklyn/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
