@@ -66,10 +66,18 @@ RUN pnpm --filter @noralos/server build
 RUN pnpm --filter @noralos-plugins/voice-config build
 RUN pnpm --filter @noralos-plugins/voice-cascade build
 RUN pnpm --filter @noralos-plugins/conference-room-bridge build
+# noralai-noralsign builds tsc output (manifest, worker, REST client) plus
+# the React UI bundle (esbuild → dist/ui/index.js). Without this step
+# `ensureNoralSignRegistered` finds the workspace path but no manifest file
+# and aborts auto-registration on the first boot.
+RUN pnpm --filter @noralos-plugins/noralai-noralsign build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 RUN test -f packages/plugins/voice-config/dist/worker.js || (echo "ERROR: voice-config build output missing" && exit 1)
 RUN test -f packages/plugins/voice-cascade/dist/worker.js || (echo "ERROR: voice-cascade build output missing" && exit 1)
 RUN test -f packages/plugins/conference-room-bridge/dist/worker.js || (echo "ERROR: conference-room-bridge build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-noralsign/dist/worker.js || (echo "ERROR: noralai-noralsign build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-noralsign/dist/manifest.js || (echo "ERROR: noralai-noralsign manifest build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-noralsign/dist/ui/index.js || (echo "ERROR: noralai-noralsign UI bundle missing" && exit 1)
 
 FROM base AS production
 ARG USER_UID=1000
