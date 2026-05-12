@@ -47,6 +47,7 @@ import { pluginUiStaticRoutes } from "./routes/plugin-ui-static.js";
 import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
 import { DEFAULT_LOCAL_PLUGIN_DIR, pluginLoader } from "./services/plugin-loader.js";
+import { ensureNoralSignRegistered } from "./services/auto-register-noralsign.js";
 import { createPluginWorkerManager, type PluginWorkerManager } from "./services/plugin-worker-manager.js";
 import { createPluginJobScheduler } from "./services/plugin-job-scheduler.js";
 import { pluginJobStore } from "./services/plugin-job-store.js";
@@ -432,16 +433,22 @@ export async function createApp(
       async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
     )
     : null;
-  void loader.loadAll().then((result) => {
-    if (!result) return;
-    for (const loaded of result.results) {
-      if (devWatcher && loaded.success && loaded.plugin.packagePath) {
-        devWatcher.watch(loaded.plugin.id, loaded.plugin.packagePath);
+  // Auto-register the workspace-local NoralSign plugin on first boot.
+  // Idempotent — subsequent boots short-circuit at the first registry lookup.
+  // Runs before loadAll() so a fresh deploy installs + activates in one cycle.
+  void ensureNoralSignRegistered(db, loader)
+    .then(() => loader.loadAll())
+    .then((result) => {
+      if (!result) return;
+      for (const loaded of result.results) {
+        if (devWatcher && loaded.success && loaded.plugin.packagePath) {
+          devWatcher.watch(loaded.plugin.id, loaded.plugin.packagePath);
+        }
       }
-    }
-  }).catch((err) => {
-    logger.error({ err }, "Failed to load ready plugins on startup");
-  });
+    })
+    .catch((err) => {
+      logger.error({ err }, "Failed to load ready plugins on startup");
+    });
   process.once("exit", () => {
     if (feedbackExportTimer) clearInterval(feedbackExportTimer);
     devWatcher?.close();

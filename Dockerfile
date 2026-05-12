@@ -45,6 +45,13 @@ COPY packages/plugins/conference-room-bridge/package.json packages/plugins/confe
 # with a newer npm-installed copy via POST /api/adapters; that path
 # wins over the workspace fallback.
 COPY packages/plugins/noralai-brooklyn/package.json packages/plugins/noralai-brooklyn/
+# noralai-noralsign is the NoralSign document-signing plugin. Like Brooklyn,
+# the package.json is COPYd here so `pnpm install --frozen-lockfile` resolves
+# the workspace member; the rest of the package (`src/`, `scripts/`, etc.)
+# lands via the broader `COPY . .` in the build stage. The runtime
+# auto-registers it from the workspace path via
+# `server/src/services/auto-register-noralsign.ts` on first boot.
+COPY packages/plugins/noralai-noralsign/package.json packages/plugins/noralai-noralsign/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
