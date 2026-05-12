@@ -389,3 +389,65 @@ When PR 1 lands, all of these must be true:
 - [ ] No changes to `heartbeat.ts`, `packages/adapter-utils/src/`, or any file flagged "do NOT touch" in `NORALOS_NEXT_SESSION.md`.
 
 Ready to start implementation.
+
+---
+
+## 14. PR 1b — host integration (implementation notes)
+
+PR 1 merged on 2026-05-12 as [#53](https://github.com/Noral-AI/NoralOS/pull/53) (squash → `360b8ebc`). PR 1b is the minimum host work to make the merged plugin actually usable: it (1) auto-registers the workspace plugin so a fresh deployment doesn't need an extra `POST /api/adapters` call, and (2) resolves `company-secret:<credential-id>` references to plaintext immediately before the adapter sees them.
+
+### 14.1 Scope (authorised)
+
+1. Register `@noralos-plugins/noralai-brooklyn` with the adapter plugin store on server start.
+2. Resolve `company-secret:<credential-id>` values on `agents.adapterConfig.apiKeyRef` to plaintext before `execute()` runs.
+3. Tests covering refusal, leak-free resolution, registration visibility, smoke execute.
+4. This map note.
+
+Explicitly **out of scope** (per the merge approval): router behaviour, heartbeat logic, UI redesign, migrations, unrelated adapter packages.
+
+### 14.2 Files added
+
+| Path | Role |
+|---|---|
+| `server/src/adapters/brooklyn-secret-ref.ts` | `wrapBrooklynAdapter()` (transforms `apiKeyRef → apiKey` on a shallow config copy) + `setBrooklynCredentialResolver()` injection point. |
+| `server/src/adapters/auto-register-brooklyn.ts` | `ensureBrooklynRegistered()` — idempotent workspace-local discovery + `loadExternalAdapterPackage` + `registerServerAdapter`. |
+| `server/src/adapters/brooklyn-secret-ref.test.ts` | 9 vitest cases: refusal w/ no resolver, refusal on resolver throw, refusal on empty plaintext, successful resolution + config copy semantics, plaintext bypass, no echo of plaintext/credentialId/`company-secret:` in error fields, `testEnvironment` resolve + fallthrough, resolver getter/setter. |
+| `server/src/adapters/auto-register-brooklyn.test.ts` | 5 vitest cases: first-call registration, `listServerAdapters` visibility, idempotence, refusal via the active registry, end-to-end smoke with mocked `fetch` confirming `Authorization: Bearer <plaintext>` and no plaintext echo in the result. |
+
+### 14.3 Files modified
+
+| Path | Change |
+|---|---|
+| `server/src/adapters/registry.ts` | `resolveExternalAdapterRegistration()` applies `wrapBrooklynAdapter()` when `type === "noralai_brooklyn"`. Both the startup IIFE and the hot-install path (`routes/adapters.ts:registerWithSessionManagement`) inherit the wrap. |
+| `server/src/index.ts` | Bootstrap, after `waitForExternalAdapters()` and before `server.listen()`: dynamic-imports `setBrooklynCredentialResolver`, `ensureBrooklynRegistered`, and `integrationCredentialService`; injects a `(companyId, credentialId) => integrationCredentialService(db).resolvePlaintext(...)` closure; then awaits `ensureBrooklynRegistered()`. |
+
+No changes to `heartbeat.ts`, `packages/adapter-utils/src/`, migrations, or UI.
+
+### 14.4 Design decisions
+
+- **Wrap at registration, resolve at call time.** The wrap is applied once during registration so the heartbeat dispatch boundary is untouched; the resolver itself is a module-level closure populated by bootstrap, so the wrapper picks it up lazily on each `execute()` call. This is what lets the registry's module-load IIFE run before the `Db` handle exists without blocking.
+- **Shallow-copy the config.** The wrapper builds a new object with `apiKey` set and `apiKeyRef` removed before calling the inner adapter. The original `ctx.config` is left intact so the heartbeat layer's persistence / audit / redaction view of `adapterConfig` still shows the reference, never the plaintext.
+- **Plugin still refuses unresolved refs.** The wrapper resolves before delegating, so the plugin's `company-secret:` refusal branch never triggers in the normal path. It stays in place as a defence-in-depth check — if a future bug bypasses the wrap, the plugin still refuses to call the upstream service with an unresolved reference.
+- **Errors are sanitised at the wrapper boundary.** When the resolver throws or returns an empty value, the wrapper produces `brooklyn_resolve_failed` / `brooklyn_no_resolver` with a hand-written `errorMessage`. The thrown error's `.message` is never copied through, so a `pg`/`drizzle` error string can't leak DB internals into the run log.
+- **`integrationCredentialService.resolvePlaintext`, not `secretService.resolveSecretValue`.** The integration-credentials layer enforces the company-scoping check (`credential belongs to another company` → `unprocessable`) and the "credential has no encrypted material" check. Bypassing it would re-implement that authorization layer in the adapter path.
+
+### 14.5 Why a Brooklyn-specific wrap (not a generic one)
+
+The `apiKeyRef` field name and the `company-secret:` ref string are conventions invented for Brooklyn. The PR #46 integration-credentials system does not impose either: other adapters consume credentials through `env`-binding rewriting at agent-edit time (see `secretService.resolveAdapterConfigForRuntime`). A generic resolver here would either (a) duplicate that env-binding path or (b) impose Brooklyn's convention on adapters that don't use it. When PR 2/3 adapters land, the right move is to lift `wrapBrooklynAdapter` into `wrapLlmAdapter` and switch the `type ===` guard to a small set — that's a 5-line follow-up, not a now-decision.
+
+### 14.6 Verification
+
+- `pnpm --filter @noralos/server typecheck` — green.
+- `pnpm --filter @noralos-plugins/noralai-brooklyn test` — 56 cases pass (no regressions from PR 1).
+- `pnpm exec vitest run src/adapters/brooklyn-secret-ref.test.ts src/adapters/auto-register-brooklyn.test.ts` — 14 cases pass.
+
+### 14.7 What the merge unlocks
+
+After PR 1b lands, the operator path to a working Brooklyn agent is:
+
+1. Settings → Integrations → "Add credential" → provider `noralai_brooklyn` → paste API key. (UI already shipped in PR #46.)
+2. Settings → Plugins → Brooklyn → assign credential to slot `apiKeyRef`. (Same UI.)
+3. Hire agent → adapter `noralai_brooklyn` → model `brooklyn-core` → set `baseUrl` (and optional `upstreamModel` override). (Same UI; `noralai_brooklyn` is selectable because PR 1b auto-registered the plugin.)
+4. First heartbeat run resolves the credential and reaches the upstream service. No further wiring required.
+
+PR 2 (Twilio) can start after this lands.

@@ -35,11 +35,15 @@ COPY packages/plugins/noralos-plugin-fake-sandbox/package.json packages/plugins/
 COPY packages/plugins/voice-config/package.json packages/plugins/voice-config/
 COPY packages/plugins/voice-cascade/package.json packages/plugins/voice-cascade/
 COPY packages/plugins/conference-room-bridge/package.json packages/plugins/conference-room-bridge/
-# noralai-brooklyn is an external adapter plugin: workspace member for
-# `pnpm install` consistency, but NOT bundled into the runtime image.
-# It is installed post-deploy into ~/.noralos/adapter-plugins/ and
-# discovered by buildExternalAdapters() at server start. No build
-# step here, no worker.js verification.
+# noralai-brooklyn is an external adapter plugin. The package.json is
+# COPYd here so `pnpm install --frozen-lockfile` succeeds; the rest of
+# the package (`src/`) lands via the broader `COPY . .` in the build
+# stage. The runtime auto-registers it from the workspace path via
+# `server/src/adapters/auto-register-brooklyn.ts` (no `tsc` build —
+# the server loads `src/index.ts` through the same tsx loader it uses
+# for its own code, see CMD below). An operator can still override
+# with a newer npm-installed copy via POST /api/adapters; that path
+# wins over the workspace fallback.
 COPY packages/plugins/noralai-brooklyn/package.json packages/plugins/noralai-brooklyn/
 COPY patches/ patches/
 

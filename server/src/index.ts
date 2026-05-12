@@ -807,6 +807,24 @@ export async function startServer(): Promise<StartedServer> {
   const { waitForExternalAdapters } = await import("./adapters/registry.js");
   await waitForExternalAdapters();
 
+  // Wire the host-side resolver for the Brooklyn LLM adapter's
+  // `company-secret:<id>` apiKeyRef format, then auto-register the
+  // workspace-local plugin if it has not been installed yet. The
+  // resolver must be set first so that the very first run after
+  // registration (e.g. from an issue already queued at boot) sees a
+  // wired adapter.
+  const [{ setBrooklynCredentialResolver }, { ensureBrooklynRegistered }, { integrationCredentialService }] =
+    await Promise.all([
+      import("./adapters/brooklyn-secret-ref.js"),
+      import("./adapters/auto-register-brooklyn.js"),
+      import("./services/integrations/credentials.js"),
+    ]);
+  setBrooklynCredentialResolver(async (companyId, credentialId) => {
+    const credentials = integrationCredentialService(db as never);
+    return credentials.resolvePlaintext(companyId, credentialId);
+  });
+  await ensureBrooklynRegistered();
+
   await new Promise<void>((resolveListen, rejectListen) => {
     const onError = (err: Error) => {
       server.off("error", onError);

@@ -103,6 +103,7 @@ import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+import { BROOKLYN_ADAPTER_TYPE, wrapBrooklynAdapter } from "./brooklyn-secret-ref.js";
 
 function normalizeHermesConfig<T extends { config?: unknown; agent?: unknown }>(ctx: T): T {
   const config =
@@ -386,13 +387,23 @@ function getDisabledAdapterTypesFromStore(): string[] {
 export function resolveExternalAdapterRegistration(
   externalAdapter: ServerAdapterModule,
 ): ServerAdapterModule {
-  return {
+  const withSession: ServerAdapterModule = {
     ...externalAdapter,
     sessionManagement:
       externalAdapter.sessionManagement
         ?? getAdapterSessionManagement(externalAdapter.type)
         ?? undefined,
   };
+  // Brooklyn-specific host-layer concern: resolve `company-secret:<id>`
+  // references on `adapterConfig.apiKeyRef` to plaintext immediately
+  // before the adapter's `execute()` runs. The wrap is applied here
+  // (not inside the plugin) so the resolution layer has access to the
+  // server's `Db` handle and integration-credentials authorization
+  // checks. See `brooklyn-secret-ref.ts` for the full rationale.
+  if (withSession.type === BROOKLYN_ADAPTER_TYPE) {
+    return wrapBrooklynAdapter(withSession);
+  }
+  return withSession;
 }
 
 /**
