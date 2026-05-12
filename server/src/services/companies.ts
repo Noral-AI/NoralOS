@@ -34,6 +34,7 @@ import {
   companyMemberships,
   companySkills,
   documents,
+  routines,
   workspaceOperations,
   workspaceRuntimeServices,
 } from "@noralos/db";
@@ -334,6 +335,15 @@ export function companyService(db: Db) {
         await tx.delete(workspaceRuntimeServices).where(eq(workspaceRuntimeServices.companyId, id));
         await tx.delete(workspaceOperations).where(eq(workspaceOperations.companyId, id));
         await tx.delete(projects).where(eq(projects.companyId, id));
+        // routines auto-cleans via FK-cascade to companies, but that
+        // trigger only fires when the companies row drops at the end
+        // of this transaction — which is AFTER the agents delete.
+        // routines.assigneeAgentId references agents.id WITHOUT
+        // `onDelete`, so an unscrubbed assigneeAgentId would block
+        // the agents delete. Explicit drop here gets routines (and
+        // its cascade-children routineTriggers / routineRuns) out of
+        // the way first.
+        await tx.delete(routines).where(eq(routines.companyId, id));
         await tx.delete(agents).where(eq(agents.companyId, id));
         const rows = await tx
           .delete(companies)
