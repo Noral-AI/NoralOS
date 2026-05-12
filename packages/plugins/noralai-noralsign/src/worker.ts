@@ -585,37 +585,17 @@ const plugin = definePlugin({
     const ctx = requireCtx();
     if (!ctx) return { status: 503, body: { error: "Plugin not yet initialised" } };
 
-    const rawConfig = await ctx.config.get();
-    ctx.logger.info("NoralSign apiRoute invoked (debug)", {
-      companyId: input.companyId,
-      configKeys: Object.keys(rawConfig),
-      apiUrlPresent: typeof (rawConfig as Record<string, unknown>).apiUrl === "string",
-      apiTokenRefPresent: typeof (rawConfig as Record<string, unknown>).apiTokenRef === "string",
-      apiTokenRefSample:
-        typeof (rawConfig as Record<string, unknown>).apiTokenRef === "string"
-          ? String((rawConfig as Record<string, unknown>).apiTokenRef).slice(0, 8) + "…"
-          : null,
-    });
-    const cfg = readConfig(rawConfig);
-    if ("error" in cfg) {
-      ctx.logger.warn("NoralSign apiRoute: readConfig failed", { cfgError: cfg.error });
-      return { status: 400, body: { error: cfg.error } };
-    }
+    const cfg = readConfig(await ctx.config.get());
+    if ("error" in cfg) return { status: 400, body: { error: cfg.error } };
     let apiToken: string;
     try {
       apiToken = await ctx.secrets.resolve(cfg.apiTokenRef);
-    } catch (err) {
-      ctx.logger.warn("NoralSign apiRoute: secret resolve threw", {
-        errName: err instanceof Error ? err.name : "unknown",
-        errMessage: err instanceof Error ? err.message : "unknown",
-      });
+    } catch {
       return { status: 400, body: { error: "Could not resolve NoralSign credential." } };
     }
     if (!apiToken) {
-      ctx.logger.warn("NoralSign apiRoute: resolved token is empty");
       return { status: 400, body: { error: "NoralSign credential is empty." } };
     }
-    ctx.logger.info("NoralSign apiRoute: token resolved", { tokenLength: apiToken.length });
 
     const queryStr = typeof input.query.query === "string" ? input.query.query : undefined;
     const limitStr = typeof input.query.limit === "string" ? input.query.limit : undefined;

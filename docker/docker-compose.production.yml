@@ -109,6 +109,13 @@ services:
       # runnable on hosts that only use email/password or other providers.
       GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
       GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      # Pin the local_encrypted secret provider's master-key file to the
+      # persistent /noralos volume. Without this, the provider falls back
+      # to `<process.cwd()>/data/secrets/master.key` which lives outside
+      # the volume — every container recreate generates a NEW random key,
+      # silently corrupting every previously-encrypted company secret
+      # (voice TTS, ElevenLabs, integration credentials, routine triggers).
+      NORALOS_SECRETS_MASTER_KEY_FILE: "/noralos/instances/default/secrets/master.key"
       # Internal URL the NoralSign plugin uses to reach the bundled
       # DocuSeal service. Override only if you run a dedicated cluster.
       DOCUSEAL_INTERNAL_URL: "${DOCUSEAL_INTERNAL_URL:-http://docuseal:3000}"
