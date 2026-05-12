@@ -77,13 +77,64 @@ export interface NoralSignRegistrationOutcome {
  * @param loader The constructed pluginLoader; must already have runtime
  *               services (the production app.ts loader does).
  */
+/**
+ * Read the workspace manifest's version from `dist/manifest.js`. Used to
+ * detect when a code change has bumped the manifest and the stored DB
+ * row needs to be refreshed via `upgradePlugin`. Without this check, a
+ * manifest change in source code never reaches production unless an
+ * operator manually triggers an upgrade — caught the hard way during
+ * NoralSign Phase 1 (2026-05-12).
+ */
+function readWorkspaceManifestVersion(localPath: string): string | null {
+  try {
+    const distFile = path.join(localPath, "dist", "manifest.js");
+    if (fs.existsSync(distFile)) {
+      const source = fs.readFileSync(distFile, "utf8");
+      const match = source.match(/version:\s*['"]([^'"]+)['"]/);
+      return match ? match[1] : null;
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
 export async function ensureNoralSignRegistered(
   db: Db,
   loader: PluginLoader,
 ): Promise<NoralSignRegistrationOutcome> {
   const registry = pluginRegistryService(db);
   const existing = await registry.getByKey(NORALSIGN_PLUGIN_KEY);
+  const localPath = resolveWorkspacePluginPath();
+
+  // Existing row — short-circuit, but FIRST refresh the manifest if the
+  // workspace has a newer version. Otherwise manifest changes in code
+  // never propagate to the DB and apiRoutes/tools/capabilities go stale.
   if (existing && existing.status !== "uninstalled") {
+    if (localPath) {
+      const workspaceVersion = readWorkspaceManifestVersion(localPath);
+      const storedVersion = typeof existing.version === "string" ? existing.version : null;
+      if (workspaceVersion && storedVersion && workspaceVersion !== storedVersion) {
+        logger.info(
+          { pluginKey: NORALSIGN_PLUGIN_KEY, storedVersion, workspaceVersion },
+          "NoralSign workspace manifest version differs from stored row; upgrading",
+        );
+        try {
+          await loader.upgradePlugin(existing.id, { localPath });
+          try {
+            await loader.unloadSingle(existing.id, NORALSIGN_PLUGIN_KEY);
+          } catch {
+            // worker may not be running; ignore
+          }
+          await loader.loadSingle(existing.id);
+        } catch (err) {
+          logger.warn(
+            { err, pluginId: existing.id },
+            "NoralSign manifest upgrade failed; continuing with stored manifest",
+          );
+        }
+      }
+    }
     return {
       registered: true,
       performedRegistration: false,
@@ -92,7 +143,6 @@ export async function ensureNoralSignRegistered(
     };
   }
 
-  const localPath = resolveWorkspacePluginPath();
   if (!localPath) {
     logger.warn(
       { packageName: NORALSIGN_PACKAGE_NAME },

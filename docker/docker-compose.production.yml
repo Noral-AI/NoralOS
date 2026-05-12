@@ -116,6 +116,11 @@ services:
       # silently corrupting every previously-encrypted company secret
       # (voice TTS, ElevenLabs, integration credentials, routine triggers).
       NORALOS_SECRETS_MASTER_KEY_FILE: "/noralos/instances/default/secrets/master.key"
+      # Slack plugin: in single-tenant deployments where multiple companies
+      # exist but only one hosts the Slack workspace, pin which company's
+      # config the plugin uses for inbound routing. Unset = the plugin
+      # picks the first company whose Slack credentials resolve cleanly.
+      SLACK_PIN_COMPANY_ID: "${SLACK_PIN_COMPANY_ID:-}"
       # Internal URL the NoralSign plugin uses to reach the bundled
       # DocuSeal service. Override only if you run a dedicated cluster.
       DOCUSEAL_INTERNAL_URL: "${DOCUSEAL_INTERNAL_URL:-http://docuseal:3000}"

@@ -52,6 +52,12 @@ COPY packages/plugins/noralai-brooklyn/package.json packages/plugins/noralai-bro
 # auto-registers it from the workspace path via
 # `server/src/services/auto-register-noralsign.ts` on first boot.
 COPY packages/plugins/noralai-noralsign/package.json packages/plugins/noralai-noralsign/
+# noralai-slack: Slack channel for NoralOS agents. Same pattern as Brooklyn
+# and NoralSign — package.json COPYd here so `pnpm install --frozen-lockfile`
+# resolves the workspace member; src + scripts land via the broader `COPY . .`
+# at the build stage. Runtime auto-registers from the workspace path via
+# `server/src/services/auto-register-slack.ts`.
+COPY packages/plugins/noralai-slack/package.json packages/plugins/noralai-slack/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
@@ -71,6 +77,10 @@ RUN pnpm --filter @noralos-plugins/conference-room-bridge build
 # `ensureNoralSignRegistered` finds the workspace path but no manifest file
 # and aborts auto-registration on the first boot.
 RUN pnpm --filter @noralos-plugins/noralai-noralsign build
+# noralai-slack builds tsc output (manifest, worker, slack client, router).
+# Without this step `ensureSlackRegistered` finds the workspace path but
+# no manifest file and aborts auto-registration on first boot.
+RUN pnpm --filter @noralos-plugins/noralai-slack build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 RUN test -f packages/plugins/voice-config/dist/worker.js || (echo "ERROR: voice-config build output missing" && exit 1)
 RUN test -f packages/plugins/voice-cascade/dist/worker.js || (echo "ERROR: voice-cascade build output missing" && exit 1)
@@ -78,6 +88,8 @@ RUN test -f packages/plugins/conference-room-bridge/dist/worker.js || (echo "ERR
 RUN test -f packages/plugins/noralai-noralsign/dist/worker.js || (echo "ERROR: noralai-noralsign build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-noralsign/dist/manifest.js || (echo "ERROR: noralai-noralsign manifest build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-noralsign/dist/ui/index.js || (echo "ERROR: noralai-noralsign UI bundle missing" && exit 1)
+RUN test -f packages/plugins/noralai-slack/dist/worker.js || (echo "ERROR: noralai-slack build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-slack/dist/manifest.js || (echo "ERROR: noralai-slack manifest build output missing" && exit 1)
 
 FROM base AS production
 ARG USER_UID=1000

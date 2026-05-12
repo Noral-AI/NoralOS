@@ -48,6 +48,7 @@ import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
 import { DEFAULT_LOCAL_PLUGIN_DIR, pluginLoader } from "./services/plugin-loader.js";
 import { ensureNoralSignRegistered } from "./services/auto-register-noralsign.js";
+import { ensureSlackRegistered } from "./services/auto-register-slack.js";
 import { createPluginWorkerManager, type PluginWorkerManager } from "./services/plugin-worker-manager.js";
 import { createPluginJobScheduler } from "./services/plugin-job-scheduler.js";
 import { pluginJobStore } from "./services/plugin-job-store.js";
@@ -433,10 +434,15 @@ export async function createApp(
       async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
     )
     : null;
-  // Auto-register the workspace-local NoralSign plugin on first boot.
-  // Idempotent — subsequent boots short-circuit at the first registry lookup.
+  // Auto-register the workspace-local plugins on first boot.
+  // Idempotent — subsequent boots short-circuit unless the workspace
+  // manifest version differs from the stored row (in which case
+  // upgradePlugin runs to refresh the DB manifest).
   // Runs before loadAll() so a fresh deploy installs + activates in one cycle.
-  void ensureNoralSignRegistered(db, loader)
+  void Promise.all([
+    ensureNoralSignRegistered(db, loader),
+    ensureSlackRegistered(db, loader),
+  ])
     .then(() => loader.loadAll())
     .then((result) => {
       if (!result) return;
