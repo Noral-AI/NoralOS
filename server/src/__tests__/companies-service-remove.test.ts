@@ -39,6 +39,7 @@ import {
   issueInboxArchives,
   issueThreadInteractions,
   issues,
+  routines,
   workspaceOperations,
   workspaceRuntimeServices,
 } from "@noralos/db";
@@ -76,6 +77,7 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
     // failing test could leak rows that block the next iteration.
     await db.delete(workspaceRuntimeServices);
     await db.delete(workspaceOperations);
+    await db.delete(routines);
     await db.delete(issueThreadInteractions);
     await db.delete(issueInboxArchives);
     await db.delete(feedbackVotes);
@@ -201,13 +203,25 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
     // `heartbeatRunId` FKs declared with `onDelete: "set null"`, so it
     // does not auto-clean from the projects or heartbeatRuns cascade
     // chains. Seeding a row here proves the explicit delete in
-    // `services/companies.ts` is correct — and was the missing
-    // table that produced the live 500 on agent.noral.ai delete that
-    // the fix-up PR addresses.
+    // `services/companies.ts` is correct.
     await db.insert(workspaceOperations).values({
       id: randomUUID(),
       companyId,
       phase: "checkout",
+    });
+
+    // routines.assigneeAgentId references agents.id WITHOUT
+    // `onDelete`, so any routine that points at an agent in this
+    // company will block the agents delete unless routines is
+    // explicitly dropped first. The seed-with-assignee here proves
+    // the explicit `tx.delete(routines)` is in place — without it,
+    // the agents delete in the service raises a Postgres FK
+    // constraint error and the test fails.
+    await db.insert(routines).values({
+      id: randomUUID(),
+      companyId,
+      title: "Fixture routine",
+      assigneeAgentId: agentId,
     });
 
     return { companyId, agentId, issueId, policyId };
@@ -249,6 +263,9 @@ describeEmbeddedPostgres("companyService.remove() — cascade", () => {
     ).resolves.toHaveLength(0);
     await expect(
       db.select().from(workspaceOperations).where(eq(workspaceOperations.companyId, companyId)),
+    ).resolves.toHaveLength(0);
+    await expect(
+      db.select().from(routines).where(eq(routines.companyId, companyId)),
     ).resolves.toHaveLength(0);
 
     // Sanity: the parents the cascade depends on are gone too.
