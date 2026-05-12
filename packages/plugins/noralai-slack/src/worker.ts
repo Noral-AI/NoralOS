@@ -47,6 +47,7 @@ import {
   type SlackClientConfig,
 } from "./slack-client.js";
 import { markSessionUsed, resolveSession } from "./agent-router.js";
+import { stripTrailingModelTag } from "./response-cleanup.js";
 
 // ---------------------------------------------------------------------------
 // Module-scoped state
@@ -121,7 +122,7 @@ async function resolveOperatingConfig(
 }
 
 // ---------------------------------------------------------------------------
-// Truncate long agent replies so Slack accepts them
+// Clean and shape agent reply text for Slack
 // ---------------------------------------------------------------------------
 
 function safeTruncate(text: string): string {
@@ -289,7 +290,7 @@ async function handleInboundMessage(ctx: PluginContext, msg: InboundMessage): Pr
   try {
     const reply = await slackPostMessage(slackConfig, {
       channel: msg.channelId,
-      text: safeTruncate(finalText),
+      text: safeTruncate(stripTrailingModelTag(finalText)),
       threadTs: msg.threadTs ?? undefined,
     });
     ctx.logger.info("Slack reply posted", {
