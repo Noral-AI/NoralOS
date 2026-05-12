@@ -370,3 +370,9 @@ export const manifest: NoralosPluginManifestV1 = {
     },
   ],
 };
+
+// The plugin-loader does `mod.default ?? mod` when importing the manifest
+// module. The named `manifest` export above is convenient for tests and
+// in-process consumers; the default export is what the host actually
+// validates at install time. Mirrors the pattern in conference-room-bridge.
+export default manifest;
