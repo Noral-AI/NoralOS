@@ -149,6 +149,25 @@ export interface CreateCredentialInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface CreateOAuthDraftInput {
+  provider: string;
+  displayName: string;
+  environment?: IntegrationEnvironment;
+  clientId: string;
+  clientSecret: string;
+  /** Non-secret text fields collected on the form. Stored in metadata.fields. */
+  fields: Record<string, string>;
+  description?: string | null;
+}
+
+export interface SetOAuthTokensInput {
+  refreshToken: string;
+  /** Non-secret api domain to persist in metadata (provider-specific). */
+  apiDomain?: string;
+  /** Authoritative accounts-server (if the provider echoes one on callback). */
+  accountsServer?: string;
+}
+
 export interface RotateCredentialInput {
   value: string;
   rotationNotes?: string | null;
@@ -330,6 +349,156 @@ export function integrationCredentialService(db: Db) {
 
       const assignments = await loadAssignmentsForCompany(companyId);
       return buildCredentialDto(inserted, assignments);
+    },
+
+    /**
+     * Create an OAuth-draft credential. Persists `{clientId, clientSecret}`
+     * as the encrypted secret material, marks the credential
+     * `needs_attention`, and stores per-provider non-secret fields under
+     * `metadata.fields`. The OAuth callback later promotes this to an
+     * `active` credential by rotating the secret to include the refresh
+     * token (`setOAuthTokens`).
+     */
+    createOAuthDraft: async (
+      companyId: string,
+      input: CreateOAuthDraftInput,
+      actor: CredentialActor,
+    ): Promise<IntegrationCredentialDto> => {
+      const provider = INTEGRATION_PROVIDERS[input.provider];
+      if (!provider) throw unprocessable(`Unknown integration provider: ${input.provider}`);
+      if (!provider.oauth) {
+        throw unprocessable(`Provider ${input.provider} is not an OAuth provider`);
+      }
+
+      const baseName = `integration:${input.provider}:${slugifyDisplayName(input.displayName)}`;
+      const existingSecret = await secretSvc.getByName(companyId, baseName);
+      if (existingSecret) {
+        throw conflict(
+          `An integration credential already exists for that provider + name. Pick a different display name.`,
+        );
+      }
+
+      // Encrypted material is a JSON blob; the refresh token is added on
+      // OAuth callback by `setOAuthTokens`. Storing as JSON keeps the
+      // existing single-secret-per-credential schema intact.
+      const materialJson = JSON.stringify({
+        clientId: input.clientId,
+        clientSecret: input.clientSecret,
+      });
+
+      const secret = await secretSvc.create(
+        companyId,
+        {
+          name: baseName,
+          provider: "local_encrypted",
+          value: materialJson,
+          description: input.description ?? null,
+        },
+        { userId: actor.userId, agentId: actor.agentId },
+      );
+
+      const inserted = await db
+        .insert(integrationCredentials)
+        .values({
+          companyId,
+          secretId: secret.id,
+          provider: provider.id,
+          category: provider.category,
+          credentialType: provider.credentialType,
+          displayName: input.displayName,
+          description: input.description ?? null,
+          environment: input.environment ?? "production",
+          // Awaiting the OAuth callback. The UI surfaces this distinctly.
+          status: "needs_attention",
+          maskedSuffix: maskSuffix(input.clientSecret),
+          metadata: { fields: input.fields, oauth: { connected: false } },
+          createdByUserId: actor.userId,
+          createdByAgentId: actor.agentId,
+          updatedByUserId: actor.userId,
+        })
+        .returning()
+        .then((rows) => (rows[0] as CredentialRow));
+
+      const assignments = await loadAssignmentsForCompany(companyId);
+      return buildCredentialDto(inserted, assignments);
+    },
+
+    /**
+     * Promote an OAuth-draft credential to an active connected credential
+     * by attaching the refresh token. Rotates the encrypted material to
+     * preserve audit history. Persists `apiDomain` and `accountsServer`
+     * (when provided) under non-secret metadata so plugins can construct
+     * provider API URLs without re-running the handshake.
+     *
+     * Safe to call on either an `initial` connect (draft -> active) or a
+     * `reconnect` (active with stale refresh token -> active with fresh
+     * refresh token). In both cases the access-token cache for this
+     * credential must be cleared by the caller.
+     */
+    setOAuthTokens: async (
+      companyId: string,
+      credentialId: string,
+      input: SetOAuthTokensInput,
+      actor: CredentialActor,
+    ): Promise<IntegrationCredentialDto> => {
+      const row = await loadCredentialRow(credentialId);
+      if (!row || row.companyId !== companyId) throw notFound("Integration credential not found");
+      if (!row.secretId) throw unprocessable("Credential has no encrypted material to update");
+
+      // Re-resolve current material so we can preserve clientId/clientSecret
+      // while rotating in the new refresh token.
+      const currentRaw = await secretSvc.resolveSecretValue(companyId, row.secretId, "latest");
+      let current: { clientId?: string; clientSecret?: string };
+      try {
+        current = JSON.parse(currentRaw);
+      } catch {
+        throw unprocessable("OAuth credential material is not valid JSON");
+      }
+      if (!current.clientId || !current.clientSecret) {
+        throw unprocessable("OAuth credential material missing clientId/clientSecret");
+      }
+
+      const nextJson = JSON.stringify({
+        clientId: current.clientId,
+        clientSecret: current.clientSecret,
+        refreshToken: input.refreshToken,
+      });
+
+      await secretSvc.rotate(
+        row.secretId,
+        { value: nextJson },
+        { userId: actor.userId, agentId: actor.agentId },
+      );
+
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const nextMeta: Record<string, unknown> = {
+        ...meta,
+        oauth: {
+          ...((meta.oauth as Record<string, unknown> | undefined) ?? {}),
+          connected: true,
+          connectedAt: new Date().toISOString(),
+          ...(input.accountsServer ? { accountsServer: input.accountsServer } : {}),
+        },
+      };
+      if (input.apiDomain) nextMeta.apiDomain = input.apiDomain;
+
+      await db
+        .update(integrationCredentials)
+        .set({
+          status: "active",
+          maskedSuffix: maskSuffix(input.refreshToken),
+          metadata: nextMeta,
+          // Clear any prior failed-test state — admin should re-test after rotate.
+          lastTestStatus: null,
+          lastTestError: null,
+          updatedByUserId: actor.userId,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrationCredentials.id, credentialId));
+
+      const fresh = await loadCredentialRow(credentialId);
+      const assignments = await loadAssignmentsForCompany(companyId);
+      return buildCredentialDto(fresh!, assignments);
     },
 
     importExistingSecret: async (

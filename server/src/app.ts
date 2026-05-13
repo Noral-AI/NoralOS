@@ -25,6 +25,7 @@ import { goalRoutes } from "./routes/goals.js";
 import { approvalRoutes } from "./routes/approvals.js";
 import { secretRoutes } from "./routes/secrets.js";
 import { integrationRoutes } from "./routes/integrations.js";
+import { integrationOAuthRoutes } from "./routes/integrations-oauth.js";
 import { costRoutes } from "./routes/costs.js";
 import { activityRoutes } from "./routes/activity.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
@@ -292,6 +293,7 @@ export async function createApp(
   // assignment can notify the running worker (or fall back to a restart)
   // after patching `plugin_config.config_json`.
   api.use(integrationRoutes(db, { workerManager, lifecycle }));
+  api.use(integrationOAuthRoutes(db));
   api.use(adapterRoutes());
   api.use(
     accessRoutes(db, {

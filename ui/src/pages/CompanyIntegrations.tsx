@@ -11,10 +11,13 @@ import {
   type IntegrationCredentialType,
   type IntegrationCredentialDto,
   type IntegrationEnvironment,
+  type IntegrationField,
+  type IntegrationProvider,
   type UnmanagedSecretDto,
 } from "@noralos/shared";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
+import { useSearchParams } from "../lib/router";
 import { integrationsApi } from "../api/integrations";
 import { voiceCascadeApi, type VoiceCascadeTtsMode } from "../api/voiceCascade";
 import { Button } from "@/components/ui/button";
@@ -29,10 +32,24 @@ export function CompanyIntegrations() {
   const [tab, setTab] = useState<Tab>("credentials");
   const [addDrawerOpen, setAddDrawerOpen] = useState<{ kind: "create" } | { kind: "import"; secret: UnmanagedSecretDto } | null>(null);
   const [editDrawerCredential, setEditDrawerCredential] = useState<IntegrationCredentialDto | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // The OAuth callback redirects back with `?connected=<credentialId>&provider=<id>`.
+  // Surface a transient banner so the admin sees the connect succeeded;
+  // strip the params on dismissal so a reload doesn't re-fire the toast.
+  const connectedCredentialId = searchParams.get("connected");
+  const connectedProvider = searchParams.get("provider");
 
   useEffect(() => {
     setBreadcrumbs([{ label: "Settings" }, { label: "Integrations" }]);
   }, [setBreadcrumbs]);
+
+  function dismissConnectFlash() {
+    const next = new URLSearchParams(searchParams);
+    next.delete("connected");
+    next.delete("provider");
+    setSearchParams(next, { replace: true });
+  }
 
   const credentialsQuery = useQuery({
     queryKey: ["integrations", "credentials", selectedCompanyId],
@@ -80,6 +97,27 @@ export function CompanyIntegrations() {
           <Button onClick={() => setAddDrawerOpen({ kind: "create" })}>Add Credential</Button>
         ) : null}
       </header>
+
+      {connectedCredentialId ? (
+        <div
+          role="status"
+          data-testid="oauth-connected-banner"
+          className="mx-8 mt-4 flex items-center justify-between gap-4 rounded border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+        >
+          <span>
+            {connectedProvider
+              ? `${INTEGRATION_PROVIDERS[connectedProvider]?.displayName ?? connectedProvider} connected.`
+              : "Integration connected."}
+          </span>
+          <button
+            type="button"
+            onClick={dismissConnectFlash}
+            className="text-xs underline-offset-2 hover:underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <div className="flex items-center gap-1 border-b border-border px-8">
         <TabButton active={tab === "credentials"} onClick={() => setTab("credentials")}>
@@ -308,7 +346,16 @@ function CredentialRow({
           <span className="italic">Not assigned</span>
         )}
       </div>
-      <div>
+      <div className="flex items-center gap-2">
+        {provider?.oauth ? (
+          <a
+            href={integrationsApi.reconnectOAuthUrl(credential.provider, credential.id)}
+            className="inline-flex items-center rounded border border-border bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted"
+            data-testid={`oauth-reconnect-${credential.id}`}
+          >
+            Reconnect
+          </a>
+        ) : null}
         <Button variant="ghost" size="sm" onClick={onEdit}>
           Manage
         </Button>
@@ -426,6 +473,49 @@ function CredentialDrawer({
   const [error, setError] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ ok: boolean; safeMessage: string } | null>(null);
 
+  // OAuth provider state. `oauthFields` holds the per-provider text
+  // inputs (e.g. `dataCenter` for Zoho). `clientId` / `clientSecret`
+  // are kept in their own state because they have provider-agnostic
+  // semantics (one is non-secret metadata, the other is a secret).
+  const selectedProviderSpec: IntegrationProvider | undefined = INTEGRATION_PROVIDERS[provider];
+  const isOAuthProvider = mode === "create" && Boolean(selectedProviderSpec?.oauth);
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [oauthFields, setOauthFields] = useState<Record<string, string>>({});
+
+  // Seed default values for fixed-list text fields whenever the
+  // selected OAuth provider changes (e.g. picking Zoho preselects
+  // `dataCenter = "us"`).
+  useEffect(() => {
+    if (!isOAuthProvider || !selectedProviderSpec) return;
+    const seeded: Record<string, string> = {};
+    for (const field of selectedProviderSpec.fields) {
+      if (field.inputType !== "text") continue;
+      if (field.key === "clientId") continue;
+      if (field.options && field.options.length > 0) {
+        seeded[field.key] = field.options[0].value;
+      } else {
+        seeded[field.key] = "";
+      }
+    }
+    setOauthFields(seeded);
+    setClientId("");
+    setClientSecret("");
+  }, [provider, isOAuthProvider, selectedProviderSpec]);
+
+  function validateOAuthInputs(): string | null {
+    if (!selectedProviderSpec?.oauth) return null;
+    if (!clientId.trim()) return "Client ID is required.";
+    if (!clientSecret.trim()) return "Client Secret is required.";
+    for (const field of selectedProviderSpec.fields) {
+      if (field.key === "clientId" || field.key === "clientSecret") continue;
+      if (field.required && !(oauthFields[field.key] ?? "").trim()) {
+        return `${field.label} is required.`;
+      }
+    }
+    return null;
+  }
+
   const create = useMutation({
     mutationFn: async () =>
       integrationsApi.create(companyId, {
@@ -440,6 +530,30 @@ function CredentialDrawer({
     },
     onError: (err) => {
       setError(err instanceof Error ? err.message : "Save failed");
+    },
+  });
+
+  const createOAuth = useMutation({
+    mutationFn: async () => {
+      const validation = validateOAuthInputs();
+      if (validation) throw new Error(validation);
+      return integrationsApi.createOAuth(companyId, {
+        provider,
+        displayName,
+        environment,
+        clientId: clientId.trim(),
+        clientSecret,
+        fields: oauthFields,
+        description: description || undefined,
+      });
+    },
+    onSuccess: (result) => {
+      // Hard navigation — we hand off to the provider's authorize URL.
+      // The browser returns to /company/settings/integrations after consent.
+      window.location.assign(result.authorizeUrl);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : "Connect failed");
     },
   });
 
@@ -622,7 +736,7 @@ function CredentialDrawer({
             </>
           ) : null}
 
-          {mode !== "import" ? (
+          {mode !== "import" && !isOAuthProvider ? (
             <Field
               label={mode === "edit" ? "Replace secret value (optional)" : "Secret value"}
               hint={
@@ -641,6 +755,20 @@ function CredentialDrawer({
                 placeholder={mode === "edit" ? credential?.maskedSuffix ?? "" : ""}
               />
             </Field>
+          ) : null}
+
+          {isOAuthProvider && selectedProviderSpec ? (
+            <OAuthFields
+              provider={selectedProviderSpec}
+              clientId={clientId}
+              clientSecret={clientSecret}
+              fields={oauthFields}
+              onClientIdChange={setClientId}
+              onClientSecretChange={setClientSecret}
+              onFieldChange={(key, val) =>
+                setOauthFields((prev) => ({ ...prev, [key]: val }))
+              }
+            />
           ) : null}
 
           <Field label="Notes (optional)">
@@ -716,9 +844,20 @@ function CredentialDrawer({
                 </Button>
               </>
             ) : null}
-            {mode === "create" ? (
+            {mode === "create" && !isOAuthProvider ? (
               <Button onClick={() => create.mutate()} disabled={create.isPending || !value || !displayName}>
                 {create.isPending ? "Saving…" : "Save"}
+              </Button>
+            ) : null}
+            {mode === "create" && isOAuthProvider ? (
+              <Button
+                onClick={() => createOAuth.mutate()}
+                disabled={createOAuth.isPending || !displayName}
+                data-testid="oauth-connect-button"
+              >
+                {createOAuth.isPending
+                  ? "Redirecting…"
+                  : `Connect ${selectedProviderSpec?.displayName ?? "provider"}`}
               </Button>
             ) : null}
             {mode === "import" ? (
@@ -730,6 +869,122 @@ function CredentialDrawer({
         </footer>
       </aside>
     </div>
+  );
+}
+
+/**
+ * Renders the per-provider OAuth form: Client ID, Client Secret, plus
+ * any provider-declared text fields (free-text or fixed-option select).
+ * The OAuth provider's own `clientId` / `clientSecret` declarations in
+ * its `fields` list are intentionally NOT rendered here — those are
+ * surfaced through their dedicated `clientId` / `clientSecret` inputs
+ * so the rest of the loop only covers the per-provider extras (e.g.
+ * Zoho's `dataCenter`).
+ */
+function OAuthFields({
+  provider,
+  clientId,
+  clientSecret,
+  fields,
+  onClientIdChange,
+  onClientSecretChange,
+  onFieldChange,
+}: {
+  provider: IntegrationProvider;
+  clientId: string;
+  clientSecret: string;
+  fields: Record<string, string>;
+  onClientIdChange: (value: string) => void;
+  onClientSecretChange: (value: string) => void;
+  onFieldChange: (key: string, value: string) => void;
+}) {
+  const clientIdField = provider.fields.find((f) => f.key === "clientId");
+  const clientSecretField = provider.fields.find((f) => f.key === "clientSecret");
+  const extras = provider.fields.filter(
+    (f) => f.key !== "clientId" && f.key !== "clientSecret",
+  );
+
+  return (
+    <>
+      <Field
+        label={clientIdField?.label ?? "Client ID"}
+        hint={clientIdField?.helpText}
+      >
+        <input
+          type="text"
+          value={clientId}
+          onChange={(e) => onClientIdChange(e.target.value)}
+          className="w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm"
+          autoComplete="off"
+          spellCheck={false}
+          data-testid="oauth-client-id"
+        />
+      </Field>
+      <Field
+        label={clientSecretField?.label ?? "Client Secret"}
+        hint={clientSecretField?.helpText}
+      >
+        <input
+          type="password"
+          value={clientSecret}
+          onChange={(e) => onClientSecretChange(e.target.value)}
+          className="w-full rounded border border-border bg-background px-3 py-2 font-mono text-sm"
+          autoComplete="off"
+          spellCheck={false}
+          data-testid="oauth-client-secret"
+        />
+      </Field>
+      {extras.map((field) => (
+        <OAuthExtraField
+          key={field.key}
+          field={field}
+          value={fields[field.key] ?? ""}
+          onChange={(v) => onFieldChange(field.key, v)}
+        />
+      ))}
+    </>
+  );
+}
+
+function OAuthExtraField({
+  field,
+  value,
+  onChange,
+}: {
+  field: IntegrationField;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  if (field.options && field.options.length > 0) {
+    return (
+      <Field label={field.label} hint={field.helpText}>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
+          data-testid={`oauth-field-${field.key}`}
+        >
+          {field.options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+    );
+  }
+  return (
+    <Field label={field.label} hint={field.helpText}>
+      <input
+        type={field.inputType === "secret" ? "password" : "text"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
+        autoComplete="off"
+        spellCheck={false}
+        data-testid={`oauth-field-${field.key}`}
+      />
+    </Field>
   );
 }
 

@@ -9,10 +9,17 @@ import {
   INTEGRATION_PROVIDERS,
   assignIntegrationCredentialSchema,
   createIntegrationCredentialSchema,
+  createOAuthIntegrationCredentialSchema,
   importIntegrationCredentialSchema,
   rotateIntegrationCredentialSchema,
   updateIntegrationCredentialSchema,
 } from "@noralos/shared";
+import {
+  buildAuthorizeUrl,
+  oauthService,
+} from "../services/integrations/oauth.js";
+import { signOAuthState } from "../services/integrations/oauth-state.js";
+import { resolveOAuthRedirectUri } from "../services/integrations/oauth-redirect-uri.js";
 import { validate } from "../middleware/validate.js";
 import {
   actorCanViewAllCompanyIssues,
@@ -147,6 +154,81 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
         },
       });
       res.status(201).json(created);
+    },
+  );
+
+  /**
+   * Create an OAuth-draft credential. The body carries the OAuth app's
+   * client id + secret + per-provider text fields (e.g. Zoho's
+   * `dataCenter`). Persists everything encrypted, marks the credential
+   * `needs_attention`, and returns the authorize URL the browser should
+   * navigate to. The platform OAuth callback finalizes the credential.
+   */
+  router.post(
+    "/companies/:companyId/integrations/credentials-oauth-draft",
+    validate(createOAuthIntegrationCredentialSchema),
+    async (req, res) => {
+      assertAuthenticated(req); assertBoard(req);
+      const companyId = req.params.companyId as string;
+      assertCompanyAccess(req, companyId);
+      assertCompanyAdmin(req, companyId);
+
+      const providerId = req.body.provider as string;
+      const provider = INTEGRATION_PROVIDERS[providerId];
+      if (!provider?.oauth) {
+        res.status(422).json({
+          error: `Provider ${providerId} is not an OAuth provider`,
+        });
+        return;
+      }
+
+      const actorInfo = getActorInfo(req);
+      const created = await credentials.createOAuthDraft(
+        companyId,
+        {
+          provider: providerId,
+          displayName: req.body.displayName,
+          environment: req.body.environment,
+          clientId: req.body.clientId,
+          clientSecret: req.body.clientSecret,
+          fields: (req.body.fields ?? {}) as Record<string, string>,
+          description: req.body.description ?? null,
+        },
+        {
+          userId: actorInfo.actorType === "user" ? actorInfo.actorId : null,
+          agentId: actorInfo.agentId,
+        },
+      );
+
+      const state = signOAuthState({
+        companyId,
+        credentialId: created.id,
+        provider: providerId,
+        mode: "initial",
+      });
+      const redirectUri = resolveOAuthRedirectUri(req, providerId);
+      const authorizeUrl = buildAuthorizeUrl({
+        providerId,
+        fields: (req.body.fields ?? {}) as Record<string, string>,
+        clientId: req.body.clientId,
+        redirectUri,
+        state,
+      });
+
+      await logActivity(db, {
+        companyId,
+        actorType: actorInfo.actorType,
+        actorId: actorInfo.actorId,
+        action: "integration.credential.oauth.drafted",
+        entityType: "integration_credential",
+        entityId: created.id,
+        details: {
+          provider: created.provider,
+          environment: created.environment,
+        },
+      });
+
+      res.status(201).json({ credential: created, authorizeUrl });
     },
   );
 
@@ -301,8 +383,39 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
 
     let result: { ok: boolean; statusCode: number; safeMessage: string };
     try {
-      const value = await credentials.resolvePlaintext(existing.companyId, id);
-      const fields: Record<string, string> = { apiKey: value };
+      let fields: Record<string, string>;
+      if (provider.oauth) {
+        // OAuth providers store their material as JSON; the test probe
+        // needs a freshly-minted access token plus the per-account
+        // apiDomain (captured in metadata at callback time). Minting
+        // goes through the OAuth service's per-credential cache so we
+        // don't hit the token endpoint on every test click.
+        if (!existing.secretId) {
+          throw new Error("OAuth credential is not yet connected");
+        }
+        const apiDomain =
+          ((existing.metadata as Record<string, unknown> | null)?.apiDomain as string | undefined) ??
+          undefined;
+        if (!apiDomain) {
+          throw new Error("OAuth credential is missing apiDomain — reconnect required");
+        }
+        const metaFields =
+          ((existing.metadata as Record<string, unknown> | null)?.fields as
+            | Record<string, string>
+            | undefined) ?? {};
+        const oauth = oauthService(db);
+        const accessToken = await oauth.getAccessToken({
+          credentialId: id,
+          companyId: existing.companyId,
+          secretId: existing.secretId,
+          providerId: existing.provider,
+          fields: metaFields,
+        });
+        fields = { apiDomain, accessToken };
+      } else {
+        const value = await credentials.resolvePlaintext(existing.companyId, id);
+        fields = { apiKey: value };
+      }
       result = await runProviderTest(existing.provider, fields);
     } catch (err) {
       result = {
