@@ -56,6 +56,22 @@ describe("runProviderTest", () => {
     expect(result.safeMessage).not.toContain("secret123");
   });
 
+  it("substitutes apiDomain into the URL and uses Zoho-oauthtoken header (not Bearer)", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("", { status: 200 }));
+    const result = await runProviderTest("zoho", {
+      apiDomain: "https://www.zohoapis.com",
+      accessToken: "1000.ACCESS",
+    });
+    expect(result.ok).toBe(true);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url as string).toBe("https://www.zohoapis.com/crm/v7/users?type=CurrentUser");
+    // Zoho's auth header is product-specific. Pin the scheme so a sloppy
+    // refactor to standard `Bearer ` doesn't silently break the probe.
+    const headers = (init as RequestInit | undefined)?.headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Zoho-oauthtoken 1000.ACCESS");
+    expect(url as string).not.toContain("ACCESS");
+  });
+
   it("rejects unknown providers without firing a request", async () => {
     const result = await runProviderTest("twilio", { authToken: "x" });
     expect(result.ok).toBe(false);

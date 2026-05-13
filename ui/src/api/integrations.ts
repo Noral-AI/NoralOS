@@ -65,6 +65,37 @@ export const integrationsApi = {
       `/companies/${companyId}/integrations/credentials`,
       input,
     ),
+  /**
+   * Two-step OAuth credential creation: drafts the credential row with
+   * the OAuth app's client id + secret + provider-specific text fields,
+   * then returns the authorize URL the browser should redirect to. The
+   * server's OAuth callback finalizes the credential by attaching the
+   * refresh token.
+   */
+  createOAuth: (
+    companyId: string,
+    input: {
+      provider: string;
+      displayName: string;
+      environment?: IntegrationEnvironment;
+      clientId: string;
+      clientSecret: string;
+      fields: Record<string, string>;
+      description?: string;
+    },
+  ) =>
+    api.post<{ credential: IntegrationCredentialDto; authorizeUrl: string }>(
+      `/companies/${companyId}/integrations/credentials-oauth-draft`,
+      input,
+    ),
+  /**
+   * URL for re-running the OAuth handshake on an existing credential
+   * (Reconnect). The browser performs a hard navigation here; the server
+   * mints a fresh state JWT and 302s to the provider.
+   */
+  reconnectOAuthUrl: (provider: string, credentialId: string) =>
+    `/api/integrations/oauth/${encodeURIComponent(provider)}/authorize` +
+    `?credentialId=${encodeURIComponent(credentialId)}&mode=reconnect`,
   importExisting: (companyId: string, input: ImportIntegrationCredentialInput) =>
     api.post<IntegrationCredentialDto>(
       `/companies/${companyId}/integrations/credentials/import`,

@@ -61,6 +61,58 @@ export interface IntegrationField {
   inputType: "secret" | "text";
   required: boolean;
   helpText?: string;
+  /**
+   * Optional fixed list of allowed values. When present the UI renders a
+   * select; otherwise a free-text/password input. `options[].value` is the
+   * stored value; `options[].label` is the human-readable label.
+   */
+  options?: ReadonlyArray<{ value: string; label: string }>;
+}
+
+/**
+ * OAuth 2.0 metadata for a provider that uses the authorization-code flow.
+ * When present, the credential is created in two steps: (1) admin submits
+ * `clientId` + `clientSecret` via the standard create endpoint with
+ * `oauthDraft: true`, which persists those values encrypted but does NOT
+ * mark the credential `active`; (2) the admin is redirected to the
+ * provider's authorize URL, and the platform callback exchanges the code
+ * for a refresh token which is added to the same encrypted material.
+ *
+ * Templates use `{var}` placeholders. Supported substitutions:
+ *   - `{clientId}` — from the credential's stored client id (non-secret metadata)
+ *   - `{redirectUri}` — the platform's callback URL for this provider
+ *   - `{scopes}` — space-joined `scopes` from this spec
+ *   - `{state}` — the signed state JWT
+ *   - `{<fieldKey>}` — any text-field value collected at create time (e.g. `{dataCenter}`)
+ *
+ * The token endpoint can also vary per-account (Zoho uses different
+ * accounts servers per data center). `tokenUrlTemplate` may reference
+ * `{accountsServer}` which is populated from the `accounts-server` query
+ * parameter Zoho appends to the callback URL, falling back to the
+ * `dataCenter`-derived default below.
+ */
+export interface IntegrationOAuthSpec {
+  /** OAuth 2.0 authorize endpoint template. */
+  authorizeUrlTemplate: string;
+  /** OAuth 2.0 token endpoint template. */
+  tokenUrlTemplate: string;
+  /** Scope strings — joined with spaces and passed as `scope=`. */
+  scopes: string[];
+  /** Extra static parameters appended to the authorize URL (e.g. `access_type=offline`). */
+  extraAuthorizeParams?: Record<string, string>;
+  /**
+   * Token-response field whose value is stored in
+   * `integration_credentials.metadata.apiDomain`. For Zoho this is
+   * `api_domain`. Used at runtime to construct API base URLs without
+   * hard-coding per-account regions.
+   */
+  apiDomainResponseField?: string;
+  /**
+   * Map from a text field's value (e.g. `dataCenter` = `"us"`) to the
+   * default accounts-server URL used when the provider doesn't echo one
+   * back on the callback. Keyed by `<fieldKey>:<fieldValue>`.
+   */
+  defaultAccountsServerByField?: Record<string, string>;
 }
 
 /** A plugin slot a credential can be assigned to. */
@@ -99,6 +151,12 @@ export interface IntegrationProvider {
   test: IntegrationTestSpec;
   /** Plugin slots this provider's credentials can be assigned to. */
   assignableSlots: IntegrationAssignableSlot[];
+  /**
+   * Optional OAuth 2.0 flow metadata. When present, the credential is
+   * provisioned through the platform's `/api/integrations/oauth/*` routes
+   * instead of a single paste-the-token form.
+   */
+  oauth?: IntegrationOAuthSpec;
 }
 
 /**
@@ -215,6 +273,109 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       },
     ],
   },
+  // ── Zoho CRM ────────────────────────────────────────────────────
+  // First OAuth 2.0 (authorization-code + refresh-token) provider. The
+  // admin supplies clientId, clientSecret, and dataCenter at create
+  // time; the platform handles the redirect dance to mint a refresh
+  // token. The api domain returned by Zoho on the callback is persisted
+  // in `integration_credentials.metadata.apiDomain` and used by
+  // downstream plugins to construct CRM API URLs.
+  zoho: {
+    // Provider id is the short `zoho` rather than `zoho_crm` because the
+    // registered redirect URI in Zoho's API Console uses /oauth/zoho/
+    // and the same OAuth app can carry scopes for CRM, Books, Desk, etc.
+    // The displayName below distinguishes products to the operator.
+    id: "zoho",
+    category: "crm",
+    credentialType: "oauth_refresh_token",
+    displayName: "Zoho CRM",
+    description:
+      "Zoho CRM via OAuth 2.0. After saving the OAuth app's client id and secret, the platform redirects to Zoho for consent and persists the resulting refresh token. Access tokens are minted on demand.",
+    fields: [
+      {
+        key: "clientId",
+        label: "Client ID",
+        inputType: "text",
+        required: true,
+        helpText:
+          "From Zoho API Console → your Server-based app → Client ID. Not a secret on its own, but together with the client secret it authorizes token refresh.",
+      },
+      {
+        key: "clientSecret",
+        label: "Client Secret",
+        inputType: "secret",
+        required: true,
+        helpText:
+          "From Zoho API Console → your Server-based app → Client Secret. Stored encrypted; never displayed again.",
+      },
+      {
+        key: "dataCenter",
+        label: "Data Center",
+        inputType: "text",
+        required: true,
+        helpText:
+          "Pick the Zoho data center your CRM org lives in. This determines the accounts server used for the OAuth handshake.",
+        options: [
+          { value: "us", label: "United States (.com)" },
+          { value: "eu", label: "Europe (.eu)" },
+          { value: "in", label: "India (.in)" },
+          { value: "au", label: "Australia (.com.au)" },
+          { value: "jp", label: "Japan (.jp)" },
+          { value: "ca", label: "Canada (.ca)" },
+        ],
+      },
+    ],
+    test: {
+      kind: "http",
+      method: "GET",
+      // `{{apiDomain}}` is substituted from `metadata.apiDomain` and
+      // `{{accessToken}}` is minted on demand by the OAuth-aware test
+      // path. Zoho's auth header is `Zoho-oauthtoken <token>` — not the
+      // standard `Bearer` scheme — so it's pinned here in the registry.
+      urlTemplate: "{{apiDomain}}/crm/v7/users?type=CurrentUser",
+      headers: { Authorization: "Zoho-oauthtoken {{accessToken}}" },
+      okStatuses: [200],
+      safeErrorPrefix: "Zoho CRM rejected the access token",
+    },
+    assignableSlots: [],
+    oauth: {
+      authorizeUrlTemplate:
+        "https://accounts.zoho.{dataCenterTld}/oauth/v2/auth" +
+        "?response_type=code" +
+        "&client_id={clientId}" +
+        "&scope={scopes}" +
+        "&redirect_uri={redirectUri}" +
+        "&state={state}" +
+        "&access_type=offline" +
+        "&prompt=consent",
+      tokenUrlTemplate: "{accountsServer}/oauth/v2/token",
+      scopes: [
+        "ZohoCRM.modules.ALL",
+        "ZohoCRM.settings.ALL",
+        "ZohoCRM.users.READ",
+      ],
+      extraAuthorizeParams: {},
+      apiDomainResponseField: "api_domain",
+      defaultAccountsServerByField: {
+        "dataCenter:us": "https://accounts.zoho.com",
+        "dataCenter:eu": "https://accounts.zoho.eu",
+        "dataCenter:in": "https://accounts.zoho.in",
+        "dataCenter:au": "https://accounts.zoho.com.au",
+        "dataCenter:jp": "https://accounts.zoho.jp",
+        "dataCenter:ca": "https://accounts.zohocloud.ca",
+      },
+    },
+  },
+};
+
+/** Maps Zoho `dataCenter` -> accounts-server TLD. Used by the authorize URL template. */
+export const ZOHO_DATA_CENTER_TLD: Record<string, string> = {
+  us: "com",
+  eu: "eu",
+  in: "in",
+  au: "com.au",
+  jp: "jp",
+  ca: "zohocloud.ca",
 };
 
 export type IntegrationProviderId = keyof typeof INTEGRATION_PROVIDERS;

@@ -76,3 +76,36 @@ describe("ASSIGNMENT_TARGETS — noralai.brooklyn", () => {
     expect(vc!.slots.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("INTEGRATION_PROVIDERS — zoho", () => {
+  it("is registered with category=crm and credentialType=oauth_refresh_token", () => {
+    const p = INTEGRATION_PROVIDERS["zoho"];
+    expect(p).toBeDefined();
+    expect(p!.category).toBe("crm");
+    expect(p!.credentialType).toBe("oauth_refresh_token");
+  });
+
+  it("declares an OAuth spec with offline-capable authorize template + Zoho scopes", () => {
+    const p = INTEGRATION_PROVIDERS["zoho"]!;
+    expect(p.oauth).toBeDefined();
+    const oauth = p.oauth!;
+    expect(oauth.authorizeUrlTemplate).toContain("accounts.zoho.{dataCenterTld}");
+    expect(oauth.authorizeUrlTemplate).toContain("access_type=offline");
+    expect(oauth.tokenUrlTemplate).toContain("{accountsServer}");
+    expect(oauth.scopes).toContain("ZohoCRM.modules.ALL");
+    expect(oauth.apiDomainResponseField).toBe("api_domain");
+    expect(oauth.defaultAccountsServerByField).toMatchObject({
+      "dataCenter:us": "https://accounts.zoho.com",
+      "dataCenter:eu": "https://accounts.zoho.eu",
+    });
+  });
+
+  it("exposes clientId/clientSecret/dataCenter fields", () => {
+    const fields = INTEGRATION_PROVIDERS["zoho"]!.fields;
+    const byKey = Object.fromEntries(fields.map((f) => [f.key, f]));
+    expect(byKey.clientId.inputType).toBe("text");
+    expect(byKey.clientSecret.inputType).toBe("secret");
+    expect(byKey.dataCenter.inputType).toBe("text");
+    expect(byKey.dataCenter.options?.length).toBeGreaterThan(0);
+  });
+});
