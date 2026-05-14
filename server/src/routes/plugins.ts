@@ -1893,6 +1893,98 @@ export function pluginRoutes(
    * - 400 if request validation fails
    * - 404 if plugin not found
    */
+  /**
+   * PATCH /api/plugins/:pluginId/config
+   *
+   * Shallow-merge a partial config into the plugin's instance configuration.
+   * Same authz + validation + worker-notify path as POST, but the supplied
+   * keys are merged with the existing row instead of replacing it. Useful
+   * for one-toggle admin actions (e.g. flipping voice-cascade's `ttsMode`
+   * without having to round-trip every other field).
+   *
+   * Validation runs over the MERGED config — that way an invalid combination
+   * (e.g. `fallbackEnabled: true` without a `fallbackProvider`) still
+   * surfaces, even if the partial body only touched one of the two fields.
+   */
+  router.patch("/plugins/:pluginId/config", async (req, res) => {
+    assertInstanceAdmin(req);
+    const { pluginId } = req.params;
+
+    const plugin = await resolvePlugin(registry, pluginId);
+    if (!plugin) {
+      res.status(404).json({ error: "Plugin not found" });
+      return;
+    }
+
+    const body = req.body as { configJson?: Record<string, unknown> } | undefined;
+    if (!body?.configJson || typeof body.configJson !== "object") {
+      res.status(400).json({ error: '"configJson" is required and must be an object' });
+      return;
+    }
+
+    // Apply the same devUiUrl carve-out as the POST handler.
+    if (
+      "devUiUrl" in body.configJson &&
+      !(req.actor.type === "board" && req.actor.isInstanceAdmin)
+    ) {
+      delete body.configJson.devUiUrl;
+    }
+
+    const existing = await registry.getConfig(plugin.id);
+    const existingJson =
+      (existing?.configJson as Record<string, unknown> | undefined) ?? {};
+    const merged = { ...existingJson, ...body.configJson };
+
+    const schema = plugin.manifestJson?.instanceConfigSchema;
+    if (schema && Object.keys(schema).length > 0) {
+      const validation = validateInstanceConfig(merged, schema);
+      if (!validation.valid) {
+        res.status(400).json({
+          error: "Configuration does not match the plugin's instanceConfigSchema",
+          fieldErrors: validation.errors,
+        });
+        return;
+      }
+    }
+
+    try {
+      const result = await registry.patchConfig(plugin.id, {
+        configJson: body.configJson,
+      });
+      await logPluginMutationActivity(req, "plugin.config.patched", plugin.id, {
+        pluginId: plugin.id,
+        pluginKey: plugin.pluginKey,
+        configKeyCount: Object.keys(body.configJson).length,
+      });
+
+      // Same worker-notify path as the POST handler. We pass the MERGED
+      // config to the worker so onConfigChanged sees the full picture.
+      if (bridgeDeps?.workerManager.isRunning(plugin.id)) {
+        try {
+          await bridgeDeps.workerManager.call(plugin.id, "configChanged", {
+            config: merged,
+          });
+        } catch (rpcErr) {
+          if (
+            rpcErr instanceof JsonRpcCallError &&
+            rpcErr.code === PLUGIN_RPC_ERROR_CODES.METHOD_NOT_IMPLEMENTED
+          ) {
+            try {
+              await lifecycle.restartWorker(plugin.id);
+            } catch {
+              /* non-fatal */
+            }
+          }
+        }
+      }
+
+      res.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ error: `Failed to patch plugin config: ${message}` });
+    }
+  });
+
   router.post("/plugins/:pluginId/config", async (req, res) => {
     assertInstanceAdmin(req);
     const { pluginId } = req.params;

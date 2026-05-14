@@ -19,6 +19,7 @@ import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useSearchParams } from "../lib/router";
 import { integrationsApi } from "../api/integrations";
+import { pluginsApi } from "../api/plugins";
 import { voiceCascadeApi, type VoiceCascadeTtsMode } from "../api/voiceCascade";
 import { Button } from "@/components/ui/button";
 import { Plug } from "lucide-react";
@@ -1085,6 +1086,12 @@ function Field({
 // in flight or unknown.
 type VoiceCascadeModeState = VoiceCascadeTtsMode | null;
 
+/**
+ * Read-only ttsMode banner. Kept as a separate export because tests (and
+ * any future read-only surface that doesn't need the flip control) target
+ * this component directly. The interactive `VoiceCascadeModeControl` below
+ * is the surface that the Assignments tab actually renders.
+ */
 export function VoiceCascadeModeBanner({
   mode,
   testId,
@@ -1125,6 +1132,51 @@ export function VoiceCascadeModeBanner({
   );
 }
 
+/**
+ * Interactive ttsMode toggle. Renders the same banner copy as
+ * `VoiceCascadeModeBanner` plus a flip button. The button targets the
+ * opposite mode (Switch to live / Switch to dry_run) and the parent
+ * handles confirmation + the actual PATCH.
+ */
+function VoiceCascadeModeControl({
+  mode,
+  pending,
+  error,
+  onFlip,
+}: {
+  mode: VoiceCascadeModeState;
+  pending: boolean;
+  error: string | null;
+  onFlip: (next: VoiceCascadeTtsMode) => void;
+}) {
+  const next: VoiceCascadeTtsMode | null =
+    mode === "dry_run" ? "live" : mode === "live" ? "dry_run" : null;
+  return (
+    <div className="flex max-w-2xl flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-3">
+        <VoiceCascadeModeBanner mode={mode} testId="voice-cascade-mode-banner" />
+        {next ? (
+          <Button
+            size="sm"
+            variant={next === "live" ? "default" : "outline"}
+            disabled={pending}
+            onClick={() => onFlip(next)}
+            data-testid="voice-cascade-mode-flip"
+            data-next-mode={next}
+          >
+            {pending ? "Saving…" : next === "live" ? "Switch to live" : "Switch to dry_run"}
+          </Button>
+        ) : null}
+      </div>
+      {error ? (
+        <p className="text-xs text-rose-600 dark:text-rose-400">
+          Could not update mode: {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function AssignmentsTab({
   companyId,
   board,
@@ -1147,7 +1199,9 @@ function AssignmentsTab({
   isLoading: boolean;
   refresh: () => void;
 }) {
-  const hasVoiceCascade = board.some((c) => c.pluginKey === "noralos.voice-cascade");
+  const queryClient = useQueryClient();
+  const voiceCascadeCard = board.find((c) => c.pluginKey === "noralos.voice-cascade");
+  const hasVoiceCascade = Boolean(voiceCascadeCard);
 
   // Probe voice-cascade /health for the actual ttsMode. Only fires when the
   // assignment board includes a voice-cascade card AND a company is selected.
@@ -1163,6 +1217,23 @@ function AssignmentsTab({
 
   const ttsMode: VoiceCascadeModeState = ttsModeQuery.data?.ttsMode ?? null;
 
+  // Flip ttsMode via PATCH (shallow merge so the apiKeyRefs survive). On
+  // success, invalidate the health probe so the banner + per-plugin badge
+  // reflect the new value immediately.
+  const setTtsModeMutation = useMutation({
+    mutationFn: async (next: VoiceCascadeTtsMode) => {
+      if (!voiceCascadeCard?.pluginId) {
+        throw new Error("Voice Cascade plugin id is unknown — cannot patch config");
+      }
+      return pluginsApi.patchConfig(voiceCascadeCard.pluginId, { ttsMode: next });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["voice-cascade", "ttsMode", companyId],
+      });
+    },
+  });
+
   if (isLoading && board.length === 0) {
     return <div className="text-sm text-muted-foreground">Loading assignments…</div>;
   }
@@ -1174,7 +1245,24 @@ function AssignmentsTab({
       </p>
 
       {hasVoiceCascade ? (
-        <VoiceCascadeModeBanner mode={ttsMode} testId="voice-cascade-mode-banner" />
+        <VoiceCascadeModeControl
+          mode={ttsMode}
+          pending={setTtsModeMutation.isPending}
+          error={
+            setTtsModeMutation.error instanceof Error
+              ? setTtsModeMutation.error.message
+              : null
+          }
+          onFlip={(next) => {
+            if (next === "live") {
+              const ok = window.confirm(
+                "Switch Voice Cascade to LIVE mode? Synthesize calls will incur real provider costs (ElevenLabs + Google Cloud TTS). Voice picker previews already work in dry_run — this is the bigger commitment.",
+              );
+              if (!ok) return;
+            }
+            setTtsModeMutation.mutate(next);
+          }}
+        />
       ) : null}
 
       {board.map((card) => (
