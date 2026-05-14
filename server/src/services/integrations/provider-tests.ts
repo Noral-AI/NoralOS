@@ -45,9 +45,28 @@ function buildRequest(
   spec: IntegrationTestSpec,
   fields: Record<string, string>,
 ): { url: string; headers: Record<string, string>; method: "GET" } | { error: string } {
+  // If the provider declares HTTP Basic auth via two fields, derive the
+  // base64-encoded token once and expose it as `__basicAuth` so headers
+  // can substitute it like any other placeholder. We do NOT mutate the
+  // caller's map; this scratch copy is discarded with the request.
+  let resolvedFields = fields;
+  if (spec.basicAuth) {
+    const user = fields[spec.basicAuth.userField];
+    const pass = fields[spec.basicAuth.passField];
+    if (!user || !pass) {
+      return {
+        error: `Provider basicAuth references missing field(s): ${spec.basicAuth.userField}, ${spec.basicAuth.passField}`,
+      };
+    }
+    resolvedFields = {
+      ...fields,
+      __basicAuth: Buffer.from(`${user}:${pass}`, "utf8").toString("base64"),
+    };
+  }
+
   let url: string;
   if (spec.urlTemplate) {
-    const sub = substitutePlaceholders(spec.urlTemplate, fields);
+    const sub = substitutePlaceholders(spec.urlTemplate, resolvedFields);
     if (!sub.ok) return { error: `Provider config references missing field: ${sub.missing}` };
     url = sub.value;
   } else if (spec.url) {
@@ -57,7 +76,7 @@ function buildRequest(
   }
   const headers: Record<string, string> = {};
   for (const [name, valueTemplate] of Object.entries(spec.headers ?? {})) {
-    const sub = substitutePlaceholders(valueTemplate, fields);
+    const sub = substitutePlaceholders(valueTemplate, resolvedFields);
     if (!sub.ok) return { error: `Provider config references missing field: ${sub.missing}` };
     headers[name] = sub.value;
   }

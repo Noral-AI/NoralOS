@@ -73,9 +73,41 @@ describe("runProviderTest", () => {
   });
 
   it("rejects unknown providers without firing a request", async () => {
-    const result = await runProviderTest("twilio", { authToken: "x" });
+    const result = await runProviderTest("not_a_real_provider", { authToken: "x" });
     expect(result.ok).toBe(false);
     expect(result.safeMessage).toContain("Unknown provider");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("derives Authorization: Basic <base64(sid:secret)> for twilio without leaking either half into the URL", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("", { status: 200 }));
+    const result = await runProviderTest("twilio", {
+      accountSid: "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      apiKeySid: "SKyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+      apiKeySecret: "TOP-SECRET-twilio-value",
+    });
+    expect(result.ok).toBe(true);
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(url as string).toBe(
+      "https://api.twilio.com/2010-04-01/Accounts/ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.json",
+    );
+    expect(url as string).not.toContain("TOP-SECRET");
+    expect(url as string).not.toContain("SKyyy");
+    const headers = (init as RequestInit | undefined)?.headers as Record<string, string>;
+    const expected = `Basic ${Buffer.from(
+      "SKyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy:TOP-SECRET-twilio-value",
+      "utf8",
+    ).toString("base64")}`;
+    expect(headers.Authorization).toBe(expected);
+  });
+
+  it("fails fast (no fetch) when twilio is called without the basic-auth pair", async () => {
+    const result = await runProviderTest("twilio", {
+      accountSid: "AC123",
+      // apiKeySid + apiKeySecret deliberately missing
+    });
+    expect(result.ok).toBe(false);
+    expect(result.safeMessage).toContain("missing field");
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

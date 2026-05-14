@@ -139,6 +139,15 @@ export interface IntegrationTestSpec {
   okStatuses: number[];
   /** Prefixed in front of the safe error message so the admin sees provider context. */
   safeErrorPrefix: string;
+  /**
+   * Optional HTTP Basic auth derivation. When set, the test runner computes
+   * `base64(<userField>:<passField>)` from the submitted fields and exposes
+   * the result as the `{{__basicAuth}}` placeholder so headers like
+   * `Authorization: Basic {{__basicAuth}}` resolve without leaking either
+   * half to logs. Use this for providers like Twilio whose REST API auth is
+   * HTTP Basic over a key id + key secret pair.
+   */
+  basicAuth?: { userField: string; passField: string };
 }
 
 export interface IntegrationProvider {
@@ -272,6 +281,69 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
         label: "Brooklyn LLM — API key",
       },
     ],
+  },
+  // ── Twilio ──────────────────────────────────────────────────────
+  // Telephony provider. NoralOS authenticates with a scoped API Key SID +
+  // Secret (HTTP Basic), never the master Auth Token. The Account SID is
+  // a public identifier carried in URL paths. The test probe hits the
+  // account-info endpoint, which is the cheapest call that exercises
+  // both auth and account access.
+  twilio: {
+    id: "twilio",
+    category: "telephony",
+    credentialType: "basic_auth",
+    displayName: "Twilio",
+    description:
+      "Twilio voice + SMS. Uses a scoped API Key (SID + Secret) for HTTP Basic auth — the master Auth Token is never required. NoralOS encrypts the secret at rest; admins never see the value back after creation.",
+    fields: [
+      {
+        key: "accountSid",
+        label: "Account SID",
+        inputType: "text",
+        required: true,
+        helpText:
+          "Twilio Console → Account info. Starts with AC and is 34 chars. A public identifier — not a secret on its own — but pins the credential to a specific Twilio account.",
+      },
+      {
+        key: "apiKeySid",
+        label: "API Key SID",
+        inputType: "text",
+        required: true,
+        helpText:
+          "Twilio Console → Account → API keys & tokens → Create API key (Standard). Starts with SK and is 34 chars. The username half of HTTP Basic auth.",
+      },
+      {
+        key: "apiKeySecret",
+        label: "API Key Secret",
+        inputType: "secret",
+        required: true,
+        helpText:
+          "Shown exactly once on the API key creation screen — if you close that screen without copying it, delete the key and create a new one. NoralOS stores this encrypted.",
+      },
+      {
+        key: "defaultFromNumber",
+        label: "Default From Number",
+        inputType: "text",
+        required: false,
+        helpText:
+          "Optional. E.164 format, e.g. +14155552671. Used as the default sender for outbound SMS / voice when the calling agent doesn't specify one. Phone Numbers → Manage → Active numbers in the Twilio console.",
+      },
+    ],
+    test: {
+      kind: "http",
+      method: "GET",
+      urlTemplate:
+        "https://api.twilio.com/2010-04-01/Accounts/{{accountSid}}.json",
+      headers: { Authorization: "Basic {{__basicAuth}}" },
+      basicAuth: { userField: "apiKeySid", passField: "apiKeySecret" },
+      okStatuses: [200],
+      safeErrorPrefix: "Twilio rejected the credential",
+    },
+    // No assignable plugin slots yet — the Twilio plugin lives on an
+    // unmerged branch (feat/twilio-plugin-foundation). The credential
+    // can still be created, tested, and stored; assignments wire up
+    // when the plugin lands.
+    assignableSlots: [],
   },
   // ── Zoho CRM ────────────────────────────────────────────────────
   // First OAuth 2.0 (authorization-code + refresh-token) provider. The

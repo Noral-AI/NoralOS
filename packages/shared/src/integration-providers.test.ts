@@ -109,3 +109,48 @@ describe("INTEGRATION_PROVIDERS — zoho", () => {
     expect(byKey.dataCenter.options?.length).toBeGreaterThan(0);
   });
 });
+
+describe("INTEGRATION_PROVIDERS — twilio", () => {
+  it("is registered with category=telephony and credentialType=basic_auth", () => {
+    const p = INTEGRATION_PROVIDERS["twilio"];
+    expect(p).toBeDefined();
+    expect(p!.id).toBe("twilio");
+    expect(p!.category).toBe("telephony");
+    expect(p!.credentialType).toBe("basic_auth");
+  });
+
+  it("exposes accountSid/apiKeySid/apiKeySecret with only apiKeySecret marked secret", () => {
+    const fields = INTEGRATION_PROVIDERS["twilio"]!.fields;
+    const byKey = Object.fromEntries(fields.map((f) => [f.key, f]));
+    expect(byKey.accountSid.inputType).toBe("text");
+    expect(byKey.accountSid.required).toBe(true);
+    expect(byKey.apiKeySid.inputType).toBe("text");
+    expect(byKey.apiKeySid.required).toBe(true);
+    expect(byKey.apiKeySecret.inputType).toBe("secret");
+    expect(byKey.apiKeySecret.required).toBe(true);
+    expect(byKey.defaultFromNumber.inputType).toBe("text");
+    expect(byKey.defaultFromNumber.required).toBe(false);
+  });
+
+  it("declares HTTP Basic auth derivation from apiKeySid + apiKeySecret", () => {
+    const p = INTEGRATION_PROVIDERS["twilio"]!;
+    expect(p.test.basicAuth).toEqual({
+      userField: "apiKeySid",
+      passField: "apiKeySecret",
+    });
+    expect(p.test.headers?.Authorization).toBe("Basic {{__basicAuth}}");
+    expect(p.test.urlTemplate).toContain("Accounts/{{accountSid}}.json");
+    expect(p.test.okStatuses).toContain(200);
+    expect(p.test.safeErrorPrefix).toContain("Twilio");
+  });
+
+  it("does NOT reference the master Auth Token anywhere (forces API-key auth)", () => {
+    const fields = INTEGRATION_PROVIDERS["twilio"]!.fields;
+    expect(fields.find((f) => /auth\s*token/i.test(f.label))).toBeUndefined();
+    expect(fields.find((f) => f.key === "authToken")).toBeUndefined();
+  });
+
+  it("ships with no assignable slots yet (plugin lands separately)", () => {
+    expect(INTEGRATION_PROVIDERS["twilio"]!.assignableSlots).toEqual([]);
+  });
+});
