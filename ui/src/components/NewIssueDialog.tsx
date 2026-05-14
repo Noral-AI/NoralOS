@@ -1,4 +1,5 @@
 import { memo, useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent, type DragEvent, type RefObject } from "react";
+import { MicDictationButton } from "./MicDictationButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pickTextColorForSolidBg } from "@/lib/color-contrast";
 import { useDialog } from "../context/DialogContext";
@@ -1882,6 +1883,21 @@ export function NewIssueDialog() {
             Discard Draft
           </Button>
           <div className="flex items-center gap-3">
+            <MicDictationButton
+              testId="new-issue-dictate-mic"
+              label="Dictate description"
+              disabled={createIssue.isPending}
+              onTranscript={(text) => {
+                // Append to description with a leading space when non-empty
+                // so dictated chunks don't run together. The title stays
+                // keyboard-only by design — it's usually short and people
+                // tend to write it deliberately.
+                const next = description
+                  ? `${description.replace(/\s*$/, "")} ${text}`
+                  : text;
+                handleDescriptionChange(next);
+              }}
+            />
             <div className="min-h-5 text-right">
               {createIssue.isPending ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
