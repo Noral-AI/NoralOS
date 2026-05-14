@@ -89,13 +89,29 @@ export async function execute(
   }
 
   // ── Prompt assembly ───────────────────────────────────────────
-  // Brooklyn is a chat-completion adapter, not a CLI tool. We read the
-  // standard NoralOS wake-prompt the host already built (matches what
-  // openclaw_gateway and other remote adapters consume) and pass it
-  // through as a single user turn. System prompts and instructions
-  // bundles are already concatenated into noralosWakePrompt by the
-  // host's agent-instructions assembly pipeline.
-  const wakePrompt = asString(context.noralosWakePrompt, "");
+  // Brooklyn is a chat-completion adapter, not a CLI tool. The host
+  // doesn't currently emit a single `noralosWakePrompt` string for
+  // non-local adapters, so we assemble one from the canonical context
+  // fields it does populate (heartbeat.ts):
+  //   - noralosContinuationSummary.body : prior-run handoff, if any
+  //   - noralosTaskMarkdown             : task framing + issue body
+  //   - noralosUserMessageMarkdown      : direct user message, if any
+  // Anything still in `noralosWakePrompt` wins as an override so a
+  // future host-side wake-prompt builder slots in without a plugin
+  // bump.
+  const overrideWakePrompt = asString(context.noralosWakePrompt, "");
+  const continuationSummary = asString(
+    parseObject(context.noralosContinuationSummary).body,
+    "",
+  );
+  const taskMarkdown = asString(context.noralosTaskMarkdown, "");
+  const userMessageMarkdown = asString(context.noralosUserMessageMarkdown, "");
+  const wakePrompt = overrideWakePrompt
+    ? overrideWakePrompt
+    : [continuationSummary, taskMarkdown, userMessageMarkdown]
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .join("\n\n---\n\n");
   if (!wakePrompt) {
     return errorResult(
       "no_prompt",
