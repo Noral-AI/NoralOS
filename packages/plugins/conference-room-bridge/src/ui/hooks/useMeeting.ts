@@ -21,10 +21,15 @@ export type MeetingApi = {
   transcript: TranscriptEntry[];
   lastAgentText: string | null;
   awaitingAgentResponse: boolean;
+  // True when the browser rejected `audio.play()` (autoplay policy / stale
+  // gesture / unfocused tab). The audio element stays armed; calling
+  // `resumeAudio` from a fresh user click will play the pending clip.
+  audioBlocked: boolean;
   startMeeting: (targetAgentId: string | null) => Promise<void>;
   sendUtterance: (text: string) => Promise<void>;
   endMeeting: () => Promise<void>;
   appendSystem: (text: string) => void;
+  resumeAudio: () => void;
 };
 
 export type UseMeetingOptions = {
@@ -61,6 +66,7 @@ export function useMeeting(
   const [state, setState] = useState<MeetingState>({ phase: "idle" });
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [awaitingAgentResponse, setAwaitingAgentResponse] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
   // Dedup signature for "we already handled this done-result". Includes the
   // runId when available, plus a content-hash fallback for the legacy case.
   const lastSeenRunIdRef = useRef<string | null>(null);
@@ -68,6 +74,11 @@ export function useMeeting(
   // Single shared <audio> element so a new response can interrupt the prior
   // playback cleanly.
   const audioElRef = useRef<HTMLAudioElement | null>(null);
+  // Last element we attempted to play. When `audio.play()` is rejected by
+  // the browser's autoplay policy, this stays armed so `resumeAudio` (fired
+  // by a user click on the "Enable audio" pill) can retry without losing
+  // the synthesized clip.
+  const pendingPlayRef = useRef<HTMLAudioElement | null>(null);
   // Tracks the URL.createObjectURL handle currently attached so we can revoke
   // it when playback ends or is replaced.
   const audioObjectUrlRef = useRef<string | null>(null);
@@ -142,7 +153,9 @@ export function useMeeting(
       const blob = new Blob([bytes as unknown as BlobPart], { type: mimeType });
       const url = URL.createObjectURL(blob);
 
-      // Tear down any prior playback before swapping in the new clip.
+      // Tear down any prior playback before swapping in the new clip. If
+      // the previous clip was blocked-pending, it's lost on purpose: the
+      // newer agent reply supersedes it.
       if (audioElRef.current) {
         try {
           audioElRef.current.pause();
@@ -150,6 +163,8 @@ export function useMeeting(
           /* ignore */
         }
       }
+      pendingPlayRef.current = null;
+      setAudioBlocked(false);
       releaseAudioObjectUrl();
       audioObjectUrlRef.current = url;
 
@@ -176,16 +191,37 @@ export function useMeeting(
         onPlayEndRef.current?.();
       };
 
-      audio.onended = () => finish("ended");
-      audio.onerror = () => finish("error");
+      audio.onended = () => {
+        pendingPlayRef.current = null;
+        finish("ended");
+      };
+      audio.onerror = () => {
+        pendingPlayRef.current = null;
+        finish("error");
+      };
       audio.src = url;
 
       onPlayStartRef.current?.();
-      void audio.play().catch((err) => {
-        // eslint-disable-next-line no-console
-        console.warn("[CR-METRICS] audio.play() rejected", err);
-        finish("error");
-      });
+      const tryPlay = (audio: HTMLAudioElement) =>
+        audio.play().then(
+          () => {
+            // Cleared once the browser actually started playback.
+            setAudioBlocked(false);
+          },
+          (err) => {
+            // eslint-disable-next-line no-console
+            console.warn("[CR-METRICS] audio.play() rejected", err);
+            // Don't tear down — keep the element armed so a subsequent
+            // user gesture (via resumeAudio) can replay it. The polling
+            // loop still pauses transcript appends because the dedup key
+            // is set when we showed the agent's text; the user-visible
+            // state is: agent text is displayed, an "Enable audio" pill
+            // appears, and mic stays parked until the user taps.
+            setAudioBlocked(true);
+          },
+        );
+      pendingPlayRef.current = audio;
+      void tryPlay(audio);
     },
     [releaseAudioObjectUrl],
   );
@@ -371,6 +407,24 @@ export function useMeeting(
     [state, companyId, append, appendSystem],
   );
 
+  const resumeAudio = useCallback(() => {
+    const audio = pendingPlayRef.current;
+    if (!audio) {
+      setAudioBlocked(false);
+      return;
+    }
+    void audio.play().then(
+      () => {
+        setAudioBlocked(false);
+      },
+      (err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[CR-METRICS] resumeAudio failed", err);
+        // Leave audioBlocked=true so the pill stays for another retry.
+      },
+    );
+  }, []);
+
   const endMeeting = useCallback(async () => {
     if (state.phase !== "active") {
       setState({ phase: "idle" });
@@ -387,6 +441,8 @@ export function useMeeting(
         /* ignore */
       }
     }
+    pendingPlayRef.current = null;
+    setAudioBlocked(false);
     releaseAudioObjectUrl();
     try {
       if (companyId) await conferenceApi.closeSession(companyId, id);
@@ -408,9 +464,11 @@ export function useMeeting(
     transcript,
     lastAgentText,
     awaitingAgentResponse,
+    audioBlocked,
     startMeeting,
     sendUtterance,
     endMeeting,
     appendSystem,
+    resumeAudio,
   };
 }

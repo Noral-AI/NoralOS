@@ -31,6 +31,19 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
     if (pinnedAgentId == null) setPinnedAgentId(defaultPinnedAgentId);
   }, [defaultPinnedAgentId, pinnedAgentId]);
 
+  // The Conference Room is intentionally a 1:1 surface: only the pinned
+  // agent is visible. Other agents are reachable indirectly — the pinned
+  // agent delegates to them via the normal agent-dispatch path. This keeps
+  // the room from feeling like a roster picker and matches the "talk to
+  // your CEO, who brings in their team as needed" model.
+  const visibleAgents = useMemo(() => {
+    if (agents.length === 0) return agents;
+    const targetId = pinnedAgentId ?? defaultPinnedAgentId;
+    if (!targetId) return agents;
+    const filtered = agents.filter((a) => a.id === targetId);
+    return filtered.length > 0 ? filtered : agents;
+  }, [agents, pinnedAgentId, defaultPinnedAgentId]);
+
   const [mode, setMode] = useState<Mode>("direct");
 
   const agentLabelLookup = useCallback(
@@ -109,7 +122,7 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
 
       <div className="flex flex-1 overflow-hidden">
         <YourTeamPanel
-          agents={agents}
+          agents={visibleAgents}
           pinnedAgentId={pinnedAgentId}
           speakingAgentId={speakingAgentId}
           onPin={(id) => setPinnedAgentId(id)}
@@ -134,8 +147,10 @@ export function ConferenceRoomPage({ context }: PluginPageProps) {
               micListening={speech.listening}
               micError={speech.error}
               awaitingAgent={meeting.awaitingAgentResponse}
+              audioBlocked={meeting.audioBlocked}
               onStart={() => void onStart()}
               onStop={() => void onStop()}
+              onResumeAudio={meeting.resumeAudio}
             />
           </div>
 

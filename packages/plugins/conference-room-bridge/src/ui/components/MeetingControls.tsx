@@ -6,8 +6,10 @@ type MeetingControlsProps = {
   micListening: boolean;
   micError: string | null;
   awaitingAgent: boolean;
+  audioBlocked: boolean;
   onStart: () => void;
   onStop: () => void;
+  onResumeAudio: () => void;
 };
 
 function statusLabel(props: MeetingControlsProps): {
@@ -34,7 +36,7 @@ function statusLabel(props: MeetingControlsProps): {
 }
 
 export function MeetingControls(props: MeetingControlsProps) {
-  const { meetingState, micListening, onStart, onStop } = props;
+  const { meetingState, micListening, audioBlocked, onStart, onStop, onResumeAudio } = props;
   const status = statusLabel(props);
   const active = meetingState.phase === "active" || meetingState.phase === "ending";
   const transitioning = meetingState.phase === "starting" || meetingState.phase === "ending";
@@ -66,6 +68,22 @@ export function MeetingControls(props: MeetingControlsProps) {
         </svg>
         {micListening ? "Mic on" : "Mic"}
       </span>
+
+      {audioBlocked ? (
+        <button
+          type="button"
+          onClick={onResumeAudio}
+          className="flex items-center gap-1.5 rounded-full border border-amber-500/60 bg-amber-500/15 px-3 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-500/25 dark:text-amber-300"
+          title="Browser blocked autoplay. Tap to play the agent's response and re-enable audio for this session."
+        >
+          <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          </svg>
+          Enable audio
+        </button>
+      ) : null}
 
       {active ? (
         <button
