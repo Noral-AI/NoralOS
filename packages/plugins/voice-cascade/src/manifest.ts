@@ -33,14 +33,27 @@ export const manifest: NoralosPluginManifestV1 = {
   },
 
   apiRoutes: [
-    // Synthesize audio. Caller is a service-agent (Conference Room bridge,
-    // future Twilio plugin, etc.). Always returns 200; success vs failure
-    // is signaled by `ok: true | false` in the body.
+    // Synthesize audio. Originally agent-only (Conference Room bridge,
+    // future Twilio plugin) — relaxed to `board-or-agent` so the in-app
+    // Dashboard / Issue chat can autoplay agent replies straight from the
+    // browser session without needing a per-surface service-agent token.
+    //
+    // Security posture is unchanged because the route does ALL its gating
+    // by `body.agentId` (the *target* voice, not the caller): voice-config
+    // enablement, ttsMode dry_run/live, exfiltration scan on `body.text`,
+    // byte/length caps, and provider-key resolution all run identically
+    // for board callers. A board caller can already read company comments
+    // and trigger LLM runs, so being able to *replay the same text as
+    // audio* doesn't widen the trust model — it just lets the browser
+    // do what an agent already could.
+    //
+    // Always returns 200; success vs failure is signaled by
+    // `ok: true | false` in the body.
     {
       routeKey: API_ROUTE_KEYS.synthesize,
       method: "POST",
       path: "/synthesize",
-      auth: "agent",
+      auth: "board-or-agent",
       capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
