@@ -26,6 +26,7 @@ import { queryKeys } from "../lib/queryKeys";
 import { AgentConfigForm } from "../components/AgentConfigForm";
 import { PageTabBar } from "../components/PageTabBar";
 import { adapterLabels, roleLabels, help } from "../components/agent-config-primitives";
+import { getAdapterLabel } from "@/adapters/adapter-display-registry";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useAdapterCapabilities } from "@/adapters/use-adapter-capabilities";
 import { MarkdownEditor } from "../components/MarkdownEditor";
@@ -3326,7 +3327,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
               return (
                 <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5 flex-wrap">
                   {adapterType && (
-                    <span className="bg-muted rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">{adapterType.replace(/_/g, " ")}</span>
+                    <span className="bg-muted rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">{getAdapterLabel(adapterType)}</span>
                   )}
                   {displayProvider && displayModel && (
                     <span>{displayProvider}/{displayModel}</span>
