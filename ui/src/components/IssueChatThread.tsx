@@ -41,6 +41,7 @@ import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { useNoralosIssueRuntime, type NoralosIssueRuntimeReassignment } from "../hooks/useNoralosIssueRuntime";
 import { useChatVoiceAutoplay } from "../hooks/useChatVoiceAutoplay";
+import { MicDictationButton } from "./MicDictationButton";
 import {
   buildIssueChatMessages,
   formatDurationWords,
@@ -3057,6 +3058,18 @@ const IssueChatComposer = forwardRef<IssueChatComposerHandle, IssueChatComposerP
             }}
           />
         ) : null}
+
+        <MicDictationButton
+          testId="issue-chat-composer-mic"
+          disabled={submitting}
+          onTranscript={(text) => {
+            // Append the recognized chunk to the existing body so the user
+            // can speak in passes, edit between chunks, or alternate typing
+            // and dictating. A leading space when the body is non-empty
+            // keeps phrases from running together.
+            setBody((prev) => (prev ? `${prev.replace(/\s*$/, "")} ${text}` : text));
+          }}
+        />
 
         <Button size="sm" disabled={!canSubmit} onClick={() => void handleSubmit()}>
           {submitting ? "Posting..." : "Send"}
