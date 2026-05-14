@@ -96,7 +96,11 @@ function buildActor(kind: Role): Record<string, unknown> {
   };
 }
 
-async function createApp(kind: Role, fetchImpl?: typeof fetch) {
+async function createApp(
+  kind: Role,
+  fetchImpl?: typeof fetch,
+  opts: { companyIssuePrefix?: string | null } = {},
+) {
   const [{ errorHandler }, { integrationOAuthRoutes }] = await Promise.all([
     vi.importActual<typeof import("../middleware/index.js")>("../middleware/index.js"),
     vi.importActual<typeof import("../routes/integrations-oauth.js")>(
@@ -115,7 +119,20 @@ async function createApp(kind: Role, fetchImpl?: typeof fetch) {
     } as never;
     next();
   });
-  app.use("/api", integrationOAuthRoutes({} as never, { fetchImpl }));
+  // The callback now looks up `companies.issuePrefix` to build a
+  // company-prefixed redirect URL. Mock just the read path it uses.
+  // Tests that exercise the callback pass `companyIssuePrefix`;
+  // `null` simulates the "no row" fallback path.
+  const issuePrefix = opts.companyIssuePrefix === undefined ? "NOR" : opts.companyIssuePrefix;
+  const db = {
+    select: () => ({
+      from: () => ({
+        where: () =>
+          Promise.resolve(issuePrefix === null ? [] : [{ issuePrefix }]),
+      }),
+    }),
+  };
+  app.use("/api", integrationOAuthRoutes(db as never, { fetchImpl }));
   app.use(errorHandler);
   return app;
 }
@@ -227,8 +244,11 @@ describe.sequential("integrations-oauth routes", () => {
         )
         .redirects(0);
       expect(res.status).toBe(302);
+      // Routes in this app are company-prefixed. The callback looks up
+      // `companies.issuePrefix` and builds `/{prefix}/company/settings/...`
+      // so the success banner lands on the actual page, not a fallback.
       expect(res.headers.location).toBe(
-        `/company/settings/integrations?connected=${encodeURIComponent(
+        `/NOR/company/settings/integrations?connected=${encodeURIComponent(
           credentialId,
         )}&provider=zoho`,
       );
@@ -246,6 +266,34 @@ describe.sequential("integrations-oauth routes", () => {
       expect(mockLogActivity.mock.calls[0][1]).toMatchObject({
         action: "integration.credential.oauth.connected",
       });
+    });
+
+    it("falls back to unprefixed redirect when company prefix lookup returns nothing", async () => {
+      const fetchImpl = buildFetch({
+        access_token: "ACCESS",
+        refresh_token: "REFRESH",
+        expires_in: 3600,
+        api_domain: "https://www.zohoapis.com",
+      });
+      const app = await createApp("admin", fetchImpl, { companyIssuePrefix: null });
+      const state = await signState("initial");
+      const res = await request(app)
+        .get(
+          `/api/integrations/oauth/zoho/callback?code=AUTHCODE&state=${encodeURIComponent(
+            state,
+          )}`,
+        )
+        .redirects(0);
+      expect(res.status).toBe(302);
+      // Without a resolved prefix we still redirect — to the unprefixed
+      // path — so the credential write side-effect isn't lost just
+      // because the routing layer couldn't be resolved.
+      expect(res.headers.location).toBe(
+        `/company/settings/integrations?connected=${encodeURIComponent(
+          credentialId,
+        )}&provider=zoho`,
+      );
+      expect(mockCredentialService.setOAuthTokens).toHaveBeenCalledOnce();
     });
 
     it("rejects callback with an unsigned/bad state", async () => {
