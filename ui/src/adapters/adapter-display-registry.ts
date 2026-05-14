@@ -108,6 +108,11 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
     icon: Cpu,
     comingSoon: true,
   },
+  noralai_brooklyn: {
+    label: "NoralAI",
+    description: "NoralAI-hosted LLM",
+    icon: Bot,
+  },
 };
 
 // ---------------------------------------------------------------------------

@@ -15,36 +15,37 @@ import { createServerAdapter } from "./server/index.js";
 export const type = "noralai_brooklyn";
 
 /** Operator-facing label. Never references the upstream backend. */
-export const label = "Brooklyn LLM (NORALAI)";
+export const label = "NoralAI";
 
 /**
- * Stable model ids exposed to NoralOS. The mapping from these ids to
- * an upstream technical model id (e.g. "Qwen/Qwen3-32B-FP8") happens
- * inside `execute()` and is configurable per-agent via
- * `adapterConfig.upstreamModel`.
+ * Stable model ids exposed to NoralOS. The id stays `brooklyn-core` to
+ * preserve existing agent configurations; only the operator-facing
+ * label is rebranded. The mapping from this id to an upstream
+ * technical model id happens inside `execute()` and is configurable
+ * per-agent via `adapterConfig.upstreamModel`.
  */
 export const models: AdapterModel[] = [
-  { id: "brooklyn-core", label: "Brooklyn Core" },
+  { id: "brooklyn-core", label: "NoralAI" },
 ];
 
 export const agentConfigurationDoc = `# noralai_brooklyn agent configuration
 
 Adapter: noralai_brooklyn
 
-Brooklyn LLM is a NORALAI-managed chat-completion provider. The
-operator-facing model is "Brooklyn Core"; the upstream backend (an
+NoralAI is a NORALAI-managed chat-completion provider. The
+operator-facing model is "NoralAI"; the upstream backend (an
 OpenAI-compatible HTTPS endpoint) is configured per-agent and the API
 key is stored per-company via NoralOS's Integration Credentials.
 
 Core fields:
-- model (string, required): the Brooklyn model id. Today: "brooklyn-core".
+- model (string, required): the NoralAI model id. Today: "brooklyn-core".
 - baseUrl (string, required): the OpenAI-compatible HTTPS base URL
   (e.g. "https://api.runpod.ai/v2/<endpoint-id>/openai/v1"). NoralOS
   never assumes a default — set it explicitly per agent.
 - upstreamModel (string, optional): the technical model id sent in
   the request body. Defaults to a named internal constant
   (DEFAULT_UPSTREAM_MODEL_ID) when not set. Operator-facing label
-  ("Brooklyn Core") is independent of this value. Override per-agent
+  ("NoralAI") is independent of this value. Override per-agent
   when you want to swap the upstream backend without editing source.
 - apiKeyRef (string, required): the secret reference produced by
   the Integration Credentials system. Format

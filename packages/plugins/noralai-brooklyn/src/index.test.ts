@@ -11,11 +11,11 @@ import {
 describe("adapter manifest", () => {
   it("uses the locked identity values from the integration map", () => {
     expect(adapterType).toBe("noralai_brooklyn");
-    expect(label).toBe("Brooklyn LLM (NORALAI)");
+    expect(label).toBe("NoralAI");
   });
 
   it("exposes brooklyn-core as the first model", () => {
-    expect(models[0]).toEqual({ id: "brooklyn-core", label: "Brooklyn Core" });
+    expect(models[0]).toEqual({ id: "brooklyn-core", label: "NoralAI" });
   });
 
   it("never mentions Qwen or RunPod in operator-facing surface fields", () => {
