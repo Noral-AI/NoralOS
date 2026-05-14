@@ -40,6 +40,7 @@ import type {
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { useNoralosIssueRuntime, type NoralosIssueRuntimeReassignment } from "../hooks/useNoralosIssueRuntime";
+import { useChatVoiceAutoplay } from "../hooks/useChatVoiceAutoplay";
 import {
   buildIssueChatMessages,
   formatDurationWords,
@@ -3122,6 +3123,16 @@ export function IssueChatThread({
   onRefreshLatestComments,
 }: IssueChatThreadProps) {
   const location = useLocation();
+  // Autoplay TTS for new agent-authored comments. The hook owns its own
+  // dedup baseline (existing history isn't replayed), audio element, and
+  // autoplay-rejection state. We feed it the raw `comments` prop directly
+  // so it sees server-truthful ids; the markdown-stripping happens inside
+  // the hook so we don't accidentally reshape the data for other consumers.
+  const voiceAutoplay = useChatVoiceAutoplay(
+    companyId,
+    comments,
+    { enabled: true, surface: "dashboard" },
+  );
   const lastScrolledHashRef = useRef<string | null>(null);
   const virtualizedThreadRef = useRef<VirtualizedIssueChatThreadListHandle | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
@@ -3637,6 +3648,25 @@ export function IssueChatThread({
     <AssistantRuntimeProvider runtime={runtime}>
       <IssueChatCtx.Provider value={chatCtx}>
       <div className={cn(variant === "embedded" ? "space-y-3" : "space-y-4")}>
+        {voiceAutoplay.audioBlocked ? (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={voiceAutoplay.resumeAudio}
+              data-testid="issue-chat-voice-resume"
+              className="flex items-center gap-1.5 rounded-full border border-amber-500/60 bg-amber-500/15 px-3 py-1 text-[11px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-300"
+              title="Browser blocked autoplay. Tap to play the agent's reply and re-enable audio for this session."
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+              Enable audio
+            </button>
+          </div>
+        ) : null}
+
         {resolvedShowJumpToLatest ? (
           <div className="flex justify-end">
             <button

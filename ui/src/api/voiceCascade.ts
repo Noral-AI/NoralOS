@@ -15,6 +15,39 @@ export interface VoiceCascadeHealthResponse {
   ttsMode: VoiceCascadeTtsMode;
 }
 
+export type VoiceCascadeSurface = "dashboard" | "conference_room" | "slack" | "phone";
+
+/**
+ * Successful synthesis response — the route always returns HTTP 200, so callers
+ * MUST inspect `ok` to discriminate. Failure modes carry `reason` (e.g.
+ * `voice-config-disabled`, `surface-disabled`, `exfiltration-blocked`,
+ * `provider-failed`) so the UI can surface a useful message without leaking
+ * provider internals.
+ */
+export interface VoiceCascadeSynthesisOk {
+  ok: true;
+  agentId: string;
+  surface: VoiceCascadeSurface;
+  providerUsed: "elevenlabs" | "google_tts";
+  voiceId: string;
+  mimeType: string;
+  audioBase64: string;
+  ttsMode: VoiceCascadeTtsMode;
+}
+
+export interface VoiceCascadeSynthesisFail {
+  ok: false;
+  agentId: string;
+  surface: VoiceCascadeSurface;
+  reason: string;
+  message: string;
+  ttsMode?: VoiceCascadeTtsMode;
+}
+
+export type VoiceCascadeSynthesisResult =
+  | VoiceCascadeSynthesisOk
+  | VoiceCascadeSynthesisFail;
+
 export const voiceCascadeApi = {
   /**
    * Fetch the current voice-cascade health snapshot, including `ttsMode`.
@@ -34,5 +67,50 @@ export const voiceCascadeApi = {
       throw new Error(`voice-cascade /health failed: HTTP ${res.status}`);
     }
     return (await res.json()) as VoiceCascadeHealthResponse;
+  },
+
+  /**
+   * Synthesize a clip of audio for an agent on a given surface.
+   *
+   * The server applies every gate: voice-config enablement, per-surface
+   * flag (e.g. `dashboardVoiceEnabled`), `ttsMode` dry_run/live, the
+   * pre-TTS exfiltration scan, and provider-key resolution. The browser
+   * only sees the resulting audio bytes (base64) or a `reason` string —
+   * provider keys never reach this client.
+   *
+   * Callers MUST check `ok` on the result. Non-ok responses are normal
+   * (e.g. dry_run, surface disabled, agent not voice-enabled) and should
+   * NOT be treated as bugs — they're how the gate signals "no audio
+   * intended."
+   */
+  synthesize: async (input: {
+    companyId: string;
+    agentId: string;
+    surface: VoiceCascadeSurface;
+    text: string;
+  }): Promise<VoiceCascadeSynthesisResult> => {
+    const params = new URLSearchParams({ companyId: input.companyId });
+    const res = await fetch(`${VOICE_CASCADE_API}/synthesize?${params.toString()}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId: input.agentId,
+        surface: input.surface,
+        text: input.text,
+      }),
+    });
+    if (!res.ok) {
+      // Hard transport errors (auth, 5xx) — surface as a synthetic fail
+      // result so callers don't need a separate try/catch path.
+      return {
+        ok: false,
+        agentId: input.agentId,
+        surface: input.surface,
+        reason: "transport-error",
+        message: `voice-cascade /synthesize failed: HTTP ${res.status}`,
+      };
+    }
+    return (await res.json()) as VoiceCascadeSynthesisResult;
   },
 };
