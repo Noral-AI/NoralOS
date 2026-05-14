@@ -253,9 +253,9 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
     id: "noralai_brooklyn",
     category: "llm",
     credentialType: "api_key",
-    displayName: "Brooklyn LLM (NORALAI)",
+    displayName: "NoralAI",
     description:
-      "API key for the NORALAI-managed Brooklyn LLM endpoint. Assigned per-company; consumed by the noralai_brooklyn adapter when an agent is configured to run on Brooklyn.",
+      "API key for the NoralAI-hosted LLM endpoint. Assigned per-company; consumed by the noralai_brooklyn adapter when an agent is configured to run on NoralAI.",
     fields: [
       {
         key: "apiKey",

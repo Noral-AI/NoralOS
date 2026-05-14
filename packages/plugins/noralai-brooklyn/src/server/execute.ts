@@ -124,7 +124,13 @@ export async function execute(
   ];
 
   // ── Client tuning ─────────────────────────────────────────────
-  const timeoutMs = Math.max(1, asNumber(config.timeoutSec, 30)) * 1000;
+  // `timeoutSec` of 0 (or anything non-positive) means "unset" — the host
+  // defaults agents' adapter_config.timeoutSec to 0 across all adapters, so
+  // we must not interpret it literally as a 1-second cap. Cold-start latency
+  // on a serverless vLLM endpoint can be tens of seconds.
+  const timeoutSecRaw = asNumber(config.timeoutSec, 0);
+  const timeoutSec = timeoutSecRaw > 0 ? timeoutSecRaw : 30;
+  const timeoutMs = timeoutSec * 1000;
   const maxRetries = Math.max(0, asNumber(config.maxRetries, 1));
   const temperature = asNumber(config.temperature, Number.NaN);
   const maxTokens = asNumber(config.maxTokens, Number.NaN);

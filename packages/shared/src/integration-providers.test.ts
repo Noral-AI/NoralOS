@@ -13,7 +13,7 @@ describe("INTEGRATION_PROVIDERS — noralai_brooklyn", () => {
 
   it("uses the operator-facing display name (no Qwen / RunPod) in the displayName", () => {
     const p = INTEGRATION_PROVIDERS["noralai_brooklyn"]!;
-    expect(p.displayName).toBe("Brooklyn LLM (NORALAI)");
+    expect(p.displayName).toBe("NoralAI");
     expect(p.displayName).not.toMatch(/qwen/i);
     expect(p.displayName).not.toMatch(/runpod/i);
   });
