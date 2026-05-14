@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import type { Db } from "@noralos/db";
+import { companies } from "@noralos/db";
+import { eq } from "drizzle-orm";
 import { INTEGRATION_PROVIDERS } from "@noralos/shared";
 import {
   buildAuthorizeUrl,
@@ -373,8 +375,25 @@ export function integrationOAuthRoutes(db: Db, deps: OAuthRoutesDeps = {}) {
         },
       });
 
+      // Routes in this app are company-prefixed (e.g. `/NOR/company/...`).
+      // The prefix is the company's `issuePrefix` (the same short token
+      // used for issue IDs). Look it up so the user lands on the actual
+      // Integrations page with the success banner instead of falling
+      // back to a generic landing page. If the lookup fails for any
+      // reason we still redirect — to the unprefixed path as before —
+      // so a deployed app without a matching prefix route still gets
+      // the connected=<id> query string for the UI to act on.
+      const prefixRow = await db
+        .select({ issuePrefix: companies.issuePrefix })
+        .from(companies)
+        .where(eq(companies.id, claims.companyId))
+        .then((rows) => rows[0] ?? null);
+      const prefix = prefixRow?.issuePrefix ?? "";
+      const settingsPath = prefix
+        ? `/${encodeURIComponent(prefix)}${SETTINGS_PATH}`
+        : SETTINGS_PATH;
       const destination =
-        `${SETTINGS_PATH}?connected=${encodeURIComponent(claims.credentialId)}` +
+        `${settingsPath}?connected=${encodeURIComponent(claims.credentialId)}` +
         `&provider=${encodeURIComponent(providerId)}`;
       res.redirect(302, destination);
     } catch (err) {
