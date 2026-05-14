@@ -482,6 +482,12 @@ function CredentialDrawer({
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [oauthFields, setOauthFields] = useState<Record<string, string>>({});
+  // Non-secret text fields for non-OAuth multi-field providers (e.g. Twilio's
+  // Account SID + API Key SID + Default From Number). Persisted server-side
+  // under `metadata.fields`. Single-secret providers (google_tts, elevenlabs,
+  // brooklyn) declare zero text fields, so this stays an empty object and
+  // the UI renders unchanged.
+  const [nonOAuthFields, setNonOAuthFields] = useState<Record<string, string>>({});
 
   // Seed default values for fixed-list text fields whenever the
   // selected OAuth provider changes (e.g. picking Zoho preselects
@@ -503,6 +509,23 @@ function CredentialDrawer({
     setClientSecret("");
   }, [provider, isOAuthProvider, selectedProviderSpec]);
 
+  // Seed non-OAuth text fields the same way: pick the first option for
+  // fixed-list selects, blank otherwise. Skips OAuth providers entirely
+  // (their fields are handled by the OAuthFields component).
+  useEffect(() => {
+    if (isOAuthProvider || !selectedProviderSpec) {
+      setNonOAuthFields({});
+      return;
+    }
+    const seeded: Record<string, string> = {};
+    for (const field of selectedProviderSpec.fields) {
+      if (field.inputType !== "text") continue;
+      seeded[field.key] =
+        field.options && field.options.length > 0 ? field.options[0].value : "";
+    }
+    setNonOAuthFields(seeded);
+  }, [provider, isOAuthProvider, selectedProviderSpec]);
+
   function validateOAuthInputs(): string | null {
     if (!selectedProviderSpec?.oauth) return null;
     if (!clientId.trim()) return "Client ID is required.";
@@ -516,15 +539,39 @@ function CredentialDrawer({
     return null;
   }
 
+  function validateNonOAuthInputs(): string | null {
+    if (isOAuthProvider || !selectedProviderSpec) return null;
+    if (mode !== "create") return null;
+    for (const field of selectedProviderSpec.fields) {
+      if (field.inputType !== "text") continue;
+      if (field.required && !(nonOAuthFields[field.key] ?? "").trim()) {
+        return `${field.label} is required.`;
+      }
+    }
+    return null;
+  }
+
   const create = useMutation({
-    mutationFn: async () =>
-      integrationsApi.create(companyId, {
+    mutationFn: async () => {
+      const validation = validateNonOAuthInputs();
+      if (validation) throw new Error(validation);
+      // Only ship a `metadata.fields` payload when the provider actually
+      // declares non-secret text fields — keeps the single-secret providers
+      // (google_tts, elevenlabs, brooklyn) untouched in stored metadata.
+      const textFieldCount = Object.keys(nonOAuthFields).length;
+      const trimmedFields: Record<string, string> = {};
+      for (const [key, val] of Object.entries(nonOAuthFields)) {
+        trimmedFields[key] = (val ?? "").trim();
+      }
+      return integrationsApi.create(companyId, {
         provider,
         displayName,
         environment,
         value,
         description: description || undefined,
-      }),
+        metadata: textFieldCount > 0 ? { fields: trimmedFields } : undefined,
+      });
+    },
     onSuccess: () => {
       onSaved();
     },
@@ -736,13 +783,35 @@ function CredentialDrawer({
             </>
           ) : null}
 
+          {mode === "create" && !isOAuthProvider && selectedProviderSpec
+            ? selectedProviderSpec.fields
+                .filter((f) => f.inputType === "text")
+                .map((field) => (
+                  <OAuthExtraField
+                    key={field.key}
+                    field={field}
+                    value={nonOAuthFields[field.key] ?? ""}
+                    onChange={(v) =>
+                      setNonOAuthFields((prev) => ({ ...prev, [field.key]: v }))
+                    }
+                  />
+                ))
+            : null}
+
           {mode !== "import" && !isOAuthProvider ? (
             <Field
-              label={mode === "edit" ? "Replace secret value (optional)" : "Secret value"}
+              label={
+                mode === "edit"
+                  ? "Replace secret value (optional)"
+                  : selectedProviderSpec?.fields.find((f) => f.inputType === "secret")
+                      ?.label ?? "Secret value"
+              }
               hint={
                 mode === "edit"
                   ? "Leave blank to keep the existing encrypted value. Submitting a new value rotates the credential."
-                  : "Pasted once, encrypted at rest, never displayed again. Only the last four characters are kept for display."
+                  : selectedProviderSpec?.fields.find((f) => f.inputType === "secret")
+                      ?.helpText ??
+                    "Pasted once, encrypted at rest, never displayed again. Only the last four characters are kept for display."
               }
             >
               <input

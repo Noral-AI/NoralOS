@@ -413,8 +413,25 @@ export function integrationRoutes(db: Db, deps: IntegrationRoutesDeps = {}) {
         });
         fields = { apiDomain, accessToken };
       } else {
+        // Non-OAuth providers: decrypt the secret material and rebuild the
+        // full field map runProviderTest expects. Single-secret providers
+        // (google_tts, elevenlabs, brooklyn) keep their historical
+        // `{ apiKey: value }` shape — the secret field is literally named
+        // `apiKey` in their registry entries. Multi-field providers like
+        // Twilio (Account SID + API Key SID as non-secret text + API Key
+        // Secret as the encrypted value) keep their non-secret halves in
+        // `metadata.fields` and have a secret field whose key may NOT be
+        // `apiKey` (Twilio's is `apiKeySecret`).
         const value = await credentials.resolvePlaintext(existing.companyId, id);
-        fields = { apiKey: value };
+        const secretField = provider.fields.find((f) => f.inputType === "secret");
+        if (!secretField) {
+          throw new Error("Provider has no secret field declared");
+        }
+        const metaFields =
+          ((existing.metadata as Record<string, unknown> | null)?.fields as
+            | Record<string, string>
+            | undefined) ?? {};
+        fields = { ...metaFields, [secretField.key]: value };
       }
       result = await runProviderTest(existing.provider, fields);
     } catch (err) {
