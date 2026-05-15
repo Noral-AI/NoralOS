@@ -266,6 +266,31 @@ export interface PluginApiRouteDeclaration {
   companyResolution?: PluginApiRouteCompanyResolution;
 }
 
+/**
+ * Declares a reverse-tool — an external system can invoke this on the
+ * plugin via the plugin's reverse-RPC inbound (HMAC-verified webhook
+ * endpoint). Used by NoralVoice's `noralos://<pluginId>/<toolName>`
+ * tool URL scheme: a voice agent mid-call invokes the tool, NoralVoice
+ * signs + POSTs to the plugin's reverse-RPC URL, the plugin's
+ * `onReverseTool` hook dispatches by tool name and returns a result.
+ *
+ * Reverse-tools are CALLED BY external systems (the opposite
+ * direction of regular `tools`, which are EXPOSED TO local agents).
+ * The declaration is metadata for documentation + future host-side
+ * UIs; runtime dispatch happens through `onReverseTool` keyed on
+ * `toolName`.
+ */
+export interface PluginReverseToolDeclaration {
+  /** Tool name, unique within the plugin. Lowercase snake_case. */
+  toolName: string;
+  /** Human-readable name shown in plugin docs / operator UIs. */
+  displayName: string;
+  /** Description of what the tool does and when external systems would invoke it. */
+  description: string;
+  /** JSON Schema describing the tool's input parameters. */
+  parametersSchema: JsonSchema;
+}
+
 // ---------------------------------------------------------------------------
 // Plugin Manifest V1
 // ---------------------------------------------------------------------------
@@ -320,6 +345,13 @@ export interface NoralosPluginManifestV1 {
   database?: PluginDatabaseDeclaration;
   /** Scoped JSON API routes mounted under `/api/plugins/:pluginId/api/*`. */
   apiRoutes?: PluginApiRouteDeclaration[];
+  /**
+   * Reverse-tools the plugin accepts from external systems via its
+   * reverse-RPC inbound webhook. Routed at runtime through the
+   * `onReverseTool` lifecycle hook keyed on `toolName`. See
+   * `PluginReverseToolDeclaration`.
+   */
+  reverseTools?: PluginReverseToolDeclaration[];
   /** Environment drivers this plugin contributes. Requires `environment.drivers.register` capability. */
   environmentDrivers?: PluginEnvironmentDriverDeclaration[];
   /**

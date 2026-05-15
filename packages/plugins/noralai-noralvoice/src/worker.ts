@@ -27,15 +27,22 @@
  *     a clear audit trail.
  */
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { definePlugin, runWorker } from "@noralos/plugin-sdk";
-import type { PluginContext, ToolRunContext, ToolResult } from "@noralos/plugin-sdk";
+import type {
+  PluginContext,
+  PluginReverseToolInput,
+  PluginReverseToolResult,
+  ToolResult,
+  ToolRunContext,
+} from "@noralos/plugin-sdk";
 
 import {
   GET_RUN_TOOL_NAME,
   LIST_WORKFLOWS_TOOL_NAME,
   PLUGIN_ID,
+  REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY,
   ROLE_TO_TIER,
   RUN_CALL_TOOL_NAME,
   RUN_COMPLETED_WEBHOOK_ENDPOINT_KEY,
@@ -44,6 +51,7 @@ import {
   TIER_RANK,
   type AgentTier,
 } from "./constants.js";
+import { dispatchReverseTool, type HostQuery } from "./reverse-tools.js";
 import { manifest } from "./manifest.js";
 import {
   NoralVoiceClientError,
@@ -348,6 +356,13 @@ function normaliseFailure(err: unknown): { safe: string; category: string; httpS
 interface WebhookRegistrationState {
   webhookId: number;
   secret: string;
+  // Phase 5d — per-company HMAC key for inbound `noralos://`
+  // reverse-RPC dispatches. Generated server-side at first
+  // registration and shipped to NoralVoice alongside `reverseRpcUrl`
+  // via `registerIntegrationWebhook`. The worker re-uses this stored
+  // value when verifying the X-Noralos-Signature header on inbound
+  // reverse-tool webhooks.
+  reverseRpcSecret?: string;
 }
 
 function verifyHmac(secret: string, body: string, headerValue: string | undefined): boolean {
@@ -366,6 +381,122 @@ function verifyHmac(secret: string, body: string, headerValue: string | undefine
     return timingSafeEqual(expected, actual);
   } catch {
     return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Phase 5d — inbound `noralos://` reverse-RPC dispatch handler.
+//
+// NoralVoice's workflow tool executor POSTs to
+// `/api/plugins/<pluginId>/webhooks/reverse-tool?company=<uuid>` with
+// an envelope `{ schemaVersion, plugin_id, tool_name, args, run_id,
+// workflow_uuid, organization_id }`, signed with
+// `X-Noralos-Signature: sha256=<hex>` over the raw body using the
+// per-company `reverseRpcSecret` captured at lifecycle setup.
+//
+// The function verifies HMAC against state-stored reverseRpcSecret,
+// dispatches to the matching reverse-tool handler, and (because the
+// host's webhook return shape is fire-and-forget) the result is
+// logged. A future host-side enhancement could thread the
+// PluginReverseToolResult back through the HTTP response so the
+// calling NoralVoice Agent node sees it directly.
+// ---------------------------------------------------------------------------
+
+interface NoralosReverseToolEnvelope {
+  schemaVersion: number;
+  plugin_id: string;
+  tool_name: string;
+  args?: Record<string, unknown>;
+  run_id?: string | number | null;
+  workflow_uuid?: string | null;
+  organization_id?: number | null;
+}
+
+function isReverseToolEnvelope(value: unknown): value is NoralosReverseToolEnvelope {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.schemaVersion === "number" &&
+    typeof v.plugin_id === "string" &&
+    typeof v.tool_name === "string"
+  );
+}
+
+async function handleReverseToolWebhook(
+  input: Parameters<NonNullable<Parameters<typeof definePlugin>[0]["onWebhook"]>>[0],
+): Promise<void> {
+  const ctx = requireCtx();
+  if (!ctx) return;
+
+  const companyQ = input.query.company;
+  const companyId = Array.isArray(companyQ) ? companyQ[0] : companyQ;
+  if (!companyId) {
+    ctx.logger.warn("NoralVoice reverse-tool webhook: missing companyId in query");
+    return;
+  }
+
+  const registration = (await ctx.state.get({
+    scopeKind: "company",
+    scopeId: companyId,
+    namespace: STATE_NAMESPACE,
+    stateKey: STATE_KEY_WEBHOOK_REGISTRATION,
+  })) as WebhookRegistrationState | null;
+  if (!registration?.reverseRpcSecret) {
+    ctx.logger.warn("NoralVoice reverse-tool webhook: no reverse-RPC secret on file", {
+      companyId,
+    });
+    return;
+  }
+
+  const signatureHeader =
+    (input.headers["x-noralos-signature"] as string | undefined) ??
+    (input.headers["X-Noralos-Signature"] as string | undefined);
+  const rawBody = typeof input.rawBody === "string" ? input.rawBody : "";
+  if (!verifyHmac(registration.reverseRpcSecret, rawBody, signatureHeader)) {
+    ctx.logger.warn("NoralVoice reverse-tool webhook: HMAC verification failed", {
+      companyId,
+    });
+    return;
+  }
+
+  const envelope = input.parsedBody;
+  if (!isReverseToolEnvelope(envelope)) {
+    ctx.logger.warn("NoralVoice reverse-tool webhook: malformed envelope", { companyId });
+    return;
+  }
+
+  // Restricted host-DB access (same cast pattern Phase 3 uses elsewhere).
+  const hostDb = (ctx as unknown as { host?: { queryHostDb?: HostQuery } })
+    .host?.queryHostDb;
+
+  const result = await dispatchReverseTool(
+    {
+      companyId,
+      hostDb,
+      logger: ctx.logger,
+    },
+    envelope.tool_name,
+    envelope.args ?? {},
+  );
+
+  // The webhook return shape is fire-and-forget, so for v1 we log the
+  // result here. Calling-side NoralVoice surfaces the failure as a
+  // tool error to the LLM via its own request/response loop; the host
+  // doesn't yet thread the result back over this socket. A follow-up
+  // can promote reverseTools to a host-routed apiRoute that returns
+  // the result directly.
+  if (result.ok) {
+    ctx.logger.info("reverse-tool dispatched ok", {
+      tool: envelope.tool_name,
+      company: companyId,
+    });
+  } else {
+    ctx.logger.warn("reverse-tool dispatch returned error", {
+      tool: envelope.tool_name,
+      company: companyId,
+      code: result.code,
+      error: result.error,
+    });
   }
 }
 
@@ -785,15 +916,44 @@ const plugin = definePlugin({
       `${hostBaseUrl.replace(/\/+$/, "")}` +
       `/api/plugins/${encodeURIComponent(PLUGIN_ID)}/webhooks/${RUN_COMPLETED_WEBHOOK_ENDPOINT_KEY}` +
       `?company=${encodeURIComponent(companyId)}`;
+    // Phase 5d — also publish the reverse-RPC callback URL so
+    // NoralVoice's `noralos://` tool executor knows where to POST.
+    // The URL reuses the webhook pattern (so we don't need a host-
+    // side apiRoute registration); HMAC verification lives in the
+    // `onWebhook` handler keyed on
+    // REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY.
+    const reverseRpcUrl =
+      `${hostBaseUrl.replace(/\/+$/, "")}` +
+      `/api/plugins/${encodeURIComponent(PLUGIN_ID)}/webhooks/${REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY}` +
+      `?company=${encodeURIComponent(companyId)}`;
+    // Per-company HMAC key for reverse-RPC inbound dispatches.
+    // Generated server-side — NoralVoice stores it but never shares
+    // it back to anyone; the plugin uses it to verify
+    // `X-Noralos-Signature` on inbound POSTs.
+    const reverseRpcSecret = randomBytes(32).toString("base64url");
 
     try {
       const registration = await registerIntegrationWebhook(
         { baseUrl: parsed.baseUrl, apiKey },
-        { eventType: "run.completed", targetUrl },
+        {
+          eventType: "run.completed",
+          targetUrl,
+          reverseRpcUrl,
+          reverseRpcSecret,
+        },
       );
-      await ctx.state.set(stateScope, registration);
-      ctx.logger.info("NoralVoice onConfigChanged: webhook registered", {
+      // Prefer the secret echoed by NoralVoice (in case the server
+      // assigned one); fall back to the one we generated.
+      const persistedReverseSecret =
+        registration.reverseRpcSecret ?? reverseRpcSecret;
+      await ctx.state.set(stateScope, {
         webhookId: registration.id,
+        secret: registration.secret,
+        reverseRpcSecret: persistedReverseSecret,
+      });
+      ctx.logger.info("NoralVoice onConfigChanged: webhook + reverse-RPC registered", {
+        webhookId: registration.id,
+        reverseRpcEnabled: true,
       });
     } catch (err) {
       ctx.logger.error("NoralVoice onConfigChanged: webhook register failed", {
@@ -807,6 +967,14 @@ const plugin = definePlugin({
   // ---------------------------------------------------------------------------
 
   async onWebhook(input) {
+    // Phase 5d — route inbound `noralos://` reverse-RPC dispatches
+    // through the reverse-tool handler. The host doesn't know how to
+    // verify per-company HMAC on these (the secret is plugin-owned),
+    // so the worker does it inline before invoking onReverseTool.
+    if (input.endpointKey === REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY) {
+      await handleReverseToolWebhook(input);
+      return;
+    }
     if (input.endpointKey !== RUN_COMPLETED_WEBHOOK_ENDPOINT_KEY) return;
     const ctx = requireCtx();
     if (!ctx) return;
@@ -1404,6 +1572,37 @@ const plugin = definePlugin({
 
   async onHealth() {
     return { status: "ok", message: `${PLUGIN_ID} ready` };
+  },
+
+  // ---------------------------------------------------------------------------
+  // Phase 5d — onReverseTool. Declarative entrypoint for inbound
+  // `noralos://` reverse-tool dispatches. The webhook handler
+  // (`handleReverseToolWebhook` above) currently calls
+  // `dispatchReverseTool` directly because the host doesn't yet route
+  // reverseTools natively; this hook exists for SDK-type consistency
+  // and as the future-proof entry point if a later host version
+  // promotes reverseTools to a first-class routed surface.
+  // ---------------------------------------------------------------------------
+  async onReverseTool(input: PluginReverseToolInput): Promise<PluginReverseToolResult> {
+    const ctx = requireCtx();
+    if (!ctx) {
+      return {
+        ok: false,
+        error: "Plugin context not initialised",
+        code: "WORKER_NOT_READY",
+      };
+    }
+    const hostDb = (ctx as unknown as { host?: { queryHostDb?: HostQuery } })
+      .host?.queryHostDb;
+    return dispatchReverseTool(
+      {
+        companyId: input.companyId,
+        hostDb,
+        logger: ctx.logger,
+      },
+      input.toolName,
+      input.args,
+    );
   },
 });
 

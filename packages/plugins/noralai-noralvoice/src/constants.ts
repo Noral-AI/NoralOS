@@ -24,10 +24,33 @@ export const GET_RUN_TOOL_NAME = "get_run";
  */
 export const RUN_COMPLETED_WEBHOOK_ENDPOINT_KEY = "run-completed";
 
+/**
+ * Phase 5d — inbound endpoint for `noralos://` reverse-RPC dispatches
+ * from a NoralVoice workflow Agent node. Reuses the webhook URL
+ * pattern (`POST /api/plugins/<pluginId>/webhooks/reverse-tool`) so
+ * we don't need a host-side route registration; HMAC verification
+ * lives in the worker's `onWebhook` handler the same way as for
+ * `run-completed`.
+ */
+export const REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY = "reverse-tool";
+
 /** Per-company plugin state namespace + keys used by `ctx.state.*`. */
 export const STATE_NAMESPACE = "noralai.noralvoice";
-/** Stores `{ webhookId: number, secret: string }` keyed per company. */
+/**
+ * Stores ``{ webhookId, secret, reverseRpcSecret }`` keyed per
+ * company. The `reverseRpcSecret` is the HMAC key for inbound
+ * `noralos://` reverse-RPC dispatches (Phase 5d).
+ */
 export const STATE_KEY_WEBHOOK_REGISTRATION = "webhook-registration";
+
+/**
+ * Phase 5d — manifest tool names for the v1 reverse-RPC handlers.
+ * Mirror the names declared in the manifest's `reverseTools` array;
+ * the worker's `onReverseTool` dispatches keyed on these.
+ */
+export const REVERSE_TOOL_GET_AGENT_STATUS = "get_agent_status";
+export const REVERSE_TOOL_CREATE_TASK_FOR_AGENT = "create_task_for_agent";
+export const REVERSE_TOOL_LOOKUP_CUSTOMER = "lookup_customer";
 
 /** Default per-call timeout for NoralVoice requests, in ms. */
 export const NORALVOICE_DEFAULT_TIMEOUT_MS = 10_000;

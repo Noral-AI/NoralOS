@@ -97,6 +97,8 @@ export type {
   PluginWebhookInput,
   PluginApiRequestInput,
   PluginApiResponse,
+  PluginReverseToolInput,
+  PluginReverseToolResult,
 } from "./define-plugin.js";
 export type {
   TestHarness,
