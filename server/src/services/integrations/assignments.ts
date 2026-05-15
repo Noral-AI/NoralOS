@@ -61,6 +61,57 @@ export interface AssignmentServiceDeps {
   lifecycle?: Pick<PluginLifecycleManager, "restartWorker">;
 }
 
+/**
+ * Read the non-secret form fields off a credential row. The credentials
+ * service stores them under `metadata.fields` as `Record<string, string>`
+ * (per the create/update paths). Returns an empty object when missing or
+ * malformed so callers can iterate without guarding.
+ */
+function readCredentialFields(row: { metadata?: unknown }): Record<string, string> {
+  const metadata = row.metadata as { fields?: unknown } | null | undefined;
+  const fields = metadata?.fields;
+  if (!fields || typeof fields !== "object") return {};
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(fields as Record<string, unknown>)) {
+    if (typeof value === "string") out[key] = value;
+    else if (typeof value === "number" || typeof value === "boolean") out[key] = String(value);
+  }
+  return out;
+}
+
+/**
+ * Coerce a credential field's string value to the type the plugin's
+ * `instanceConfigSchema` expects. JSON-schema validation in the plugin
+ * loader rejects type mismatches; coercing here keeps the cast in one
+ * place and out of every plugin worker. Returns the raw string when no
+ * coercion is requested.
+ */
+function coerceFieldValue(raw: string, coerce: "integer" | "boolean" | undefined): unknown {
+  if (coerce === "integer") {
+    // Integer fields in the form layer are typed as text but constrained
+    // to digits by the input. Empty / non-numeric values were filtered
+    // out by the caller (raw === "" is skipped). Use `Number()` rather
+    // than `parseInt` so a trailing-garbage value like "12abc" surfaces
+    // as NaN and gets rejected by JSON-schema downstream — better than
+    // silently truncating.
+    const n = Number(raw);
+    if (!Number.isFinite(n) || !Number.isInteger(n)) {
+      throw unprocessable(
+        `Credential field expected integer but got "${raw}". Fix the credential's value before assigning.`,
+      );
+    }
+    return n;
+  }
+  if (coerce === "boolean") {
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    throw unprocessable(
+      `Credential field expected boolean but got "${raw}". Use literal "true" or "false".`,
+    );
+  }
+  return raw;
+}
+
 export function integrationAssignmentService(db: Db, deps: AssignmentServiceDeps = {}) {
   const credentialSvc = integrationCredentialService(db);
   const registry = pluginRegistryService(db);
@@ -283,9 +334,26 @@ export function integrationAssignmentService(db: Db, deps: AssignmentServiceDeps
       //    other field (`ttsMode`, `voiceConfigAgentTokenRef`,
       //    `googleTtsDefaultLanguageCode`, `maxTextChars`, plus any
       //    field a future operator added) is preserved verbatim.
+      //
+      //    For multi-field providers, also propagate any non-secret
+      //    fields the slot declares as `pairedFields`. NoralVoice needs
+      //    `baseUrl` + `organizationId` alongside `apiKeyRef`; without
+      //    this, the plugin's instanceConfig schema validation fails
+      //    on the missing fields and operators have to hand-edit JSON.
       const patchPayload: Record<string, unknown> = {
         [input.targetConfigPath]: credentialRow.secretId,
       };
+      const slot = provider.assignableSlots.find(
+        (s) => s.pluginKey === plugin.pluginKey && s.configPath === input.targetConfigPath,
+      );
+      if (slot?.pairedFields?.length) {
+        const credentialFields = readCredentialFields(credentialRow);
+        for (const paired of slot.pairedFields) {
+          const raw = credentialFields[paired.sourceField];
+          if (raw === undefined || raw === null || raw === "") continue;
+          patchPayload[paired.targetConfigPath] = coerceFieldValue(raw, paired.coerce);
+        }
+      }
       let patched: { configJson: Record<string, unknown> } | null = null;
       try {
         patched = (await registry.patchConfig(plugin.id, {
