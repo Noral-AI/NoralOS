@@ -97,6 +97,8 @@ export const manifest: NoralosPluginManifestV1 = {
         id: "noralvoice-voice-settings",
         displayName: "Voice settings",
         exportName: "VoiceSettingsTab",
+        // Mount only on the Agent detail page — voice settings are per-agent.
+        entityTypes: ["agent"],
       },
     ],
   },
