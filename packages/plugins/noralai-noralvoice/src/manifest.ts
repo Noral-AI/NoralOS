@@ -65,6 +65,7 @@ export const manifest: NoralosPluginManifestV1 = {
     "api.routes.register",
     "ui.sidebar.register",
     "ui.page.register",
+    "ui.detailTab.register",
   ],
 
   entrypoints: {
