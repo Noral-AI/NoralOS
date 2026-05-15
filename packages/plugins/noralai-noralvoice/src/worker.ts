@@ -1291,7 +1291,7 @@ const plugin = definePlugin({
 
     // ── Phase 4 PR-B: interact surfaces ──────────────────────────────
     if (input.routeKey === "create_workflow_embed_token") {
-      const workflowUuid = input.pathParams?.uuid as string | undefined;
+      const workflowUuid = input.params.uuid;
       if (!workflowUuid) {
         return {
           status: 400,
@@ -1370,8 +1370,8 @@ const plugin = definePlugin({
       // here is to pass start/stop signals through to the host via
       // events.emit; the real work happens in the host service.
       const body =
-        input.parsedBody && typeof input.parsedBody === "object"
-          ? (input.parsedBody as { action?: string; runId?: string; workflowUuid?: string })
+        input.body && typeof input.body === "object"
+          ? (input.body as { action?: string; runId?: string; workflowUuid?: string })
           : {};
       const action = typeof body.action === "string" ? body.action : "";
       if (action !== "start" && action !== "stop") {
@@ -1381,11 +1381,11 @@ const plugin = definePlugin({
         };
       }
       try {
-        await ctx.events.emit({
-          event: `noralai.noralvoice.transcript_pump.${action}`,
-          companyId: (input as unknown as { companyId?: string }).companyId,
-          data: { runId: body.runId, workflowUuid: body.workflowUuid },
-        });
+        await ctx.events.emit(
+          `noralai.noralvoice.transcript_pump.${action}`,
+          input.companyId,
+          { runId: body.runId, workflowUuid: body.workflowUuid },
+        );
       } catch (err) {
         ctx.logger.warn("NoralVoice transcript pump control emit failed", {
           action,
