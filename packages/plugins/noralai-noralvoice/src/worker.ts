@@ -841,12 +841,52 @@ const plugin = definePlugin({
     const payload = input.parsedBody;
     if (!payload || typeof payload !== "object") return;
 
+    // Phase 4 B4 dedup: the live transcript pump (server-side service)
+    // may have already streamed extracted_variable events for keys
+    // present in this webhook's `extracted_variables` blob. Ask the
+    // pump for the set of keys it emitted and strip them from the
+    // webhook payload before re-emitting, so the originating agent
+    // doesn't see duplicates.
+    //
+    // The pump exposes its set via an HTTP query against the host
+    // ('/internal/voice-transcript-pump/emitted-keys?runId=...'); we
+    // skip it if the host doesn't surface that endpoint (graceful
+    // degradation — duplicates are annoying but not broken).
+    const runId =
+      typeof (payload as { run_id?: unknown }).run_id === "string"
+        ? ((payload as { run_id?: string }).run_id as string)
+        : null;
+    let dedupPayload: Record<string, unknown> = payload as Record<string, unknown>;
+    if (runId) {
+      try {
+        const probe = await fetch(
+          `/internal/voice-transcript-pump/emitted-keys?companyId=${encodeURIComponent(companyId)}&runId=${encodeURIComponent(runId)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (probe.ok) {
+          const body = (await probe.json().catch(() => ({}))) as { keys?: string[] };
+          const emittedKeys = new Set(Array.isArray(body.keys) ? body.keys : []);
+          const evRaw = (dedupPayload as { extracted_variables?: unknown }).extracted_variables;
+          if (evRaw && typeof evRaw === "object" && !Array.isArray(evRaw)) {
+            const ev = evRaw as Record<string, unknown>;
+            const filtered: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(ev)) {
+              if (!emittedKeys.has(k)) filtered[k] = v;
+            }
+            dedupPayload = { ...dedupPayload, extracted_variables: filtered };
+          }
+        }
+      } catch {
+        // Best-effort — proceed with the un-deduped payload.
+      }
+    }
+
     // Emit on the NoralOS event bus — this is what wakes the originating
     // agent. The payload keys mirror the v1 schema PR-A defined.
     await ctx.events.emit(
       "noralai.noralvoice.run.completed",
       companyId,
-      payload as Record<string, unknown>,
+      dedupPayload,
     );
     await ctx.activity.log({
       companyId,
@@ -1247,6 +1287,116 @@ const plugin = definePlugin({
         }
       };
       return handler();
+    }
+
+    // ── Phase 4 PR-B: interact surfaces ──────────────────────────────
+    if (input.routeKey === "create_workflow_embed_token") {
+      const workflowUuid = input.params.uuid;
+      if (!workflowUuid) {
+        return {
+          status: 400,
+          body: { ok: false, error: "BAD_REQUEST", message: "workflow uuid required" },
+        };
+      }
+      const userId =
+        (input as unknown as { actor?: { userId?: string | null } }).actor?.userId ?? null;
+      if (!userId) {
+        return {
+          status: 400,
+          body: { ok: false, error: "BAD_REQUEST", message: "embed token requires a user-actor context" },
+        };
+      }
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) {
+        return { status: 400, body: { ok: false, error: "NO_API_KEY", message: config.error } };
+      }
+      // Resolve the operator's email from better-auth's user table so
+      // we can hand it to NoralVoice as target_user_email. The plugin
+      // SDK doesn't expose a typed accessor for this; we use the host
+      // SQL helper.
+      if (!hostDb) {
+        return {
+          status: 500,
+          body: {
+            ok: false,
+            error: "HOST_DB_UNAVAILABLE",
+            message: "ctx.host.queryHostDb is required for embed-token lookups",
+          },
+        };
+      }
+      const userRows = (await hostDb(
+        `SELECT email FROM "user" WHERE id = $1 LIMIT 1`,
+        [userId],
+      )) as Array<{ email: string | null }> | null;
+      const email = Array.isArray(userRows) ? userRows[0]?.email ?? null : null;
+      if (!email) {
+        return {
+          status: 400,
+          body: {
+            ok: false,
+            error: "NO_OPERATOR_EMAIL",
+            message: "Calling user has no email on record",
+          },
+        };
+      }
+      try {
+        const mod = await import("./noralvoice-client.js");
+        const result = await mod.createEmbedExchangeToken(config, {
+          targetUserEmail: email,
+          targetPath: `/workflow/${workflowUuid}`,
+          ttlSeconds: 90,
+        });
+        return { status: 200, body: result };
+      } catch (err) {
+        const { safe, category, httpStatus } = normaliseFailure(err);
+        return {
+          status: httpStatus && httpStatus >= 400 && httpStatus < 500 ? 400 : 502,
+          body: {
+            ok: false,
+            error: category === "HTTP_4XX" ? "NORALVOICE_4XX" : "NORALVOICE_5XX",
+            status: httpStatus,
+            message: safe,
+          },
+        };
+      }
+    }
+
+    if (input.routeKey === "transcript_pump_control") {
+      // The transcript pump lives in a NoralOS server service
+      // (server/src/services/voice-transcript-pump.ts) because the
+      // plugin worker model is RPC-shaped — workers respond to
+      // discrete calls, not long-lived subscriptions (architecture
+      // call documented in the PR description). The plugin's role
+      // here is to pass start/stop signals through to the host via
+      // events.emit; the real work happens in the host service.
+      const body =
+        input.body && typeof input.body === "object"
+          ? (input.body as { action?: string; runId?: string; workflowUuid?: string })
+          : {};
+      const action = typeof body.action === "string" ? body.action : "";
+      if (action !== "start" && action !== "stop") {
+        return {
+          status: 400,
+          body: { ok: false, error: "BAD_REQUEST", message: "action must be 'start' or 'stop'" },
+        };
+      }
+      try {
+        await ctx.events.emit(
+          `noralai.noralvoice.transcript_pump.${action}`,
+          input.companyId,
+          { runId: body.runId, workflowUuid: body.workflowUuid },
+        );
+      } catch (err) {
+        ctx.logger.warn("NoralVoice transcript pump control emit failed", {
+          action,
+          err: err instanceof Error ? err.message : "unknown",
+        });
+        return {
+          status: 500,
+          body: { ok: false, error: "EMIT_FAILED", message: "Could not signal the pump service" },
+        };
+      }
+      return { status: 200, body: { ok: true, action } };
     }
 
     return { status: 404, body: { error: "Unknown route" } };

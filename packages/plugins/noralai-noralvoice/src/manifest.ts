@@ -309,6 +309,35 @@ export const manifest: NoralosPluginManifestV1 = {
       capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
+    // ── Phase 4 PR-B: interact surfaces ────────────────────────────────
+    {
+      // Mint a one-shot embed token for the iframed workflow builder.
+      // Body: { workflowUuid: string }. Plugin worker calls NV's
+      // POST /api/v1/embed/exchange-token (Phase 1 PR-A) with the
+      // current operator's email as target_user_email and
+      // /workflow/<uuid> as target_path. Returns the embed URL ready
+      // to drop into <iframe src>.
+      routeKey: "create_workflow_embed_token",
+      method: "POST",
+      path: "/workflows/:uuid/embed-token",
+      auth: "board",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      // Server-side process control for the live transcript pump
+      // (PR-B B2). The pump itself runs in a NoralOS server service
+      // (NOT the plugin worker — plugin workers don't support
+      // long-lived WS subscriptions cleanly; see commit message for
+      // the architecture decision). This endpoint lets the worker
+      // tell the server to start/stop a pump for a given run.
+      routeKey: "transcript_pump_control",
+      method: "POST",
+      path: "/transcript-pump/control",
+      auth: "board",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
   ],
 
   tools: [
