@@ -563,6 +563,10 @@ export const PLUGIN_CATEGORIES = [
   "workspace",
   "automation",
   "ui",
+  // Voice-AI runtime integrations (e.g. NoralVoice). Filtered as a
+  // distinct group in the plugin gallery alongside other channel
+  // categories.
+  "voice",
 ] as const;
 export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
 
@@ -606,6 +610,10 @@ export const PLUGIN_CAPABILITIES = [
   "agents.pause",
   "agents.resume",
   "agents.invoke",
+  // `agents.write` is broader than pause/resume/invoke — it permits a
+  // plugin to *create* new agents (e.g. shipping an agent template like
+  // the NoralVoice plugin's "Voice Director"). Gates `agents.create`.
+  "agents.write",
   "agent.sessions.create",
   "agent.sessions.list",
   "agent.sessions.send",

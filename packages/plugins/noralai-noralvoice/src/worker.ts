@@ -55,6 +55,15 @@ import {
 import { executeGetRun } from "./tools/get_run.js";
 import { executeListWorkflows } from "./tools/list_workflows.js";
 import { executeRunCall } from "./tools/run_call.js";
+import {
+  VOICE_DIRECTOR_DEFAULT_ROLE,
+  VOICE_DIRECTOR_DEFAULT_SYSTEM_PROMPT,
+  VOICE_DIRECTOR_DEFAULT_TITLE,
+  VOICE_DIRECTOR_DEFAULT_TOOLS,
+  VOICE_DIRECTOR_TEMPLATE_ID,
+  VOICE_DIRECTOR_TEMPLATE_NAME,
+  type VoiceDirectorOverrides,
+} from "./voice-director-template.js";
 
 // ---------------------------------------------------------------------------
 // Module-scoped plugin context (set in `setup`, reused from webhook/api hooks)
@@ -113,6 +122,125 @@ async function assertTier(
     };
   }
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Voice Director provisioner
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve the company's CEO agent id (if any) so the new Voice Director
+ * reports up the chain. Falls back to null with a soft warning when no
+ * CEO exists yet — the operator can create one later and re-parent.
+ */
+async function resolveCeoAgentId(
+  ctx: PluginContext,
+  companyId: string,
+): Promise<string | null> {
+  try {
+    const rows = await ctx.agents.list({ companyId });
+    const ceo = rows.find(
+      (a) =>
+        (a.role ?? "").toLowerCase() === "ceo" &&
+        a.status !== "terminated",
+    );
+    return ceo?.id ?? null;
+  } catch (err) {
+    ctx.logger.warn("NoralVoice provisionVoiceDirector: CEO lookup failed", {
+      companyId,
+      err: err instanceof Error ? err.message : "unknown",
+    });
+    return null;
+  }
+}
+
+/** Parse the apiRoute body into a typed overrides object. */
+function readVoiceDirectorOverrides(body: unknown): VoiceDirectorOverrides {
+  if (!body || typeof body !== "object") return {};
+  const o = body as Record<string, unknown>;
+  const out: VoiceDirectorOverrides = {};
+  if (typeof o.name === "string" && o.name.trim().length > 0) out.name = o.name.trim();
+  if (typeof o.systemPrompt === "string" && o.systemPrompt.length > 0) out.systemPrompt = o.systemPrompt;
+  if (typeof o.adapterType === "string" || o.adapterType === null) out.adapterType = o.adapterType;
+  if (typeof o.reportsTo === "string" || o.reportsTo === null) out.reportsTo = o.reportsTo;
+  return out;
+}
+
+/**
+ * Handle `POST /api/plugins/noralai.noralvoice/api/voice-directors`.
+ *
+ * Creates a manager-tier agent from the Voice Director template using
+ * `ctx.agents.create` (the host service enforces `agents.write`
+ * capability and writes provenance metadata).
+ *
+ * The caller-supplied overrides take precedence over template defaults.
+ * When `reportsTo` isn't specified, we resolve the company's CEO and
+ * report up the chain; if no CEO exists, we surface a soft warning so
+ * the UI can prompt to create one.
+ */
+async function handleCreateVoiceDirector(
+  ctx: PluginContext,
+  input: { companyId?: string; parsedBody?: unknown },
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const companyId = typeof input.companyId === "string" ? input.companyId : "";
+  if (!companyId) {
+    return { status: 400, body: { error: "Missing companyId" } };
+  }
+  const overrides = readVoiceDirectorOverrides(input.parsedBody);
+  const reportsTo =
+    overrides.reportsTo !== undefined ? overrides.reportsTo : await resolveCeoAgentId(ctx, companyId);
+
+  try {
+    const created = await ctx.agents.create({
+      companyId,
+      name: overrides.name ?? VOICE_DIRECTOR_TEMPLATE_NAME,
+      role: VOICE_DIRECTOR_DEFAULT_ROLE,
+      title: VOICE_DIRECTOR_DEFAULT_TITLE,
+      reportsTo,
+      capabilities: VOICE_DIRECTOR_DEFAULT_TOOLS.join(","),
+      adapterType: overrides.adapterType ?? null,
+      adapterConfig: {},
+      runtimeConfig: {
+        systemPrompt: overrides.systemPrompt ?? VOICE_DIRECTOR_DEFAULT_SYSTEM_PROMPT,
+        tools: [...VOICE_DIRECTOR_DEFAULT_TOOLS],
+        template: VOICE_DIRECTOR_TEMPLATE_ID,
+      },
+      metadata: {
+        provisionedFromTemplate: VOICE_DIRECTOR_TEMPLATE_ID,
+      },
+    });
+    await ctx.activity.log({
+      companyId,
+      message: `Voice Director "${created.name}" provisioned`,
+      entityType: "agent",
+      entityId: created.id,
+      metadata: {
+        kind: "noralvoice.voice-director.provisioned",
+        reportsTo: created.reportsTo ?? null,
+      },
+    });
+    const body: Record<string, unknown> = {
+      ok: true,
+      agentId: created.id,
+      name: created.name,
+      reportsTo: created.reportsTo ?? null,
+    };
+    if (created.reportsTo == null) {
+      body.reportsToWarning =
+        "No CEO agent found in this company — Voice Director was created without a manager. " +
+        "Create a CEO agent (or pass `reportsTo` explicitly) to set up the reporting chain.";
+    }
+    return { status: 200, body };
+  } catch (err) {
+    ctx.logger.warn("NoralVoice create_voice_director failed", {
+      companyId,
+      err: err instanceof Error ? err.message : "unknown",
+    });
+    return {
+      status: 500,
+      body: { ok: false, error: err instanceof Error ? err.message : "Unknown error" },
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -418,7 +546,7 @@ const plugin = definePlugin({
         { baseUrl: parsed.baseUrl, apiKey },
         { eventType: "run.completed", targetUrl },
       );
-      await ctx.state.set({ ...stateScope, value: registration });
+      await ctx.state.set(stateScope, registration);
       ctx.logger.info("NoralVoice onConfigChanged: webhook registered", {
         webhookId: registration.id,
       });
@@ -438,9 +566,8 @@ const plugin = definePlugin({
     const ctx = requireCtx();
     if (!ctx) return;
 
-    const companyId =
-      (input as unknown as { companyId?: string }).companyId ??
-      (input.query.company as string | undefined);
+    const companyQ = input.query.company;
+    const companyId = Array.isArray(companyQ) ? companyQ[0] : companyQ;
     if (!companyId) {
       ctx.logger.warn("NoralVoice webhook: missing companyId in query");
       return;
@@ -471,16 +598,15 @@ const plugin = definePlugin({
 
     // Emit on the NoralOS event bus — this is what wakes the originating
     // agent. The payload keys mirror the v1 schema PR-A defined.
-    await ctx.events.emit({
-      event: "noralai.noralvoice.run.completed",
+    await ctx.events.emit(
+      "noralai.noralvoice.run.completed",
       companyId,
-      data: payload as Record<string, unknown>,
-    });
-    await ctx.activityLog.write({
+      payload as Record<string, unknown>,
+    );
+    await ctx.activity.log({
       companyId,
-      kind: "noralvoice.webhook.received",
-      summary: "NoralVoice run.completed delivered",
-      data: { eventType: "run.completed" },
+      message: "NoralVoice run.completed delivered",
+      metadata: { eventType: "run.completed" },
     });
     ctx.logger.info("NoralVoice webhook accepted", {
       companyId,
@@ -512,18 +638,7 @@ const plugin = definePlugin({
     }
 
     if (input.routeKey === "create_voice_director") {
-      // The actual agent row creation happens server-side in
-      // `server/src/services/agent-templates/voice-director.ts` —
-      // exposed via a separate REST endpoint mounted by the auto-register
-      // hook. Here we just signal the host to proxy.
-      const overrides =
-        input.parsedBody && typeof input.parsedBody === "object"
-          ? (input.parsedBody as Record<string, unknown>)
-          : {};
-      return {
-        status: 200,
-        body: { ok: true, message: "create_voice_director route reached (provisioner in server services).", overrides },
-      };
+      return await handleCreateVoiceDirector(ctx, input);
     }
 
     return { status: 404, body: { error: "Unknown route" } };

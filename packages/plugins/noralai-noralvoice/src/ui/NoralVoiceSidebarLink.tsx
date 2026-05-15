@@ -6,6 +6,8 @@
  * matching the "Voice" theme used elsewhere in NoralOS.
  */
 
+import type { MouseEvent } from "react";
+
 import type { PluginSidebarProps } from "@noralos/plugin-sdk/ui";
 
 const linkClassName = [
@@ -21,7 +23,7 @@ export function NoralVoiceSidebarLink({ context }: PluginSidebarProps) {
     <a
       href={href}
       className={linkClassName}
-      onClick={(event) => {
+      onClick={(event: MouseEvent<HTMLAnchorElement>) => {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
         event.preventDefault();
         window.history.pushState({}, "", href);

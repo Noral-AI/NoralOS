@@ -173,7 +173,7 @@ export function NoralVoicePage({ context }: PluginPageProps) {
               <span className={subduedClass}>{status.directors.length} total</span>
             </div>
             <ul className="divide-y divide-border/60">
-              {status.directors.map((d) => (
+              {status.directors.map((d: VoiceDirector) => (
                 <li key={d.id} className="flex items-center justify-between py-3">
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-medium">{d.name}</span>

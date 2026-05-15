@@ -2426,6 +2426,10 @@ export function pluginRoutes(
       await webhookDeps.workerManager.call(plugin.id, "handleWebhook", {
         endpointKey,
         headers: req.headers as Record<string, string | string[]>,
+        // Pass the parsed query string so receivers can read tenancy
+        // hints like `?company=<uuid>` (NoralVoice plugin pattern).
+        // Mirrors the shape of `PluginScopedApiRequest.query`.
+        query: normalizeQuery(req.query),
         rawBody,
         parsedBody,
         requestId,

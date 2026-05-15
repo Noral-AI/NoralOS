@@ -946,6 +946,41 @@ export interface WorkerToHostMethods {
   ];
 
   // Agents (write)
+  "agents.create": [
+    params: {
+      companyId: string;
+      /** Human-readable agent name. Duplicates in the company are
+       *  auto-suffixed by the host (e.g. "Voice Director" → "Voice Director (2)"). */
+      name: string;
+      /** Role string ("ceo", "manager", "worker", or any custom role).
+       *  Drives tier-derivation in plugins that gate by tier. */
+      role: string;
+      /** Short title shown in agent cards / chat avatars. */
+      title?: string;
+      /** Agent id of the manager this agent reports to.
+       *  The host enforces that the target is in the same company. */
+      reportsTo?: string | null;
+      /** Comma-separated capability list — used by some adapters for tool
+       *  allowlisting. Plugins providing their own tool surface should
+       *  include their tools here so the heartbeat sees them. */
+      capabilities?: string;
+      /** Adapter slug (e.g. "claude-local", "noralai_brooklyn"). When
+       *  omitted, the company default adapter is used. */
+      adapterType?: string | null;
+      /** Adapter-specific configuration object (model, base URL, etc.).
+       *  Stored on the agent row; merged at runtime with company defaults. */
+      adapterConfig?: Record<string, unknown>;
+      /** Runtime knobs (systemPrompt, tools array, template provenance, …). */
+      runtimeConfig?: Record<string, unknown>;
+      /** Optional default environment id the agent runs in. */
+      defaultEnvironmentId?: string | null;
+      /** Monthly budget in USD cents. 0 = no limit. */
+      budgetMonthlyCents?: number;
+      /** Free-form metadata bag — provenance, template id, audit info. */
+      metadata?: Record<string, unknown>;
+    },
+    result: Agent,
+  ];
   "agents.pause": [
     params: { agentId: string; companyId: string },
     result: Agent,

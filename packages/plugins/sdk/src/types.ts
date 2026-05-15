@@ -1235,6 +1235,27 @@ export interface PluginIssuesClient {
 export interface PluginAgentsClient {
   list(input: { companyId: string; status?: Agent["status"]; limit?: number; offset?: number }): Promise<Agent[]>;
   get(agentId: string, companyId: string): Promise<Agent | null>;
+  /**
+   * Create a new agent in the given company. Requires `agents.write`
+   * capability. The host validates the company, deduplicates the name,
+   * normalises permissions for the role, and returns the persisted
+   * agent row. Used by plugins that ship agent templates (e.g. the
+   * NoralVoice plugin's Voice Director template).
+   */
+  create(input: {
+    companyId: string;
+    name: string;
+    role: string;
+    title?: string;
+    reportsTo?: string | null;
+    capabilities?: string;
+    adapterType?: string | null;
+    adapterConfig?: Record<string, unknown>;
+    runtimeConfig?: Record<string, unknown>;
+    defaultEnvironmentId?: string | null;
+    budgetMonthlyCents?: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<Agent>;
   /** Pause an agent. Throws if agent is terminated or not found. Requires `agents.pause`. */
   pause(agentId: string, companyId: string): Promise<Agent>;
   /** Resume a paused agent (sets status to idle). Throws if terminated, pending_approval, or not found. Requires `agents.resume`. */

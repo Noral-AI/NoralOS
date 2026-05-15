@@ -859,6 +859,23 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
           return callHost("agents.get", { agentId, companyId });
         },
 
+        async create(input) {
+          return callHost("agents.create", {
+            companyId: input.companyId,
+            name: input.name,
+            role: input.role,
+            title: input.title,
+            reportsTo: input.reportsTo,
+            capabilities: input.capabilities,
+            adapterType: input.adapterType,
+            adapterConfig: input.adapterConfig,
+            runtimeConfig: input.runtimeConfig,
+            defaultEnvironmentId: input.defaultEnvironmentId,
+            budgetMonthlyCents: input.budgetMonthlyCents,
+            metadata: input.metadata,
+          });
+        },
+
         async pause(agentId: string, companyId: string) {
           return callHost("agents.pause", { agentId, companyId });
         },

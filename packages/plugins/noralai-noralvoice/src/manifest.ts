@@ -145,7 +145,11 @@ export const manifest: NoralosPluginManifestV1 = {
       method: "POST",
       path: "/voice-directors",
       auth: "board",
-      capability: "agents.write",
+      // The route registration itself requires `api.routes.register`;
+      // the underlying provisioner inside the worker calls
+      // `ctx.agents.create` which the host gates on `agents.write`
+      // (declared in the top-level `capabilities` array above).
+      capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
   ],
