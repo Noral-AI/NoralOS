@@ -37,6 +37,11 @@ import {
   RUN_COMPLETED_WEBHOOK_ENDPOINT_KEY,
   TOOL_MIN_TIER,
 } from "./constants.js";
+import {
+  LIST_VOICES_TOOL_NAME,
+  PROVISION_VOICE_AGENT_TOOL_NAME,
+  SET_AGENT_VOICE_TOOL_NAME,
+} from "./tools/registry.js";
 
 export const manifest: NoralosPluginManifestV1 = {
   id: PLUGIN_ID,
@@ -81,6 +86,17 @@ export const manifest: NoralosPluginManifestV1 = {
         displayName: "NoralVoice",
         exportName: "NoralVoicePage",
         routePath: "voice",
+      },
+      {
+        // Phase 3: a per-agent settings tab on the Agent detail page.
+        // Host mounts this when an operator opens any agent — the
+        // component itself decides whether to render (no voice_agent_uuid
+        // ⇒ show the "Provision Voice Agent" CTA; uuid set ⇒ show the
+        // provider+voice dropdowns).
+        type: "agent-detail-tab",
+        id: "noralvoice-voice-settings",
+        displayName: "Voice settings",
+        exportName: "VoiceSettingsTab",
       },
     ],
   },
@@ -146,6 +162,51 @@ export const manifest: NoralosPluginManifestV1 = {
       path: "/voice-directors",
       auth: "board",
       capability: "agents.write",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    // Phase 3 — per-agent voice config surface for the VoiceSettingsTab.
+    {
+      // GET aggregated voice config for an agent. Resolves
+      // agents.voice_agent_uuid; if set, calls NV's GET /workflow/{id}
+      // and extracts the TTS provider/voice from
+      // workflow_configurations.model_overrides.
+      routeKey: "get_agent_voice_config",
+      method: "GET",
+      path: "/agents/:agentId/voice-config",
+      auth: "board",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      // POST a provider+voice update for an agent. Delegates to the
+      // set_agent_voice tool path; same tier-gate applies.
+      routeKey: "set_agent_voice_config",
+      method: "POST",
+      path: "/agents/:agentId/voice-config",
+      auth: "board",
+      capability: "agent.tools.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      // POST a one-click provision-voice for an agent. Wraps the
+      // provision_voice_agent tool so the UI doesn't have to do a tool
+      // call directly.
+      routeKey: "provision_voice_for_agent",
+      method: "POST",
+      path: "/agents/:agentId/provision-voice",
+      auth: "board",
+      capability: "agents.write",
+      companyResolution: { from: "query", key: "companyId" },
+    },
+    {
+      // Board-auth surface over the list_voices tool — the
+      // VoiceSettingsTab calls this to populate the voice dropdown.
+      // Returns NoralVoice's catalog filtered by `?provider=`.
+      routeKey: "list_voices_board",
+      method: "GET",
+      path: "/voices",
+      auth: "board",
+      capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
   ],
@@ -224,6 +285,88 @@ export const manifest: NoralosPluginManifestV1 = {
         },
       },
     },
+    // Phase 3 voice-config tools.
+    {
+      name: LIST_VOICES_TOOL_NAME,
+      displayName: "List NoralVoice TTS voices",
+      description:
+        "Return the available TTS voices from NoralVoice's voice catalog, optionally filtered by provider. Read-only — admits any tier. Use as a chooser before `set_agent_voice`.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          provider: {
+            type: "string",
+            description: "Optional provider filter (one of NoralVoice's six TTS providers).",
+            enum: ["elevenlabs", "deepgram", "sarvam", "cartesia", "dograh", "rime"],
+          },
+        },
+      },
+    },
+    {
+      name: SET_AGENT_VOICE_TOOL_NAME,
+      displayName: "Set a NoralOS agent's voice",
+      description:
+        "Update the TTS provider + voice on a NoralOS agent's linked NoralVoice workflow. Requires `provision_voice_agent` to have been called first (or the agent to already carry a `voice_agent_uuid`). Mirrors the value to voice-config's local table for legacy readers. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["noralosAgentId", "provider", "voiceId"],
+        properties: {
+          noralosAgentId: {
+            type: "string",
+            description: "NoralOS agents.id (uuid).",
+            format: "uuid",
+          },
+          provider: {
+            type: "string",
+            enum: ["elevenlabs", "deepgram", "sarvam", "cartesia", "dograh", "rime"],
+          },
+          voiceId: {
+            type: "string",
+            description: "Provider-scoped voice id (from `list_voices`).",
+            minLength: 1,
+            maxLength: 256,
+          },
+          voiceOptions: {
+            type: "object",
+            description:
+              "Optional provider-specific overrides (speed, model, etc.). Merged into the workflow's model_overrides.tts block alongside provider+voice.",
+            additionalProperties: true,
+          },
+        },
+      },
+    },
+    {
+      name: PROVISION_VOICE_AGENT_TOOL_NAME,
+      displayName: "Provision a NoralVoice workflow for a NoralOS agent",
+      description:
+        "Create a new minimal NoralVoice workflow for an agent that doesn't yet have one and write the resulting workflow_uuid back to `agents.voice_agent_uuid`. One-shot per agent — refuses with ALREADY_PROVISIONED if a uuid is already set. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["noralosAgentId"],
+        properties: {
+          noralosAgentId: {
+            type: "string",
+            description: "NoralOS agents.id (uuid).",
+            format: "uuid",
+          },
+          displayName: {
+            type: "string",
+            description:
+              "Override the auto-derived workflow display name (defaults to `<agent.name> voice`).",
+            maxLength: 200,
+          },
+          template: {
+            type: "string",
+            enum: ["blank", "conversational"],
+            description:
+              "Starter template. Both options resolve to a single-Agent-node minimal graph today; the distinction is reserved for a follow-up release that ships richer starters.",
+          },
+        },
+      },
+    },
   ],
 };
 
@@ -243,6 +386,9 @@ export const TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
   GET_RUN_TOOL_NAME,
+  LIST_VOICES_TOOL_NAME,
+  SET_AGENT_VOICE_TOOL_NAME,
+  PROVISION_VOICE_AGENT_TOOL_NAME,
 ] as const;
 
 export { TOOL_MIN_TIER };

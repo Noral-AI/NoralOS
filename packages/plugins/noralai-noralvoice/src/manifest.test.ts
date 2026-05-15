@@ -74,10 +74,15 @@ describe("noralai-noralvoice manifest", () => {
     expect(route.companyResolution).toEqual({ from: "query", key: "companyId" });
   });
 
-  it("declares the three Phase 1B starter tools", () => {
-    expect(manifest.tools).toHaveLength(EXPECTED_TOOLS.length);
+  it("declares the three Phase 1B starter tools plus the three Phase 3 voice-config tools", () => {
+    // Phase 1B starters (list_workflows, run_call, get_run) +
+    // Phase 3 voice-config (list_voices, set_agent_voice, provision_voice_agent).
+    expect(manifest.tools).toHaveLength(6);
     const names = manifest.tools!.map((t) => t.name);
     expect(names).toEqual(expect.arrayContaining(EXPECTED_TOOLS));
+    expect(names).toEqual(
+      expect.arrayContaining(["list_voices", "set_agent_voice", "provision_voice_agent"]),
+    );
   });
 
   it("run_call parametersSchema enforces E.164 + requires workflowUuid+toNumber", () => {
