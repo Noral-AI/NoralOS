@@ -547,6 +547,13 @@
       "when": 1778145000000,
       "tag": "0077_integration_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1778845977000,
+      "tag": "0078_agents_voice_agent_uuid",
+      "breakpoints": true
     }
   ]
 }
