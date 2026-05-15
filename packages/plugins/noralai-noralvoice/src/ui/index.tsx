@@ -7,3 +7,7 @@
 export { NoralVoiceSidebarLink } from "./NoralVoiceSidebarLink.js";
 export { NoralVoicePage } from "./NoralVoicePage.js";
 export { VoiceSettingsTab } from "./VoiceSettingsTab.js";
+export {
+  NoralVoiceBuilderModal,
+  isEmbeddedVoiceBuilderEnabled,
+} from "./NoralVoiceBuilderModal.js";
