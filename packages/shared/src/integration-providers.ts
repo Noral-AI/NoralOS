@@ -282,6 +282,82 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       },
     ],
   },
+  // ── NoralVoice ──────────────────────────────────────────────────
+  // Phase 2 voice-runtime provider. The credential is an X-API-Key for a
+  // NoralVoice deployment (default voice.noral.ai) bound to a specific
+  // NoralVoice organization. The plugin worker
+  // (`@noralos-plugins/noralai-noralvoice`) consumes this credential
+  // through the standard ctx.secrets.resolve() path on every tool call;
+  // the apiKeyRef in instanceConfig is populated by the assignment
+  // pipeline below.
+  //
+  // Test probe: GET {{baseUrl}}/api/v1/health with X-API-Key. 200 means
+  // the deployment is reachable AND the key is valid (the health route
+  // is public, but invalid keys still get a 200 — so the test probe
+  // mainly verifies reachability + that baseUrl is the right server.
+  // A typo'd key surfaces at first tool call via NoralVoiceClientError
+  // category=HTTP_4XX; that's an acceptable Phase 2 limit since the
+  // health route is the only NoralVoice endpoint that doesn't need
+  // X-API-Key today, and we don't want to make the test probe hit an
+  // org-scoped endpoint that could side-effect on a misconfigured key).
+  //
+  // organizationId is an integer-valued text field (numeric input) so
+  // the form keeps a normalised representation; the plugin parses it
+  // at instanceConfig read time.
+  noralvoice: {
+    id: "noralvoice",
+    category: "voice",
+    credentialType: "api_key",
+    displayName: "NoralVoice",
+    description:
+      "API key for a NoralVoice deployment (voice.noral.ai by default). Used by the noralai.noralvoice plugin to manage voice agents, place outbound calls, and review transcripts. Per-company; the assignment pipeline writes the encrypted reference into the plugin's instanceConfig.apiKeyRef on save.",
+    fields: [
+      {
+        key: "apiKey",
+        label: "API Key",
+        inputType: "secret",
+        required: true,
+        helpText:
+          "Mint a key under NoralVoice → Settings → API Keys. Bound to a single NoralVoice organization — the key's org binding must match `Organization ID` below. NoralOS stores this encrypted; admins never see the value back.",
+      },
+      {
+        key: "baseUrl",
+        label: "Base URL",
+        inputType: "text",
+        required: true,
+        helpText:
+          "Base URL of the NoralVoice deployment, e.g. `https://voice.noral.ai`. Override only if you run a dedicated NoralVoice cluster; the public deployment at voice.noral.ai is the default. No trailing slash.",
+      },
+      {
+        key: "organizationId",
+        label: "Organization ID",
+        inputType: "text",
+        required: true,
+        helpText:
+          "Numeric NoralVoice organization id this company maps to. Visible in the NoralVoice dashboard URL when an admin is in an org context (`/orgs/<id>/...`). Must match the org the API key was minted in — otherwise the plugin's tools 401 at runtime.",
+      },
+    ],
+    test: {
+      kind: "http",
+      method: "GET",
+      // `/api/v1/health` is the canonical unauthenticated health
+      // endpoint; we still send the X-API-Key header so a future
+      // health-route hardening (e.g. requiring the key for org context)
+      // doesn't silently break tests.
+      urlTemplate: "{{baseUrl}}/api/v1/health",
+      headers: { "X-API-Key": "{{apiKey}}" },
+      okStatuses: [200],
+      safeErrorPrefix: "NoralVoice rejected the credential or is unreachable",
+    },
+    assignableSlots: [
+      {
+        pluginKey: "noralai.noralvoice",
+        configPath: "apiKeyRef",
+        label: "NoralVoice — API key",
+      },
+    ],
+  },
+
   // ── Twilio ──────────────────────────────────────────────────────
   // Telephony provider. NoralOS authenticates with a scoped API Key SID +
   // Secret (HTTP Basic), never the master Auth Token. The Account SID is
@@ -503,6 +579,17 @@ export const ASSIGNMENT_TARGETS: Array<{
         configPath: "apiKeyRef",
         label: "Brooklyn LLM — API key",
         expectsProvider: "noralai_brooklyn",
+      },
+    ],
+  },
+  {
+    pluginKey: "noralai.noralvoice",
+    pluginDisplayName: "NoralVoice",
+    slots: [
+      {
+        configPath: "apiKeyRef",
+        label: "NoralVoice — API key",
+        expectsProvider: "noralvoice",
       },
     ],
   },
