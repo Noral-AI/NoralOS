@@ -154,3 +154,81 @@ describe("INTEGRATION_PROVIDERS — twilio", () => {
     expect(INTEGRATION_PROVIDERS["twilio"]!.assignableSlots).toEqual([]);
   });
 });
+
+describe("INTEGRATION_PROVIDERS — noralvoice", () => {
+  it("is registered with category=voice and credentialType=api_key", () => {
+    const p = INTEGRATION_PROVIDERS["noralvoice"];
+    expect(p).toBeDefined();
+    expect(p!.id).toBe("noralvoice");
+    expect(p!.category).toBe("voice");
+    expect(p!.credentialType).toBe("api_key");
+    expect(p!.displayName).toBe("NoralVoice");
+  });
+
+  it("declares apiKey (secret), baseUrl (text), and organizationId (text)", () => {
+    const p = INTEGRATION_PROVIDERS["noralvoice"]!;
+    expect(p.fields).toHaveLength(3);
+    const byKey: Record<string, (typeof p.fields)[number]> = Object.fromEntries(
+      p.fields.map((f) => [f.key, f]),
+    );
+    expect(byKey.apiKey).toBeDefined();
+    expect(byKey.apiKey!.inputType).toBe("secret");
+    expect(byKey.apiKey!.required).toBe(true);
+    expect(byKey.baseUrl).toBeDefined();
+    expect(byKey.baseUrl!.inputType).toBe("text");
+    expect(byKey.baseUrl!.required).toBe(true);
+    expect(byKey.organizationId).toBeDefined();
+    expect(byKey.organizationId!.inputType).toBe("text");
+    expect(byKey.organizationId!.required).toBe(true);
+  });
+
+  it("test probe hits {{baseUrl}}/api/v1/health with X-API-Key substituted", () => {
+    const p = INTEGRATION_PROVIDERS["noralvoice"]!;
+    expect(p.test.kind).toBe("http");
+    expect(p.test.method).toBe("GET");
+    expect(p.test.urlTemplate).toBe("{{baseUrl}}/api/v1/health");
+    expect(p.test.headers?.["X-API-Key"]).toBe("{{apiKey}}");
+    expect(p.test.okStatuses).toContain(200);
+    expect(p.test.safeErrorPrefix).toContain("NoralVoice");
+  });
+
+  it("exposes exactly one assignable slot pointing at noralai.noralvoice apiKeyRef", () => {
+    const p = INTEGRATION_PROVIDERS["noralvoice"]!;
+    expect(p.assignableSlots).toHaveLength(1);
+    expect(p.assignableSlots[0]).toEqual({
+      pluginKey: "noralai.noralvoice",
+      configPath: "apiKeyRef",
+      label: "NoralVoice — API key",
+    });
+  });
+
+  it("does not regress the existing providers (twilio + brooklyn + voice-cascade)", () => {
+    expect(INTEGRATION_PROVIDERS["twilio"]).toBeDefined();
+    expect(INTEGRATION_PROVIDERS["noralai_brooklyn"]).toBeDefined();
+    expect(INTEGRATION_PROVIDERS["google_tts"]).toBeDefined();
+    expect(INTEGRATION_PROVIDERS["elevenlabs"]).toBeDefined();
+  });
+});
+
+describe("ASSIGNMENT_TARGETS — noralai.noralvoice", () => {
+  it("registers the noralai.noralvoice plugin as assignable", () => {
+    const target = ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralai.noralvoice");
+    expect(target).toBeDefined();
+    expect(target!.pluginDisplayName).toBe("NoralVoice");
+  });
+
+  it("declares exactly one apiKeyRef slot expecting the noralvoice provider", () => {
+    const target = ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralai.noralvoice")!;
+    expect(target.slots).toHaveLength(1);
+    expect(target.slots[0]).toEqual({
+      configPath: "apiKeyRef",
+      label: "NoralVoice — API key",
+      expectsProvider: "noralvoice",
+    });
+  });
+
+  it("does not regress the noralai.brooklyn or voice-cascade assignment targets", () => {
+    expect(ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralai.brooklyn")).toBeDefined();
+    expect(ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralos.voice-cascade")).toBeDefined();
+  });
+});
