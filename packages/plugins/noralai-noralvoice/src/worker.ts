@@ -88,6 +88,18 @@ function requireCtx(): PluginContext | null {
 }
 
 // ---------------------------------------------------------------------------
+// Shared utilities
+// ---------------------------------------------------------------------------
+
+/** Parse + clamp a `?limit=` query value to 1..100. Default 25. */
+function parseLimit(raw: unknown): number {
+  if (typeof raw !== "string") return 25;
+  const n = Number.parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1) return 25;
+  return Math.min(100, n);
+}
+
+// ---------------------------------------------------------------------------
 // Tier gate
 // ---------------------------------------------------------------------------
 
@@ -1060,6 +1072,181 @@ const plugin = definePlugin({
         return { status: 409, body: { error: result.message, code: result.error } };
       }
       return { status: 200, body: result.data };
+    }
+
+    // ── Phase 4 PR-A: browse surfaces ────────────────────────────────
+    //
+    // Each route follows the same shape:
+    //   1. Resolve client config (apiKey from secrets).
+    //   2. Translate inputs to typed params.
+    //   3. Call the noralvoice-client helper.
+    //   4. Map NV errors to a uniform `{ ok: false, error, status, message }`
+    //      response so the UI's react-query layer renders consistent
+    //      error states.
+    if (
+      input.routeKey === "list_runs" ||
+      input.routeKey === "get_run_detail" ||
+      input.routeKey === "list_recordings" ||
+      input.routeKey === "get_recording_download_url" ||
+      input.routeKey === "search_kb" ||
+      input.routeKey === "list_kb_documents" ||
+      input.routeKey === "list_campaigns" ||
+      input.routeKey === "get_campaign" ||
+      input.routeKey === "list_telephony_numbers" ||
+      input.routeKey === "list_telephony_providers" ||
+      input.routeKey === "get_usage_current"
+    ) {
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) {
+        return {
+          status: 400,
+          body: { ok: false, error: "NO_API_KEY", message: config.error },
+        };
+      }
+
+      const handler = async (): Promise<{ status: number; body: unknown }> => {
+        try {
+          // Lazy import — avoids name churn on the top of the worker
+          // module while exposing every Phase 4 helper.
+          const mod = await import("./noralvoice-client.js");
+          switch (input.routeKey) {
+            case "list_runs": {
+              const workflowUuid =
+                typeof input.query.workflowUuid === "string"
+                  ? (input.query.workflowUuid as string)
+                  : "";
+              if (!workflowUuid) {
+                return {
+                  status: 400,
+                  body: { ok: false, error: "BAD_REQUEST", message: "workflowUuid required" },
+                };
+              }
+              const wf = await mod.getWorkflowByUuid(config, workflowUuid);
+              if (!wf) {
+                return {
+                  status: 404,
+                  body: { ok: false, error: "NOT_FOUND", message: "workflow not found in NoralVoice" },
+                };
+              }
+              const limit = parseLimit(input.query.limit);
+              const cursor =
+                typeof input.query.cursor === "string" ? (input.query.cursor as string) : null;
+              const page = await mod.listWorkflowRuns(config, wf.id, { limit, cursor });
+              return { status: 200, body: page };
+            }
+            case "get_run_detail": {
+              const workflowUuid =
+                typeof input.query.workflowUuid === "string"
+                  ? (input.query.workflowUuid as string)
+                  : "";
+              const runId = Number(input.pathParams?.runId);
+              if (!workflowUuid || !Number.isFinite(runId) || runId <= 0) {
+                return {
+                  status: 400,
+                  body: { ok: false, error: "BAD_REQUEST", message: "workflowUuid + valid runId required" },
+                };
+              }
+              const wf = await mod.getWorkflowByUuid(config, workflowUuid);
+              if (!wf) {
+                return { status: 404, body: { ok: false, error: "NOT_FOUND" } };
+              }
+              const run = await mod.getWorkflowRun(config, wf.id, runId);
+              return { status: 200, body: run };
+            }
+            case "list_recordings": {
+              const limit = parseLimit(input.query.limit);
+              const workflowIdRaw = input.query.workflowId;
+              const workflowId =
+                typeof workflowIdRaw === "string" && /^\d+$/.test(workflowIdRaw)
+                  ? Number.parseInt(workflowIdRaw, 10)
+                  : undefined;
+              const page = await mod.listRecordings(config, { limit, workflowId });
+              return { status: 200, body: page };
+            }
+            case "get_recording_download_url": {
+              const id = Number(input.pathParams?.id);
+              if (!Number.isFinite(id) || id <= 0) {
+                return {
+                  status: 400,
+                  body: { ok: false, error: "BAD_REQUEST", message: "valid recording id required" },
+                };
+              }
+              const result = await mod.getRecordingDownloadUrl(config, id);
+              return { status: 200, body: result };
+            }
+            case "search_kb": {
+              const body =
+                input.parsedBody && typeof input.parsedBody === "object"
+                  ? (input.parsedBody as Record<string, unknown>)
+                  : {};
+              const query = typeof body.query === "string" ? body.query : "";
+              if (!query) {
+                return {
+                  status: 400,
+                  body: { ok: false, error: "BAD_REQUEST", message: "query is required" },
+                };
+              }
+              const limit = typeof body.limit === "number" ? body.limit : 10;
+              const hits = await mod.searchKbDocuments(config, { query, limit });
+              return { status: 200, body: hits };
+            }
+            case "list_kb_documents": {
+              const limit = parseLimit(input.query.limit);
+              const page = await mod.listKbDocuments(config, { limit });
+              return { status: 200, body: page };
+            }
+            case "list_campaigns": {
+              const status =
+                typeof input.query.status === "string" ? (input.query.status as string) : undefined;
+              const limit = parseLimit(input.query.limit);
+              const page = await mod.listCampaigns(config, { status, limit });
+              return { status: 200, body: page };
+            }
+            case "get_campaign": {
+              const id = Number(input.pathParams?.id);
+              if (!Number.isFinite(id) || id <= 0) {
+                return {
+                  status: 400,
+                  body: { ok: false, error: "BAD_REQUEST", message: "valid campaign id required" },
+                };
+              }
+              const campaign = await mod.getCampaign(config, id);
+              return { status: 200, body: campaign };
+            }
+            case "list_telephony_numbers": {
+              const numbers = await mod.listTelephonyNumbers(config);
+              return { status: 200, body: { numbers } };
+            }
+            case "list_telephony_providers": {
+              const providers = await mod.listTelephonyProviders(config);
+              return { status: 200, body: { providers } };
+            }
+            case "get_usage_current": {
+              const usage = await mod.getCurrentPeriodUsage(config);
+              return { status: 200, body: usage };
+            }
+            default:
+              return { status: 404, body: { ok: false, error: "Unknown route" } };
+          }
+        } catch (err) {
+          const { safe, category, httpStatus } = normaliseFailure(err);
+          const status = httpStatus && httpStatus >= 400 && httpStatus < 500 ? 400 : 502;
+          ctx.logger.warn(`NoralVoice route ${input.routeKey} failed`, {
+            category,
+            httpStatus,
+          });
+          return {
+            status,
+            body: {
+              ok: false,
+              error: category === "HTTP_4XX" ? "NORALVOICE_4XX" : "NORALVOICE_5XX",
+              status: httpStatus,
+              message: safe,
+            },
+          };
+        }
+      };
+      return handler();
     }
 
     return { status: 404, body: { error: "Unknown route" } };

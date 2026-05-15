@@ -545,3 +545,460 @@ export async function listVoicesAcrossProviders(
   }
   return all;
 }
+
+// ---------------------------------------------------------------------------
+// Phase 4: browse surfaces — runs, recordings, KB, campaigns, telephony, usage
+// ---------------------------------------------------------------------------
+
+export interface RunListItem {
+  id: number;
+  name: string;
+  state: string;
+  isCompleted: boolean;
+  callType?: string;
+  createdAt?: string;
+  transcriptUrl?: string | null;
+  recordingUrl?: string | null;
+  costInfo?: Record<string, unknown> | null;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  total: number;
+  nextCursor?: string | null;
+}
+
+function toRunListItem(r: Record<string, unknown>): RunListItem {
+  return {
+    id: Number(r.id ?? 0),
+    name: String(r.name ?? ""),
+    state: String(r.state ?? r.status ?? ""),
+    isCompleted: Boolean(r.is_completed),
+    callType: typeof r.call_type === "string" ? r.call_type : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+    transcriptUrl: typeof r.transcript_url === "string" ? r.transcript_url : null,
+    recordingUrl: typeof r.recording_url === "string" ? r.recording_url : null,
+    costInfo: r.cost_info && typeof r.cost_info === "object"
+      ? (r.cost_info as Record<string, unknown>)
+      : null,
+  };
+}
+
+/**
+ * List runs for a workflow. NoralVoice indexes workflows by integer id;
+ * callers who only have the UUID resolve via getWorkflowByUuid first.
+ *
+ * The endpoint's pagination is offset-based (?limit=&offset=) rather
+ * than cursor-based — we expose a cursor field on the wrapper to keep
+ * the plugin apiRoute contract uniform, encoding `offset` as the cursor
+ * string.
+ */
+export async function listWorkflowRuns(
+  config: NoralVoiceClientConfig,
+  workflowId: number,
+  options: { limit?: number; cursor?: string | null } = {},
+): Promise<PagedResult<RunListItem>> {
+  const limit = Math.max(1, Math.min(100, options.limit ?? 25));
+  const offset =
+    options.cursor && /^\d+$/.test(options.cursor) ? Number.parseInt(options.cursor, 10) : 0;
+  const path = `/api/v1/workflow/${workflowId}/runs?limit=${limit}&offset=${offset}`;
+  const body = await request<{ runs?: unknown[]; total?: number }>(config, "GET", path);
+  const raw = Array.isArray(body.runs) ? body.runs : [];
+  const items = raw.map((r) => toRunListItem(r as Record<string, unknown>));
+  const total = Number(body.total ?? items.length);
+  const nextOffset = offset + items.length;
+  return {
+    items,
+    total,
+    nextCursor: nextOffset < total ? String(nextOffset) : null,
+  };
+}
+
+export async function getWorkflowRun(
+  config: NoralVoiceClientConfig,
+  workflowId: number,
+  runId: number,
+): Promise<RunListItem & { gatheredContext?: Record<string, unknown> | null }> {
+  const r = await request<Record<string, unknown>>(
+    config,
+    "GET",
+    `/api/v1/workflow/${workflowId}/runs/${runId}`,
+  );
+  return {
+    ...toRunListItem(r),
+    gatheredContext:
+      r.gathered_context && typeof r.gathered_context === "object"
+        ? (r.gathered_context as Record<string, unknown>)
+        : null,
+  };
+}
+
+// ---- Recordings ------------------------------------------------------------
+
+export interface RecordingListItem {
+  id: number;
+  workflowId?: number;
+  name?: string;
+  ttsProvider?: string;
+  ttsVoiceId?: string;
+  durationSec?: number;
+  createdAt?: string;
+}
+
+function toRecordingListItem(r: Record<string, unknown>): RecordingListItem {
+  return {
+    id: Number(r.id ?? 0),
+    workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
+    name: typeof r.name === "string" ? r.name : undefined,
+    ttsProvider: typeof r.tts_provider === "string" ? r.tts_provider : undefined,
+    ttsVoiceId: typeof r.tts_voice_id === "string" ? r.tts_voice_id : undefined,
+    durationSec: typeof r.duration_sec === "number" ? r.duration_sec : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+  };
+}
+
+export async function listRecordings(
+  config: NoralVoiceClientConfig,
+  options: { limit?: number; workflowId?: number } = {},
+): Promise<PagedResult<RecordingListItem>> {
+  const params = new URLSearchParams();
+  if (options.workflowId !== undefined) params.set("workflow_id", String(options.workflowId));
+  const path = params.toString()
+    ? `/api/v1/workflow-recordings/?${params}`
+    : "/api/v1/workflow-recordings/";
+  const body = await request<{ recordings?: unknown[]; total?: number }>(config, "GET", path);
+  const raw = Array.isArray(body.recordings) ? body.recordings : [];
+  const items = raw.map((r) => toRecordingListItem(r as Record<string, unknown>));
+  const total = Number(body.total ?? items.length);
+  const limit = Math.max(1, Math.min(100, options.limit ?? items.length));
+  return {
+    items: items.slice(0, limit),
+    total,
+    // Recordings endpoint doesn't paginate today; cursor is null until
+    // NV adds offset support.
+    nextCursor: null,
+  };
+}
+
+export async function getRecordingDownloadUrl(
+  config: NoralVoiceClientConfig,
+  recordingId: number,
+): Promise<{ url: string; expiresAt?: string }> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "GET",
+    `/api/v1/workflow-recordings/${recordingId}/download-url`,
+  );
+  return {
+    url: String(body.url ?? body.download_url ?? ""),
+    expiresAt: typeof body.expires_at === "string" ? body.expires_at : undefined,
+  };
+}
+
+// ---- Knowledge base --------------------------------------------------------
+
+export interface KbDocumentSummary {
+  id: number;
+  name: string;
+  filename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  createdAt?: string;
+  chunkCount?: number;
+}
+
+export interface KbSearchHit {
+  documentId: number;
+  documentName?: string;
+  chunkIndex?: number;
+  text: string;
+  score: number;
+}
+
+function toKbDocument(r: Record<string, unknown>): KbDocumentSummary {
+  return {
+    id: Number(r.id ?? 0),
+    name: String(r.name ?? r.filename ?? ""),
+    filename: typeof r.filename === "string" ? r.filename : undefined,
+    mimeType: typeof r.mime_type === "string" ? r.mime_type : undefined,
+    sizeBytes: typeof r.size_bytes === "number" ? r.size_bytes : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+    chunkCount: typeof r.chunk_count === "number" ? r.chunk_count : undefined,
+  };
+}
+
+export async function listKbDocuments(
+  config: NoralVoiceClientConfig,
+  options: { limit?: number } = {},
+): Promise<PagedResult<KbDocumentSummary>> {
+  const limit = Math.max(1, Math.min(100, options.limit ?? 25));
+  const body = await request<{ documents?: unknown[]; total?: number }>(
+    config,
+    "GET",
+    `/api/v1/knowledge-base/documents?limit=${limit}`,
+  );
+  const raw = Array.isArray(body.documents) ? body.documents : [];
+  const items = raw.map((r) => toKbDocument(r as Record<string, unknown>));
+  return {
+    items,
+    total: Number(body.total ?? items.length),
+    nextCursor: null,
+  };
+}
+
+export async function searchKbDocuments(
+  config: NoralVoiceClientConfig,
+  params: { query: string; limit?: number },
+): Promise<{ hits: KbSearchHit[] }> {
+  const limit = Math.max(1, Math.min(50, params.limit ?? 10));
+  const body = await request<{ hits?: unknown[] }>(
+    config,
+    "POST",
+    "/api/v1/knowledge-base/search",
+    { query: params.query, limit },
+  );
+  const raw = Array.isArray(body.hits) ? body.hits : [];
+  return {
+    hits: raw.map((h) => {
+      const r = (h ?? {}) as Record<string, unknown>;
+      return {
+        documentId: Number(r.document_id ?? 0),
+        documentName: typeof r.document_name === "string" ? r.document_name : undefined,
+        chunkIndex: typeof r.chunk_index === "number" ? r.chunk_index : undefined,
+        text: String(r.text ?? ""),
+        score: typeof r.score === "number" ? r.score : 0,
+      };
+    }),
+  };
+}
+
+// ---- Campaigns -------------------------------------------------------------
+
+export interface CampaignSummary {
+  id: number;
+  name: string;
+  status: string;
+  workflowId?: number;
+  totalContacts?: number;
+  completedCalls?: number;
+  createdAt?: string;
+}
+
+function toCampaign(r: Record<string, unknown>): CampaignSummary {
+  return {
+    id: Number(r.id ?? 0),
+    name: String(r.name ?? ""),
+    status: String(r.status ?? ""),
+    workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
+    totalContacts: typeof r.total_contacts === "number" ? r.total_contacts : undefined,
+    completedCalls: typeof r.completed_calls === "number" ? r.completed_calls : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+  };
+}
+
+export async function listCampaigns(
+  config: NoralVoiceClientConfig,
+  options: { status?: string; limit?: number } = {},
+): Promise<PagedResult<CampaignSummary>> {
+  const params = new URLSearchParams();
+  if (options.status) params.set("status", options.status);
+  if (options.limit !== undefined) params.set("limit", String(Math.min(100, options.limit)));
+  const path = params.toString() ? `/api/v1/campaign/?${params}` : "/api/v1/campaign/";
+  const body = await request<{ campaigns?: unknown[]; total?: number }>(
+    config,
+    "GET",
+    path,
+  );
+  const raw = Array.isArray(body.campaigns) ? body.campaigns : [];
+  const items = raw.map((c) => toCampaign(c as Record<string, unknown>));
+  return {
+    items,
+    total: Number(body.total ?? items.length),
+    nextCursor: null,
+  };
+}
+
+export async function getCampaign(
+  config: NoralVoiceClientConfig,
+  campaignId: number,
+): Promise<CampaignSummary & { progress?: Record<string, unknown> | null }> {
+  const r = await request<Record<string, unknown>>(
+    config,
+    "GET",
+    `/api/v1/campaign/${campaignId}`,
+  );
+  return {
+    ...toCampaign(r),
+    progress: r.progress && typeof r.progress === "object"
+      ? (r.progress as Record<string, unknown>)
+      : null,
+  };
+}
+
+// ---- Telephony -------------------------------------------------------------
+
+export interface PhoneNumberSummary {
+  id: number;
+  phoneNumber: string;
+  provider?: string;
+  inboundWorkflowId?: number | null;
+  isActive?: boolean;
+  createdAt?: string;
+}
+
+export interface TelephonyProviderSummary {
+  id: number;
+  name: string;
+  provider: string;
+  isActive: boolean;
+  isDefault?: boolean;
+  createdAt?: string;
+}
+
+/**
+ * NoralVoice exposes phone numbers under
+ * /api/v1/organizations/telephony-configs/{config_id}/phone-numbers
+ * (scoped to a telephony config). Phase 4 surfaces a flat list — we fan
+ * out across the org's telephony configs and concatenate, attaching the
+ * provider so the UI can display it. This is the cheapest path that
+ * doesn't extend NV; if/when NV adds a flat
+ * /telephony-phone-numbers endpoint, swap in here.
+ */
+export async function listTelephonyProviders(
+  config: NoralVoiceClientConfig,
+): Promise<TelephonyProviderSummary[]> {
+  const body = await request<{ configurations?: unknown[] }>(
+    config,
+    "GET",
+    "/api/v1/organizations/telephony-configs",
+  );
+  const raw = Array.isArray(body.configurations) ? body.configurations : [];
+  return raw.map((c) => {
+    const r = (c ?? {}) as Record<string, unknown>;
+    return {
+      id: Number(r.id ?? 0),
+      name: String(r.name ?? ""),
+      provider: String(r.provider ?? ""),
+      isActive: Boolean(r.is_active),
+      isDefault: typeof r.is_default === "boolean" ? r.is_default : undefined,
+      createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+    };
+  });
+}
+
+export async function listTelephonyNumbers(
+  config: NoralVoiceClientConfig,
+): Promise<PhoneNumberSummary[]> {
+  const providers = await listTelephonyProviders(config);
+  const all: PhoneNumberSummary[] = [];
+  for (const p of providers) {
+    try {
+      const body = await request<{ phone_numbers?: unknown[] }>(
+        config,
+        "GET",
+        `/api/v1/organizations/telephony-configs/${p.id}/phone-numbers`,
+      );
+      const raw = Array.isArray(body.phone_numbers) ? body.phone_numbers : [];
+      for (const n of raw) {
+        const r = (n ?? {}) as Record<string, unknown>;
+        all.push({
+          id: Number(r.id ?? 0),
+          phoneNumber: String(r.phone_number ?? r.number ?? ""),
+          provider: p.provider,
+          inboundWorkflowId:
+            typeof r.inbound_workflow_id === "number" ? r.inbound_workflow_id : null,
+          isActive: Boolean(r.is_active ?? true),
+          createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+        });
+      }
+    } catch (err) {
+      // One config 5xx shouldn't fail the whole listing.
+      if (err instanceof NoralVoiceClientError && err.category === "HTTP_5XX") continue;
+      throw err;
+    }
+  }
+  return all;
+}
+
+// ---- Usage / costs ---------------------------------------------------------
+
+export interface CurrentPeriodUsage {
+  /** Cents — caller treats as integer. */
+  totalCostCents: number;
+  callDurationSec?: number;
+  callCount?: number;
+  periodStart?: string;
+  periodEnd?: string;
+  perWorkflow?: Array<{
+    workflowId?: number;
+    workflowUuid?: string;
+    workflowName?: string;
+    costCents: number;
+    callCount?: number;
+  }>;
+}
+
+/**
+ * NoralVoice's /usage/current-period returns spend in USD. Convert to
+ * cents for parity with NoralOS's cost_events table (integer cents).
+ * If NV adds time-window filtering later, pass it through as
+ * `?period_start=&period_end=`.
+ */
+export async function getCurrentPeriodUsage(
+  config: NoralVoiceClientConfig,
+): Promise<CurrentPeriodUsage> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "GET",
+    "/api/v1/organizations/usage/current-period",
+  );
+  const totalCostUsd = Number(body.total_cost_usd ?? body.total_cost ?? 0);
+  return {
+    totalCostCents: Math.round(totalCostUsd * 100),
+    callDurationSec:
+      typeof body.call_duration_seconds === "number"
+        ? body.call_duration_seconds
+        : undefined,
+    callCount: typeof body.call_count === "number" ? body.call_count : undefined,
+    periodStart: typeof body.period_start === "string" ? body.period_start : undefined,
+    periodEnd: typeof body.period_end === "string" ? body.period_end : undefined,
+    perWorkflow: Array.isArray(body.per_workflow)
+      ? (body.per_workflow as Record<string, unknown>[]).map((r) => ({
+          workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
+          workflowUuid: typeof r.workflow_uuid === "string" ? r.workflow_uuid : undefined,
+          workflowName: typeof r.workflow_name === "string" ? r.workflow_name : undefined,
+          costCents: Math.round(Number(r.cost_usd ?? r.total_cost_usd ?? 0) * 100),
+          callCount: typeof r.call_count === "number" ? r.call_count : undefined,
+        }))
+      : undefined,
+  };
+}
+
+// ---- Phase 4 PR-B: exchange-token wrapper ---------------------------------
+
+export interface ExchangeTokenResult {
+  token: string;
+  expiresAt: string;
+  embedUrl: string;
+}
+
+export async function createEmbedExchangeToken(
+  config: NoralVoiceClientConfig,
+  params: { targetUserEmail: string; targetPath: string; ttlSeconds?: number },
+): Promise<ExchangeTokenResult> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/embed/exchange-token",
+    {
+      target_user_email: params.targetUserEmail,
+      target_path: params.targetPath,
+      ttl_seconds: params.ttlSeconds ?? 90,
+    },
+  );
+  return {
+    token: String(body.token ?? ""),
+    expiresAt: String(body.expires_at ?? ""),
+    embedUrl: String(body.embed_url ?? ""),
+  };
+}
