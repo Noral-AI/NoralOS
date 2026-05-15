@@ -826,7 +826,7 @@ const plugin = definePlugin({
       return;
     }
 
-    const payload = input.body;
+    const payload = input.parsedBody;
     if (!payload || typeof payload !== "object") return;
 
     // Emit on the NoralOS event bus — this is what wakes the originating
