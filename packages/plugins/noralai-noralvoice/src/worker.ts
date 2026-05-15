@@ -196,13 +196,13 @@ function readVoiceDirectorOverrides(body: unknown): VoiceDirectorOverrides {
  */
 async function handleCreateVoiceDirector(
   ctx: PluginContext,
-  input: { companyId?: string; parsedBody?: unknown },
+  input: { companyId?: string; body?: unknown },
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const companyId = typeof input.companyId === "string" ? input.companyId : "";
   if (!companyId) {
     return { status: 400, body: { error: "Missing companyId" } };
   }
-  const overrides = readVoiceDirectorOverrides(input.parsedBody);
+  const overrides = readVoiceDirectorOverrides(input.body);
   const reportsTo =
     overrides.reportsTo !== undefined ? overrides.reportsTo : await resolveCeoAgentId(ctx, companyId);
 
@@ -826,7 +826,7 @@ const plugin = definePlugin({
       return;
     }
 
-    const payload = input.parsedBody;
+    const payload = input.body;
     if (!payload || typeof payload !== "object") return;
 
     // Emit on the NoralOS event bus — this is what wakes the originating
@@ -898,7 +898,7 @@ const plugin = definePlugin({
     }
 
     if (input.routeKey === "get_agent_voice_config") {
-      const agentId = input.pathParams?.agentId as string | undefined;
+      const agentId = input.params?.agentId as string | undefined;
       const companyId = (input as unknown as { companyId?: string }).companyId;
       if (!agentId || !companyId) {
         return { status: 400, body: { error: "agentId path param and companyId query are required" } };
@@ -943,14 +943,14 @@ const plugin = definePlugin({
     }
 
     if (input.routeKey === "provision_voice_for_agent") {
-      const agentId = input.pathParams?.agentId as string | undefined;
+      const agentId = input.params?.agentId as string | undefined;
       const companyId = (input as unknown as { companyId?: string }).companyId;
       if (!agentId || !companyId) {
         return { status: 400, body: { error: "agentId path param and companyId query are required" } };
       }
       const body =
-        input.parsedBody && typeof input.parsedBody === "object"
-          ? (input.parsedBody as Record<string, unknown>)
+        input.body && typeof input.body === "object"
+          ? (input.body as Record<string, unknown>)
           : {};
       const displayName =
         typeof body.displayName === "string" ? (body.displayName as string) : undefined;
@@ -1014,14 +1014,14 @@ const plugin = definePlugin({
     }
 
     if (input.routeKey === "set_agent_voice_config") {
-      const agentId = input.pathParams?.agentId as string | undefined;
+      const agentId = input.params?.agentId as string | undefined;
       const companyId = (input as unknown as { companyId?: string }).companyId;
       if (!agentId || !companyId) {
         return { status: 400, body: { error: "agentId path param and companyId query are required" } };
       }
       const body =
-        input.parsedBody && typeof input.parsedBody === "object"
-          ? (input.parsedBody as Record<string, unknown>)
+        input.body && typeof input.body === "object"
+          ? (input.body as Record<string, unknown>)
           : {};
       const provider = body.provider;
       const voiceId = body.voiceId;
