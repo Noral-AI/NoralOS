@@ -24,7 +24,7 @@
   "dependencies": {
     "@noralos/plugin-sdk": "workspace:*",
     "@noralos/shared": "workspace:*",
-    "@noralai/voice-sdk": "0.2.0"
+    "@noralai/voice-sdk": "https://github.com/Noral-AI/NoralVoice/releases/download/sdks-v0.2.0-prerelease/noralai-voice-sdk-0.2.0.tgz"
   },
   "devDependencies": {
     "esbuild": "^0.27.3",
