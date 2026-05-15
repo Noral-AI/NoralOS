@@ -144,7 +144,10 @@ type LoadState<T> =
   | { kind: "ready"; data: T }
   | { kind: "error"; message: string; category: "no-key" | "unreachable" | "remote-error" };
 
-function categoriseError(body: ErrorBody, status: number): LoadState<never>["category"] {
+function categoriseError(
+  body: ErrorBody,
+  status: number,
+): Extract<LoadState<never>, { kind: "error" }>["category"] {
   if (body.error === "NO_API_KEY") return "no-key";
   if (body.error === "NORALVOICE_5XX" || status === 0 || status >= 500) return "unreachable";
   return "remote-error";
@@ -1102,7 +1105,7 @@ function SettingsTab({ companyPrefix }: { companyPrefix?: string }): ReactNode {
 export function NoralVoicePage({ context }: PluginPageProps) {
   const [tab, setTab] = useState<TabId>("voice-agents");
   const companyId = context.companyId;
-  const companyPrefix = context.companyPrefix;
+  const companyPrefix = context.companyPrefix ?? undefined;
 
   const tabs = useMemo(
     () => [
