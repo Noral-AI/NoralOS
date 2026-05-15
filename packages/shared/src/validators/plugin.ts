@@ -107,6 +107,32 @@ export const pluginToolDeclarationSchema = z.object({
   parametersSchema: jsonSchemaSchema,
 });
 
+/**
+ * Validates a {@link PluginReverseToolDeclaration} — a tool the plugin
+ * accepts inbound from an external system via its reverse-RPC endpoint.
+ * Used by NoralVoice's `noralos://<pluginId>/<toolName>` URL scheme.
+ *
+ * Tool name is lower snake_case for parity with the existing
+ * agent-tool naming convention and the NoralVoice executor's
+ * client-side validation.
+ */
+export const pluginReverseToolDeclarationSchema = z.object({
+  toolName: z
+    .string()
+    .min(1)
+    .regex(
+      /^[a-z][a-z0-9_]*$/,
+      "Reverse-tool name must be lower snake_case (start with a letter, then letters/digits/underscores)",
+    ),
+  displayName: z.string().min(1),
+  description: z.string().min(1),
+  parametersSchema: jsonSchemaSchema,
+});
+
+export type PluginReverseToolDeclarationInput = z.infer<
+  typeof pluginReverseToolDeclarationSchema
+>;
+
 export const pluginEnvironmentDriverDeclarationSchema = z.object({
   driverKey: z.string().min(1).regex(
     /^[a-z0-9][a-z0-9._-]*$/,
@@ -470,6 +496,7 @@ export const pluginManifestV1Schema = z.object({
   tools: z.array(pluginToolDeclarationSchema).optional(),
   database: pluginDatabaseDeclarationSchema.optional(),
   apiRoutes: z.array(pluginApiRouteDeclarationSchema).optional(),
+  reverseTools: z.array(pluginReverseToolDeclarationSchema).optional(),
   environmentDrivers: z.array(pluginEnvironmentDriverDeclarationSchema).optional(),
   launchers: z.array(pluginLauncherDeclarationSchema).optional(),
   ui: z.object({

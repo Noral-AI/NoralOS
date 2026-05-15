@@ -223,20 +223,52 @@ export async function getRun(
  * Register a webhook with NoralVoice for an event type. Returns the
  * id + secret of the registration. The plugin must persist the secret
  * — subsequent inbound webhooks include it in their HMAC signature.
+ *
+ * Phase 5d: optional reverse-RPC fields. When the plugin wants to
+ * receive ``noralos://<pluginId>/<toolName>`` reverse-RPC dispatches,
+ * it includes ``reverseRpcUrl`` (where NoralVoice POSTs the signed
+ * envelope) and ``reverseRpcSecret`` (HMAC-SHA256 key). NoralVoice
+ * persists both; one row per organization is sufficient.
+ *
+ * The response carries the reverse_rpc_secret back so the plugin can
+ * regenerate / rotate it server-side without keeping client-side
+ * state. If neither field is supplied the row participates only in
+ * the outbound webhook firing path.
  */
 export async function registerIntegrationWebhook(
   config: NoralVoiceClientConfig,
-  params: { eventType: string; targetUrl: string },
-): Promise<{ id: number; secret: string }> {
+  params: {
+    eventType: string;
+    targetUrl: string;
+    reverseRpcUrl?: string;
+    reverseRpcSecret?: string;
+  },
+): Promise<{
+  id: number;
+  secret: string;
+  reverseRpcSecret: string | null;
+}> {
   const body = await request<Record<string, unknown>>(
     config,
     "POST",
     "/api/v1/integration-webhooks",
-    { event_type: params.eventType, target_url: params.targetUrl },
+    {
+      event_type: params.eventType,
+      target_url: params.targetUrl,
+      ...(params.reverseRpcUrl ? { reverse_rpc_url: params.reverseRpcUrl } : {}),
+      ...(params.reverseRpcSecret
+        ? { reverse_rpc_secret: params.reverseRpcSecret }
+        : {}),
+    },
   );
+  const reverseRpcSecret = body.reverse_rpc_secret;
   return {
     id: Number(body.id ?? 0),
     secret: String(body.secret ?? ""),
+    reverseRpcSecret:
+      typeof reverseRpcSecret === "string" && reverseRpcSecret.length > 0
+        ? reverseRpcSecret
+        : null,
   };
 }
 

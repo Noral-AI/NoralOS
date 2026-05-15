@@ -33,6 +33,10 @@ import {
   LIST_WORKFLOWS_TOOL_NAME,
   PLUGIN_ID,
   PLUGIN_VERSION,
+  REVERSE_TOOL_CREATE_TASK_FOR_AGENT,
+  REVERSE_TOOL_GET_AGENT_STATUS,
+  REVERSE_TOOL_LOOKUP_CUSTOMER,
+  REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY,
   RUN_CALL_TOOL_NAME,
   RUN_COMPLETED_WEBHOOK_ENDPOINT_KEY,
   TOOL_MIN_TIER,
@@ -138,6 +142,17 @@ export const manifest: NoralosPluginManifestV1 = {
       displayName: "Call / workflow run completed",
       description:
         "Receives NoralVoice's `run.completed` event when a workflow run transitions to a terminal state, verifies the HMAC-SHA256 signature against the per-company secret captured at lifecycle setup, then emits `noralai.noralvoice.run.completed` on the NoralOS event bus so the originating agent wakes within 5 seconds.",
+    },
+    {
+      // Phase 5d — inbound endpoint for `noralos://` reverse-RPC
+      // dispatches from a NoralVoice workflow Agent node. Receives the
+      // signed envelope, verifies HMAC against the per-company
+      // `reverseRpcSecret` stored at lifecycle setup, dispatches to
+      // the corresponding `onReverseTool` handler.
+      endpointKey: REVERSE_TOOL_WEBHOOK_ENDPOINT_KEY,
+      displayName: "Reverse-RPC tool dispatch",
+      description:
+        "Inbound endpoint for `noralos://<pluginId>/<toolName>` tool dispatches from NoralVoice workflow Agent nodes. NoralVoice signs the envelope with the per-company reverse_rpc_secret captured at lifecycle setup; the worker verifies HMAC and routes the payload through `onReverseTool` to the matching handler in `reverse-tools.ts`.",
     },
   ],
 
@@ -492,6 +507,72 @@ export const manifest: NoralosPluginManifestV1 = {
             enum: ["blank", "conversational"],
             description:
               "Starter template. Both options resolve to a single-Agent-node minimal graph today; the distinction is reserved for a follow-up release that ships richer starters.",
+          },
+        },
+      },
+    },
+  ],
+
+  // Phase 5d — reverse-tools the plugin accepts inbound from external
+  // systems (NoralVoice's `noralos://` workflow tool URL scheme).
+  // Runtime dispatch happens in `worker.ts#onReverseTool`, which routes
+  // by `toolName` into the implementations in `reverse-tools.ts`. The
+  // schemas below are advisory documentation — argument validation
+  // happens inside each handler.
+  reverseTools: [
+    {
+      toolName: REVERSE_TOOL_GET_AGENT_STATUS,
+      displayName: "Get NoralOS agent status",
+      description:
+        "Look up a NoralOS agent in the calling company and return whether it's active/idle/offline plus pageability. Read-only; the calling voice agent uses this to decide whether to escalate to or page a NoralOS worker mid-call.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["agent_id"],
+        properties: {
+          agent_id: {
+            type: "string",
+            description: "UUID of the target NoralOS agent.",
+            format: "uuid",
+          },
+        },
+      },
+    },
+    {
+      toolName: REVERSE_TOOL_CREATE_TASK_FOR_AGENT,
+      displayName: "Create a task for a NoralOS agent",
+      description:
+        "Create a new task (issue) on the NoralOS side targeting the given agent. The calling voice agent uses this to delegate follow-up work mid-call (e.g. 'log this customer's question for the support team'). NOT_IMPLEMENTED in Phase 5; landing in a follow-up that wires ctx.tasks.create through the SDK.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["agent_id", "title", "body"],
+        properties: {
+          agent_id: { type: "string", description: "Target agent UUID.", format: "uuid" },
+          title: { type: "string", description: "Short task title.", minLength: 1 },
+          body: { type: "string", description: "Detailed task description / context." },
+          priority: {
+            type: "string",
+            description: "Optional task priority.",
+            enum: ["low", "normal", "high"],
+          },
+        },
+      },
+    },
+    {
+      toolName: REVERSE_TOOL_LOOKUP_CUSTOMER,
+      displayName: "Look up a customer by identifier",
+      description:
+        "Resolve a customer record from the calling company's CRM-like data, given an email / phone / customer_id identifier. NOT_CONFIGURED unless the company has registered a customer-lookup hook on the host; lands when the hook surface ships.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["identifier"],
+        properties: {
+          identifier: {
+            type: "string",
+            description: "Email, phone number, or customer_id to resolve.",
+            minLength: 1,
           },
         },
       },
