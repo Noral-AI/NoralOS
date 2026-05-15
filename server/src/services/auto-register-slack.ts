@@ -50,10 +50,21 @@ function resolveWorkspacePluginPath(): string | null {
 function readWorkspaceManifestVersion(localPath: string): string | null {
   try {
     const distFile = path.join(localPath, "dist", "manifest.js");
-    if (fs.existsSync(distFile)) {
-      const source = fs.readFileSync(distFile, "utf8");
-      const match = source.match(/version:\s*['"]([^'"]+)['"]/);
-      return match ? match[1] : null;
+    if (!fs.existsSync(distFile)) return null;
+    const source = fs.readFileSync(distFile, "utf8");
+    // Literal form: `version: "0.2.0",`
+    const literal = source.match(/version:\s*['"]([^'"]+)['"]/);
+    if (literal) return literal[1];
+    // Identifier-reference form: `version: PLUGIN_VERSION,` — tsc leaves the
+    // identifier intact, so resolve it from constants.js.
+    const ref = source.match(/version:\s*([A-Z_][A-Z0-9_]*)/);
+    if (ref) {
+      const constName = ref[1];
+      const distConstants = path.join(localPath, "dist", "constants.js");
+      if (!fs.existsSync(distConstants)) return null;
+      const constSource = fs.readFileSync(distConstants, "utf8");
+      const constMatch = constSource.match(new RegExp(`${constName}\\s*=\\s*['"]([^'"]+)['"]`));
+      return constMatch ? constMatch[1] : null;
     }
   } catch {
     // fall through
