@@ -195,11 +195,43 @@ describe("INTEGRATION_PROVIDERS — noralvoice", () => {
   it("exposes exactly one assignable slot pointing at noralai.noralvoice apiKeyRef", () => {
     const p = INTEGRATION_PROVIDERS["noralvoice"]!;
     expect(p.assignableSlots).toHaveLength(1);
-    expect(p.assignableSlots[0]).toEqual({
-      pluginKey: "noralai.noralvoice",
-      configPath: "apiKeyRef",
-      label: "NoralVoice — API key",
-    });
+    const slot = p.assignableSlots[0]!;
+    expect(slot.pluginKey).toBe("noralai.noralvoice");
+    expect(slot.configPath).toBe("apiKeyRef");
+    expect(slot.label).toBe("NoralVoice — API key");
+  });
+
+  it("declares pairedFields so baseUrl + organizationId propagate to plugin config alongside the secret-ref", () => {
+    const p = INTEGRATION_PROVIDERS["noralvoice"]!;
+    const slot = p.assignableSlots[0]!;
+    expect(slot.pairedFields).toBeDefined();
+    expect(slot.pairedFields).toHaveLength(2);
+
+    const baseUrl = slot.pairedFields!.find((pf) => pf.sourceField === "baseUrl");
+    expect(baseUrl).toBeDefined();
+    expect(baseUrl!.targetConfigPath).toBe("baseUrl");
+    expect(baseUrl!.coerce).toBeUndefined(); // plain string passthrough
+
+    const orgId = slot.pairedFields!.find((pf) => pf.sourceField === "organizationId");
+    expect(orgId).toBeDefined();
+    expect(orgId!.targetConfigPath).toBe("organizationId");
+    expect(orgId!.coerce).toBe("integer"); // plugin manifest declares organizationId as integer
+  });
+
+  it("pairedFields source keys all exist as declared non-secret fields on the provider", () => {
+    // Guards against drift between a slot's pairedFields and the form
+    // fields it refers to: a typo here would silently no-op the
+    // propagation. Every pairedField sourceField must be a declared
+    // non-secret field on the same provider.
+    const p = INTEGRATION_PROVIDERS["noralvoice"]!;
+    const nonSecretKeys = new Set(
+      p.fields.filter((f) => f.inputType !== "secret").map((f) => f.key),
+    );
+    for (const slot of p.assignableSlots) {
+      for (const paired of slot.pairedFields ?? []) {
+        expect(nonSecretKeys.has(paired.sourceField)).toBe(true);
+      }
+    }
   });
 
   it("does not regress the existing providers (twilio + brooklyn + voice-cascade)", () => {

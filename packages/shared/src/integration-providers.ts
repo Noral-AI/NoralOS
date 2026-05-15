@@ -121,6 +121,32 @@ export interface IntegrationAssignableSlot {
   configPath: string;
   /** Human-friendly label for the assignment card. */
   label: string;
+  /**
+   * Optional. For multi-field providers, propagate selected non-secret
+   * fields from `credential.metadata.fields` into the plugin's `configJson`
+   * at the named paths, alongside the encrypted secret-ref written to
+   * `configPath`.
+   *
+   * Use when a plugin's `instanceConfigSchema` requires more than just a
+   * secret reference to function — e.g. NoralVoice needs `baseUrl` and
+   * `organizationId` alongside `apiKeyRef`. Without this, the plugin
+   * fails `instanceConfig` validation on first save and operators have
+   * to hand-edit `plugin_config.config_json`.
+   *
+   * Credential metadata stores all non-secret values as strings.
+   * `coerce` controls type conversion at the assignment-writer boundary
+   * so the plugin's JSON-schema validation passes (e.g. an
+   * `organizationId` field declared as `type: "integer"` in the manifest
+   * gets `Number()`'d here).
+   */
+  pairedFields?: ReadonlyArray<{
+    /** Field key on `credential.metadata.fields` (always string-valued). */
+    sourceField: string;
+    /** Destination key on the plugin's `configJson` (shallow). */
+    targetConfigPath: string;
+    /** Optional type coercion. Default: pass through as string. */
+    coerce?: "integer" | "boolean";
+  }>;
 }
 
 /** Provider-specific test instructions. Phase 1 only supports HTTP probes. */
@@ -354,6 +380,19 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
         pluginKey: "noralai.noralvoice",
         configPath: "apiKeyRef",
         label: "NoralVoice — API key",
+        // The NoralVoice plugin's instanceConfigSchema requires
+        // `baseUrl` (string) and `organizationId` (integer) in addition
+        // to the encrypted `apiKeyRef`. Propagate those from the
+        // credential's non-secret fields so the assignment yields a
+        // valid plugin config with no operator hand-editing.
+        pairedFields: [
+          { sourceField: "baseUrl", targetConfigPath: "baseUrl" },
+          {
+            sourceField: "organizationId",
+            targetConfigPath: "organizationId",
+            coerce: "integer",
+          },
+        ],
       },
     ],
   },
