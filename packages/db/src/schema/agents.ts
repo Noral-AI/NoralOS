@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
   pgTable,
@@ -7,6 +8,7 @@ import {
   timestamp,
   jsonb,
   index,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { companies } from "./companies.js";
 import { environments } from "./environments.js";
@@ -36,6 +38,12 @@ export const agents = pgTable(
     permissions: jsonb("permissions").$type<Record<string, unknown>>().notNull().default({}),
     lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true }),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    // Phase 3: soft FK to NoralVoice's `workflows.workflow_uuid`. Nullable
+    // because the vast majority of agents are non-voice. The noralai.noralvoice
+    // plugin reads + writes this column when an operator configures voice
+    // settings on an Agent detail page. Phase 7 may promote to an enforced
+    // cross-DB FK once schemas merge.
+    voiceAgentUuid: varchar("voice_agent_uuid", { length: 36 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -44,5 +52,9 @@ export const agents = pgTable(
     companyReportsToIdx: index("agents_company_reports_to_idx").on(table.companyId, table.reportsTo),
     companyDefaultEnvironmentIdx: index("agents_company_default_environment_idx").on(table.companyId, table.defaultEnvironmentId),
     companyDepartmentIdx: index("agents_company_department_idx").on(table.companyId, table.departmentId),
+    // Partial index — most agents have NULL here; only index real values.
+    voiceAgentUuidIdx: index("agents_voice_agent_uuid_idx")
+      .on(table.voiceAgentUuid)
+      .where(sql`${table.voiceAgentUuid} IS NOT NULL`),
   }),
 );

@@ -42,19 +42,30 @@ import {
   STATE_KEY_WEBHOOK_REGISTRATION,
   STATE_NAMESPACE,
   TIER_RANK,
-  TOOL_MIN_TIER,
   type AgentTier,
 } from "./constants.js";
 import { manifest } from "./manifest.js";
 import {
   NoralVoiceClientError,
+  type NoralVoiceTTSProvider,
   deleteIntegrationWebhook,
+  extractVoiceSettings,
+  getWorkflowByUuid,
   registerIntegrationWebhook,
   type NoralVoiceClientConfig,
 } from "./noralvoice-client.js";
 import { executeGetRun } from "./tools/get_run.js";
 import { executeListWorkflows } from "./tools/list_workflows.js";
+import {
+  LIST_VOICES_TOOL_NAME,
+  PROVISION_VOICE_AGENT_TOOL_NAME,
+  SET_AGENT_VOICE_TOOL_NAME,
+  TOOL_MIN_TIER_V3,
+} from "./tools/registry.js";
 import { executeRunCall } from "./tools/run_call.js";
+import { executeListVoices } from "./tools/list_voices.js";
+import { executeProvisionVoiceAgent } from "./tools/provision_voice_agent.js";
+import { executeSetAgentVoice } from "./tools/set_agent_voice.js";
 import {
   VOICE_DIRECTOR_DEFAULT_ROLE,
   VOICE_DIRECTOR_DEFAULT_SYSTEM_PROMPT,
@@ -64,6 +75,7 @@ import {
   VOICE_DIRECTOR_TEMPLATE_NAME,
   type VoiceDirectorOverrides,
 } from "./voice-director-template.js";
+import { mirrorToVoiceConfig } from "./voice-config-mirror.js";
 
 // ---------------------------------------------------------------------------
 // Module-scoped plugin context (set in `setup`, reused from webhook/api hooks)
@@ -89,7 +101,11 @@ async function assertTier(
   runCtx: ToolRunContext,
   toolName: string,
 ): Promise<{ error: string } | null> {
-  const minTier = TOOL_MIN_TIER[toolName] ?? "worker";
+  // Phase 3: tier mappings live in tools/registry.ts (TOOL_MIN_TIER_V3),
+  // which is the source of truth across both phases. The Phase 1B
+  // TOOL_MIN_TIER constant is preserved for backward compat but new
+  // tools must register here.
+  const minTier = TOOL_MIN_TIER_V3[toolName] ?? "worker";
   if (!runCtx.agentId || !runCtx.companyId) {
     return { error: "NoralVoice tools require an agent-scoped run context." };
   }
@@ -471,6 +487,223 @@ const plugin = definePlugin({
       async (params, config) => executeGetRun(config, params),
     );
 
+    // ---- Phase 3: list_voices --------------------------------------------
+    const NORALVOICE_PROVIDERS: readonly NoralVoiceTTSProvider[] = [
+      "elevenlabs",
+      "deepgram",
+      "sarvam",
+      "cartesia",
+      "dograh",
+      "rime",
+    ];
+    registerTool<{ provider?: NoralVoiceTTSProvider }>(
+      LIST_VOICES_TOOL_NAME,
+      (raw) => {
+        let provider: NoralVoiceTTSProvider | undefined;
+        if (raw.provider !== undefined) {
+          if (!isNonEmptyString(raw.provider)) {
+            return { ok: false, error: `${LIST_VOICES_TOOL_NAME}.provider must be a string.` };
+          }
+          if (!(NORALVOICE_PROVIDERS as readonly string[]).includes(raw.provider)) {
+            return {
+              ok: false,
+              error: `${LIST_VOICES_TOOL_NAME}.provider must be one of: ${NORALVOICE_PROVIDERS.join(", ")}.`,
+            };
+          }
+          provider = raw.provider as NoralVoiceTTSProvider;
+        }
+        return { ok: true, value: { provider } };
+      },
+      async (params, config) => executeListVoices(config, params),
+    );
+
+    // Per-company DB query helper for the voice-config mirror write.
+    // The plugin SDK exposes `ctx.host.queryHostDb` for plugins with
+    // the appropriate capability declared in their manifest; we cast
+    // through here because the SDK types are wider than the plumbing
+    // we exercise.
+    type HostQuery = (sql: string, params: unknown[]) => Promise<unknown>;
+    const hostDb = (
+      ctx as unknown as { host?: { queryHostDb?: HostQuery } }
+    ).host?.queryHostDb;
+
+    // Tier-3 side-effect context builders. Each closure captures the
+    // worker `ctx` so the tools themselves stay SDK-free.
+    async function resolveVoiceAgentUuid(
+      companyId: string,
+      agentId: string,
+    ): Promise<string | null> {
+      if (!hostDb) return null;
+      const rows = (await hostDb(
+        `SELECT voice_agent_uuid FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
+        [agentId, companyId],
+      )) as Array<{ voice_agent_uuid: string | null }> | null;
+      const row = Array.isArray(rows) ? rows[0] : null;
+      return row?.voice_agent_uuid ?? null;
+    }
+
+    async function resolveAgentName(
+      companyId: string,
+      agentId: string,
+    ): Promise<string | null> {
+      if (!hostDb) return null;
+      const rows = (await hostDb(
+        `SELECT name FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
+        [agentId, companyId],
+      )) as Array<{ name: string | null }> | null;
+      const row = Array.isArray(rows) ? rows[0] : null;
+      return row?.name ?? null;
+    }
+
+    async function writeVoiceAgentUuid(
+      companyId: string,
+      agentId: string,
+      uuid: string,
+    ): Promise<void> {
+      if (!hostDb) {
+        throw new Error(
+          "NoralVoice plugin: ctx.host.queryHostDb unavailable; cannot write voice_agent_uuid.",
+        );
+      }
+      await hostDb(
+        `UPDATE public.agents SET voice_agent_uuid = $1, updated_at = now() WHERE id = $2::uuid AND company_id = $3::uuid`,
+        [uuid, agentId, companyId],
+      );
+    }
+
+    // ---- Phase 3: set_agent_voice ----------------------------------------
+    registerTool<{
+      noralosAgentId: string;
+      provider: NoralVoiceTTSProvider;
+      voiceId: string;
+      voiceOptions?: Record<string, unknown>;
+    }>(
+      SET_AGENT_VOICE_TOOL_NAME,
+      (raw) => {
+        const agentId = isNonEmptyString(raw.noralosAgentId) ? raw.noralosAgentId : "";
+        if (!agentId) {
+          return { ok: false, error: `${SET_AGENT_VOICE_TOOL_NAME}.noralosAgentId is required.` };
+        }
+        const provider = raw.provider;
+        if (!isNonEmptyString(provider) || !(NORALVOICE_PROVIDERS as readonly string[]).includes(provider)) {
+          return {
+            ok: false,
+            error: `${SET_AGENT_VOICE_TOOL_NAME}.provider must be one of: ${NORALVOICE_PROVIDERS.join(", ")}.`,
+          };
+        }
+        const voiceId = isNonEmptyString(raw.voiceId) ? raw.voiceId : "";
+        if (!voiceId) {
+          return { ok: false, error: `${SET_AGENT_VOICE_TOOL_NAME}.voiceId is required.` };
+        }
+        let voiceOptions: Record<string, unknown> | undefined;
+        if (raw.voiceOptions !== undefined) {
+          if (typeof raw.voiceOptions !== "object" || Array.isArray(raw.voiceOptions) || raw.voiceOptions === null) {
+            return {
+              ok: false,
+              error: `${SET_AGENT_VOICE_TOOL_NAME}.voiceOptions must be an object.`,
+            };
+          }
+          voiceOptions = raw.voiceOptions as Record<string, unknown>;
+        }
+        return {
+          ok: true,
+          value: { noralosAgentId: agentId, provider: provider as NoralVoiceTTSProvider, voiceId, voiceOptions },
+        };
+      },
+      async (params, config, runCtx) => {
+        const companyId = runCtx.companyId!;
+        const result = await executeSetAgentVoice(config, params, {
+          companyId,
+          resolveVoiceAgentUuid: (agentId) => resolveVoiceAgentUuid(companyId, agentId),
+          mirrorToVoiceConfig: async (args) => {
+            if (!hostDb) return { mirrored: false };
+            return mirrorToVoiceConfig(hostDb, args);
+          },
+        });
+        if (!result.ok) {
+          ctx.logger.info("NoralVoice set_agent_voice precondition failed", {
+            companyId,
+            agentId: params.noralosAgentId,
+            error: result.error,
+          });
+          return { error: result.message, data: { code: result.error } };
+        }
+        ctx.logger.info("NoralVoice set_agent_voice ok", {
+          companyId,
+          agentId: params.noralosAgentId,
+          provider: params.provider,
+          mirrored: result.data.mirrored,
+        });
+        return { content: result.content, data: result.data };
+      },
+    );
+
+    // ---- Phase 3: provision_voice_agent ----------------------------------
+    registerTool<{ noralosAgentId: string; displayName?: string; template?: "blank" | "conversational" }>(
+      PROVISION_VOICE_AGENT_TOOL_NAME,
+      (raw) => {
+        const agentId = isNonEmptyString(raw.noralosAgentId) ? raw.noralosAgentId : "";
+        if (!agentId) {
+          return {
+            ok: false,
+            error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.noralosAgentId is required.`,
+          };
+        }
+        let displayName: string | undefined;
+        if (raw.displayName !== undefined) {
+          if (!isNonEmptyString(raw.displayName)) {
+            return {
+              ok: false,
+              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.displayName must be a non-empty string.`,
+            };
+          }
+          if (raw.displayName.length > 200) {
+            return {
+              ok: false,
+              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.displayName exceeds the 200-char limit.`,
+            };
+          }
+          displayName = raw.displayName;
+        }
+        let template: "blank" | "conversational" | undefined;
+        if (raw.template !== undefined) {
+          if (raw.template !== "blank" && raw.template !== "conversational") {
+            return {
+              ok: false,
+              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.template must be 'blank' or 'conversational'.`,
+            };
+          }
+          template = raw.template;
+        }
+        return { ok: true, value: { noralosAgentId: agentId, displayName, template } };
+      },
+      async (params, config, runCtx) => {
+        const companyId = runCtx.companyId!;
+        const result = await executeProvisionVoiceAgent(config, params, {
+          resolveVoiceAgentUuid: (agentId) => resolveVoiceAgentUuid(companyId, agentId),
+          resolveAgentName: (agentId) => resolveAgentName(companyId, agentId),
+          writeVoiceAgentUuid: (agentId, uuid) => writeVoiceAgentUuid(companyId, agentId, uuid),
+        });
+        if (!result.ok) {
+          ctx.logger.info("NoralVoice provision_voice_agent precondition failed", {
+            companyId,
+            agentId: params.noralosAgentId,
+            error: result.error,
+          });
+          return {
+            error: result.message,
+            data: { code: result.error, voice_agent_uuid: result.voice_agent_uuid },
+          };
+        }
+        ctx.logger.info("NoralVoice provision_voice_agent ok", {
+          companyId,
+          agentId: params.noralosAgentId,
+          voiceAgentUuid: result.data.voice_agent_uuid,
+        });
+        return { content: result.content, data: result.data };
+      },
+    );
+
     ctx.logger.info(`${PLUGIN_ID} plugin setup complete`);
   },
 
@@ -639,6 +872,194 @@ const plugin = definePlugin({
 
     if (input.routeKey === "create_voice_director") {
       return await handleCreateVoiceDirector(ctx, input);
+    }
+
+    // ---- Phase 3 board routes -------------------------------------------
+    //
+    // The plugin SDK doesn't expose direct DB to onApiRequest closures
+    // (the per-tool side-effect helpers I bound during `setup` aren't
+    // in scope here), so these routes call the SDK's queryHostDb path
+    // through the same casting pattern used in setup().
+    type HostQuery = (sql: string, params: unknown[]) => Promise<unknown>;
+    const hostDb = (
+      ctx as unknown as { host?: { queryHostDb?: HostQuery } }
+    ).host?.queryHostDb;
+
+    async function lookupVoiceAgentUuidForAgent(
+      companyId: string,
+      agentId: string,
+    ): Promise<string | null> {
+      if (!hostDb) return null;
+      const rows = (await hostDb(
+        `SELECT voice_agent_uuid FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
+        [agentId, companyId],
+      )) as Array<{ voice_agent_uuid: string | null }> | null;
+      return (Array.isArray(rows) ? rows[0]?.voice_agent_uuid : null) ?? null;
+    }
+
+    if (input.routeKey === "get_agent_voice_config") {
+      const agentId = input.pathParams?.agentId as string | undefined;
+      const companyId = (input as unknown as { companyId?: string }).companyId;
+      if (!agentId || !companyId) {
+        return { status: 400, body: { error: "agentId path param and companyId query are required" } };
+      }
+      const uuid = await lookupVoiceAgentUuidForAgent(companyId, agentId);
+      if (!uuid) {
+        return { status: 200, body: { voice_agent_uuid: null } };
+      }
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) return { status: 400, body: { error: config.error } };
+      try {
+        const workflow = await getWorkflowByUuid(config, uuid);
+        if (!workflow) {
+          // Stored uuid but NV doesn't recognise it — likely deleted from
+          // the NV side. Surface as 404 so the UI can prompt re-provisioning.
+          return {
+            status: 404,
+            body: {
+              voice_agent_uuid: uuid,
+              error: "voice agent not found in NoralVoice",
+            },
+          };
+        }
+        const voice = extractVoiceSettings(workflow);
+        return {
+          status: 200,
+          body: {
+            voice_agent_uuid: uuid,
+            workflow_name: workflow.name,
+            provider: voice.provider,
+            voice_id: voice.voiceId,
+            provider_options: voice.providerOptions ?? null,
+          },
+        };
+      } catch (err) {
+        const { safe, httpStatus } = normaliseFailure(err);
+        return {
+          status: httpStatus && httpStatus >= 400 && httpStatus < 500 ? 400 : 502,
+          body: { error: safe },
+        };
+      }
+    }
+
+    if (input.routeKey === "provision_voice_for_agent") {
+      const agentId = input.pathParams?.agentId as string | undefined;
+      const companyId = (input as unknown as { companyId?: string }).companyId;
+      if (!agentId || !companyId) {
+        return { status: 400, body: { error: "agentId path param and companyId query are required" } };
+      }
+      const body =
+        input.parsedBody && typeof input.parsedBody === "object"
+          ? (input.parsedBody as Record<string, unknown>)
+          : {};
+      const displayName =
+        typeof body.displayName === "string" ? (body.displayName as string) : undefined;
+
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) return { status: 400, body: { error: config.error } };
+      if (!hostDb) return { status: 500, body: { error: "Host DB unavailable" } };
+
+      const result = await executeProvisionVoiceAgent(
+        config,
+        { noralosAgentId: agentId, displayName },
+        {
+          resolveVoiceAgentUuid: async (id) => lookupVoiceAgentUuidForAgent(companyId, id),
+          resolveAgentName: async (id) => {
+            const rows = (await hostDb(
+              `SELECT name FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
+              [id, companyId],
+            )) as Array<{ name: string | null }> | null;
+            return (Array.isArray(rows) ? rows[0]?.name : null) ?? null;
+          },
+          writeVoiceAgentUuid: async (id, uuid) => {
+            await hostDb(
+              `UPDATE public.agents SET voice_agent_uuid = $1, updated_at = now() WHERE id = $2::uuid AND company_id = $3::uuid`,
+              [uuid, id, companyId],
+            );
+          },
+        },
+      );
+      if (!result.ok) {
+        return {
+          status: result.error === "ALREADY_PROVISIONED" ? 409 : 400,
+          body: { error: result.message, code: result.error, voice_agent_uuid: result.voice_agent_uuid },
+        };
+      }
+      return { status: 200, body: result.data };
+    }
+
+    if (input.routeKey === "list_voices_board") {
+      const providerParam =
+        typeof input.query.provider === "string" ? (input.query.provider as string) : undefined;
+      if (
+        providerParam &&
+        !["elevenlabs", "deepgram", "sarvam", "cartesia", "dograh", "rime"].includes(providerParam)
+      ) {
+        return { status: 400, body: { error: "Unknown provider filter" } };
+      }
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) return { status: 400, body: { error: config.error } };
+      try {
+        const result = await executeListVoices(config, {
+          provider: providerParam as NoralVoiceTTSProvider | undefined,
+        });
+        return { status: 200, body: { voices: result.data.voices } };
+      } catch (err) {
+        const { safe, httpStatus } = normaliseFailure(err);
+        return {
+          status: httpStatus && httpStatus >= 400 && httpStatus < 500 ? 400 : 502,
+          body: { error: safe },
+        };
+      }
+    }
+
+    if (input.routeKey === "set_agent_voice_config") {
+      const agentId = input.pathParams?.agentId as string | undefined;
+      const companyId = (input as unknown as { companyId?: string }).companyId;
+      if (!agentId || !companyId) {
+        return { status: 400, body: { error: "agentId path param and companyId query are required" } };
+      }
+      const body =
+        input.parsedBody && typeof input.parsedBody === "object"
+          ? (input.parsedBody as Record<string, unknown>)
+          : {};
+      const provider = body.provider;
+      const voiceId = body.voiceId;
+      const voiceOptions =
+        body.voiceOptions && typeof body.voiceOptions === "object" && !Array.isArray(body.voiceOptions)
+          ? (body.voiceOptions as Record<string, unknown>)
+          : undefined;
+      if (
+        typeof provider !== "string" ||
+        !["elevenlabs", "deepgram", "sarvam", "cartesia", "dograh", "rime"].includes(provider)
+      ) {
+        return { status: 400, body: { error: "provider must be one of the six supported TTS providers" } };
+      }
+      if (typeof voiceId !== "string" || voiceId.length === 0) {
+        return { status: 400, body: { error: "voiceId is required" } };
+      }
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) return { status: 400, body: { error: config.error } };
+      if (!hostDb) return { status: 500, body: { error: "Host DB unavailable" } };
+
+      const result = await executeSetAgentVoice(
+        config,
+        {
+          noralosAgentId: agentId,
+          provider: provider as NoralVoiceTTSProvider,
+          voiceId,
+          voiceOptions,
+        },
+        {
+          companyId,
+          resolveVoiceAgentUuid: async (id) => lookupVoiceAgentUuidForAgent(companyId, id),
+          mirrorToVoiceConfig: async (args) => mirrorToVoiceConfig(hostDb, args),
+        },
+      );
+      if (!result.ok) {
+        return { status: 409, body: { error: result.message, code: result.error } };
+      }
+      return { status: 200, body: result.data };
     }
 
     return { status: 404, body: { error: "Unknown route" } };
