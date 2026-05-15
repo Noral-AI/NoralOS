@@ -1029,6 +1029,35 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
         const agent = agents.get(agentId);
         return isInCompany(agent, companyId) ? agent : null;
       },
+      async create(input) {
+        requireCapability(manifest, capabilitySet, "agents.write");
+        const companyId = requireCompanyId(input.companyId);
+        const id = randomUUID();
+        const now = new Date();
+        const agent: Agent = {
+          id,
+          companyId,
+          name: input.name,
+          role: input.role,
+          title: input.title ?? null,
+          reportsTo: input.reportsTo ?? null,
+          status: "idle",
+          permissions: [],
+          capabilities: input.capabilities ?? null,
+          adapterType: input.adapterType ?? null,
+          adapterConfig: input.adapterConfig ?? {},
+          runtimeConfig: input.runtimeConfig ?? {},
+          defaultEnvironmentId: input.defaultEnvironmentId ?? null,
+          budgetMonthlyCents: input.budgetMonthlyCents ?? 0,
+          metadata: input.metadata ?? {},
+          pauseReason: null,
+          pausedAt: null,
+          createdAt: now,
+          updatedAt: now,
+        } as unknown as Agent;
+        agents.set(id, agent);
+        return agent;
+      },
       async pause(agentId, companyId) {
         requireCapability(manifest, capabilitySet, "agents.pause");
         const cid = requireCompanyId(companyId);

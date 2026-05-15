@@ -1624,6 +1624,37 @@ export function buildHostServices(
         const agent = await agents.getById(params.agentId);
         return (inCompany(agent, companyId) ? agent : null) as Agent | null;
       },
+      async create(params) {
+        const companyId = ensureCompanyId(params.companyId);
+        await ensurePluginAvailableForCompany(companyId);
+        // Plugin-provisioned agents always carry plugin provenance in
+        // their metadata bag so audit / dashboards can tell who created
+        // them. We merge over any caller-supplied metadata, with our
+        // provenance fields taking precedence.
+        const metadata = {
+          ...(params.metadata ?? {}),
+          provisionedByPluginId: pluginId,
+          provisionedByPluginKey: pluginKey,
+          provisionedAt: new Date().toISOString(),
+        };
+        const created = await agents.create(companyId, {
+          name: params.name,
+          role: params.role,
+          title: params.title ?? null,
+          reportsTo: params.reportsTo ?? null,
+          capabilities: params.capabilities ?? null,
+          // adapterType has a NOT NULL DEFAULT in the schema — omit
+          // when the caller passes null/undefined so the column default
+          // applies. Pass an explicit string through verbatim.
+          ...(typeof params.adapterType === "string" ? { adapterType: params.adapterType } : {}),
+          adapterConfig: params.adapterConfig ?? {},
+          runtimeConfig: params.runtimeConfig ?? {},
+          defaultEnvironmentId: params.defaultEnvironmentId ?? null,
+          budgetMonthlyCents: params.budgetMonthlyCents ?? 0,
+          metadata,
+        });
+        return created as Agent;
+      },
       async pause(params) {
         const companyId = ensureCompanyId(params.companyId);
         await ensurePluginAvailableForCompany(companyId);

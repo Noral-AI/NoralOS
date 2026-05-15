@@ -114,6 +114,14 @@ export interface PluginWebhookInput {
   endpointKey: string;
   /** Inbound request headers. */
   headers: Record<string, string | string[]>;
+  /**
+   * Inbound request query string parameters. Plugins commonly need
+   * tenancy hints (e.g. `?company=<uuid>`) on the receiver URL because
+   * external providers post one URL per registration but receivers
+   * have to map back to the originating company. Mirrors the shape of
+   * `PluginApiRequestInput.query`.
+   */
+  query: Record<string, string | string[]>;
   /** Raw request body as a UTF-8 string. */
   rawBody: string;
   /** Parsed JSON body (if applicable and parseable). */
