@@ -93,7 +93,7 @@ export const manifest: NoralosPluginManifestV1 = {
         // component itself decides whether to render (no voice_agent_uuid
         // ⇒ show the "Provision Voice Agent" CTA; uuid set ⇒ show the
         // provider+voice dropdowns).
-        type: "agent-detail-tab",
+        type: "detailTab",
         id: "noralvoice-voice-settings",
         displayName: "Voice settings",
         exportName: "VoiceSettingsTab",
@@ -188,7 +188,7 @@ export const manifest: NoralosPluginManifestV1 = {
       method: "POST",
       path: "/agents/:agentId/voice-config",
       auth: "board",
-      capability: "agent.tools.register",
+      capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
     {
@@ -199,7 +199,7 @@ export const manifest: NoralosPluginManifestV1 = {
       method: "POST",
       path: "/agents/:agentId/provision-voice",
       auth: "board",
-      capability: "agents.write",
+      capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
     {
