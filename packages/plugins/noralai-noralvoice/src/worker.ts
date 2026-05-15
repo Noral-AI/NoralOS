@@ -1139,7 +1139,7 @@ const plugin = definePlugin({
                 typeof input.query.workflowUuid === "string"
                   ? (input.query.workflowUuid as string)
                   : "";
-              const runId = Number(input.pathParams?.runId);
+              const runId = Number(input.params.runId);
               if (!workflowUuid || !Number.isFinite(runId) || runId <= 0) {
                 return {
                   status: 400,
@@ -1164,7 +1164,7 @@ const plugin = definePlugin({
               return { status: 200, body: page };
             }
             case "get_recording_download_url": {
-              const id = Number(input.pathParams?.id);
+              const id = Number(input.params.id);
               if (!Number.isFinite(id) || id <= 0) {
                 return {
                   status: 400,
@@ -1176,8 +1176,8 @@ const plugin = definePlugin({
             }
             case "search_kb": {
               const body =
-                input.parsedBody && typeof input.parsedBody === "object"
-                  ? (input.parsedBody as Record<string, unknown>)
+                input.body && typeof input.body === "object"
+                  ? (input.body as Record<string, unknown>)
                   : {};
               const query = typeof body.query === "string" ? body.query : "";
               if (!query) {
@@ -1203,7 +1203,7 @@ const plugin = definePlugin({
               return { status: 200, body: page };
             }
             case "get_campaign": {
-              const id = Number(input.pathParams?.id);
+              const id = Number(input.params.id);
               if (!Number.isFinite(id) || id <= 0) {
                 return {
                   status: 400,
