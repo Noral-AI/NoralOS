@@ -58,6 +58,10 @@ COPY packages/plugins/noralai-noralsign/package.json packages/plugins/noralai-no
 # at the build stage. Runtime auto-registers from the workspace path via
 # `server/src/services/auto-register-slack.ts`.
 COPY packages/plugins/noralai-slack/package.json packages/plugins/noralai-slack/
+# noralai-noralvoice: NoralVoice (voice.noral.ai) integration. Same pattern.
+# Runtime auto-registers from the workspace path via
+# `server/src/services/auto-register-noralvoice.ts`.
+COPY packages/plugins/noralai-noralvoice/package.json packages/plugins/noralai-noralvoice/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
@@ -81,6 +85,11 @@ RUN pnpm --filter @noralos-plugins/noralai-noralsign build
 # Without this step `ensureSlackRegistered` finds the workspace path but
 # no manifest file and aborts auto-registration on first boot.
 RUN pnpm --filter @noralos-plugins/noralai-slack build
+# noralai-noralvoice builds tsc output (manifest, worker, NoralVoice client)
+# plus the React UI bundle (esbuild → dist/ui/index.js). Without this step
+# `ensureNoralVoiceRegistered` finds the workspace path but no manifest
+# file and aborts auto-registration on first boot.
+RUN pnpm --filter @noralos-plugins/noralai-noralvoice build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 RUN test -f packages/plugins/voice-config/dist/worker.js || (echo "ERROR: voice-config build output missing" && exit 1)
 RUN test -f packages/plugins/voice-cascade/dist/worker.js || (echo "ERROR: voice-cascade build output missing" && exit 1)
@@ -90,6 +99,9 @@ RUN test -f packages/plugins/noralai-noralsign/dist/manifest.js || (echo "ERROR:
 RUN test -f packages/plugins/noralai-noralsign/dist/ui/index.js || (echo "ERROR: noralai-noralsign UI bundle missing" && exit 1)
 RUN test -f packages/plugins/noralai-slack/dist/worker.js || (echo "ERROR: noralai-slack build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-slack/dist/manifest.js || (echo "ERROR: noralai-slack manifest build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-noralvoice/dist/worker.js || (echo "ERROR: noralai-noralvoice build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-noralvoice/dist/manifest.js || (echo "ERROR: noralai-noralvoice manifest build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-noralvoice/dist/ui/index.js || (echo "ERROR: noralai-noralvoice UI bundle missing" && exit 1)
 
 FROM base AS production
 ARG USER_UID=1000
