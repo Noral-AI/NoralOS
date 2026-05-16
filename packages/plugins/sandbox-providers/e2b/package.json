@@ -51,7 +51,6 @@
     "postpack": "if [ -f package.dev.json ]; then mv package.dev.json package.json; fi"
   },
   "dependencies": {
-    "@noralos/plugin-sdk": "workspace:*",
     "e2b": "^2.19.0"
   },
   "devDependencies": {
