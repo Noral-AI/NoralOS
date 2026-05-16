@@ -4,6 +4,12 @@
 // the actual `ttsMode` from the running plugin instead of a hard-coded label.
 // Keeping it scoped here (instead of importing from the plugin package)
 // avoids cross-coupling the host UI to plugin source.
+//
+// @deprecated Phase 6 PR-2 — `voiceCascadeApi.synthesize` is being replaced
+// by `noralVoiceTtsApi.synthesize` (in `./noralVoiceTts`). The flag
+// `NEXT_PUBLIC_ENABLE_NV_TTS_AUTOPLAY=true` flips `useChatVoiceAutoplay`
+// to the NoralVoice TTS path. `voiceCascadeApi.health` stays useful until
+// PR-3 retires the voice-cascade plugin entirely.
 
 const VOICE_CASCADE_API = "/api/plugins/noralos.voice-cascade/api";
 

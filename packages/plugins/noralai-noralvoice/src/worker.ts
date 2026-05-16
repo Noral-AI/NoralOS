@@ -1529,6 +1529,96 @@ const plugin = definePlugin({
       }
     }
 
+    // Phase 6 PR-2 — TTS proxy for Dashboard agent-voice autoplay.
+    //
+    // Browser-side hook posts {text, voiceOverride?}; worker forwards
+    // to NoralVoice's /api/v1/public/embed/synthesize via the dual-auth
+    // X-API-Key path. The apiKey never reaches the browser. NV returns
+    // a pre-signed audio URL with 5-minute TTL.
+    //
+    // 422 `text_blocked_exfiltration` is surfaced as
+    // `{ok: false, reason: "exfiltration-blocked"}` — same contract
+    // the autoplay hook expects from voice-cascade. Other errors
+    // come back as HTTP 4XX/5XX from the wrapper.
+    if (input.routeKey === "synthesize") {
+      const body =
+        input.body && typeof input.body === "object"
+          ? (input.body as {
+              text?: unknown;
+              voiceOverride?: {
+                provider?: unknown;
+                voiceId?: unknown;
+                model?: unknown;
+              };
+            })
+          : {};
+      const text = typeof body.text === "string" ? body.text : "";
+      if (!text || text.length === 0) {
+        return {
+          status: 400,
+          body: { ok: false, error: "BAD_REQUEST", message: "text required" },
+        };
+      }
+      const config = await resolveClientConfig(ctx, null);
+      if ("error" in config) {
+        return { status: 400, body: { ok: false, error: "NO_API_KEY", message: config.error } };
+      }
+      let voiceOverride: { provider: string; voiceId: string; model: string } | undefined;
+      if (body.voiceOverride && typeof body.voiceOverride === "object") {
+        const ov = body.voiceOverride;
+        if (
+          typeof ov.provider === "string" &&
+          typeof ov.voiceId === "string" &&
+          typeof ov.model === "string"
+        ) {
+          voiceOverride = {
+            provider: ov.provider,
+            voiceId: ov.voiceId,
+            model: ov.model,
+          };
+        }
+      }
+      try {
+        const mod = await import("./noralvoice-client.js");
+        const result = await mod.synthesizeAudio(config, { text, voiceOverride });
+        if (!result.ok) {
+          // Exfiltration block — not an error to the caller, just a
+          // signal that no audio will be returned for this message.
+          return {
+            status: 200,
+            body: {
+              ok: false,
+              reason: "exfiltration-blocked",
+              matchTypes: result.matchTypes,
+            },
+          };
+        }
+        return {
+          status: 200,
+          body: {
+            ok: true,
+            audioUrl: result.audioUrl,
+            expiresAt: result.expiresAt,
+            contentType: result.contentType,
+            durationSeconds: result.durationSeconds,
+            charCount: result.charCount,
+            provider: result.provider,
+          },
+        };
+      } catch (err) {
+        const { safe, category, httpStatus } = normaliseFailure(err);
+        return {
+          status: httpStatus && httpStatus >= 400 && httpStatus < 500 ? 400 : 502,
+          body: {
+            ok: false,
+            error: category === "HTTP_4XX" ? "NORALVOICE_4XX" : "NORALVOICE_5XX",
+            status: httpStatus,
+            message: safe,
+          },
+        };
+      }
+    }
+
     if (input.routeKey === "transcript_pump_control") {
       // The transcript pump lives in a NoralOS server service
       // (server/src/services/voice-transcript-pump.ts) because the

@@ -353,6 +353,27 @@ export const manifest: NoralosPluginManifestV1 = {
       capability: "api.routes.register",
       companyResolution: { from: "query", key: "companyId" },
     },
+    // Phase 6 PR-2 — TTS proxy for Dashboard agent-voice autoplay.
+    //
+    // Browser-side `useChatVoiceAutoplay` POSTs here with the comment
+    // text; the worker forwards to NoralVoice's POST
+    // /api/v1/public/embed/synthesize with the plugin's apiKey (via
+    // X-API-Key — the dual-auth path landed in NoralVoice #10). The
+    // worker never lets the apiKey reach the browser; the response is
+    // just `{audioUrl, contentType, durationSeconds, ...}` for the
+    // browser to play.
+    //
+    // 422 `text_blocked_exfiltration` is surfaced as `ok: false` so
+    // the autoplay hook can no-op cleanly (matches voice-cascade's
+    // contract for the same scenario).
+    {
+      routeKey: "synthesize",
+      method: "POST",
+      path: "/synthesize",
+      auth: "board",
+      capability: "api.routes.register",
+      companyResolution: { from: "query", key: "companyId" },
+    },
   ],
 
   tools: [
