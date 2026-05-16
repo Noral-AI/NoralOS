@@ -114,7 +114,7 @@ Later, when we layer in runtime tools and per-tool confirmations:
 |---|---|
 | `0078_brooklyn_provider_registry.sql` (only if needed) | Optional: extend `provider-registry.ts` allowlist; may end up being code-only. |
 | Reuse `issueApprovals` | No migration; confirmation-style approvals slot into existing approval flow. |
-| Twilio / Calendar plugin migrations | Each plugin already gets its own migrations directory under `packages/plugins/<name>/migrations/` (matches `voice-cascade` and `conference-room-bridge` pattern). |
+| Twilio / Calendar plugin migrations | Each plugin already gets its own migrations directory under `packages/plugins/<name>/migrations/` (matches the `voice-cascade` and `voice-config` plugin pattern; `conference-room-bridge` was retired in [#105](https://github.com/Noral-AI/NoralOS/pull/105)). |
 
 No `runtime_confirmations`-style new table. The `issueApprovals` queue is the right primitive.
 
