@@ -139,7 +139,7 @@ function buildCliAuthApprovalPath(challengeId: string, token: string) {
 function readSkillMarkdown(skillName: string): string | null {
   const normalized = skillName.trim().toLowerCase();
   if (
-    normalized !== "paperclip" &&
+    normalized !== "noralos" &&
     normalized !== "noralos-create-agent" &&
     normalized !== "noralos-create-plugin" &&
     normalized !== "noralos-converting-plans-to-tasks" &&
@@ -2861,7 +2861,7 @@ export function accessRoutes(
     assertAuthenticated(req);
     res.json({
       skills: [
-        { name: "paperclip", path: "/api/skills/noralos" },
+        { name: "noralos", path: "/api/skills/noralos" },
         {
           name: "para-memory-files",
           path: "/api/skills/para-memory-files"
@@ -3138,7 +3138,7 @@ export function accessRoutes(
     res.json({
       skills: [
         {
-          name: "paperclip",
+          name: "noralos",
           path: `/api/invites/${token}/skills/noralos`,
         },
       ],
@@ -3158,7 +3158,7 @@ export function accessRoutes(
     }
 
     const skillName = (req.params.skillName as string).trim().toLowerCase();
-    if (skillName !== "paperclip") throw notFound("Skill not found");
+    if (skillName !== "noralos") throw notFound("Skill not found");
     const markdown = readSkillMarkdown(skillName);
     if (!markdown) throw notFound("Skill not found");
     res.type("text/markdown").send(markdown);
