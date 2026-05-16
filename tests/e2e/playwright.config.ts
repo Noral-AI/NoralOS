@@ -17,6 +17,10 @@ export default defineConfig({
   testIgnore: ["multi-user.spec.ts", "multi-user-authenticated.spec.ts"],
   timeout: 60_000,
   retries: 0,
+  // All specs share a single webServer; parallel inter-file execution
+  // races on shared DB state (postgres deadlocks, agent_runtime_state FK
+  // violations, Issue checkout 409s). Within-file order is already serial.
+  workers: 1,
   use: {
     baseURL: BASE_URL,
     headless: true,
