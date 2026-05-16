@@ -1034,3 +1034,137 @@ export async function createEmbedExchangeToken(
     embedUrl: String(body.embed_url ?? ""),
   };
 }
+
+// ---- Phase 6 PR-2: NV TTS synthesize wrapper ------------------------------
+//
+// Calls NoralVoice's POST /api/v1/public/embed/synthesize with the plugin's
+// apiKey via X-API-Key header (the dual-auth path landed in NoralVoice PR
+// #10). The route returns a pre-signed audio URL the browser plays.
+//
+// Used by the plugin worker's /synthesize route handler (Phase 6 PR-2,
+// Dashboard agent-voice autoplay migration from voice-cascade to NoralVoice).
+
+export interface SynthesizeAudioParams {
+  text: string;
+  voiceOverride?: {
+    provider: string;
+    voiceId: string;
+    model: string;
+  };
+}
+
+export interface SynthesizeAudioResult {
+  audioUrl: string;
+  expiresAt: string;
+  contentType: string;
+  durationSeconds: number;
+  charCount: number;
+  provider: string;
+}
+
+export interface SynthesizeAudioBlocked {
+  ok: false;
+  code: "text_blocked_exfiltration";
+  matchTypes: string[];
+}
+
+export type SynthesizeAudioOutcome =
+  | ({ ok: true } & SynthesizeAudioResult)
+  | SynthesizeAudioBlocked;
+
+/**
+ * Synthesize text → audio URL via NoralVoice's /embed/synthesize endpoint.
+ *
+ * The 422 `text_blocked_exfiltration` response is NOT an error — it's a
+ * normal outcome where the server's pre-TTS scan found a secret-shaped
+ * string. Callers should surface a "no audio for this message" state to
+ * the user, not retry or treat as a bug.
+ *
+ * Other non-2xx responses (401, 500, 502) raise NoralVoiceClientError
+ * with the appropriate category.
+ */
+export async function synthesizeAudio(
+  config: NoralVoiceClientConfig,
+  params: SynthesizeAudioParams,
+): Promise<SynthesizeAudioOutcome> {
+  if (!config.apiKey) {
+    throw new NoralVoiceClientError("NoralVoice API key is empty.", "NO_API_KEY");
+  }
+  const timeoutMs = config.timeoutMs ?? NORALVOICE_DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const body: Record<string, unknown> = { text: params.text };
+  if (params.voiceOverride) {
+    body.voice_override = {
+      provider: params.voiceOverride.provider,
+      voice_id: params.voiceOverride.voiceId,
+      model: params.voiceOverride.model,
+    };
+  }
+  let response: Response;
+  try {
+    response = await fetch(
+      joinUrl(config.baseUrl, "/api/v1/public/embed/synthesize"),
+      {
+        method: "POST",
+        headers: buildHeaders(config),
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      },
+    );
+  } catch {
+    throw new NoralVoiceClientError(
+      `Could not reach NoralVoice at ${config.baseUrl}.`,
+      "UNREACHABLE",
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (response.status >= 200 && response.status < 300) {
+    const payload = (await response.json()) as Record<string, unknown>;
+    return {
+      ok: true,
+      audioUrl: String(payload.audio_url ?? ""),
+      expiresAt: String(payload.expires_at ?? ""),
+      contentType: String(payload.content_type ?? "audio/wav"),
+      durationSeconds: Number(payload.duration_seconds ?? 0),
+      charCount: Number(payload.char_count ?? 0),
+      provider: String(payload.provider ?? ""),
+    };
+  }
+
+  // Special-case the exfiltration block. NV returns 422 with a structured
+  // detail body: { code: "text_blocked_exfiltration", match_types: [...] }.
+  if (response.status === 422) {
+    try {
+      const errBody = (await response.json()) as {
+        detail?: { code?: string; match_types?: unknown };
+      };
+      const code = errBody.detail?.code;
+      if (code === "text_blocked_exfiltration") {
+        const rawTypes = errBody.detail?.match_types;
+        const matchTypes = Array.isArray(rawTypes)
+          ? rawTypes.map((t) => String(t))
+          : [];
+        return { ok: false, code: "text_blocked_exfiltration", matchTypes };
+      }
+    } catch {
+      // Fall through to generic 422 error below.
+    }
+  }
+
+  const isClient = response.status >= 400 && response.status < 500;
+  let detail = "";
+  try {
+    const errBody = (await response.json()) as { detail?: string };
+    detail = typeof errBody.detail === "string" ? errBody.detail : "";
+  } catch {
+    detail = "";
+  }
+  throw new NoralVoiceClientError(
+    detail || `NoralVoice /synthesize returned HTTP ${response.status}.`,
+    isClient ? "HTTP_4XX" : "HTTP_5XX",
+    response.status,
+  );
+}

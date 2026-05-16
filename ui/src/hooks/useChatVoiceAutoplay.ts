@@ -28,10 +28,25 @@
 //     are silently dropped: the agent simply has no voice on this surface.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { noralVoiceTtsApi } from "../api/noralVoiceTts";
 import {
   voiceCascadeApi,
   type VoiceCascadeSurface,
 } from "../api/voiceCascade";
+
+// Phase 6 PR-2 — feature flag for the voice-cascade → NoralVoice TTS migration.
+//
+// Default OFF in prod, ON in dev. Set NEXT_PUBLIC_ENABLE_NV_TTS_AUTOPLAY=true
+// in the deploy environment to flip on. Once soaked for a week, voice-cascade
+// retires in PR-3.
+//
+// Per-plugin-instance config is the eventual home for this flag; an env var
+// today is the simplest defensible knob for the soak period.
+function isNvTtsAutoplayEnabled(): boolean {
+  if (typeof process === "undefined") return false;
+  const v = process.env.NEXT_PUBLIC_ENABLE_NV_TTS_AUTOPLAY;
+  return v === "true" || v === "1";
+}
 
 export interface ChatVoiceEntry {
   id: string;
@@ -129,6 +144,50 @@ export function useChatVoiceAutoplay(
       blobUrlRef.current = null;
     }
   }, []);
+
+  // Generic play-from-URL primitive. Used by the NoralVoice TTS path
+  // (which returns a pre-signed audio URL). Mirrors playAudioBytes'
+  // autoplay-rejection handling + single-clip-at-a-time semantics.
+  const playAudioFromUrl = useCallback(
+    (audioUrl: string) => {
+      if (typeof window === "undefined") return;
+      if (audioElRef.current) {
+        try {
+          audioElRef.current.pause();
+        } catch {
+          /* ignore */
+        }
+      }
+      // Free any prior blob URL — we're switching to a remote URL now.
+      releaseBlobUrl();
+
+      const audio = audioElRef.current ?? new Audio();
+      audioElRef.current = audio;
+      pendingPlayRef.current = null;
+      setAudioBlocked(false);
+
+      audio.onended = () => {
+        pendingPlayRef.current = null;
+      };
+      audio.onerror = () => {
+        pendingPlayRef.current = null;
+      };
+      audio.src = audioUrl;
+
+      void audio.play().then(
+        () => {
+          setAudioBlocked(false);
+        },
+        (err) => {
+          // eslint-disable-next-line no-console
+          console.warn("[chat-voice] audio.play() rejected (URL path)", err);
+          pendingPlayRef.current = audio;
+          setAudioBlocked(true);
+        },
+      );
+    },
+    [releaseBlobUrl],
+  );
 
   const playAudioBytes = useCallback(
     (audioBase64: string, mimeType: string) => {
@@ -252,31 +311,62 @@ export function useChatVoiceAutoplay(
     if (!target) return;
 
     let cancelled = false;
-    void voiceCascadeApi
-      .synthesize({
-        companyId,
-        agentId: target.authorAgentId!,
-        surface,
-        text: target.body,
-      })
-      .then((result) => {
-        if (cancelled) return;
-        if (!result.ok) {
-          setLastSuppressedEntryId(target.id);
-          return;
-        }
-        playAudioBytes(result.audioBase64, result.mimeType);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        // eslint-disable-next-line no-console
-        console.warn("[chat-voice] synthesize failed", err);
-      });
+    const useNvTts = isNvTtsAutoplayEnabled();
+    if (useNvTts) {
+      // Phase 6 NV path — POST to the noralvoice plugin's /synthesize
+      // proxy, get a pre-signed audio URL, play it directly. Skips
+      // base64 encode/decode entirely.
+      void noralVoiceTtsApi
+        .synthesize({ companyId, text: target.body })
+        .then((result) => {
+          if (cancelled) return;
+          if (!result.ok) {
+            setLastSuppressedEntryId(target.id);
+            return;
+          }
+          playAudioFromUrl(result.audioUrl);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          // eslint-disable-next-line no-console
+          console.warn("[chat-voice] NV synthesize failed", err);
+        });
+    } else {
+      // Legacy voice-cascade path. Removed in PR-3 once NV soaks.
+      void voiceCascadeApi
+        .synthesize({
+          companyId,
+          agentId: target.authorAgentId!,
+          surface,
+          text: target.body,
+        })
+        .then((result) => {
+          if (cancelled) return;
+          if (!result.ok) {
+            setLastSuppressedEntryId(target.id);
+            return;
+          }
+          playAudioBytes(result.audioBase64, result.mimeType);
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          // eslint-disable-next-line no-console
+          console.warn("[chat-voice] synthesize failed", err);
+        });
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [companyId, enabled, entries, playAudioBytes, surface, textFromBody]);
+  }, [
+    companyId,
+    enabled,
+    entries,
+    playAudioBytes,
+    playAudioFromUrl,
+    surface,
+    textFromBody,
+  ]);
 
   return { audioBlocked, resumeAudio, lastSuppressedEntryId };
 }
