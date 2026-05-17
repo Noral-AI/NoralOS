@@ -77,6 +77,15 @@ export interface UseChatVoiceAutoplayApi {
   /** Retry the queued clip via a fresh user gesture. Safe to call when
    * nothing is queued (no-op). */
   resumeAudio: () => void;
+  /** True while a clip is actively playing. Lets the UI render a stop
+   * affordance only when there's something to stop. */
+  isPlaying: boolean;
+  /** Stop the currently-playing clip (and release its blob URL). Safe to
+   * call when nothing is playing (no-op). Does NOT change the autoplay
+   * preference — the next inbound agent message will still synthesize if
+   * the hook is `enabled`. Callers who want to mute *future* messages
+   * should also flip their `enabled` flag off. */
+  stopAudio: () => void;
   /** Last entry id whose synthesis returned ok=false — useful for tests /
    * debugging only. Not surfaced to end users. */
   lastSuppressedEntryId: string | null;
@@ -120,6 +129,7 @@ export function useChatVoiceAutoplay(
   const textFromBody = options.textFromBody ?? defaultTextFromBody;
 
   const [audioBlocked, setAudioBlocked] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [lastSuppressedEntryId, setLastSuppressedEntryId] = useState<
     string | null
   >(null);
@@ -168,21 +178,31 @@ export function useChatVoiceAutoplay(
 
       audio.onended = () => {
         pendingPlayRef.current = null;
+        setIsPlaying(false);
       };
       audio.onerror = () => {
         pendingPlayRef.current = null;
+        setIsPlaying(false);
+      };
+      audio.onpause = () => {
+        // Distinguish manual stop from natural completion — `onended` already
+        // covers the latter; we only want to flip the visible state when the
+        // user (or `stopAudio`) interrupted playback.
+        if (!audio.ended) setIsPlaying(false);
       };
       audio.src = audioUrl;
 
       void audio.play().then(
         () => {
           setAudioBlocked(false);
+          setIsPlaying(true);
         },
         (err) => {
           // eslint-disable-next-line no-console
           console.warn("[chat-voice] audio.play() rejected (URL path)", err);
           pendingPlayRef.current = audio;
           setAudioBlocked(true);
+          setIsPlaying(false);
         },
       );
     },
@@ -222,6 +242,7 @@ export function useChatVoiceAutoplay(
 
       audio.onended = () => {
         pendingPlayRef.current = null;
+        setIsPlaying(false);
         if (blobUrlRef.current === url) {
           URL.revokeObjectURL(url);
           blobUrlRef.current = null;
@@ -229,27 +250,49 @@ export function useChatVoiceAutoplay(
       };
       audio.onerror = () => {
         pendingPlayRef.current = null;
+        setIsPlaying(false);
         if (blobUrlRef.current === url) {
           URL.revokeObjectURL(url);
           blobUrlRef.current = null;
         }
+      };
+      audio.onpause = () => {
+        if (!audio.ended) setIsPlaying(false);
       };
       audio.src = url;
 
       void audio.play().then(
         () => {
           setAudioBlocked(false);
+          setIsPlaying(true);
         },
         (err) => {
           // eslint-disable-next-line no-console
           console.warn("[chat-voice] audio.play() rejected", err);
           pendingPlayRef.current = audio;
           setAudioBlocked(true);
+          setIsPlaying(false);
         },
       );
     },
     [releaseBlobUrl],
   );
+
+  const stopAudio = useCallback(() => {
+    const audio = audioElRef.current;
+    if (audio) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        /* ignore — audio element may already be teared down */
+      }
+    }
+    pendingPlayRef.current = null;
+    setAudioBlocked(false);
+    setIsPlaying(false);
+    releaseBlobUrl();
+  }, [releaseBlobUrl]);
 
   const resumeAudio = useCallback(() => {
     const audio = pendingPlayRef.current;
@@ -258,13 +301,36 @@ export function useChatVoiceAutoplay(
       return;
     }
     void audio.play().then(
-      () => setAudioBlocked(false),
+      () => {
+        setAudioBlocked(false);
+        setIsPlaying(true);
+      },
       (err) => {
         // eslint-disable-next-line no-console
         console.warn("[chat-voice] resumeAudio failed", err);
       },
     );
   }, []);
+
+  // When `enabled` flips to false mid-session (user toggled the preference
+  // off), stop any in-flight clip so the agent doesn't keep talking after
+  // the user has explicitly muted. Future inbound messages won't synthesize
+  // because the main effect early-returns on `!enabled`.
+  useEffect(() => {
+    if (enabled) return;
+    const audio = audioElRef.current;
+    if (audio) {
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
+    }
+    pendingPlayRef.current = null;
+    setAudioBlocked(false);
+    setIsPlaying(false);
+  }, [enabled]);
 
   useEffect(() => {
     // Tear down audio on unmount or when the hook is disabled.
@@ -368,5 +434,11 @@ export function useChatVoiceAutoplay(
     textFromBody,
   ]);
 
-  return { audioBlocked, resumeAudio, lastSuppressedEntryId };
+  return {
+    audioBlocked,
+    resumeAudio,
+    isPlaying,
+    stopAudio,
+    lastSuppressedEntryId,
+  };
 }
