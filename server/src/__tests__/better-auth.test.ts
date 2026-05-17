@@ -20,8 +20,8 @@ afterEach(() => {
 
 describe("Better Auth cookie scoping", () => {
   it("derives an instance-scoped cookie prefix", () => {
-    expect(deriveAuthCookiePrefix("default")).toBe("paperclip-default");
-    expect(deriveAuthCookiePrefix("PAP-1601-worktree")).toBe("paperclip-PAP-1601-worktree");
+    expect(deriveAuthCookiePrefix("default")).toBe("noralos-default");
+    expect(deriveAuthCookiePrefix("PAP-1601-worktree")).toBe("noralos-PAP-1601-worktree");
   });
 
   it("uses NORALOS_INSTANCE_ID for the Better Auth cookie prefix", () => {
@@ -30,10 +30,10 @@ describe("Better Auth cookie scoping", () => {
     const advanced = buildBetterAuthAdvancedOptions({ disableSecureCookies: false });
 
     expect(advanced).toEqual({
-      cookiePrefix: "paperclip-sat-worktree",
+      cookiePrefix: "noralos-sat-worktree",
     });
     expect(getCookies({ advanced } as BetterAuthOptions).sessionToken.name).toBe(
-      "paperclip-sat-worktree.session_token",
+      "noralos-sat-worktree.session_token",
     );
   });
 
@@ -41,7 +41,7 @@ describe("Better Auth cookie scoping", () => {
     process.env.NORALOS_INSTANCE_ID = "pap-worktree";
 
     expect(buildBetterAuthAdvancedOptions({ disableSecureCookies: true })).toEqual({
-      cookiePrefix: "paperclip-pap-worktree",
+      cookiePrefix: "noralos-pap-worktree",
       useSecureCookies: false,
     });
   });
@@ -125,7 +125,7 @@ describe("Better Auth cross-subdomain cookie domain (SSO)", () => {
       crossSubDomainCookieDomain: ".noral.ai",
     });
     expect(advanced).toEqual({
-      cookiePrefix: "paperclip-test-inst",
+      cookiePrefix: "noralos-test-inst",
       useSecureCookies: false,
       crossSubDomainCookies: { enabled: true, domain: ".noral.ai" },
     });
