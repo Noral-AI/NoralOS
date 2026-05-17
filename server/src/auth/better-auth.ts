@@ -34,7 +34,7 @@ export function deriveAuthCookiePrefix(instanceId = resolveNoralosInstanceId()):
     .trim()
     .replace(AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE, "-")
     .replace(/^-+|-+$/g, "") || AUTH_COOKIE_PREFIX_FALLBACK;
-  return `paperclip-${scopedInstanceId}`;
+  return `noralos-${scopedInstanceId}`;
 }
 
 export function buildBetterAuthAdvancedOptions(input: {
