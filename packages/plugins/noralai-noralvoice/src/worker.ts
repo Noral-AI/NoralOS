@@ -62,17 +62,25 @@ import {
   registerIntegrationWebhook,
   type NoralVoiceClientConfig,
 } from "./noralvoice-client.js";
+import { executeGetCampaign } from "./tools/get_campaign.js";
 import { executeGetRun } from "./tools/get_run.js";
+import { executeListCampaigns } from "./tools/list_campaigns.js";
+import { executeListRuns } from "./tools/list_runs.js";
 import { executeListWorkflows } from "./tools/list_workflows.js";
 import {
+  GET_CAMPAIGN_TOOL_NAME,
+  LIST_CAMPAIGNS_TOOL_NAME,
+  LIST_RUNS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  SEARCH_KB_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
   TOOL_MIN_TIER_V3,
 } from "./tools/registry.js";
 import { executeRunCall } from "./tools/run_call.js";
 import { executeListVoices } from "./tools/list_voices.js";
 import { executeProvisionVoiceAgent } from "./tools/provision_voice_agent.js";
+import { executeSearchKb } from "./tools/search_kb.js";
 import { executeSetAgentVoice } from "./tools/set_agent_voice.js";
 import {
   VOICE_DIRECTOR_DEFAULT_ROLE,
@@ -844,6 +852,118 @@ const plugin = definePlugin({
           voiceAgentUuid: result.data.voice_agent_uuid,
         });
         return { content: result.content, data: result.data };
+      },
+    );
+
+    // ---- Phase 7: list_runs --------------------------------------------------
+    registerTool<{ workflowUuid: string; limit?: number; cursor?: string | null }>(
+      LIST_RUNS_TOOL_NAME,
+      (raw) => {
+        const workflowUuid = isNonEmptyString(raw.workflowUuid) ? raw.workflowUuid : "";
+        if (!workflowUuid) {
+          return { ok: false, error: `${LIST_RUNS_TOOL_NAME}.workflowUuid is required.` };
+        }
+        let limit: number | undefined;
+        if (raw.limit !== undefined) {
+          if (typeof raw.limit !== "number" || !Number.isInteger(raw.limit) || raw.limit < 1 || raw.limit > 100) {
+            return { ok: false, error: `${LIST_RUNS_TOOL_NAME}.limit must be an integer 1..100.` };
+          }
+          limit = raw.limit;
+        }
+        const cursor = isNonEmptyString(raw.cursor) ? raw.cursor : null;
+        return { ok: true, value: { workflowUuid, limit, cursor } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeListRuns(config, params);
+        ctx.logger.info("NoralVoice list_runs ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          count: result.data.runs.length,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 7: list_campaigns --------------------------------------------
+    registerTool<{ status?: string; limit?: number }>(
+      LIST_CAMPAIGNS_TOOL_NAME,
+      (raw) => {
+        const status = isNonEmptyString(raw.status) ? raw.status : undefined;
+        let limit: number | undefined;
+        if (raw.limit !== undefined) {
+          if (typeof raw.limit !== "number" || !Number.isInteger(raw.limit) || raw.limit < 1 || raw.limit > 100) {
+            return { ok: false, error: `${LIST_CAMPAIGNS_TOOL_NAME}.limit must be an integer 1..100.` };
+          }
+          limit = raw.limit;
+        }
+        return { ok: true, value: { status, limit } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeListCampaigns(config, params);
+        ctx.logger.info("NoralVoice list_campaigns ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          count: result.data.items.length,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 7: get_campaign ----------------------------------------------
+    registerTool<{ campaignId: number }>(
+      GET_CAMPAIGN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.campaignId !== "number" ||
+          !Number.isInteger(raw.campaignId) ||
+          raw.campaignId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${GET_CAMPAIGN_TOOL_NAME}.campaignId must be a positive integer.`,
+          };
+        }
+        return { ok: true, value: { campaignId: raw.campaignId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeGetCampaign(config, params);
+        ctx.logger.info("NoralVoice get_campaign ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          campaignId: params.campaignId,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 7: search_kb -------------------------------------------------
+    registerTool<{ query: string; limit?: number }>(
+      SEARCH_KB_TOOL_NAME,
+      (raw) => {
+        const query = isNonEmptyString(raw.query) ? raw.query : "";
+        if (!query) {
+          return { ok: false, error: `${SEARCH_KB_TOOL_NAME}.query is required.` };
+        }
+        if (query.length > 1000) {
+          return { ok: false, error: `${SEARCH_KB_TOOL_NAME}.query exceeds 1000-char limit.` };
+        }
+        let limit: number | undefined;
+        if (raw.limit !== undefined) {
+          if (typeof raw.limit !== "number" || !Number.isInteger(raw.limit) || raw.limit < 1 || raw.limit > 50) {
+            return { ok: false, error: `${SEARCH_KB_TOOL_NAME}.limit must be an integer 1..50.` };
+          }
+          limit = raw.limit;
+        }
+        return { ok: true, value: { query, limit } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeSearchKb(config, params);
+        ctx.logger.info("NoralVoice search_kb ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          hits: result.data.hits.length,
+        });
+        return result;
       },
     );
 

@@ -24,6 +24,12 @@ export const LIST_VOICES_TOOL_NAME = "list_voices";
 export const SET_AGENT_VOICE_TOOL_NAME = "set_agent_voice";
 export const PROVISION_VOICE_AGENT_TOOL_NAME = "provision_voice_agent";
 
+// Phase 7 — agent read tools (promoted from board-only apiRoutes).
+export const LIST_RUNS_TOOL_NAME = "list_runs";
+export const LIST_CAMPAIGNS_TOOL_NAME = "list_campaigns";
+export const GET_CAMPAIGN_TOOL_NAME = "get_campaign";
+export const SEARCH_KB_TOOL_NAME = "search_kb";
+
 export const ALL_TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
@@ -31,6 +37,10 @@ export const ALL_TOOL_NAMES = [
   LIST_VOICES_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  LIST_RUNS_TOOL_NAME,
+  LIST_CAMPAIGNS_TOOL_NAME,
+  GET_CAMPAIGN_TOOL_NAME,
+  SEARCH_KB_TOOL_NAME,
 ] as const;
 
 /**
@@ -54,4 +64,9 @@ export const TOOL_MIN_TIER_V3: Record<string, AgentTier> = {
   [LIST_VOICES_TOOL_NAME]: "worker",
   [SET_AGENT_VOICE_TOOL_NAME]: "manager",
   [PROVISION_VOICE_AGENT_TOOL_NAME]: "manager",
+  // Phase 7 — promoted from board-only apiRoutes (all read-only).
+  [LIST_RUNS_TOOL_NAME]: "worker",
+  [LIST_CAMPAIGNS_TOOL_NAME]: "worker",
+  [GET_CAMPAIGN_TOOL_NAME]: "worker",
+  [SEARCH_KB_TOOL_NAME]: "worker",
 };
