@@ -37,11 +37,56 @@ export function deriveAuthCookiePrefix(instanceId = resolveNoralosInstanceId()):
   return `paperclip-${scopedInstanceId}`;
 }
 
-export function buildBetterAuthAdvancedOptions(input: { disableSecureCookies: boolean }) {
-  return {
+export function buildBetterAuthAdvancedOptions(input: {
+  disableSecureCookies: boolean;
+  /**
+   * When set, configures Better Auth to set the session/CSRF cookies with
+   * a leading-dot domain (e.g. `.noral.ai`) so they're sent to every
+   * subdomain of the same parent. Enables cross-product SSO between
+   * agent.noral.ai and voice.noral.ai (both `*.noral.ai`).
+   *
+   * MUST start with a leading dot to be valid. Operator opts in via the
+   * BETTER_AUTH_COOKIE_DOMAIN env var; default behaviour is unchanged.
+   *
+   * Side effect: enabling this invalidates existing per-host cookies —
+   * already-signed-in users will need to sign in once after the change.
+   */
+  crossSubDomainCookieDomain?: string;
+}) {
+  const advanced: Record<string, unknown> = {
     cookiePrefix: deriveAuthCookiePrefix(),
-    ...(input.disableSecureCookies ? { useSecureCookies: false } : {}),
   };
+  if (input.disableSecureCookies) {
+    advanced.useSecureCookies = false;
+  }
+  if (input.crossSubDomainCookieDomain) {
+    advanced.crossSubDomainCookies = {
+      enabled: true,
+      domain: input.crossSubDomainCookieDomain,
+    };
+  }
+  return advanced;
+}
+
+/**
+ * Resolve the cross-subdomain cookie domain from env. Validates it starts
+ * with a leading dot. Returns undefined when unset.
+ *
+ * Examples:
+ *   BETTER_AUTH_COOKIE_DOMAIN=.noral.ai → ".noral.ai"
+ *   BETTER_AUTH_COOKIE_DOMAIN=noral.ai  → throws (missing leading dot)
+ *   BETTER_AUTH_COOKIE_DOMAIN unset     → undefined
+ */
+export function resolveCrossSubDomainCookieDomain(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const raw = env.BETTER_AUTH_COOKIE_DOMAIN?.trim();
+  if (!raw) return undefined;
+  if (!raw.startsWith(".")) {
+    throw new Error(
+      `BETTER_AUTH_COOKIE_DOMAIN must start with a leading dot for cross-subdomain ` +
+      `cookies to work (got '${raw}'). Example: '.noral.ai'.`,
+    );
+  }
+  return raw;
 }
 
 function headersFromNodeHeaders(rawHeaders: IncomingHttpHeaders): Headers {
@@ -124,7 +169,10 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
       requireEmailVerification: false,
       disableSignUp: config.authDisableSignUp,
     },
-    advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies: isHttpOnly }),
+    advanced: buildBetterAuthAdvancedOptions({
+      disableSecureCookies: isHttpOnly,
+      crossSubDomainCookieDomain: resolveCrossSubDomainCookieDomain(),
+    }),
   };
 
   if (googleEnabled) {
