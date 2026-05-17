@@ -23,6 +23,7 @@ Practical context every Claude Code session needs before touching this repo. Rea
 - **Squash-merge** is the convention. Look at recent PRs (`gh pr list --state merged --limit 5`) to confirm.
 - **Stacked PRs auto-close** when their base branch is deleted on squash-merge. If you have a PR stack (B → A → master), after A merges, B closes with `CONFLICTING` state. Recovery: rebase B onto new master, force-push, **create a new PR** (closed PRs with rewritten heads cannot be reopened).
 - **Tip:** when you find yourself rebasing a stacked PR, the new PR title should note "reopened from #N" so the audit trail survives.
+- **Squash titles can mask the diff.** A multi-commit PR squash-merges under the GitHub UI's PR title, even when the body contains multiple `feat:` / `chore:` commit messages. Verify with `git diff origin/master <branch>` before assuming an open PR is "the source of truth" for a phase. See `project_phase4_pr94_mislabel` memory — Phase 4A landed via a `docs:` titled PR.
 
 ## Lockfile policy (DO NOT trip this)
 
@@ -82,6 +83,10 @@ When adding a new plugin under `packages/plugins/<name>/`:
    - apiRoute handler `input.params` (path params) + `input.body` (parsed JSON)
    - webhook handler `input.parsedBody` (parsed JSON) + `input.query` (query string params) + `input.rawBody`
 
+6. **Bump `PLUGIN_VERSION` in `constants.ts` after manifest changes.** Adding apiRoutes, tools, capabilities, or UI slots to a workspace-local plugin (noralvoice / noralsign / slack) is invisible to prod unless the version moves. The auto-register hooks (`server/src/services/auto-register-*.ts`) only run `upgradePlugin` when `workspaceVersion !== storedVersion` — same version, no refresh, DB keeps the old manifest. The reader was previously broken too (only matched literal string values for `version`, not `version: PLUGIN_VERSION` identifier refs); fixed in PR #103. See `feedback_auto_register_version_reader_bug` memory.
+
+7. **Plugin upgrade race: "Worker already registered".** The auto-register's `upgradePlugin` → `unloadSingle` → `loadSingle` sequence sometimes races and puts the plugin row into `status='error'` with `last_error: "Worker already registered for plugin ... (status: running)"`. Recovery (one-time): `UPDATE plugins SET status='ready', last_error=NULL WHERE plugin_key='<key>'` then restart the server. The underlying bug is in `plugin-loader.ts` (the post-upgrade `loadSingle` is redundant — `loadAll` runs right after). Documented as a follow-up; Phase 5 or later should fix.
+
 ## Persistent state / secrets
 
 - `/opt/noralos/docker-compose.yml` on the VPS sometimes diverges from this repo's `docker-compose.yml` (env passthroughs added over time, e.g. `CLAUDE_CODE_OAUTH_TOKEN`, `GOOGLE_CLIENT_ID`). **Diff before any wholesale replacement.**
@@ -113,11 +118,11 @@ docs/audit/
   integration-architecture.md     ← how they talk
   uiux-streamlining.md            ← UI consolidation
   open-questions.md               ← decided
-  claude-code-prompt-phase-{0..4}.md  ← per-phase execution prompts
+  claude-code-prompt-phase-{0..5}.md  ← per-phase execution prompts
   claude-code-prompt-phases-0-to-3.md ← autonomous merge loop (0–3 done)
 ```
 
-**State as of 2026-05-15:** Phases 0–3 merged and deployed (NV PRs #1, #3, #4 on `rebrand/noralvoice`; NoralOS PRs #83, #86, #87 on `master`, plus #88–92 follow-up fixes). Phase 4 prompt is ready.
+**State as of 2026-05-15:** Phases 0–4 merged and deployed. NoralVoice on `rebrand/noralvoice`; NoralOS on `master`. `agent.noral.ai` runs plugin `noralai.noralvoice@0.2.0` with all 19 apiRoutes registered (`/runs`, `/recordings`, `/kb/search`, `/campaigns`, `/telephony/*`, `/usage/current-period`, `/workflows/:uuid/embed-token`, `/transcript-pump/control`, etc.). **Phase 5 prompt is ready** at [docs/audit/claude-code-prompt-phase-5.md](docs/audit/claude-code-prompt-phase-5.md) — covers NV settings collapse, Dograh brand purge, dead-page dispositions, and the `noralos://` reverse-tool scheme.
 
 **SDK publish deferred:** `@noralai/voice-sdk@0.2.0` is NOT on npm. The plugin installs it from a GitHub release tarball (`https://github.com/Noral-AI/NoralVoice/releases/download/sdks-v0.2.0-prerelease/noralai-voice-sdk-0.2.0.tgz`). Swap the package.json dep to a normal semver range once the user publishes to npm at the end of consolidation.
 
