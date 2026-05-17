@@ -8,7 +8,7 @@
  */
 
 export const PLUGIN_ID = "noralai.noralvoice";
-export const PLUGIN_VERSION = "0.3.0";
+export const PLUGIN_VERSION = "0.4.0";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";
