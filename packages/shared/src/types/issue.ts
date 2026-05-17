@@ -489,6 +489,15 @@ export type IssueThreadInteractionResult =
   | AskUserQuestionsResult
   | RequestConfirmationResult;
 
+export interface PendingConfirmationListItem {
+  interaction: RequestConfirmationInteraction;
+  issue: {
+    id: string;
+    identifier: string | null;
+    title: string;
+  };
+}
+
 export interface IssueAttachment {
   id: string;
   companyId: string;

@@ -1,4 +1,4 @@
-import type { Approval, ApprovalComment, Issue } from "@noralos/shared";
+import type { Approval, ApprovalComment, Issue, PendingConfirmationListItem } from "@noralos/shared";
 import { api } from "./client";
 
 export const approvalsApi = {
@@ -6,6 +6,8 @@ export const approvalsApi = {
     api.get<Approval[]>(
       `/companies/${companyId}/approvals${status ? `?status=${encodeURIComponent(status)}` : ""}`,
     ),
+  listPendingConfirmations: (companyId: string) =>
+    api.get<PendingConfirmationListItem[]>(`/companies/${companyId}/pending-confirmations`),
   create: (companyId: string, data: Record<string, unknown>) =>
     api.post<Approval>(`/companies/${companyId}/approvals`, data),
   get: (id: string) => api.get<Approval>(`/approvals/${id}`),

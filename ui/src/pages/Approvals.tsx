@@ -12,6 +12,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { ShieldCheck } from "lucide-react";
 import { ApprovalCard } from "../components/ApprovalCard";
 import { PageSkeleton } from "../components/PageSkeleton";
+import { PendingConfirmationsList } from "../components/PendingConfirmationsList";
 
 type StatusFilter = "pending" | "all";
 
@@ -38,6 +39,12 @@ export function Approvals() {
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
+    enabled: !!selectedCompanyId,
+  });
+
+  const { data: pendingConfirmations = [] } = useQuery({
+    queryKey: queryKeys.approvals.pendingConfirmations(selectedCompanyId!),
+    queryFn: () => approvalsApi.listPendingConfirmations(selectedCompanyId!),
     enabled: !!selectedCompanyId,
   });
 
@@ -70,9 +77,9 @@ export function Approvals() {
     )
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const pendingCount = (data ?? []).filter(
-    (a) => a.status === "pending" || a.status === "revision_requested",
-  ).length;
+  const pendingCount =
+    (data ?? []).filter((a) => a.status === "pending" || a.status === "revision_requested").length +
+    pendingConfirmations.length;
 
   if (!selectedCompanyId) {
     return <p className="text-sm text-muted-foreground">Select a company first.</p>;
@@ -103,7 +110,9 @@ export function Approvals() {
       {error && <p className="text-sm text-destructive">{error.message}</p>}
       {actionError && <p className="text-sm text-destructive">{actionError}</p>}
 
-      {filtered.length === 0 && (
+      <PendingConfirmationsList confirmations={pendingConfirmations} />
+
+      {filtered.length === 0 && pendingConfirmations.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <ShieldCheck className="h-8 w-8 text-muted-foreground/30 mb-3" />
           <p className="text-sm text-muted-foreground">
