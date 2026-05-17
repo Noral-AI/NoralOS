@@ -208,26 +208,41 @@ Phase 6 collapses to 5 independent PRs gated by the NV TTS endpoint shipping fir
 
 ---
 
-## Phase 7 — Full tool coverage + shared schemas
+## Phase 7 — Full tool coverage + typed SDK adoption
 
-**Goal:** Complete the §2 Pillar A tool inventory. Drift surfaces reduced.
+**Status (2026-05-17):** Partially shipped — see "Shipped vs Deferred" below.
 
-**Plugin tool additions:** all tools in scope §2 not already shipped (~20 more tools — campaigns, telephony writes, KB CRUD, tools CRUD, embed sessions, full lifecycle)
+**Goal:** Bring the `noralai.noralvoice` plugin onto a typed SDK foundation and expand the agent-callable tool surface so Voice Director / Brooklyn can act on more of NoralVoice's API without hand-rolled HTTP.
 
-**Schema sharing (optional):**
-- Extract `@noralai/voice-schemas` from NoralVoice's OpenAPI spec — TypeScript types for NodeSpec catalog, run shape, provider catalog
-- Plugin pins to a `@noralai/voice-schemas` major; mismatched version = hard boot failure with clear error
+### Shipped
 
-**`agents.voice_agent_uuid` first-class column:**
-- Phase 3 may have used JSON; promote to a real indexed FK
+1. **NV SDK coverage expansion** ([Noral-AI/NoralVoice#11](https://github.com/Noral-AI/NoralVoice/pull/11)):
+   - Added `@sdk_expose` tags to 24 NV routes (campaigns ×12, embed-token CRUD ×3, KB writes/reads ×5, tool-def CRUD ×5, daily reports ×2, recording management ×4, minus the `/transcribe` multipart endpoint).
+   - SDK operations: 11 → 42. TS generated methods: 11 → 43.
+   - Drive-by: 5 files patched from `typing.TypedDict` → `typing_extensions.TypedDict` for Pydantic v2 + Python 3.11 compat (CI runs 3.12 so masked the issue).
 
-**LLM-driven workflow generation:**
-- Upgrade `noralvoice:design_workflow` from template-fill to graph-generation with validate-loop
-- Voice Director can now design a new voice agent end-to-end via chat
+2. **SDK v0.3.0 release** ([Noral-AI/NoralVoice#12](https://github.com/Noral-AI/NoralVoice/pull/12) + tag [`sdks-v0.3.0-prerelease`](https://github.com/Noral-AI/NoralVoice/releases/tag/sdks-v0.3.0-prerelease)):
+   - Tarball: `https://github.com/Noral-AI/NoralVoice/releases/download/sdks-v0.3.0-prerelease/noralai-voice-sdk-0.3.0.tgz`
 
-**Rollback:** Each tool is independently revertable. Schema package can be pinned to the prior major.
+3. **Plugin pins to v0.3.0** ([Noral-AI/NoralOS#110](https://github.com/Noral-AI/NoralOS/pull/110)):
+   - `noralai-noralvoice/package.json` SDK URL bumped to v0.3.0.
+   - Plugin code does **not** yet import from `@noralai/voice-sdk` (the 1170-LOC hand-rolled `noralvoice-client.ts` still serves all tools). The SDK is ready for new tools.
 
-**DoD:** Every §6 success-criteria tool succeeds against a fresh test workflow; Voice Director can design + deploy a new voice agent in one session.
+4. **4 new agent read tools** ([Noral-AI/NoralOS#111](https://github.com/Noral-AI/NoralOS/pull/111)):
+   - `list_runs`, `list_campaigns`, `get_campaign`, `search_kb` — all worker-tier.
+   - Reuses the legacy `noralvoice-client.ts` helpers that the board apiRoutes already call.
+   - Plugin tool count: 6 → 10. `PLUGIN_VERSION`: 0.2.0 → 0.3.0.
+
+### Deferred (out of Phase 7 scope, queued as follow-ups)
+
+- **Plugin SDK adoption refactor.** `noralvoice-client.ts` (1170 LOC of hand-rolled `fetch`) still mediates every tool. Migrating handlers to `client.X()` requires several NV routes to upgrade their `response_model` annotations first — many currently emit `response_model: unknown` in the OpenAPI schema. Tracked as a NV-side cleanup.
+- **More read tools.** `get_run_detail`, `list_recordings`, `get_recording_download_url`, `list_kb_documents`, `get_daily_report` — same response-model gap blocks clean typing.
+- **Write tools.** All 13 originally planned: KB writes (`upload_kb_document`, `delete_kb_document`), campaign lifecycle (`create_campaign`, `start_campaign`, `pause_campaign`, `resume_campaign`, `redial_campaign`), workflow tool defs (`add_workflow_tool`, `update_workflow_tool`, `delete_workflow_tool`), embed-token CRUD (`create_persistent_embed_token`, `get_persistent_embed_token`, `revoke_persistent_embed_token`). Highest-value pair (`create_campaign` + `start_campaign`) gates on the SDK adoption being well-typed; `upload_kb_document` needs an SSRF threat-model decision; `create_persistent_embed_token` needs a secret-never-in-tool-return contract.
+- **Schema sharing (`@noralai/voice-schemas`)**, **`agents.voice_agent_uuid` first-class column**, **LLM-driven workflow generation** — all still future work.
+
+**Rollback:** Each shipped PR is independently revertable. Plugin version bumps trigger `upgradePlugin` on next deploy, so reverting the plugin manifest is a deploy event, not a code change.
+
+**DoD (revised):** Agents can list runs, campaigns, and the KB without operator UI; SDK foundation in place for the next tool wave.
 
 ---
 
