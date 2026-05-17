@@ -42,8 +42,12 @@ import {
   TOOL_MIN_TIER,
 } from "./constants.js";
 import {
+  GET_CAMPAIGN_TOOL_NAME,
+  LIST_CAMPAIGNS_TOOL_NAME,
+  LIST_RUNS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  SEARCH_KB_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
 } from "./tools/registry.js";
 
@@ -528,6 +532,104 @@ export const manifest: NoralosPluginManifestV1 = {
             enum: ["blank", "conversational"],
             description:
               "Starter template. Both options resolve to a single-Agent-node minimal graph today; the distinction is reserved for a follow-up release that ships richer starters.",
+          },
+        },
+      },
+    },
+    // ---- Phase 7 — promoted read tools ----
+    {
+      name: LIST_RUNS_TOOL_NAME,
+      displayName: "List a workflow's recent runs",
+      description:
+        "List runs (one per call attempt) for a NoralVoice workflow. Use to answer 'how many calls did workflow X make this week?' or to find a specific run. Read-only — admits any tier. Paginated via opaque cursor.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowUuid"],
+        properties: {
+          workflowUuid: {
+            type: "string",
+            description: "NoralVoice workflow UUID (from `list_workflows`).",
+            minLength: 1,
+            maxLength: 64,
+          },
+          limit: {
+            type: "integer",
+            description: "Max runs to return (1..100, default 25).",
+            minimum: 1,
+            maximum: 100,
+          },
+          cursor: {
+            type: "string",
+            description: "Opaque pagination cursor from a prior response.",
+            maxLength: 256,
+          },
+        },
+      },
+    },
+    {
+      name: LIST_CAMPAIGNS_TOOL_NAME,
+      displayName: "List NoralVoice campaigns",
+      description:
+        "List campaigns (multi-call outbound dialing batches) for this organization. Optionally filter by status. Read-only — admits any tier.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          status: {
+            type: "string",
+            description:
+              "Optional status filter (e.g. 'pending', 'running', 'paused', 'completed').",
+            maxLength: 32,
+          },
+          limit: {
+            type: "integer",
+            description: "Max campaigns to return (1..100, default 25).",
+            minimum: 1,
+            maximum: 100,
+          },
+        },
+      },
+    },
+    {
+      name: GET_CAMPAIGN_TOOL_NAME,
+      displayName: "Get a NoralVoice campaign",
+      description:
+        "Look up a specific campaign by its numeric id (from `list_campaigns`). Returns status, workflow link, and progress snapshot. Read-only — admits any tier.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["campaignId"],
+        properties: {
+          campaignId: {
+            type: "integer",
+            description: "NoralVoice campaign id.",
+            minimum: 1,
+          },
+        },
+      },
+    },
+    {
+      name: SEARCH_KB_TOOL_NAME,
+      displayName: "Search the NoralVoice knowledge base",
+      description:
+        "Semantic search over the organization's knowledge-base chunks (uploaded documents NoralVoice agents reference mid-call). Returns ranked chunks with their source document. Read-only — admits any tier.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["query"],
+        properties: {
+          query: {
+            type: "string",
+            description: "Natural-language query to embed and match against KB chunks.",
+            minLength: 1,
+            maxLength: 1000,
+          },
+          limit: {
+            type: "integer",
+            description: "Max chunks to return (1..50, default 10).",
+            minimum: 1,
+            maximum: 50,
           },
         },
       },
