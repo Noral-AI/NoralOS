@@ -5,13 +5,17 @@ import {
   buildBetterAuthAdvancedOptions,
   deriveAuthCookiePrefix,
   deriveAuthTrustedOrigins,
+  resolveCrossSubDomainCookieDomain,
 } from "../auth/better-auth.js";
 
 const ORIGINAL_INSTANCE_ID = process.env.NORALOS_INSTANCE_ID;
+const ORIGINAL_COOKIE_DOMAIN = process.env.BETTER_AUTH_COOKIE_DOMAIN;
 
 afterEach(() => {
   if (ORIGINAL_INSTANCE_ID === undefined) delete process.env.NORALOS_INSTANCE_ID;
   else process.env.NORALOS_INSTANCE_ID = ORIGINAL_INSTANCE_ID;
+  if (ORIGINAL_COOKIE_DOMAIN === undefined) delete process.env.BETTER_AUTH_COOKIE_DOMAIN;
+  else process.env.BETTER_AUTH_COOKIE_DOMAIN = ORIGINAL_COOKIE_DOMAIN;
 });
 
 describe("Better Auth cookie scoping", () => {
@@ -74,5 +78,67 @@ describe("Better Auth cookie scoping", () => {
     ]));
     expect(trustedOrigins).not.toContain("https://board.example.test:3100");
     expect(trustedOrigins).not.toContain("http://board.example.test:3100");
+  });
+});
+
+describe("Better Auth cross-subdomain cookie domain (SSO)", () => {
+  it("returns undefined when BETTER_AUTH_COOKIE_DOMAIN is unset", () => {
+    delete process.env.BETTER_AUTH_COOKIE_DOMAIN;
+    expect(resolveCrossSubDomainCookieDomain()).toBeUndefined();
+  });
+
+  it("returns the dot-prefixed domain when set", () => {
+    process.env.BETTER_AUTH_COOKIE_DOMAIN = ".noral.ai";
+    expect(resolveCrossSubDomainCookieDomain()).toBe(".noral.ai");
+  });
+
+  it("throws when set without a leading dot", () => {
+    process.env.BETTER_AUTH_COOKIE_DOMAIN = "noral.ai";
+    expect(() => resolveCrossSubDomainCookieDomain()).toThrow(/leading dot/);
+  });
+
+  it("ignores whitespace-only values", () => {
+    process.env.BETTER_AUTH_COOKIE_DOMAIN = "   ";
+    expect(resolveCrossSubDomainCookieDomain()).toBeUndefined();
+  });
+
+  it("does NOT add crossSubDomainCookies when domain is undefined (default behaviour preserved)", () => {
+    const advanced = buildBetterAuthAdvancedOptions({ disableSecureCookies: false });
+    expect(advanced.crossSubDomainCookies).toBeUndefined();
+  });
+
+  it("adds crossSubDomainCookies with the given domain when supplied", () => {
+    const advanced = buildBetterAuthAdvancedOptions({
+      disableSecureCookies: false,
+      crossSubDomainCookieDomain: ".noral.ai",
+    });
+    expect(advanced.crossSubDomainCookies).toEqual({
+      enabled: true,
+      domain: ".noral.ai",
+    });
+  });
+
+  it("preserves cookie prefix and useSecureCookies when cross-subdomain is also set", () => {
+    process.env.NORALOS_INSTANCE_ID = "test-inst";
+    const advanced = buildBetterAuthAdvancedOptions({
+      disableSecureCookies: true,
+      crossSubDomainCookieDomain: ".noral.ai",
+    });
+    expect(advanced).toEqual({
+      cookiePrefix: "paperclip-test-inst",
+      useSecureCookies: false,
+      crossSubDomainCookies: { enabled: true, domain: ".noral.ai" },
+    });
+  });
+
+  it("Better Auth cookie computation accepts the cross-subdomain config without errors", () => {
+    const advanced = buildBetterAuthAdvancedOptions({
+      disableSecureCookies: false,
+      crossSubDomainCookieDomain: ".noral.ai",
+    });
+    // This is the same call Better Auth makes internally when minting cookies —
+    // it shouldn't throw on our config shape.
+    const cookies = getCookies({ advanced } as BetterAuthOptions);
+    expect(cookies.sessionToken.name).toMatch(/session_token$/);
   });
 });
