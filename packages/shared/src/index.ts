@@ -372,6 +372,7 @@ export type {
   IssueThreadInteraction,
   IssueThreadInteractionPayload,
   IssueThreadInteractionResult,
+  PendingConfirmationListItem,
   IssueDocument,
   IssueDocumentSummary,
   DocumentRevision,

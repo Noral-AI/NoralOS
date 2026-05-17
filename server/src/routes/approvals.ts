@@ -13,6 +13,7 @@ import {
   approvalService,
   heartbeatService,
   issueApprovalService,
+  issueThreadInteractionService,
   logActivity,
   secretService,
 } from "../services/index.js";
@@ -55,6 +56,13 @@ export function approvalRoutes(
     const status = req.query.status as string | undefined;
     const result = await svc.list(companyId, status);
     res.json(result.map((approval) => redactApprovalPayload(approval)));
+  });
+
+  router.get("/companies/:companyId/pending-confirmations", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    const result = await issueThreadInteractionService(db).listPendingConfirmationsForCompany(companyId);
+    res.json(result);
   });
 
   router.get("/approvals/:id", async (req, res) => {

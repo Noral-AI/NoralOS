@@ -957,4 +957,149 @@ describeEmbeddedPostgres("issueThreadInteractionService", () => {
       },
     });
   });
+
+  it("lists only pending request_confirmation interactions for the company with joined issue metadata", async () => {
+    const companyId = randomUUID();
+    const otherCompanyId = randomUUID();
+    const goalId = randomUUID();
+    const issueAId = randomUUID();
+    const issueBId = randomUUID();
+    const issueOtherId = randomUUID();
+
+    await db.insert(companies).values([
+      {
+        id: companyId,
+        name: "NoralOS",
+        issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
+        requireBoardApprovalForNewAgents: false,
+      },
+      {
+        id: otherCompanyId,
+        name: "Other",
+        issuePrefix: `T${otherCompanyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
+        requireBoardApprovalForNewAgents: false,
+      },
+    ]);
+    await instanceSettingsService(db).updateExperimental({ enableIsolatedWorkspaces: false });
+    await db.insert(goals).values({
+      id: goalId,
+      companyId,
+      title: "List pending confirmations",
+      level: "task",
+      status: "active",
+    });
+    await db.insert(issues).values([
+      {
+        id: issueAId,
+        companyId,
+        goalId,
+        identifier: "NOR-100",
+        title: "First issue",
+        status: "in_progress",
+        priority: "medium",
+      },
+      {
+        id: issueBId,
+        companyId,
+        goalId,
+        identifier: "NOR-101",
+        title: "Second issue",
+        status: "in_progress",
+        priority: "medium",
+      },
+      {
+        id: issueOtherId,
+        companyId: otherCompanyId,
+        title: "Different company's issue",
+        status: "in_progress",
+        priority: "medium",
+      },
+    ]);
+
+    const pendingA = await interactionsSvc.create(
+      { id: issueAId, companyId },
+      {
+        kind: "request_confirmation",
+        continuationPolicy: "wake_assignee",
+        title: "Confirm A",
+        summary: "Apply plan A?",
+        payload: { version: 1, prompt: "Apply plan A?" },
+      },
+      { userId: "local-board" },
+    );
+
+    await interactionsSvc.create(
+      { id: issueBId, companyId },
+      {
+        kind: "request_confirmation",
+        payload: { version: 1, prompt: "Apply plan B?" },
+      },
+      { userId: "local-board" },
+    );
+
+    const accepted = await interactionsSvc.create(
+      { id: issueAId, companyId },
+      {
+        kind: "request_confirmation",
+        payload: { version: 1, prompt: "Already-resolved confirmation" },
+      },
+      { userId: "local-board" },
+    );
+    await interactionsSvc.acceptInteraction(
+      { id: issueAId, companyId, goalId, projectId: null },
+      accepted.id,
+      {},
+      { userId: "local-board" },
+    );
+
+    await interactionsSvc.create(
+      { id: issueAId, companyId },
+      {
+        kind: "ask_user_questions",
+        payload: {
+          version: 1,
+          questions: [
+            {
+              id: "q1",
+              prompt: "Pick one",
+              selectionMode: "single",
+              options: [{ id: "yes", label: "Yes" }],
+            },
+          ],
+        },
+      },
+      { userId: "local-board" },
+    );
+
+    await interactionsSvc.create(
+      { id: issueOtherId, companyId: otherCompanyId },
+      {
+        kind: "request_confirmation",
+        payload: { version: 1, prompt: "Other company's pending confirmation" },
+      },
+      { userId: "local-board" },
+    );
+
+    const result = await interactionsSvc.listPendingConfirmationsForCompany(companyId);
+
+    expect(result).toHaveLength(2);
+    const byInteractionId = new Map(result.map((row) => [row.interaction.id, row]));
+    expect(byInteractionId.get(pendingA.id)).toMatchObject({
+      interaction: {
+        id: pendingA.id,
+        kind: "request_confirmation",
+        status: "pending",
+        title: "Confirm A",
+        summary: "Apply plan A?",
+      },
+      issue: {
+        id: issueAId,
+        identifier: "NOR-100",
+        title: "First issue",
+      },
+    });
+    expect(result.every((row) => row.interaction.status === "pending")).toBe(true);
+    expect(result.every((row) => row.interaction.kind === "request_confirmation")).toBe(true);
+    expect(result.every((row) => row.issue.id !== issueOtherId)).toBe(true);
+  });
 });
