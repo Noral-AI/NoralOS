@@ -30,6 +30,14 @@ export const LIST_CAMPAIGNS_TOOL_NAME = "list_campaigns";
 export const GET_CAMPAIGN_TOOL_NAME = "get_campaign";
 export const SEARCH_KB_TOOL_NAME = "search_kb";
 
+// Phase 7 PR-J — telephony credential + phone-number management.
+// Lets agents wire Twilio (and other providers) end-to-end without
+// operator intervention. See tools/add_telephony_credential.ts etc. for
+// the secret-handling contract.
+export const ADD_TELEPHONY_CREDENTIAL_TOOL_NAME = "add_telephony_credential";
+export const LIST_TELEPHONY_CREDENTIALS_TOOL_NAME = "list_telephony_credentials";
+export const ASSIGN_PHONE_NUMBER_TOOL_NAME = "assign_phone_number_to_workflow";
+
 export const ALL_TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
@@ -41,6 +49,9 @@ export const ALL_TOOL_NAMES = [
   LIST_CAMPAIGNS_TOOL_NAME,
   GET_CAMPAIGN_TOOL_NAME,
   SEARCH_KB_TOOL_NAME,
+  ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
+  LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
+  ASSIGN_PHONE_NUMBER_TOOL_NAME,
 ] as const;
 
 /**
@@ -69,4 +80,9 @@ export const TOOL_MIN_TIER_V3: Record<string, AgentTier> = {
   [LIST_CAMPAIGNS_TOOL_NAME]: "worker",
   [GET_CAMPAIGN_TOOL_NAME]: "worker",
   [SEARCH_KB_TOOL_NAME]: "worker",
+  // Phase 7 PR-J — telephony credentials are write/sensitive (creds in,
+  // phone-number assignment mutates routing); listing is read-only.
+  [ADD_TELEPHONY_CREDENTIAL_TOOL_NAME]: "manager",
+  [LIST_TELEPHONY_CREDENTIALS_TOOL_NAME]: "worker",
+  [ASSIGN_PHONE_NUMBER_TOOL_NAME]: "manager",
 };

@@ -74,14 +74,27 @@ describe("noralai-noralvoice manifest", () => {
     expect(route.companyResolution).toEqual({ from: "query", key: "companyId" });
   });
 
-  it("declares the three Phase 1B starter tools plus the three Phase 3 voice-config tools", () => {
+  it("declares all 13 agent tools across phases 1B, 3, 7-read, and 7-PR-J telephony", () => {
     // Phase 1B starters (list_workflows, run_call, get_run) +
-    // Phase 3 voice-config (list_voices, set_agent_voice, provision_voice_agent).
-    expect(manifest.tools).toHaveLength(6);
+    // Phase 3 voice-config (list_voices, set_agent_voice, provision_voice_agent) +
+    // Phase 7 read tools (list_runs, list_campaigns, get_campaign, search_kb) +
+    // Phase 7 PR-J telephony (add_telephony_credential, list_telephony_credentials,
+    // assign_phone_number_to_workflow).
+    expect(manifest.tools).toHaveLength(13);
     const names = manifest.tools!.map((t) => t.name);
     expect(names).toEqual(expect.arrayContaining(EXPECTED_TOOLS));
     expect(names).toEqual(
       expect.arrayContaining(["list_voices", "set_agent_voice", "provision_voice_agent"]),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining(["list_runs", "list_campaigns", "get_campaign", "search_kb"]),
+    );
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "add_telephony_credential",
+        "list_telephony_credentials",
+        "assign_phone_number_to_workflow",
+      ]),
     );
   });
 

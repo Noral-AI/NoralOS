@@ -42,9 +42,12 @@ import {
   TOOL_MIN_TIER,
 } from "./constants.js";
 import {
+  ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
+  ASSIGN_PHONE_NUMBER_TOOL_NAME,
   GET_CAMPAIGN_TOOL_NAME,
   LIST_CAMPAIGNS_TOOL_NAME,
   LIST_RUNS_TOOL_NAME,
+  LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
   SEARCH_KB_TOOL_NAME,
@@ -630,6 +633,109 @@ export const manifest: NoralosPluginManifestV1 = {
             description: "Max chunks to return (1..50, default 10).",
             minimum: 1,
             maximum: 50,
+          },
+        },
+      },
+    },
+    // Phase 7 PR-J — telephony credential + phone-number management.
+    {
+      name: ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
+      displayName: "Add a telephony provider credential",
+      description:
+        "Save a telephony provider credential (e.g. Twilio account_sid + auth_token) under a friendly name. Required before any phone numbers can be assigned to workflows or outbound calls can be placed via that provider. Sensitive fields are stored encrypted and only masked previews are returned. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "provider", "credentials"],
+        properties: {
+          name: {
+            type: "string",
+            description:
+              "Friendly name for this credential within the org (e.g. \"Main Twilio account\"). Must be unique per organization.",
+            minLength: 1,
+            maxLength: 64,
+          },
+          provider: {
+            type: "string",
+            description: "Telephony provider this credential is for.",
+            enum: [
+              "twilio",
+              "plivo",
+              "vonage",
+              "vobiz",
+              "cloudonix",
+              "ari",
+              "telnyx",
+            ],
+          },
+          credentials: {
+            type: "object",
+            description:
+              "Provider-specific credential fields. For Twilio: { account_sid, auth_token }. NoralVoice validates the shape against a discriminated union; shapes for other providers live in NoralVoice's provider registry.",
+            additionalProperties: { type: "string" },
+          },
+          isDefaultOutbound: {
+            type: "boolean",
+            description:
+              "When true, marks this credential as the org's default for outbound calls. Only one credential per org can hold this flag; setting it on a new credential unsets the previous default.",
+          },
+        },
+      },
+    },
+    {
+      name: LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
+      displayName: "List the org's telephony credentials",
+      description:
+        "List configured telephony provider credentials with their names, providers, and how many phone numbers are attached. Credentials themselves are NOT returned (NoralVoice's list endpoint omits them entirely); use this to find a configId to pass to `assign_phone_number_to_workflow`. Read-only — admits any tier.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        properties: {},
+      },
+    },
+    {
+      name: ASSIGN_PHONE_NUMBER_TOOL_NAME,
+      displayName: "Assign a phone number to a workflow",
+      description:
+        "Register a phone number under a telephony credential and (optionally) route inbound calls on that number to a workflow. When `inboundWorkflowId` is set, NoralVoice attempts to auto-sync the inbound webhook to the provider (works for Twilio when the credential has write access to the number). When auto-sync fails, the tool returns an `inboundWebhookUrl` the user must paste into the provider's console manually. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["configId", "address"],
+        properties: {
+          configId: {
+            type: "integer",
+            description:
+              "Telephony configuration id (from `list_telephony_credentials` or returned by `add_telephony_credential`).",
+            minimum: 1,
+          },
+          address: {
+            type: "string",
+            description:
+              "Phone number in E.164 format (e.g. `+15555550100`). Must be a number you own under the provider this configId points at.",
+            pattern: "^\\+[1-9]\\d{6,14}$",
+          },
+          inboundWorkflowId: {
+            type: "integer",
+            description:
+              "Optional NoralVoice workflow id to route inbound calls to. Omit if this number is for outbound use only.",
+            minimum: 1,
+          },
+          countryCode: {
+            type: "string",
+            description: "Optional ISO-3166-1 alpha-2 country code (e.g. \"US\", \"GB\").",
+            minLength: 2,
+            maxLength: 2,
+          },
+          label: {
+            type: "string",
+            description: "Optional human-readable label for the number (e.g. \"Sales line\").",
+            maxLength: 64,
+          },
+          isDefaultCallerId: {
+            type: "boolean",
+            description:
+              "Whether to use this number as the default outbound caller id under this telephony configuration.",
           },
         },
       },

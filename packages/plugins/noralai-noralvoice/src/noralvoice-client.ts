@@ -1168,3 +1168,225 @@ export async function synthesizeAudio(
     response.status,
   );
 }
+
+// ---------------------------------------------------------------------------
+// Telephony configuration + phone-number management (Phase 7 — PR-J)
+// ---------------------------------------------------------------------------
+
+/**
+ * Supported telephony providers, sourced from NoralVoice's provider registry
+ * (api/services/telephony/registry.py). Mirroring the list here lets us reject
+ * bad input client-side before bothering NV; NV does the same check
+ * server-side, so this is defense-in-depth.
+ */
+export const NORALVOICE_TELEPHONY_PROVIDERS = [
+  "twilio",
+  "plivo",
+  "vonage",
+  "vobiz",
+  "cloudonix",
+  "ari",
+  "telnyx",
+] as const;
+export type NoralVoiceTelephonyProvider =
+  (typeof NORALVOICE_TELEPHONY_PROVIDERS)[number];
+
+export interface TelephonyConfigSummary {
+  id: number;
+  name: string;
+  provider: string;
+  isDefaultOutbound: boolean;
+  phoneNumberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TelephonyConfigDetail {
+  id: number;
+  name: string;
+  provider: string;
+  isDefaultOutbound: boolean;
+  /**
+   * Provider credentials with sensitive fields masked server-side
+   * (NV's _detail_response runs _mask_sensitive before returning).
+   * Safe to log / surface in agent transcripts.
+   */
+  credentialsMasked: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PhoneNumberAssignment {
+  id: number;
+  configId: number;
+  address: string;
+  countryCode?: string;
+  label?: string;
+  inboundWorkflowId?: number;
+  isActive: boolean;
+  isDefaultCallerId: boolean;
+  /**
+   * Webhook URL the operator must paste into their telephony provider
+   * console (e.g. Twilio Phone Number → Voice → Webhook) to route
+   * inbound calls to the assigned workflow. Only populated when
+   * `inboundWorkflowId` is set on creation.
+   */
+  inboundWebhookUrl?: string;
+  providerSyncOk?: boolean;
+  providerSyncMessage?: string;
+}
+
+function toConfigSummary(record: Record<string, unknown>): TelephonyConfigSummary {
+  return {
+    id: Number(record.id ?? 0),
+    name: String(record.name ?? ""),
+    provider: String(record.provider ?? ""),
+    isDefaultOutbound: Boolean(record.is_default_outbound),
+    phoneNumberCount: Number(record.phone_number_count ?? 0),
+    createdAt: String(record.created_at ?? ""),
+    updatedAt: String(record.updated_at ?? ""),
+  };
+}
+
+function toConfigDetail(record: Record<string, unknown>): TelephonyConfigDetail {
+  const creds = record.credentials;
+  return {
+    id: Number(record.id ?? 0),
+    name: String(record.name ?? ""),
+    provider: String(record.provider ?? ""),
+    isDefaultOutbound: Boolean(record.is_default_outbound),
+    credentialsMasked:
+      creds && typeof creds === "object" && !Array.isArray(creds)
+        ? (creds as Record<string, unknown>)
+        : {},
+    createdAt: String(record.created_at ?? ""),
+    updatedAt: String(record.updated_at ?? ""),
+  };
+}
+
+function toPhoneNumber(record: Record<string, unknown>): PhoneNumberAssignment {
+  const inboundWebhookUrl =
+    typeof record.inbound_webhook_url === "string"
+      ? record.inbound_webhook_url
+      : undefined;
+  const sync = record.provider_sync;
+  const syncOk =
+    sync && typeof sync === "object" && !Array.isArray(sync)
+      ? Boolean((sync as Record<string, unknown>).ok)
+      : undefined;
+  const syncMessage =
+    sync && typeof sync === "object" && !Array.isArray(sync)
+      ? typeof (sync as Record<string, unknown>).message === "string"
+        ? String((sync as Record<string, unknown>).message)
+        : undefined
+      : undefined;
+  return {
+    id: Number(record.id ?? 0),
+    configId: Number(record.telephony_configuration_id ?? 0),
+    address: String(record.address ?? ""),
+    countryCode:
+      typeof record.country_code === "string" ? record.country_code : undefined,
+    label: typeof record.label === "string" ? record.label : undefined,
+    inboundWorkflowId:
+      record.inbound_workflow_id != null
+        ? Number(record.inbound_workflow_id)
+        : undefined,
+    isActive: Boolean(record.is_active ?? true),
+    isDefaultCallerId: Boolean(record.is_default_caller_id),
+    inboundWebhookUrl,
+    providerSyncOk: syncOk,
+    providerSyncMessage: syncMessage,
+  };
+}
+
+/**
+ * Create a new telephony provider configuration (Twilio, Plivo, etc.) for the
+ * org backing the caller's API key. NoralVoice's `_detail_response` masks
+ * sensitive credential fields server-side before returning, so the response
+ * is safe to relay to agent transcripts.
+ */
+export async function createTelephonyConfig(
+  config: NoralVoiceClientConfig,
+  params: {
+    name: string;
+    provider: NoralVoiceTelephonyProvider;
+    /**
+     * Provider-specific credential fields. Shape varies by provider — for
+     * Twilio: `{ account_sid: string, auth_token: string }`. NV validates
+     * the shape via its discriminated-union request schema.
+     */
+    credentials: Record<string, string>;
+    isDefaultOutbound?: boolean;
+  },
+): Promise<TelephonyConfigDetail> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/organizations/telephony-configs",
+    {
+      name: params.name,
+      is_default_outbound: params.isDefaultOutbound ?? false,
+      config: { provider: params.provider, ...params.credentials },
+    },
+  );
+  return toConfigDetail(body);
+}
+
+/**
+ * List all telephony configurations for the org. NoralVoice's list endpoint
+ * returns name + provider + counts but NOT credentials, so no masking is
+ * needed — there are no secrets in this response.
+ */
+export async function listTelephonyConfigs(
+  config: NoralVoiceClientConfig,
+): Promise<TelephonyConfigSummary[]> {
+  const body = await request<{ configurations: Record<string, unknown>[] }>(
+    config,
+    "GET",
+    "/api/v1/organizations/telephony-configs",
+  );
+  const rows = Array.isArray(body.configurations) ? body.configurations : [];
+  return rows.map(toConfigSummary);
+}
+
+/**
+ * Register a phone number under an existing telephony configuration and
+ * optionally route inbound calls on that number to a workflow.
+ *
+ * When `inboundWorkflowId` is supplied, NoralVoice attempts to sync the
+ * inbound webhook to the telephony provider (e.g. write the webhook URL
+ * into the Twilio phone number's "Voice → A CALL COMES IN" setting). The
+ * sync may fail for reasons outside NV's control (auth, number not owned,
+ * etc.); the result surfaces in `providerSyncOk` / `providerSyncMessage`
+ * so the agent can relay the situation to the user.
+ *
+ * For Twilio specifically, when the auto-sync fails the user must paste
+ * the webhook URL (returned here as `inboundWebhookUrl`) manually into
+ * their Twilio console.
+ */
+export async function addPhoneNumber(
+  config: NoralVoiceClientConfig,
+  params: {
+    configId: number;
+    address: string;
+    countryCode?: string;
+    label?: string;
+    inboundWorkflowId?: number;
+    isDefaultCallerId?: boolean;
+  },
+): Promise<PhoneNumberAssignment> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/organizations/telephony-configs/${params.configId}/phone-numbers`,
+    {
+      address: params.address,
+      country_code: params.countryCode ?? null,
+      label: params.label ?? null,
+      inbound_workflow_id: params.inboundWorkflowId ?? null,
+      is_active: true,
+      is_default_caller_id: params.isDefaultCallerId ?? false,
+    },
+  );
+  return toPhoneNumber(body);
+}

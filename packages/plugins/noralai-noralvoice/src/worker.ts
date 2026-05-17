@@ -68,20 +68,27 @@ import { executeListCampaigns } from "./tools/list_campaigns.js";
 import { executeListRuns } from "./tools/list_runs.js";
 import { executeListWorkflows } from "./tools/list_workflows.js";
 import {
+  ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
+  ASSIGN_PHONE_NUMBER_TOOL_NAME,
   GET_CAMPAIGN_TOOL_NAME,
   LIST_CAMPAIGNS_TOOL_NAME,
   LIST_RUNS_TOOL_NAME,
+  LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
   SEARCH_KB_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
   TOOL_MIN_TIER_V3,
 } from "./tools/registry.js";
+import { executeAddTelephonyCredential } from "./tools/add_telephony_credential.js";
+import { executeAssignPhoneNumber } from "./tools/assign_phone_number_to_workflow.js";
+import { executeListTelephonyCredentials } from "./tools/list_telephony_credentials.js";
 import { executeRunCall } from "./tools/run_call.js";
 import { executeListVoices } from "./tools/list_voices.js";
 import { executeProvisionVoiceAgent } from "./tools/provision_voice_agent.js";
 import { executeSearchKb } from "./tools/search_kb.js";
 import { executeSetAgentVoice } from "./tools/set_agent_voice.js";
+import { NORALVOICE_TELEPHONY_PROVIDERS, type NoralVoiceTelephonyProvider } from "./noralvoice-client.js";
 import {
   VOICE_DIRECTOR_DEFAULT_ROLE,
   VOICE_DIRECTOR_DEFAULT_SYSTEM_PROMPT,
@@ -962,6 +969,203 @@ const plugin = definePlugin({
           companyId: runCtx.companyId,
           agentId: runCtx.agentId,
           hits: result.data.hits.length,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 7 PR-J: add_telephony_credential --------------------------
+    // High-stakes write: stores a provider credential (e.g. Twilio account
+    // SID + auth token) in NoralVoice. Tier gate enforced above.
+    registerTool<{
+      name: string;
+      provider: NoralVoiceTelephonyProvider;
+      credentials: Record<string, string>;
+      isDefaultOutbound?: boolean;
+    }>(
+      ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
+      (raw) => {
+        const name = isNonEmptyString(raw.name) ? raw.name : "";
+        if (!name) return { ok: false, error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.name is required.` };
+        if (name.length > 64) {
+          return { ok: false, error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.name exceeds 64-char limit.` };
+        }
+        const provider = isNonEmptyString(raw.provider) ? raw.provider : "";
+        if (!provider) {
+          return { ok: false, error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.provider is required.` };
+        }
+        if (!(NORALVOICE_TELEPHONY_PROVIDERS as readonly string[]).includes(provider)) {
+          return {
+            ok: false,
+            error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.provider must be one of: ${NORALVOICE_TELEPHONY_PROVIDERS.join(", ")}.`,
+          };
+        }
+        if (
+          !raw.credentials ||
+          typeof raw.credentials !== "object" ||
+          Array.isArray(raw.credentials)
+        ) {
+          return {
+            ok: false,
+            error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.credentials must be an object of string fields.`,
+          };
+        }
+        // Coerce every credential field to a string. Refuse non-string values
+        // up front — the discriminated-union request schema on NV expects
+        // string-typed account_sid / auth_token / etc., and passing booleans
+        // or numbers would 422 with a confusing error.
+        const credentials: Record<string, string> = {};
+        for (const [k, v] of Object.entries(raw.credentials)) {
+          if (typeof v !== "string") {
+            return {
+              ok: false,
+              error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.credentials.${k} must be a string.`,
+            };
+          }
+          if (v.length === 0) {
+            return {
+              ok: false,
+              error: `${ADD_TELEPHONY_CREDENTIAL_TOOL_NAME}.credentials.${k} must not be empty.`,
+            };
+          }
+          credentials[k] = v;
+        }
+        const isDefaultOutbound =
+          raw.isDefaultOutbound === undefined ? undefined : Boolean(raw.isDefaultOutbound);
+        return {
+          ok: true,
+          value: {
+            name,
+            provider: provider as NoralVoiceTelephonyProvider,
+            credentials,
+            isDefaultOutbound,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeAddTelephonyCredential(config, params);
+        // Log only non-secret fields. `credentials` MUST NOT appear here.
+        ctx.logger.info("NoralVoice add_telephony_credential ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          provider: result.data.provider,
+          configId: result.data.configId,
+          isDefaultOutbound: result.data.isDefaultOutbound,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 7 PR-J: list_telephony_credentials ------------------------
+    // Read-only. NV's list endpoint omits credentials entirely so there's
+    // no secret surface in the response.
+    registerTool<Record<string, never>>(
+      LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
+      () => ({ ok: true, value: {} }),
+      async (_params, config, runCtx) => {
+        const result = await executeListTelephonyCredentials(config);
+        ctx.logger.info("NoralVoice list_telephony_credentials ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          count: result.data.configs.length,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 7 PR-J: assign_phone_number_to_workflow -------------------
+    // High-stakes write: routes inbound calls on a phone number to a
+    // workflow + (when supplied) attempts a provider-side webhook sync.
+    registerTool<{
+      configId: number;
+      address: string;
+      inboundWorkflowId?: number;
+      countryCode?: string;
+      label?: string;
+      isDefaultCallerId?: boolean;
+    }>(
+      ASSIGN_PHONE_NUMBER_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.configId !== "number" ||
+          !Number.isInteger(raw.configId) ||
+          raw.configId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.configId must be a positive integer.`,
+          };
+        }
+        const address = isNonEmptyString(raw.address) ? raw.address : "";
+        if (!address) {
+          return { ok: false, error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.address is required.` };
+        }
+        if (!/^\+[1-9]\d{6,14}$/.test(address)) {
+          return {
+            ok: false,
+            error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.address must be E.164 (e.g. +15555550100).`,
+          };
+        }
+        let inboundWorkflowId: number | undefined;
+        if (raw.inboundWorkflowId !== undefined) {
+          if (
+            typeof raw.inboundWorkflowId !== "number" ||
+            !Number.isInteger(raw.inboundWorkflowId) ||
+            raw.inboundWorkflowId < 1
+          ) {
+            return {
+              ok: false,
+              error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.inboundWorkflowId must be a positive integer.`,
+            };
+          }
+          inboundWorkflowId = raw.inboundWorkflowId;
+        }
+        let countryCode: string | undefined;
+        if (raw.countryCode !== undefined) {
+          if (typeof raw.countryCode !== "string" || raw.countryCode.length !== 2) {
+            return {
+              ok: false,
+              error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.countryCode must be ISO-3166-1 alpha-2 (2 chars).`,
+            };
+          }
+          countryCode = raw.countryCode;
+        }
+        let label: string | undefined;
+        if (raw.label !== undefined) {
+          if (typeof raw.label !== "string") {
+            return { ok: false, error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.label must be a string.` };
+          }
+          if (raw.label.length > 64) {
+            return {
+              ok: false,
+              error: `${ASSIGN_PHONE_NUMBER_TOOL_NAME}.label exceeds 64-char limit.`,
+            };
+          }
+          label = raw.label;
+        }
+        const isDefaultCallerId =
+          raw.isDefaultCallerId === undefined ? undefined : Boolean(raw.isDefaultCallerId);
+        return {
+          ok: true,
+          value: {
+            configId: raw.configId,
+            address,
+            inboundWorkflowId,
+            countryCode,
+            label,
+            isDefaultCallerId,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeAssignPhoneNumber(config, params);
+        ctx.logger.info("NoralVoice assign_phone_number_to_workflow ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          configId: params.configId,
+          address: params.address,
+          inboundWorkflowId: params.inboundWorkflowId,
+          providerSyncOk: result.data.providerSyncOk,
         });
         return result;
       },
