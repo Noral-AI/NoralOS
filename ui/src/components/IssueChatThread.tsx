@@ -108,7 +108,7 @@ import { cn, formatDateTime, formatShortDate } from "../lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, ArrowRight, Brain, Check, ChevronDown, Copy, Hammer, Loader2, MoreHorizontal, Paperclip, PauseCircle, Search, Square, ThumbsDown, ThumbsUp } from "lucide-react";
+import { AlertTriangle, ArrowRight, Brain, Check, ChevronDown, Copy, Hammer, Loader2, MoreHorizontal, Paperclip, PauseCircle, Search, Square, ThumbsDown, ThumbsUp, Volume2, VolumeX } from "lucide-react";
 import { IssueBlockedNotice } from "./IssueBlockedNotice";
 
 interface IssueChatMessageContext {
@@ -495,6 +495,10 @@ function IssueChatFallbackThread({
 const DRAFT_DEBOUNCE_MS = 800;
 const COMPOSER_FOCUS_SCROLL_PADDING_PX = 96;
 const SUBMIT_SCROLL_RESERVE_VH = 0.4;
+
+// Per-browser preference key for chat-voice autoplay. Reads/writes are
+// best-effort (private browsing / quota errors are swallowed).
+const CHAT_VOICE_AUTOPLAY_LS_KEY = "noralos.chat-voice-autoplay-enabled";
 
 type ComposerAttachmentItem = {
   id: string;
@@ -3136,6 +3140,36 @@ export function IssueChatThread({
   onRefreshLatestComments,
 }: IssueChatThreadProps) {
   const location = useLocation();
+  // Voice autoplay is OPT-IN per browser. We persist the preference in
+  // localStorage so it survives reloads but is per-device, never per-account
+  // (no server round-trip on first render = no flicker, and a shared
+  // workstation can have different audio preferences per person).
+  //
+  // Default off: agents reading messages aloud unprompted is surprising
+  // behavior for new users and there's no way to stop it once started. Users
+  // explicitly opt in via the speaker toggle in the thread header.
+  const [chatVoiceEnabled, setChatVoiceEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(CHAT_VOICE_AUTOPLAY_LS_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const toggleChatVoice = useCallback(() => {
+    setChatVoiceEnabled((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(
+          CHAT_VOICE_AUTOPLAY_LS_KEY,
+          next ? "true" : "false",
+        );
+      } catch {
+        /* ignore — private browsing / quota */
+      }
+      return next;
+    });
+  }, []);
   // Autoplay TTS for new agent-authored comments. The hook owns its own
   // dedup baseline (existing history isn't replayed), audio element, and
   // autoplay-rejection state. We feed it the raw `comments` prop directly
@@ -3144,7 +3178,7 @@ export function IssueChatThread({
   const voiceAutoplay = useChatVoiceAutoplay(
     companyId,
     comments,
-    { enabled: true, surface: "dashboard" },
+    { enabled: chatVoiceEnabled, surface: "dashboard" },
   );
   const lastScrolledHashRef = useRef<string | null>(null);
   const virtualizedThreadRef = useRef<VirtualizedIssueChatThreadListHandle | null>(null);
@@ -3661,8 +3695,53 @@ export function IssueChatThread({
     <AssistantRuntimeProvider runtime={runtime}>
       <IssueChatCtx.Provider value={chatCtx}>
       <div className={cn(variant === "embedded" ? "space-y-3" : "space-y-4")}>
-        {voiceAutoplay.audioBlocked ? (
-          <div className="flex justify-end">
+        {/*
+          Voice controls row. Always renders the autoplay toggle so users
+          can opt in/out at any time. The Stop pill only renders while a
+          clip is actually playing. The amber "Enable audio" pill renders
+          when the browser autoplay policy rejected the first attempt and a
+          fresh user gesture is required to resume.
+        */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={toggleChatVoice}
+            data-testid="issue-chat-voice-toggle"
+            aria-pressed={chatVoiceEnabled}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
+              chatVoiceEnabled
+                ? "border-sky-500/60 bg-sky-500/15 text-sky-700 hover:bg-sky-500/25 dark:text-sky-300"
+                : "border-muted-foreground/30 bg-muted/30 text-muted-foreground hover:bg-muted/50",
+            )}
+            title={
+              chatVoiceEnabled
+                ? "Voice on: agent replies are spoken aloud on this device. Click to mute."
+                : "Voice off: agent replies stay silent. Click to have new replies spoken aloud."
+            }
+          >
+            {chatVoiceEnabled ? (
+              <Volume2 className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <VolumeX className="h-3 w-3" aria-hidden="true" />
+            )}
+            {chatVoiceEnabled ? "Voice on" : "Voice off"}
+          </button>
+
+          {voiceAutoplay.isPlaying ? (
+            <button
+              type="button"
+              onClick={voiceAutoplay.stopAudio}
+              data-testid="issue-chat-voice-stop"
+              className="flex items-center gap-1.5 rounded-full border border-rose-500/60 bg-rose-500/15 px-3 py-1 text-[11px] font-semibold text-rose-700 transition-colors hover:bg-rose-500/25 dark:text-rose-300"
+              title="Stop the agent's current spoken reply. Future replies will keep playing while voice is on."
+            >
+              <Square className="h-3 w-3" aria-hidden="true" />
+              Stop
+            </button>
+          ) : null}
+
+          {voiceAutoplay.audioBlocked ? (
             <button
               type="button"
               onClick={voiceAutoplay.resumeAudio}
@@ -3677,8 +3756,8 @@ export function IssueChatThread({
               </svg>
               Enable audio
             </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
         {resolvedShowJumpToLatest ? (
           <div className="flex justify-end">
