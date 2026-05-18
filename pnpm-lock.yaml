@@ -797,6 +797,9 @@ importers:
       '@mdxeditor/editor':
         specifier: ^3.52.4
         version: 3.52.4(@codemirror/language@6.12.1)(@lezer/highlight@1.2.3)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(yjs@13.6.29)
+      '@noralos-plugins/noralai-brooklyn':
+        specifier: workspace:*
+        version: link:../packages/plugins/noralai-brooklyn
       '@noralos/adapter-claude-local':
         specifier: workspace:*
         version: link:../packages/adapters/claude-local
