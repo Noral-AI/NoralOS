@@ -43,6 +43,7 @@
     "@noralos/adapter-pi-local": "workspace:*",
     "@noralos/adapter-utils": "workspace:*",
     "@noralos/shared": "workspace:*",
+    "@noralos-plugins/noralai-brooklyn": "workspace:*",
     "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.90.21",
