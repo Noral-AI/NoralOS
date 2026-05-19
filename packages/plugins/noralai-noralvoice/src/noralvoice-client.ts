@@ -1724,6 +1724,130 @@ export async function deleteWorkflowTool(
   };
 }
 
+// ---- pause_campaign / resume_campaign / redial_campaign (Phase 9D Tier 3) --
+
+/**
+ * POST /api/v1/campaign/{campaign_id}/pause.
+ */
+export async function pauseCampaign(
+  config: NoralVoiceClientConfig,
+  campaignId: number,
+): Promise<CreateCampaignResult> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/campaign/${campaignId}/pause`,
+  );
+  return toCampaignResult(body);
+}
+
+/**
+ * POST /api/v1/campaign/{campaign_id}/resume.
+ */
+export async function resumeCampaign(
+  config: NoralVoiceClientConfig,
+  campaignId: number,
+): Promise<CreateCampaignResult> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/campaign/${campaignId}/resume`,
+  );
+  return toCampaignResult(body);
+}
+
+export interface RedialCampaignParams {
+  campaignId: number;
+  name?: string;
+  retryOnVoicemail?: boolean;
+  retryOnNoAnswer?: boolean;
+  retryOnBusy?: boolean;
+}
+
+/**
+ * POST /api/v1/campaign/{campaign_id}/redial.
+ * Creates a new campaign that retries contacts from the parent campaign
+ * based on their outcome.
+ */
+export async function redialCampaign(
+  config: NoralVoiceClientConfig,
+  params: RedialCampaignParams,
+): Promise<CreateCampaignResult> {
+  const body: Record<string, unknown> = {};
+  if (params.name !== undefined) body.name = params.name;
+  if (params.retryOnVoicemail !== undefined) body.retry_on_voicemail = params.retryOnVoicemail;
+  if (params.retryOnNoAnswer !== undefined) body.retry_on_no_answer = params.retryOnNoAnswer;
+  if (params.retryOnBusy !== undefined) body.retry_on_busy = params.retryOnBusy;
+
+  const raw = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/campaign/${params.campaignId}/redial`,
+    body,
+  );
+  return toCampaignResult(raw);
+}
+
+// ---- embed-token CRUD (Phase 9D Tier 3) ------------------------------------
+
+export interface EmbedTokenResult {
+  /**
+   * The raw embed token string returned by NoralVoice. This value
+   * MUST be written to a secret store by the caller — it must never
+   * appear in any agent tool result.
+   */
+  token: string;
+  workflowId: number;
+  expiresAt?: string;
+}
+
+/**
+ * POST /api/v1/workflow/{workflow_id}/embed-token.
+ * Returns the raw embed token. The caller is responsible for storing
+ * it in a secret store and returning only the secret ref to the agent.
+ */
+export async function createWorkflowEmbedToken(
+  config: NoralVoiceClientConfig,
+  workflowId: number,
+  expiresInDays?: number,
+): Promise<EmbedTokenResult> {
+  const body: Record<string, unknown> = {};
+  if (expiresInDays !== undefined) body.expires_in_days = expiresInDays;
+  const raw = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/workflow/${workflowId}/embed-token`,
+    body,
+  );
+  const token = String(raw.token ?? raw.embed_token ?? "");
+  if (!token) {
+    throw new NoralVoiceClientError(
+      "NoralVoice did not return an embed token.",
+      "HTTP_5XX",
+    );
+  }
+  return {
+    token,
+    workflowId,
+    expiresAt: typeof raw.expires_at === "string" ? raw.expires_at : undefined,
+  };
+}
+
+/**
+ * DELETE /api/v1/workflow/{workflow_id}/embed-token.
+ * Revokes the active embed token for the workflow.
+ */
+export async function revokeWorkflowEmbedToken(
+  config: NoralVoiceClientConfig,
+  workflowId: number,
+): Promise<void> {
+  await request<Record<string, unknown>>(
+    config,
+    "DELETE",
+    `/api/v1/workflow/${workflowId}/embed-token`,
+  );
+}
+
 // ---- get_run_detail (Tier 2 — full run record) -----------------------------
 
 export interface RunDetail {

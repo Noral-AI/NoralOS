@@ -72,10 +72,12 @@ import {
   ADD_WORKFLOW_TOOL_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
   CREATE_CAMPAIGN_TOOL_NAME,
+  CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   CREATE_WORKFLOW_TOOL_NAME,
   DELETE_WORKFLOW_TOOL_TOOL_NAME,
   GET_CAMPAIGN_TOOL_NAME,
   GET_DAILY_REPORT_TOOL_NAME,
+  GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   GET_RECORDING_DOWNLOAD_URL_TOOL_NAME,
   GET_RUN_DETAIL_TOOL_NAME,
   LIST_CAMPAIGNS_TOOL_NAME,
@@ -84,7 +86,11 @@ import {
   LIST_RUNS_TOOL_NAME,
   LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
+  PAUSE_CAMPAIGN_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  REDIAL_CAMPAIGN_TOOL_NAME,
+  RESUME_CAMPAIGN_TOOL_NAME,
+  REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   SAVE_WORKFLOW_TOOL_NAME,
   SEARCH_KB_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
@@ -95,13 +101,19 @@ import {
 } from "./tools/registry.js";
 import { executeAddWorkflowTool } from "./tools/add_workflow_tool.js";
 import { executeCreateCampaign } from "./tools/create_campaign.js";
+import { executeCreatePersistentEmbedToken } from "./tools/create_persistent_embed_token.js";
 import { executeCreateWorkflow } from "./tools/create_workflow.js";
 import { executeDeleteWorkflowTool } from "./tools/delete_workflow_tool.js";
 import { executeGetDailyReport } from "./tools/get_daily_report.js";
+import { executeGetPersistentEmbedToken } from "./tools/get_persistent_embed_token.js";
 import { executeGetRecordingDownloadUrl } from "./tools/get_recording_download_url.js";
 import { executeGetRunDetail } from "./tools/get_run_detail.js";
 import { executeListKbDocuments } from "./tools/list_kb_documents.js";
 import { executeListRecordings } from "./tools/list_recordings.js";
+import { executePauseCampaign } from "./tools/pause_campaign.js";
+import { executeRedialCampaign } from "./tools/redial_campaign.js";
+import { executeResumeCampaign } from "./tools/resume_campaign.js";
+import { executeRevokePersistentEmbedToken } from "./tools/revoke_persistent_embed_token.js";
 import { executeSaveWorkflow } from "./tools/save_workflow.js";
 import { executeStartCampaign } from "./tools/start_campaign.js";
 import { executeUpdateWorkflowTool } from "./tools/update_workflow_tool.js";
@@ -1695,6 +1707,204 @@ const plugin = definePlugin({
         return { ok: true, value: { date } };
       },
       async (params, config) => executeGetDailyReport(config, params),
+    );
+
+    // ---- pause_campaign --------------------------------------------------
+    registerTool<{ campaignId: number }>(
+      PAUSE_CAMPAIGN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.campaignId !== "number" ||
+          !Number.isInteger(raw.campaignId) ||
+          raw.campaignId < 1
+        ) {
+          return { ok: false, error: `${PAUSE_CAMPAIGN_TOOL_NAME}.campaignId must be a positive integer.` };
+        }
+        return { ok: true, value: { campaignId: raw.campaignId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executePauseCampaign(config, params);
+        ctx.logger.info("NoralVoice pause_campaign ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          campaignId: params.campaignId,
+          status: result.data.status,
+        });
+        return result;
+      },
+    );
+
+    // ---- resume_campaign -------------------------------------------------
+    registerTool<{ campaignId: number }>(
+      RESUME_CAMPAIGN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.campaignId !== "number" ||
+          !Number.isInteger(raw.campaignId) ||
+          raw.campaignId < 1
+        ) {
+          return { ok: false, error: `${RESUME_CAMPAIGN_TOOL_NAME}.campaignId must be a positive integer.` };
+        }
+        return { ok: true, value: { campaignId: raw.campaignId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeResumeCampaign(config, params);
+        ctx.logger.info("NoralVoice resume_campaign ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          campaignId: params.campaignId,
+          status: result.data.status,
+        });
+        return result;
+      },
+    );
+
+    // ---- redial_campaign -------------------------------------------------
+    registerTool<{
+      campaignId: number;
+      name?: string;
+      retryOnVoicemail?: boolean;
+      retryOnNoAnswer?: boolean;
+      retryOnBusy?: boolean;
+    }>(
+      REDIAL_CAMPAIGN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.campaignId !== "number" ||
+          !Number.isInteger(raw.campaignId) ||
+          raw.campaignId < 1
+        ) {
+          return { ok: false, error: `${REDIAL_CAMPAIGN_TOOL_NAME}.campaignId must be a positive integer.` };
+        }
+        let name: string | undefined;
+        if (raw.name !== undefined) {
+          if (typeof raw.name !== "string" || raw.name.length === 0 || raw.name.length > 256) {
+            return { ok: false, error: `${REDIAL_CAMPAIGN_TOOL_NAME}.name must be a non-empty string ≤256 chars.` };
+          }
+          name = raw.name;
+        }
+        const retryOnVoicemail =
+          raw.retryOnVoicemail !== undefined ? Boolean(raw.retryOnVoicemail) : undefined;
+        const retryOnNoAnswer =
+          raw.retryOnNoAnswer !== undefined ? Boolean(raw.retryOnNoAnswer) : undefined;
+        const retryOnBusy =
+          raw.retryOnBusy !== undefined ? Boolean(raw.retryOnBusy) : undefined;
+        return {
+          ok: true,
+          value: { campaignId: raw.campaignId, name, retryOnVoicemail, retryOnNoAnswer, retryOnBusy },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeRedialCampaign(config, params);
+        ctx.logger.info("NoralVoice redial_campaign ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          sourceCampaignId: params.campaignId,
+          newCampaignId: result.data.id,
+        });
+        return result;
+      },
+    );
+
+    // ---- create_persistent_embed_token -----------------------------------
+    registerTool<{ workflowId: number; expiresInDays?: number }>(
+      CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return { ok: false, error: `${CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME}.workflowId must be a positive integer.` };
+        }
+        let expiresInDays: number | undefined;
+        if (raw.expiresInDays !== undefined) {
+          if (
+            typeof raw.expiresInDays !== "number" ||
+            !Number.isInteger(raw.expiresInDays) ||
+            raw.expiresInDays < 1 ||
+            raw.expiresInDays > 365
+          ) {
+            return { ok: false, error: `${CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME}.expiresInDays must be an integer 1..365.` };
+          }
+          expiresInDays = raw.expiresInDays;
+        }
+        return { ok: true, value: { workflowId: raw.workflowId, expiresInDays } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeCreatePersistentEmbedToken(
+          config,
+          params,
+          ctx.state,
+          runCtx.companyId,
+        );
+        ctx.logger.info("NoralVoice create_persistent_embed_token ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+          ref: result.data.embed_token_ref,
+        });
+        return result;
+      },
+    );
+
+    // ---- get_persistent_embed_token --------------------------------------
+    registerTool<{ workflowId: number }>(
+      GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return { ok: false, error: `${GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME}.workflowId must be a positive integer.` };
+        }
+        return { ok: true, value: { workflowId: raw.workflowId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeGetPersistentEmbedToken(
+          config,
+          params,
+          ctx.state,
+          runCtx.companyId,
+        );
+        ctx.logger.info("NoralVoice get_persistent_embed_token ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+          found: result.data.embed_token_ref !== null,
+        });
+        return result;
+      },
+    );
+
+    // ---- revoke_persistent_embed_token -----------------------------------
+    registerTool<{ workflowId: number }>(
+      REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return { ok: false, error: `${REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME}.workflowId must be a positive integer.` };
+        }
+        return { ok: true, value: { workflowId: raw.workflowId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeRevokePersistentEmbedToken(
+          config,
+          params,
+          ctx.state,
+          runCtx.companyId,
+        );
+        ctx.logger.info("NoralVoice revoke_persistent_embed_token ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+        });
+        return result;
+      },
     );
 
     ctx.logger.info(`${PLUGIN_ID} plugin setup complete`);

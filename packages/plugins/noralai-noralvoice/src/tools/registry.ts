@@ -60,6 +60,15 @@ export const GET_RECORDING_DOWNLOAD_URL_TOOL_NAME = "get_recording_download_url"
 export const LIST_KB_DOCUMENTS_TOOL_NAME = "list_kb_documents";
 export const GET_DAILY_REPORT_TOOL_NAME = "get_daily_report";
 
+// Phase 9D — Tier 3 write tools (manager-tier).
+// Final set: campaign lifecycle + embed-token secret refs.
+export const PAUSE_CAMPAIGN_TOOL_NAME = "pause_campaign";
+export const RESUME_CAMPAIGN_TOOL_NAME = "resume_campaign";
+export const REDIAL_CAMPAIGN_TOOL_NAME = "redial_campaign";
+export const CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "create_persistent_embed_token";
+export const GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "get_persistent_embed_token";
+export const REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "revoke_persistent_embed_token";
+
 export const ALL_TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
@@ -88,6 +97,13 @@ export const ALL_TOOL_NAMES = [
   GET_RECORDING_DOWNLOAD_URL_TOOL_NAME,
   LIST_KB_DOCUMENTS_TOOL_NAME,
   GET_DAILY_REPORT_TOOL_NAME,
+  // Phase 9D
+  PAUSE_CAMPAIGN_TOOL_NAME,
+  RESUME_CAMPAIGN_TOOL_NAME,
+  REDIAL_CAMPAIGN_TOOL_NAME,
+  CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+  GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+  REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
 ] as const;
 
 /**
@@ -135,4 +151,11 @@ export const TOOL_MIN_TIER_V3: Record<string, AgentTier> = {
   [GET_RECORDING_DOWNLOAD_URL_TOOL_NAME]: "worker",
   [LIST_KB_DOCUMENTS_TOOL_NAME]: "worker",
   [GET_DAILY_REPORT_TOOL_NAME]: "worker",
+  // Phase 9D — Tier 3 writes (all manager-tier).
+  [PAUSE_CAMPAIGN_TOOL_NAME]: "manager",
+  [RESUME_CAMPAIGN_TOOL_NAME]: "manager",
+  [REDIAL_CAMPAIGN_TOOL_NAME]: "manager",
+  [CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME]: "manager",
+  [GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME]: "manager",
+  [REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME]: "manager",
 };
