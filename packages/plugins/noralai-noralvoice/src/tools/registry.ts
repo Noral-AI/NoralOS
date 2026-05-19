@@ -38,6 +38,28 @@ export const ADD_TELEPHONY_CREDENTIAL_TOOL_NAME = "add_telephony_credential";
 export const LIST_TELEPHONY_CREDENTIALS_TOOL_NAME = "list_telephony_credentials";
 export const ASSIGN_PHONE_NUMBER_TOOL_NAME = "assign_phone_number_to_workflow";
 
+// Phase 9C — Tier 1 write tools (manager) + Tier 2 read tools (worker).
+// Together these give a Voice Director agent operator-parity: every
+// action a human performs today in the NoralVoice UI is now callable
+// by an agent without human intervention.
+//
+// Tier 1 — writes, manager-tier:
+export const CREATE_WORKFLOW_TOOL_NAME = "create_workflow";
+export const SAVE_WORKFLOW_TOOL_NAME = "save_workflow";
+export const CREATE_CAMPAIGN_TOOL_NAME = "create_campaign";
+export const START_CAMPAIGN_TOOL_NAME = "start_campaign";
+export const UPLOAD_KB_DOCUMENT_TOOL_NAME = "upload_kb_document";
+export const ADD_WORKFLOW_TOOL_TOOL_NAME = "add_workflow_tool";
+export const UPDATE_WORKFLOW_TOOL_TOOL_NAME = "update_workflow_tool";
+export const DELETE_WORKFLOW_TOOL_TOOL_NAME = "delete_workflow_tool";
+//
+// Tier 2 — reads, worker-tier:
+export const GET_RUN_DETAIL_TOOL_NAME = "get_run_detail";
+export const LIST_RECORDINGS_TOOL_NAME = "list_recordings";
+export const GET_RECORDING_DOWNLOAD_URL_TOOL_NAME = "get_recording_download_url";
+export const LIST_KB_DOCUMENTS_TOOL_NAME = "list_kb_documents";
+export const GET_DAILY_REPORT_TOOL_NAME = "get_daily_report";
+
 export const ALL_TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
@@ -52,6 +74,20 @@ export const ALL_TOOL_NAMES = [
   ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
   LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
+  // Phase 9C
+  CREATE_WORKFLOW_TOOL_NAME,
+  SAVE_WORKFLOW_TOOL_NAME,
+  CREATE_CAMPAIGN_TOOL_NAME,
+  START_CAMPAIGN_TOOL_NAME,
+  UPLOAD_KB_DOCUMENT_TOOL_NAME,
+  ADD_WORKFLOW_TOOL_TOOL_NAME,
+  UPDATE_WORKFLOW_TOOL_TOOL_NAME,
+  DELETE_WORKFLOW_TOOL_TOOL_NAME,
+  GET_RUN_DETAIL_TOOL_NAME,
+  LIST_RECORDINGS_TOOL_NAME,
+  GET_RECORDING_DOWNLOAD_URL_TOOL_NAME,
+  LIST_KB_DOCUMENTS_TOOL_NAME,
+  GET_DAILY_REPORT_TOOL_NAME,
 ] as const;
 
 /**
@@ -85,4 +121,18 @@ export const TOOL_MIN_TIER_V3: Record<string, AgentTier> = {
   [ADD_TELEPHONY_CREDENTIAL_TOOL_NAME]: "manager",
   [LIST_TELEPHONY_CREDENTIALS_TOOL_NAME]: "worker",
   [ASSIGN_PHONE_NUMBER_TOOL_NAME]: "manager",
+  // Phase 9C — Tier 1 writes (manager) + Tier 2 reads (worker).
+  [CREATE_WORKFLOW_TOOL_NAME]: "manager",
+  [SAVE_WORKFLOW_TOOL_NAME]: "manager",
+  [CREATE_CAMPAIGN_TOOL_NAME]: "manager",
+  [START_CAMPAIGN_TOOL_NAME]: "manager",
+  [UPLOAD_KB_DOCUMENT_TOOL_NAME]: "manager",
+  [ADD_WORKFLOW_TOOL_TOOL_NAME]: "manager",
+  [UPDATE_WORKFLOW_TOOL_TOOL_NAME]: "manager",
+  [DELETE_WORKFLOW_TOOL_TOOL_NAME]: "manager",
+  [GET_RUN_DETAIL_TOOL_NAME]: "worker",
+  [LIST_RECORDINGS_TOOL_NAME]: "worker",
+  [GET_RECORDING_DOWNLOAD_URL_TOOL_NAME]: "worker",
+  [LIST_KB_DOCUMENTS_TOOL_NAME]: "worker",
+  [GET_DAILY_REPORT_TOOL_NAME]: "worker",
 };

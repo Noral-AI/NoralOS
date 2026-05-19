@@ -74,13 +74,18 @@ describe("noralai-noralvoice manifest", () => {
     expect(route.companyResolution).toEqual({ from: "query", key: "companyId" });
   });
 
-  it("declares all 13 agent tools across phases 1B, 3, 7-read, and 7-PR-J telephony", () => {
+  it("declares all 26 agent tools across phases 1B, 3, 7-read, 7-PR-J telephony, and 9C", () => {
     // Phase 1B starters (list_workflows, run_call, get_run) +
     // Phase 3 voice-config (list_voices, set_agent_voice, provision_voice_agent) +
     // Phase 7 read tools (list_runs, list_campaigns, get_campaign, search_kb) +
     // Phase 7 PR-J telephony (add_telephony_credential, list_telephony_credentials,
-    // assign_phone_number_to_workflow).
-    expect(manifest.tools).toHaveLength(13);
+    // assign_phone_number_to_workflow) +
+    // Phase 9C Tier-1 writes (create_workflow, save_workflow, create_campaign,
+    // start_campaign, upload_kb_document, add_workflow_tool, update_workflow_tool,
+    // delete_workflow_tool) +
+    // Phase 9C Tier-2 reads (get_run_detail, list_recordings,
+    // get_recording_download_url, list_kb_documents, get_daily_report).
+    expect(manifest.tools).toHaveLength(26);
     const names = manifest.tools!.map((t) => t.name);
     expect(names).toEqual(expect.arrayContaining(EXPECTED_TOOLS));
     expect(names).toEqual(
@@ -94,6 +99,29 @@ describe("noralai-noralvoice manifest", () => {
         "add_telephony_credential",
         "list_telephony_credentials",
         "assign_phone_number_to_workflow",
+      ]),
+    );
+    // Phase 9C Tier-1 writes
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "create_workflow",
+        "save_workflow",
+        "create_campaign",
+        "start_campaign",
+        "upload_kb_document",
+        "add_workflow_tool",
+        "update_workflow_tool",
+        "delete_workflow_tool",
+      ]),
+    );
+    // Phase 9C Tier-2 reads
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "get_run_detail",
+        "list_recordings",
+        "get_recording_download_url",
+        "list_kb_documents",
+        "get_daily_report",
       ]),
     );
   });
