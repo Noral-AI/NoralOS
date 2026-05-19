@@ -46,10 +46,12 @@ import {
   ADD_WORKFLOW_TOOL_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
   CREATE_CAMPAIGN_TOOL_NAME,
+  CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   CREATE_WORKFLOW_TOOL_NAME,
   DELETE_WORKFLOW_TOOL_TOOL_NAME,
   GET_CAMPAIGN_TOOL_NAME,
   GET_DAILY_REPORT_TOOL_NAME,
+  GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   GET_RECORDING_DOWNLOAD_URL_TOOL_NAME,
   GET_RUN_DETAIL_TOOL_NAME,
   LIST_CAMPAIGNS_TOOL_NAME,
@@ -58,7 +60,11 @@ import {
   LIST_RUNS_TOOL_NAME,
   LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
+  PAUSE_CAMPAIGN_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  REDIAL_CAMPAIGN_TOOL_NAME,
+  RESUME_CAMPAIGN_TOOL_NAME,
+  REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   SAVE_WORKFLOW_TOOL_NAME,
   SEARCH_KB_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
@@ -1086,6 +1092,139 @@ export const manifest: NoralosPluginManifestV1 = {
             description:
               "ISO-8601 date (YYYY-MM-DD) for which to fetch the report. Defaults to today.",
             pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+          },
+        },
+      },
+    },
+    // ── Phase 9D — Tier 3 write tools (manager) ───────────────────────────────
+    {
+      name: PAUSE_CAMPAIGN_TOOL_NAME,
+      displayName: "Pause a NoralVoice campaign",
+      description:
+        "Pause a running campaign. The campaign transitions to `paused` state; in-flight calls finish before dialing stops. Call `resume_campaign` to continue. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["campaignId"],
+        properties: {
+          campaignId: {
+            type: "integer",
+            description: "NoralVoice campaign id (from `list_campaigns` or `create_campaign`).",
+            minimum: 1,
+          },
+        },
+      },
+    },
+    {
+      name: RESUME_CAMPAIGN_TOOL_NAME,
+      displayName: "Resume a NoralVoice campaign",
+      description:
+        "Resume a paused campaign. The campaign transitions back to `running` state and continues dialing from where it left off. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["campaignId"],
+        properties: {
+          campaignId: {
+            type: "integer",
+            description: "NoralVoice campaign id.",
+            minimum: 1,
+          },
+        },
+      },
+    },
+    {
+      name: REDIAL_CAMPAIGN_TOOL_NAME,
+      displayName: "Redial a NoralVoice campaign",
+      description:
+        "Create a new campaign that retries contacts from an existing campaign based on their call outcome. At least one retry flag should be true. Returns the new redial campaign (initially in `pending` state — call `start_campaign` to begin dialing). Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["campaignId"],
+        properties: {
+          campaignId: {
+            type: "integer",
+            description: "Source campaign id to redial from.",
+            minimum: 1,
+          },
+          name: {
+            type: "string",
+            description: "Optional name for the new redial campaign.",
+            minLength: 1,
+            maxLength: 256,
+          },
+          retryOnVoicemail: {
+            type: "boolean",
+            description: "Retry contacts who reached voicemail.",
+          },
+          retryOnNoAnswer: {
+            type: "boolean",
+            description: "Retry contacts who did not answer.",
+          },
+          retryOnBusy: {
+            type: "boolean",
+            description: "Retry contacts whose line was busy.",
+          },
+        },
+      },
+    },
+    {
+      name: CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+      displayName: "Create a persistent embed token",
+      description:
+        "Create a long-lived embed token for a NoralVoice workflow and store it as a plugin-scoped company secret. Returns a secret ref string (not the raw token) that can be passed to the NoralVoice widget. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowId"],
+        properties: {
+          workflowId: {
+            type: "integer",
+            description: "NoralVoice workflow id.",
+            minimum: 1,
+          },
+          expiresInDays: {
+            type: "integer",
+            description: "Token validity in days (optional; server default applies when omitted).",
+            minimum: 1,
+            maximum: 365,
+          },
+        },
+      },
+    },
+    {
+      name: GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+      displayName: "Get the stored embed token ref",
+      description:
+        "Return the secret ref for a previously created embed token. Returns null if no token has been created for this workflow — call `create_persistent_embed_token` first. Never returns the raw token. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowId"],
+        properties: {
+          workflowId: {
+            type: "integer",
+            description: "NoralVoice workflow id.",
+            minimum: 1,
+          },
+        },
+      },
+    },
+    {
+      name: REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+      displayName: "Revoke a persistent embed token",
+      description:
+        "Revoke the active embed token for a workflow in NoralVoice and delete the stored secret ref. Any widget instances using the token will become invalid. Returns `{ revoked: true }`. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowId"],
+        properties: {
+          workflowId: {
+            type: "integer",
+            description: "NoralVoice workflow id.",
+            minimum: 1,
           },
         },
       },

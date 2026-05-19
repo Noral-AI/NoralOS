@@ -12,7 +12,11 @@ export const PLUGIN_ID = "noralai.noralvoice";
 // giving the Voice Director agent operator-parity. Tool count: 13 → 26.
 // All new tools route through resolveClientConfig so X-Noralos-Actor-*
 // headers from Phase 9-B auto-attach without additional plumbing.
-export const PLUGIN_VERSION = "0.5.0";
+//
+// 0.6.0 — Phase 9-D: 6 final Tier 3 tools (campaign lifecycle: pause/resume/redial
+// + embed-token CRUD: create/get/revoke). Embed-token tools use ctx.state for
+// secret storage — the raw token never crosses the tool boundary. Tool count: 26 → 32.
+export const PLUGIN_VERSION = "0.6.0";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";
