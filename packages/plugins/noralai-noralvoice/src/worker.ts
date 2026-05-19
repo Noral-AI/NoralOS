@@ -69,17 +69,43 @@ import { executeListRuns } from "./tools/list_runs.js";
 import { executeListWorkflows } from "./tools/list_workflows.js";
 import {
   ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
+  ADD_WORKFLOW_TOOL_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
+  CREATE_CAMPAIGN_TOOL_NAME,
+  CREATE_WORKFLOW_TOOL_NAME,
+  DELETE_WORKFLOW_TOOL_TOOL_NAME,
   GET_CAMPAIGN_TOOL_NAME,
+  GET_DAILY_REPORT_TOOL_NAME,
+  GET_RECORDING_DOWNLOAD_URL_TOOL_NAME,
+  GET_RUN_DETAIL_TOOL_NAME,
   LIST_CAMPAIGNS_TOOL_NAME,
+  LIST_KB_DOCUMENTS_TOOL_NAME,
+  LIST_RECORDINGS_TOOL_NAME,
   LIST_RUNS_TOOL_NAME,
   LIST_TELEPHONY_CREDENTIALS_TOOL_NAME,
   LIST_VOICES_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  SAVE_WORKFLOW_TOOL_NAME,
   SEARCH_KB_TOOL_NAME,
   SET_AGENT_VOICE_TOOL_NAME,
+  START_CAMPAIGN_TOOL_NAME,
   TOOL_MIN_TIER_V3,
+  UPDATE_WORKFLOW_TOOL_TOOL_NAME,
+  UPLOAD_KB_DOCUMENT_TOOL_NAME,
 } from "./tools/registry.js";
+import { executeAddWorkflowTool } from "./tools/add_workflow_tool.js";
+import { executeCreateCampaign } from "./tools/create_campaign.js";
+import { executeCreateWorkflow } from "./tools/create_workflow.js";
+import { executeDeleteWorkflowTool } from "./tools/delete_workflow_tool.js";
+import { executeGetDailyReport } from "./tools/get_daily_report.js";
+import { executeGetRecordingDownloadUrl } from "./tools/get_recording_download_url.js";
+import { executeGetRunDetail } from "./tools/get_run_detail.js";
+import { executeListKbDocuments } from "./tools/list_kb_documents.js";
+import { executeListRecordings } from "./tools/list_recordings.js";
+import { executeSaveWorkflow } from "./tools/save_workflow.js";
+import { executeStartCampaign } from "./tools/start_campaign.js";
+import { executeUpdateWorkflowTool } from "./tools/update_workflow_tool.js";
+import { executeUploadKbDocument } from "./tools/upload_kb_document.js";
 import { executeAddTelephonyCredential } from "./tools/add_telephony_credential.js";
 import { executeAssignPhoneNumber } from "./tools/assign_phone_number_to_workflow.js";
 import { executeListTelephonyCredentials } from "./tools/list_telephony_credentials.js";
@@ -1209,6 +1235,466 @@ const plugin = definePlugin({
         });
         return result;
       },
+    );
+
+    // ---- Phase 9C: Tier-1 write tools ------------------------------------
+
+    // ---- create_workflow -------------------------------------------------
+    registerTool<{ name: string; workflowDefinition?: Record<string, unknown> }>(
+      CREATE_WORKFLOW_TOOL_NAME,
+      (raw) => {
+        const name = isNonEmptyString(raw.name) ? raw.name.trim() : "";
+        if (!name) return { ok: false, error: `${CREATE_WORKFLOW_TOOL_NAME}.name is required.` };
+        if (name.length > 200) {
+          return { ok: false, error: `${CREATE_WORKFLOW_TOOL_NAME}.name exceeds 200-char limit.` };
+        }
+        let workflowDefinition: Record<string, unknown> | undefined;
+        if (raw.workflowDefinition !== undefined) {
+          if (
+            typeof raw.workflowDefinition !== "object" ||
+            Array.isArray(raw.workflowDefinition) ||
+            raw.workflowDefinition === null
+          ) {
+            return { ok: false, error: `${CREATE_WORKFLOW_TOOL_NAME}.workflowDefinition must be an object.` };
+          }
+          workflowDefinition = raw.workflowDefinition as Record<string, unknown>;
+        }
+        return { ok: true, value: { name, workflowDefinition } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeCreateWorkflow(config, params);
+        ctx.logger.info("NoralVoice create_workflow ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: result.data.id,
+          workflowUuid: result.data.workflow_uuid,
+        });
+        return result;
+      },
+    );
+
+    // ---- save_workflow ----------------------------------------------------
+    registerTool<{
+      workflowId: number;
+      name?: string;
+      workflowDefinition: Record<string, unknown>;
+    }>(
+      SAVE_WORKFLOW_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return { ok: false, error: `${SAVE_WORKFLOW_TOOL_NAME}.workflowId must be a positive integer.` };
+        }
+        let name: string | undefined;
+        if (raw.name !== undefined) {
+          if (!isNonEmptyString(raw.name)) {
+            return { ok: false, error: `${SAVE_WORKFLOW_TOOL_NAME}.name must be a non-empty string.` };
+          }
+          if (raw.name.length > 200) {
+            return { ok: false, error: `${SAVE_WORKFLOW_TOOL_NAME}.name exceeds 200-char limit.` };
+          }
+          name = raw.name;
+        }
+        if (
+          !raw.workflowDefinition ||
+          typeof raw.workflowDefinition !== "object" ||
+          Array.isArray(raw.workflowDefinition)
+        ) {
+          return { ok: false, error: `${SAVE_WORKFLOW_TOOL_NAME}.workflowDefinition is required and must be an object.` };
+        }
+        return {
+          ok: true,
+          value: {
+            workflowId: raw.workflowId,
+            name,
+            workflowDefinition: raw.workflowDefinition as Record<string, unknown>,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeSaveWorkflow(config, params);
+        ctx.logger.info("NoralVoice save_workflow ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+        });
+        return result;
+      },
+    );
+
+    // ---- create_campaign -------------------------------------------------
+    registerTool<{
+      name: string;
+      workflowId: number;
+      sourceType: "google-sheet" | "csv";
+      sourceId: string;
+      telephonyConfigurationId?: number;
+      maxConcurrency?: number;
+    }>(
+      CREATE_CAMPAIGN_TOOL_NAME,
+      (raw) => {
+        const name = isNonEmptyString(raw.name) ? raw.name.trim() : "";
+        if (!name) return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.name is required.` };
+        if (name.length > 200) {
+          return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.name exceeds 200-char limit.` };
+        }
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.workflowId must be a positive integer.` };
+        }
+        if (raw.sourceType !== "google-sheet" && raw.sourceType !== "csv") {
+          return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.sourceType must be 'google-sheet' or 'csv'.` };
+        }
+        const sourceId = isNonEmptyString(raw.sourceId) ? raw.sourceId : "";
+        if (!sourceId) return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.sourceId is required.` };
+        let telephonyConfigurationId: number | undefined;
+        if (raw.telephonyConfigurationId !== undefined) {
+          if (
+            typeof raw.telephonyConfigurationId !== "number" ||
+            !Number.isInteger(raw.telephonyConfigurationId) ||
+            raw.telephonyConfigurationId < 1
+          ) {
+            return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.telephonyConfigurationId must be a positive integer.` };
+          }
+          telephonyConfigurationId = raw.telephonyConfigurationId;
+        }
+        let maxConcurrency: number | undefined;
+        if (raw.maxConcurrency !== undefined) {
+          if (
+            typeof raw.maxConcurrency !== "number" ||
+            !Number.isInteger(raw.maxConcurrency) ||
+            raw.maxConcurrency < 1 ||
+            raw.maxConcurrency > 100
+          ) {
+            return { ok: false, error: `${CREATE_CAMPAIGN_TOOL_NAME}.maxConcurrency must be an integer 1..100.` };
+          }
+          maxConcurrency = raw.maxConcurrency;
+        }
+        return {
+          ok: true,
+          value: {
+            name,
+            workflowId: raw.workflowId,
+            sourceType: raw.sourceType,
+            sourceId,
+            telephonyConfigurationId,
+            maxConcurrency,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeCreateCampaign(config, params);
+        ctx.logger.info("NoralVoice create_campaign ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          campaignId: result.data.id,
+        });
+        return result;
+      },
+    );
+
+    // ---- start_campaign --------------------------------------------------
+    registerTool<{ campaignId: number }>(
+      START_CAMPAIGN_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.campaignId !== "number" ||
+          !Number.isInteger(raw.campaignId) ||
+          raw.campaignId < 1
+        ) {
+          return { ok: false, error: `${START_CAMPAIGN_TOOL_NAME}.campaignId must be a positive integer.` };
+        }
+        return { ok: true, value: { campaignId: raw.campaignId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeStartCampaign(config, params);
+        ctx.logger.info("NoralVoice start_campaign ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          campaignId: params.campaignId,
+          status: result.data.status,
+        });
+        return result;
+      },
+    );
+
+    // ---- upload_kb_document ----------------------------------------------
+    registerTool<{ filename: string; contentBase64: string; contentType?: string }>(
+      UPLOAD_KB_DOCUMENT_TOOL_NAME,
+      (raw) => {
+        const filename = isNonEmptyString(raw.filename) ? raw.filename : "";
+        if (!filename) {
+          return { ok: false, error: `${UPLOAD_KB_DOCUMENT_TOOL_NAME}.filename is required.` };
+        }
+        if (filename.length > 256) {
+          return { ok: false, error: `${UPLOAD_KB_DOCUMENT_TOOL_NAME}.filename exceeds 256-char limit.` };
+        }
+        const contentBase64 = isNonEmptyString(raw.contentBase64) ? raw.contentBase64 : "";
+        if (!contentBase64) {
+          return {
+            ok: false,
+            error: `${UPLOAD_KB_DOCUMENT_TOOL_NAME}.contentBase64 is required (base64-encoded bytes; URL uploads are not supported).`,
+          };
+        }
+        let contentType: string | undefined;
+        if (raw.contentType !== undefined) {
+          if (!isNonEmptyString(raw.contentType) || raw.contentType.length > 128) {
+            return { ok: false, error: `${UPLOAD_KB_DOCUMENT_TOOL_NAME}.contentType must be a non-empty string ≤128 chars.` };
+          }
+          contentType = raw.contentType;
+        }
+        return { ok: true, value: { filename, contentBase64, contentType } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeUploadKbDocument(config, params);
+        ctx.logger.info("NoralVoice upload_kb_document ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          documentUuid: result.data.document_uuid,
+          filename: params.filename,
+        });
+        return result;
+      },
+    );
+
+    // ---- add_workflow_tool -----------------------------------------------
+    registerTool<{ name: string; description: string; toolDefinition: Record<string, unknown> }>(
+      ADD_WORKFLOW_TOOL_TOOL_NAME,
+      (raw) => {
+        const name = isNonEmptyString(raw.name) ? raw.name : "";
+        if (!name) return { ok: false, error: `${ADD_WORKFLOW_TOOL_TOOL_NAME}.name is required.` };
+        if (name.length > 128) {
+          return { ok: false, error: `${ADD_WORKFLOW_TOOL_TOOL_NAME}.name exceeds 128-char limit.` };
+        }
+        const description = isNonEmptyString(raw.description) ? raw.description : "";
+        if (!description) {
+          return { ok: false, error: `${ADD_WORKFLOW_TOOL_TOOL_NAME}.description is required.` };
+        }
+        if (description.length > 1000) {
+          return { ok: false, error: `${ADD_WORKFLOW_TOOL_TOOL_NAME}.description exceeds 1000-char limit.` };
+        }
+        if (
+          !raw.toolDefinition ||
+          typeof raw.toolDefinition !== "object" ||
+          Array.isArray(raw.toolDefinition)
+        ) {
+          return { ok: false, error: `${ADD_WORKFLOW_TOOL_TOOL_NAME}.toolDefinition is required and must be an object.` };
+        }
+        return {
+          ok: true,
+          value: {
+            name,
+            description,
+            toolDefinition: raw.toolDefinition as Record<string, unknown>,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeAddWorkflowTool(config, params);
+        ctx.logger.info("NoralVoice add_workflow_tool ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          toolUuid: result.data.tool_uuid,
+        });
+        return result;
+      },
+    );
+
+    // ---- update_workflow_tool --------------------------------------------
+    registerTool<{
+      toolUuid: string;
+      name?: string;
+      description?: string;
+      toolDefinition?: Record<string, unknown>;
+    }>(
+      UPDATE_WORKFLOW_TOOL_TOOL_NAME,
+      (raw) => {
+        const toolUuid = isNonEmptyString(raw.toolUuid) ? raw.toolUuid : "";
+        if (!toolUuid) {
+          return { ok: false, error: `${UPDATE_WORKFLOW_TOOL_TOOL_NAME}.toolUuid is required.` };
+        }
+        if (toolUuid.length > 64) {
+          return { ok: false, error: `${UPDATE_WORKFLOW_TOOL_TOOL_NAME}.toolUuid exceeds 64-char limit.` };
+        }
+        let name: string | undefined;
+        if (raw.name !== undefined) {
+          if (!isNonEmptyString(raw.name) || raw.name.length > 128) {
+            return { ok: false, error: `${UPDATE_WORKFLOW_TOOL_TOOL_NAME}.name must be a non-empty string ≤128 chars.` };
+          }
+          name = raw.name;
+        }
+        let description: string | undefined;
+        if (raw.description !== undefined) {
+          if (!isNonEmptyString(raw.description) || raw.description.length > 1000) {
+            return { ok: false, error: `${UPDATE_WORKFLOW_TOOL_TOOL_NAME}.description must be a non-empty string ≤1000 chars.` };
+          }
+          description = raw.description;
+        }
+        let toolDefinition: Record<string, unknown> | undefined;
+        if (raw.toolDefinition !== undefined) {
+          if (
+            typeof raw.toolDefinition !== "object" ||
+            Array.isArray(raw.toolDefinition) ||
+            raw.toolDefinition === null
+          ) {
+            return { ok: false, error: `${UPDATE_WORKFLOW_TOOL_TOOL_NAME}.toolDefinition must be an object.` };
+          }
+          toolDefinition = raw.toolDefinition as Record<string, unknown>;
+        }
+        return { ok: true, value: { toolUuid, name, description, toolDefinition } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeUpdateWorkflowTool(config, params);
+        ctx.logger.info("NoralVoice update_workflow_tool ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          toolUuid: params.toolUuid,
+        });
+        return result;
+      },
+    );
+
+    // ---- delete_workflow_tool --------------------------------------------
+    registerTool<{ toolUuid: string }>(
+      DELETE_WORKFLOW_TOOL_TOOL_NAME,
+      (raw) => {
+        const toolUuid = isNonEmptyString(raw.toolUuid) ? raw.toolUuid : "";
+        if (!toolUuid) {
+          return { ok: false, error: `${DELETE_WORKFLOW_TOOL_TOOL_NAME}.toolUuid is required.` };
+        }
+        if (toolUuid.length > 64) {
+          return { ok: false, error: `${DELETE_WORKFLOW_TOOL_TOOL_NAME}.toolUuid exceeds 64-char limit.` };
+        }
+        return { ok: true, value: { toolUuid } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeDeleteWorkflowTool(config, params);
+        ctx.logger.info("NoralVoice delete_workflow_tool ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          toolUuid: params.toolUuid,
+        });
+        return result;
+      },
+    );
+
+    // ---- Phase 9C: Tier-2 read tools -------------------------------------
+
+    // ---- get_run_detail --------------------------------------------------
+    registerTool<{ runId: string }>(
+      GET_RUN_DETAIL_TOOL_NAME,
+      (raw) => {
+        const runId = isNonEmptyString(raw.runId) ? raw.runId : "";
+        if (!runId) {
+          return { ok: false, error: `${GET_RUN_DETAIL_TOOL_NAME}.runId is required.` };
+        }
+        if (runId.length > 64) {
+          return { ok: false, error: `${GET_RUN_DETAIL_TOOL_NAME}.runId exceeds 64-char limit.` };
+        }
+        return { ok: true, value: { runId } };
+      },
+      async (params, config) => executeGetRunDetail(config, params),
+    );
+
+    // ---- list_recordings -------------------------------------------------
+    registerTool<{ workflowId?: number; limit?: number }>(
+      LIST_RECORDINGS_TOOL_NAME,
+      (raw) => {
+        let workflowId: number | undefined;
+        if (raw.workflowId !== undefined) {
+          if (
+            typeof raw.workflowId !== "number" ||
+            !Number.isInteger(raw.workflowId) ||
+            raw.workflowId < 1
+          ) {
+            return { ok: false, error: `${LIST_RECORDINGS_TOOL_NAME}.workflowId must be a positive integer.` };
+          }
+          workflowId = raw.workflowId;
+        }
+        let limit: number | undefined;
+        if (raw.limit !== undefined) {
+          if (
+            typeof raw.limit !== "number" ||
+            !Number.isInteger(raw.limit) ||
+            raw.limit < 1 ||
+            raw.limit > 100
+          ) {
+            return { ok: false, error: `${LIST_RECORDINGS_TOOL_NAME}.limit must be an integer 1..100.` };
+          }
+          limit = raw.limit;
+        }
+        return { ok: true, value: { workflowId, limit } };
+      },
+      async (params, config) => executeListRecordings(config, params),
+    );
+
+    // ---- get_recording_download_url -------------------------------------
+    registerTool<{ recordingId: number }>(
+      GET_RECORDING_DOWNLOAD_URL_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.recordingId !== "number" ||
+          !Number.isInteger(raw.recordingId) ||
+          raw.recordingId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${GET_RECORDING_DOWNLOAD_URL_TOOL_NAME}.recordingId must be a positive integer.`,
+          };
+        }
+        return { ok: true, value: { recordingId: raw.recordingId } };
+      },
+      async (params, config) => executeGetRecordingDownloadUrl(config, params),
+    );
+
+    // ---- list_kb_documents -----------------------------------------------
+    registerTool<{ status?: string; limit?: number }>(
+      LIST_KB_DOCUMENTS_TOOL_NAME,
+      (raw) => {
+        const status = isNonEmptyString(raw.status) ? raw.status : undefined;
+        if (status !== undefined && status.length > 32) {
+          return { ok: false, error: `${LIST_KB_DOCUMENTS_TOOL_NAME}.status exceeds 32-char limit.` };
+        }
+        let limit: number | undefined;
+        if (raw.limit !== undefined) {
+          if (
+            typeof raw.limit !== "number" ||
+            !Number.isInteger(raw.limit) ||
+            raw.limit < 1 ||
+            raw.limit > 100
+          ) {
+            return { ok: false, error: `${LIST_KB_DOCUMENTS_TOOL_NAME}.limit must be an integer 1..100.` };
+          }
+          limit = raw.limit;
+        }
+        return { ok: true, value: { status, limit } };
+      },
+      async (params, config) => executeListKbDocuments(config, params),
+    );
+
+    // ---- get_daily_report -----------------------------------------------
+    registerTool<{ date?: string }>(
+      GET_DAILY_REPORT_TOOL_NAME,
+      (raw) => {
+        let date: string | undefined;
+        if (raw.date !== undefined) {
+          if (!isNonEmptyString(raw.date) || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) {
+            return {
+              ok: false,
+              error: `${GET_DAILY_REPORT_TOOL_NAME}.date must be an ISO-8601 date (YYYY-MM-DD).`,
+            };
+          }
+          date = raw.date;
+        }
+        return { ok: true, value: { date } };
+      },
+      async (params, config) => executeGetDailyReport(config, params),
     );
 
     ctx.logger.info(`${PLUGIN_ID} plugin setup complete`);

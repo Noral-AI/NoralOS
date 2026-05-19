@@ -1403,3 +1403,470 @@ export async function addPhoneNumber(
   );
   return toPhoneNumber(body);
 }
+
+// ---------------------------------------------------------------------------
+// Phase 9C: Tier-1 write tools + Tier-2 read tools
+// ---------------------------------------------------------------------------
+
+// ---- Workflow write wrappers -----------------------------------------------
+
+/**
+ * POST /api/v1/workflow/create/definition.
+ * Agent-tool variant of `createWorkflow` (above) — exposed separately
+ * so callers can supply an optional explicit definition; falls back to
+ * the minimal conversational starter.
+ */
+export async function agentCreateWorkflow(
+  config: NoralVoiceClientConfig,
+  params: { name: string; workflowDefinition?: Record<string, unknown> },
+): Promise<{ id: number; workflow_uuid: string; name: string }> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/workflow/create/definition",
+    {
+      name: params.name,
+      workflow_definition: params.workflowDefinition ?? {
+        nodes: [
+          {
+            id: "agent-1",
+            type: "agentNode",
+            position: { x: 0, y: 0 },
+            data: {
+              name: "Conversation",
+              prompt: "You are a helpful voice assistant. Greet the caller and ask how you can help.",
+            },
+          },
+        ],
+        edges: [],
+      },
+    },
+  );
+  return {
+    id: Number(body.id ?? 0),
+    workflow_uuid: String(body.workflow_uuid ?? ""),
+    name: String(body.name ?? ""),
+  };
+}
+
+/**
+ * PUT /api/v1/workflow/{workflow_id}.
+ */
+export async function agentSaveWorkflow(
+  config: NoralVoiceClientConfig,
+  params: {
+    workflowId: number;
+    name?: string;
+    workflowDefinition: Record<string, unknown>;
+  },
+): Promise<{ id: number; workflow_uuid: string; name: string; status?: string }> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "PUT",
+    `/api/v1/workflow/${params.workflowId}`,
+    {
+      name: params.name,
+      workflow_definition: params.workflowDefinition,
+    },
+  );
+  return {
+    id: Number(body.id ?? params.workflowId),
+    workflow_uuid: String(body.workflow_uuid ?? ""),
+    name: String(body.name ?? ""),
+    status: typeof body.status === "string" ? body.status : undefined,
+  };
+}
+
+// ---- Campaign write wrappers -----------------------------------------------
+
+export interface CreateCampaignResult {
+  id: number;
+  name: string;
+  status: string;
+  workflowId?: number;
+  sourceType?: string;
+  sourceId?: string;
+  createdAt?: string;
+}
+
+function toCampaignResult(r: Record<string, unknown>): CreateCampaignResult {
+  return {
+    id: Number(r.id ?? 0),
+    name: String(r.name ?? ""),
+    status: String(r.status ?? ""),
+    workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
+    sourceType: typeof r.source_type === "string" ? r.source_type : undefined,
+    sourceId: typeof r.source_id === "string" ? r.source_id : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+  };
+}
+
+/**
+ * POST /api/v1/campaign/create.
+ */
+export async function createCampaign(
+  config: NoralVoiceClientConfig,
+  params: {
+    name: string;
+    workflowId: number;
+    sourceType: "google-sheet" | "csv";
+    sourceId: string;
+    telephonyConfigurationId?: number;
+    maxConcurrency?: number;
+  },
+): Promise<CreateCampaignResult> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/campaign/create",
+    {
+      name: params.name,
+      workflow_id: params.workflowId,
+      source_type: params.sourceType,
+      source_id: params.sourceId,
+      ...(params.telephonyConfigurationId !== undefined
+        ? { telephony_configuration_id: params.telephonyConfigurationId }
+        : {}),
+      ...(params.maxConcurrency !== undefined
+        ? { max_concurrency: params.maxConcurrency }
+        : {}),
+    },
+  );
+  return toCampaignResult(body);
+}
+
+/**
+ * POST /api/v1/campaign/{campaign_id}/start.
+ */
+export async function startCampaign(
+  config: NoralVoiceClientConfig,
+  campaignId: number,
+): Promise<CreateCampaignResult> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/campaign/${campaignId}/start`,
+  );
+  return toCampaignResult(body);
+}
+
+// ---- KB upload (3-step) ----------------------------------------------------
+
+export interface UploadKbDocumentResult {
+  document_uuid: string;
+  status: string;
+}
+
+/**
+ * Three-step KB document upload:
+ * 1. POST /api/v1/knowledge-base/upload-url  — get pre-signed S3 URL + document_uuid.
+ * 2. PUT <uploadUrl> — stream bytes directly to S3 (no API key here).
+ * 3. POST /api/v1/knowledge-base/process-document — trigger chunking + indexing.
+ *
+ * `contentBase64` must be a base64-encoded string of the file bytes.
+ * No URL-fetching is performed — the caller is responsible for
+ * supplying the raw bytes.
+ */
+export async function uploadKbDocument(
+  config: NoralVoiceClientConfig,
+  params: { filename: string; contentBase64: string; contentType?: string },
+): Promise<UploadKbDocumentResult> {
+  if (!config.apiKey) {
+    throw new NoralVoiceClientError("NoralVoice API key is empty.", "NO_API_KEY");
+  }
+  const contentType = params.contentType ?? "application/octet-stream";
+
+  // Step 1: Get pre-signed upload URL.
+  const presignResponse = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/knowledge-base/upload-url",
+    { filename: params.filename, content_type: contentType },
+  );
+  const uploadUrl = String(presignResponse.upload_url ?? presignResponse.uploadUrl ?? "");
+  const documentUuid = String(presignResponse.document_uuid ?? presignResponse.documentUuid ?? "");
+  if (!uploadUrl) {
+    throw new NoralVoiceClientError(
+      "NoralVoice did not return an upload_url for the KB document.",
+      "HTTP_5XX",
+    );
+  }
+
+  // Step 2: PUT raw bytes to S3. This is a pre-signed URL — no X-API-Key.
+  const fileBytes = Buffer.from(params.contentBase64, "base64");
+  const timeoutMs = config.timeoutMs ?? NORALVOICE_DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let uploadResponse: Response;
+  try {
+    uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      body: fileBytes,
+      headers: { "Content-Type": contentType },
+      signal: controller.signal,
+    });
+  } catch {
+    throw new NoralVoiceClientError(
+      "KB document upload to storage failed (network error).",
+      "UNREACHABLE",
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+  if (uploadResponse.status < 200 || uploadResponse.status >= 300) {
+    throw new NoralVoiceClientError(
+      `KB document storage upload returned HTTP ${uploadResponse.status}.`,
+      uploadResponse.status >= 400 && uploadResponse.status < 500 ? "HTTP_4XX" : "HTTP_5XX",
+      uploadResponse.status,
+    );
+  }
+
+  // Step 3: Register + trigger processing.
+  const processResponse = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/knowledge-base/process-document",
+    { document_uuid: documentUuid, filename: params.filename, content_type: contentType },
+  );
+  return {
+    document_uuid: String(processResponse.document_uuid ?? documentUuid),
+    status: String(processResponse.status ?? "processing"),
+  };
+}
+
+// ---- Workflow tool (function-tool) wrappers --------------------------------
+
+export interface WorkflowToolRecord {
+  tool_uuid: string;
+  name: string;
+  description: string;
+  toolDefinition?: Record<string, unknown>;
+  createdAt?: string;
+}
+
+function toWorkflowTool(r: Record<string, unknown>): WorkflowToolRecord {
+  return {
+    tool_uuid: String(r.tool_uuid ?? r.uuid ?? ""),
+    name: String(r.name ?? ""),
+    description: String(r.description ?? ""),
+    toolDefinition:
+      r.tool_definition && typeof r.tool_definition === "object"
+        ? (r.tool_definition as Record<string, unknown>)
+        : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+  };
+}
+
+/**
+ * POST /api/v1/tool/
+ */
+export async function addWorkflowTool(
+  config: NoralVoiceClientConfig,
+  params: {
+    name: string;
+    description: string;
+    toolDefinition: Record<string, unknown>;
+  },
+): Promise<WorkflowToolRecord> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    "/api/v1/tool/",
+    {
+      name: params.name,
+      description: params.description,
+      tool_definition: params.toolDefinition,
+    },
+  );
+  return toWorkflowTool(body);
+}
+
+/**
+ * PUT /api/v1/tool/{tool_uuid}
+ */
+export async function updateWorkflowTool(
+  config: NoralVoiceClientConfig,
+  params: {
+    toolUuid: string;
+    name?: string;
+    description?: string;
+    toolDefinition?: Record<string, unknown>;
+  },
+): Promise<WorkflowToolRecord> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "PUT",
+    `/api/v1/tool/${encodeURIComponent(params.toolUuid)}`,
+    {
+      name: params.name,
+      description: params.description,
+      tool_definition: params.toolDefinition,
+    },
+  );
+  return toWorkflowTool(body);
+}
+
+/**
+ * DELETE /api/v1/tool/{tool_uuid}
+ */
+export async function deleteWorkflowTool(
+  config: NoralVoiceClientConfig,
+  toolUuid: string,
+): Promise<{ status: "archived"; tool_uuid: string }> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "DELETE",
+    `/api/v1/tool/${encodeURIComponent(toolUuid)}`,
+  );
+  return {
+    status: "archived",
+    tool_uuid: String(body.tool_uuid ?? toolUuid),
+  };
+}
+
+// ---- get_run_detail (Tier 2 — full run record) -----------------------------
+
+export interface RunDetail {
+  id: string;
+  workflowId?: number;
+  workflowUuid?: string;
+  state: string;
+  callType?: string;
+  toNumber?: string;
+  fromNumber?: string;
+  createdAt?: string;
+  endedAt?: string | null;
+  durationSec?: number;
+  transcriptUrl?: string | null;
+  recordingUrl?: string | null;
+  gatheredContext?: Record<string, unknown> | null;
+  costInfo?: Record<string, unknown> | null;
+}
+
+function toRunDetail(r: Record<string, unknown>): RunDetail {
+  return {
+    id: String(r.id ?? r.run_id ?? ""),
+    workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
+    workflowUuid: typeof r.workflow_uuid === "string" ? r.workflow_uuid : undefined,
+    state: String(r.state ?? r.status ?? ""),
+    callType: typeof r.call_type === "string" ? r.call_type : undefined,
+    toNumber: typeof r.to_number === "string" ? r.to_number : undefined,
+    fromNumber: typeof r.from_number === "string" ? r.from_number : undefined,
+    createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
+    endedAt: typeof r.ended_at === "string" ? r.ended_at : null,
+    durationSec: typeof r.duration_sec === "number" ? r.duration_sec : undefined,
+    transcriptUrl: typeof r.transcript_url === "string" ? r.transcript_url : null,
+    recordingUrl: typeof r.recording_url === "string" ? r.recording_url : null,
+    gatheredContext:
+      r.gathered_context && typeof r.gathered_context === "object"
+        ? (r.gathered_context as Record<string, unknown>)
+        : null,
+    costInfo:
+      r.cost_info && typeof r.cost_info === "object"
+        ? (r.cost_info as Record<string, unknown>)
+        : null,
+  };
+}
+
+/**
+ * GET /api/v1/workflow-run/{run_id}.
+ * Returns the full run record (used by the `get_run_detail` agent tool).
+ */
+export async function getRunDetail(
+  config: NoralVoiceClientConfig,
+  runId: string,
+): Promise<RunDetail> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "GET",
+    `/api/v1/workflow-run/${encodeURIComponent(runId)}`,
+  );
+  return toRunDetail(body);
+}
+
+// ---- listKbDocumentsFiltered (status-aware, for agent tool) ----------------
+
+export async function listKbDocumentsFiltered(
+  config: NoralVoiceClientConfig,
+  options: { status?: string; limit?: number } = {},
+): Promise<PagedResult<KbDocumentSummary>> {
+  const limit = Math.max(1, Math.min(100, options.limit ?? 25));
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (options.status) params.set("status", options.status);
+  const body = await request<{ documents?: unknown[]; total?: number }>(
+    config,
+    "GET",
+    `/api/v1/knowledge-base/documents?${params}`,
+  );
+  const raw = Array.isArray(body.documents) ? body.documents : [];
+  const items = raw.map((r) => toKbDocument(r as Record<string, unknown>));
+  return {
+    items,
+    total: Number(body.total ?? items.length),
+    nextCursor: null,
+  };
+}
+
+// ---- get_daily_report -------------------------------------------------------
+
+export interface DailyReport {
+  date: string;
+  totalCalls?: number;
+  completedCalls?: number;
+  failedCalls?: number;
+  averageDurationSec?: number;
+  totalCostCents?: number;
+  perWorkflow?: Array<{
+    workflowId?: number;
+    workflowUuid?: string;
+    workflowName?: string;
+    callCount?: number;
+    completedCalls?: number;
+    costCents?: number;
+  }>;
+}
+
+/**
+ * GET /api/v1/reports/daily — daily activity summary.
+ * `date` is ISO-8601 (YYYY-MM-DD); defaults server-side to today when omitted.
+ */
+export async function getDailyReport(
+  config: NoralVoiceClientConfig,
+  options: { date?: string } = {},
+): Promise<DailyReport> {
+  const params = new URLSearchParams();
+  if (options.date) params.set("date", options.date);
+  const path = params.toString()
+    ? `/api/v1/reports/daily?${params}`
+    : "/api/v1/reports/daily";
+  const body = await request<Record<string, unknown>>(config, "GET", path);
+  return {
+    date: String(body.date ?? options.date ?? ""),
+    totalCalls: typeof body.total_calls === "number" ? body.total_calls : undefined,
+    completedCalls: typeof body.completed_calls === "number" ? body.completed_calls : undefined,
+    failedCalls: typeof body.failed_calls === "number" ? body.failed_calls : undefined,
+    averageDurationSec:
+      typeof body.average_duration_sec === "number" ? body.average_duration_sec : undefined,
+    totalCostCents:
+      typeof body.total_cost_usd === "number"
+        ? Math.round(body.total_cost_usd * 100)
+        : typeof body.total_cost_cents === "number"
+          ? body.total_cost_cents
+          : undefined,
+    perWorkflow: Array.isArray(body.per_workflow)
+      ? (body.per_workflow as Record<string, unknown>[]).map((r) => ({
+          workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
+          workflowUuid: typeof r.workflow_uuid === "string" ? r.workflow_uuid : undefined,
+          workflowName: typeof r.workflow_name === "string" ? r.workflow_name : undefined,
+          callCount: typeof r.call_count === "number" ? r.call_count : undefined,
+          completedCalls: typeof r.completed_calls === "number" ? r.completed_calls : undefined,
+          costCents:
+            typeof r.cost_usd === "number"
+              ? Math.round(r.cost_usd * 100)
+              : typeof r.cost_cents === "number"
+                ? r.cost_cents
+                : undefined,
+        }))
+      : undefined,
+  };
+}

@@ -8,10 +8,11 @@
  */
 
 export const PLUGIN_ID = "noralai.noralvoice";
-// 0.4.1 — Phase 9-B: NoralVoice client now stamps X-Noralos-Actor-* headers
-// on every outbound call so the NV-side actor-attribution middleware
-// (NoralVoice PR #17) can record which agent / run made each write.
-export const PLUGIN_VERSION = "0.4.1";
+// 0.5.0 — Phase 9-C: 13 new agent tools added (Tier 1 writes + Tier 2 reads),
+// giving the Voice Director agent operator-parity. Tool count: 13 → 26.
+// All new tools route through resolveClientConfig so X-Noralos-Actor-*
+// headers from Phase 9-B auto-attach without additional plumbing.
+export const PLUGIN_VERSION = "0.5.0";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";
