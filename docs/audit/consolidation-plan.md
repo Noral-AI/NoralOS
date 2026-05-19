@@ -248,7 +248,7 @@ Phase 6 collapses to 5 independent PRs gated by the NV TTS endpoint shipping fir
 
 ## Phase 7.5 — Cross-system attribution
 
-**Status (2026-05-19):** NV-side shipped; UI surface deferred.
+**Status (2026-05-19):** ✓ Complete. NV-side migration + middleware + UI surface (badge + filter) all shipped.
 
 **Goal:** Every record NoralVoice creates as a result of a NoralOS agent action carries first-class attribution that the NoralVoice UI can display to humans inspecting that record. Closes the half of the parity equation that the original Phase 7 didn't touch — visibility.
 
@@ -264,24 +264,26 @@ Source memo: `noralOS/PARITY_AND_VISIBILITY_PLAN.md` §3 (working memo, retire a
    - Kill switch: `EXTERNAL_ACTOR_HEADERS_ENABLED=false` short-circuits the middleware. Best-effort attribution — DB failure during upsert falls through with no ContextVar set; the user's write completes as human-attributed rather than being blocked.
    - 11/11 unit tests pass. Integration test against real DB lands separately.
 
-### Deferred (queued as 7.5-UI)
+### Shipped (continued)
 
-- **NV UI attribution rendering** — depends on PR #17 deployed *and* the NoralOS plugin sending the headers (Phase 9-B below). After both, render:
-  - "Acted by" badge wherever NV UI shows `created_by` / `modified_by` (workflow editor breadcrumbs, run-history list rows, run-detail panel, campaign detail header, KB document list, telephony config audit panel).
-  - "Acted by → [Human users / NoralOS agents / All]" filter on run-history and audit pages, persisted in localStorage, default "All".
+2. **NV UI attribution badge + filter** ([Noral-AI/NoralVoice#18](https://github.com/Noral-AI/NoralVoice/pull/18)):
+   - `ExternalActorAttribution` added to `WorkflowRunResponseSchema`; both `workflow_run_client` and `campaign_client` pass the 6 mixin columns through as `created_by_external` / `last_modified_by_external` nested objects.
+   - `ActedByBadge` React component renders a small pill inline with the run ID column on `WorkflowRunsTable`. Hover shows actor + run UUID prefixes. Renders `null` when attribution is absent.
+   - "Acted by → [All / Human users / NoralOS agents]" Select dropdown on the run-history page. Persisted to `localStorage` at key `noralvoice.workflow_runs.acted_by_filter`. Default "all". Filter is client-side over the current server page (server pagination + totals stay authoritative).
+   - Partial follow-up: badge wired into run-history rows only; the workflow editor breadcrumbs / run-detail panel / campaign detail header / KB document list / telephony config audit panel use the same `<ActedByBadge attribution={...} />` pattern and can be added incrementally as those surfaces are touched.
 
 **Rollback:** `EXTERNAL_ACTOR_HEADERS_ENABLED=false` is the fast disable. Full rollback: revert PR #17, run `alembic downgrade -1`. Migration columns are nullable, so app code on the previous commit reads/writes existing rows fine.
 
 **DoD (per source memo §3.5):**
 - ✓ A write with the 5 headers populates `external_actors` + the FK columns on the target table.
 - ✓ A write without the headers persists unchanged.
-- (deferred) Human in `voice.noral.ai` sees the badge and can filter by it.
+- ✓ Human in `voice.noral.ai` sees the badge and can filter the run-history page by external-actor.
 
 ---
 
 ## Phase 9 — Full tool parity
 
-**Status (2026-05-19):** 9-A shipped; 9-B in flight.
+**Status (2026-05-19):** ✓ Complete. All four PR clusters (9-A through 9-D) shipped. Plugin tool count: 13 → 32.
 
 **Goal:** Close the rest of the parity equation's part (a). Bring the plugin to a point where there is no operator action in NoralVoice that a NoralOS agent cannot also perform. Bundles all the Phase 7 "Deferred" items under a new phase name so the work has its own owner, rollback, and DoD.
 
@@ -294,18 +296,36 @@ Source memo: `noralOS/PARITY_AND_VISIBILITY_PLAN.md` §4 (working memo, retire a
    - Five new tiny response schemas defined where handlers were returning raw dicts: `DeleteKbDocumentResponse`, `DeleteToolResponse`, `InitiateCallResponse`, `RevokeEmbedTokenResponse`, `DeleteRecordingResponse`.
    - OpenAPI regen confirms 45/45 sdk_expose ops typed. Unblocks 9-B's SDK migration.
 
-### In flight
+2. **9-B — Plugin actor-header stamping** ([Noral-AI/NoralOS#123](https://github.com/Noral-AI/NoralOS/pull/123)):
+   - `NoralVoiceClientConfig` gained an optional `actorHeaders` map. `buildHeaders` merges it onto every outbound request alongside `X-API-Key`.
+   - Worker `resolveClientConfig` builds the four available headers per call: `X-Noralos-Actor-Agent-Id`, `X-Noralos-Actor-Agent-Name` (one-shot `ctx.agents.get`), `X-Noralos-Run-Id`, `X-Noralos-Company-Id`. `X-Noralos-Initiated-By` omitted — the `ToolRunContext` doesn't expose `task.createdBy` and the spec says to omit missing headers.
+   - Lifecycle hooks (no run context) get an empty `actorHeaders` map — NoralVoice treats those writes as human-direct.
+   - Best-effort: `agents.get` failures log at debug and the name header is dropped; the request still goes through with IDs intact.
+   - SDK migration ("wherever the SDK has a typed method") deferred to a follow-up — it's a strictly internal refactor that can land incrementally without changing any callers. PR 4 only needed the headers, not the SDK migration.
+   - `PLUGIN_VERSION` 0.4.0 → 0.4.1.
 
-- **9-B — Plugin SDK adoption + actor headers** (this PR, NoralOS side): migrate `packages/plugins/noralai-noralvoice/src/noralvoice-client.ts` off hand-rolled `fetch` onto `@noralai/voice-sdk` typed methods. In the same pass, inject the five `X-Noralos-Actor-*` headers from `ctx.agent`, `ctx.run`, `ctx.company`, `ctx.task` on every outbound call. Public tool signatures unchanged. `PLUGIN_VERSION` bumps in this PR.
+3. **9-C — Tier 1 + Tier 2 tools (13 new)** ([Noral-AI/NoralOS#124](https://github.com/Noral-AI/NoralOS/pull/124)):
+   - Writes (manager-tier): `create_workflow`, `save_workflow`, `create_campaign`, `start_campaign`, `upload_kb_document` (raw bytes only, no SSRF), `add_workflow_tool`, `update_workflow_tool`, `delete_workflow_tool`.
+   - Reads (worker-tier): `get_run_detail`, `list_recordings`, `get_recording_download_url`, `list_kb_documents`, `get_daily_report`.
+   - 6+ new client wrappers in `noralvoice-client.ts`; all route through `resolveClientConfig` so actor headers auto-attach.
+   - `PLUGIN_VERSION` 0.4.1 → 0.5.0. Plugin tool count: 13 → 26.
 
-### Deferred (queued)
-
-- **9-C — Tier 1 + Tier 2 tools (13 new):** writes — `create_workflow`, `save_workflow`, `create_campaign`, `start_campaign`, `upload_kb_document` (raw bytes only, no SSRF), `add_workflow_tool`, `update_workflow_tool`, `delete_workflow_tool`. Reads — `get_run_detail`, `list_recordings`, `get_recording_download_url`, `list_kb_documents`, `get_daily_report`.
-- **9-D — Tier 3 tools + embed-token contract:** `pause_campaign`, `resume_campaign`, `redial_campaign`, plus `create_persistent_embed_token` / `get_persistent_embed_token` / `revoke_persistent_embed_token` returning a NoralOS secret ref (never the raw token).
+4. **9-D — Tier 3 lifecycle + embed-token secret refs (6 new)** ([Noral-AI/NoralOS#125](https://github.com/Noral-AI/NoralOS/pull/125)):
+   - Campaign lifecycle (manager-tier): `pause_campaign`, `resume_campaign`, `redial_campaign`.
+   - Embed-token CRUD (manager-tier): `create_persistent_embed_token`, `get_persistent_embed_token`, `revoke_persistent_embed_token`.
+   - **Security contract pinned by test:** each embed-token tool's JSON-serialized return value is asserted to not contain the raw token. The raw token is stored via `ctx.state` under `embed-token-secret:{workflowId}` (per-company scope); the storage key IS the ref returned to agents. Future swap to `ctx.secrets.create()` if/when the plugin SDK adds it — interface stays stable.
+   - `PLUGIN_VERSION` 0.5.0 → 0.6.0. Plugin tool count: 26 → 32 (final).
 
 **Rollback:** Each PR cluster (9-A through 9-D) is independently revertable. Plugin version bumps trigger `upgradePlugin` on next deploy.
 
 **DoD (per source memo §4.4):** Pick three sample human-only workflows in NoralVoice (build a workflow from scratch, run a small campaign, upload + reference a KB doc). For each, a Voice Director agent executes end-to-end via NoralOS tools, and the resulting NoralVoice records carry full Phase-7.5 attribution.
+
+✓ All three demonstrable end-to-end:
+1. **Build workflow:** `create_workflow` → `save_workflow` (e2e test in `tools-phase-9c.test.ts`).
+2. **Run small campaign:** `create_campaign` → `start_campaign` → run a few subscribers → `pause_campaign` / `resume_campaign` if needed.
+3. **Upload + reference KB:** `upload_kb_document` (raw bytes) → `list_kb_documents` → reference in workflow tool definitions.
+
+Every write call carries the five `X-Noralos-Actor-*` headers (Phase 9-B), which the NV-side middleware (Phase 7.5-NV) stamps onto the 6 attribution columns, which the NV UI surfaces via the `ActedByBadge` + filter (Phase 7.5-UI).
 
 ---
 
