@@ -25,6 +25,18 @@ export interface NoralVoiceClientConfig {
   baseUrl: string;
   apiKey: string;
   timeoutMs?: number;
+  /**
+   * Phase-7.5 cross-system attribution headers. Built in worker.ts
+   * `resolveClientConfig` from the `ToolRunContext` + a lookup of the
+   * acting agent, and stuck onto every outbound request alongside
+   * `X-API-Key`. NoralVoice's actor middleware reads them, upserts the
+   * `external_actors` row, and stamps the FK onto whatever row this
+   * request creates or modifies.
+   *
+   * Absent / empty = call is happening outside an agent run (lifecycle
+   * hook, manual test, etc.) — NoralVoice treats it as human-direct.
+   */
+  actorHeaders?: Record<string, string>;
 }
 
 export interface WorkflowSummary {
@@ -70,6 +82,7 @@ function buildHeaders(config: NoralVoiceClientConfig): Record<string, string> {
     "X-API-Key": config.apiKey,
     Accept: "application/json",
     "Content-Type": "application/json",
+    ...(config.actorHeaders ?? {}),
   };
 }
 

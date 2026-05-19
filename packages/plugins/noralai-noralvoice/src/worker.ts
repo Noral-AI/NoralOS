@@ -349,7 +349,47 @@ async function resolveClientConfig(
       error: "NoralVoice API key credential is empty. Re-enter the credential in Settings → Integrations.",
     };
   }
-  return { baseUrl: config.baseUrl, apiKey };
+  const actorHeaders = await buildActorHeaders(ctx, runCtx);
+  return { baseUrl: config.baseUrl, apiKey, actorHeaders };
+}
+
+/**
+ * Phase-7.5 cross-system attribution: assemble the `X-Noralos-Actor-*` headers
+ * NoralVoice's actor middleware reads on every write request. Sourced from
+ * the `ToolRunContext` plus a one-shot agent lookup for the display name.
+ *
+ * Returns an empty object when there's no run (lifecycle hooks, manual API
+ * paths) — NoralVoice treats those as human-direct writes.
+ *
+ * Per the cross-system attribution spec: omit headers that aren't available
+ * rather than synthesising values. NoralVoice's middleware is lenient about
+ * missing optional headers and falls back to "Unknown agent" if the name is
+ * absent.
+ */
+async function buildActorHeaders(
+  ctx: PluginContext,
+  runCtx: ToolRunContext | null,
+): Promise<Record<string, string>> {
+  if (!runCtx) return {};
+  const headers: Record<string, string> = {
+    "X-Noralos-Actor-Agent-Id": runCtx.agentId,
+    "X-Noralos-Run-Id": runCtx.runId,
+    "X-Noralos-Company-Id": runCtx.companyId,
+  };
+  try {
+    const agent = await ctx.agents.get(runCtx.agentId, runCtx.companyId);
+    if (agent && agent.name) {
+      headers["X-Noralos-Actor-Agent-Name"] = agent.name;
+    }
+  } catch (err) {
+    // Best-effort — a failed agent lookup must never block a tool call.
+    // NoralVoice will record the actor with display_name = "Unknown agent".
+    ctx.logger.debug("agent name lookup for attribution failed", {
+      err: err instanceof Error ? err.message : String(err),
+      agentId: runCtx.agentId,
+    });
+  }
+  return headers;
 }
 
 // ---------------------------------------------------------------------------

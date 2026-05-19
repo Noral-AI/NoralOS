@@ -246,6 +246,69 @@ Phase 6 collapses to 5 independent PRs gated by the NV TTS endpoint shipping fir
 
 ---
 
+## Phase 7.5 — Cross-system attribution
+
+**Status (2026-05-19):** NV-side shipped; UI surface deferred.
+
+**Goal:** Every record NoralVoice creates as a result of a NoralOS agent action carries first-class attribution that the NoralVoice UI can display to humans inspecting that record. Closes the half of the parity equation that the original Phase 7 didn't touch — visibility.
+
+Source memo: `noralOS/PARITY_AND_VISIBILITY_PLAN.md` §3 (working memo, retire after Phase 9 completes).
+
+### Shipped
+
+1. **NV migration + middleware + event listeners** ([Noral-AI/NoralVoice#17](https://github.com/Noral-AI/NoralVoice/pull/17)):
+   - New `external_actors` table — append-only roster of non-human identities (NoralOS agents today), keyed by `(integration_id, external_actor_id)`.
+   - `ExternalAttributionMixin` adding six nullable columns to each of the eight user-authored tables: `workflows, workflow_runs, campaigns, knowledge_base_documents, tools, telephony_configurations, workflow_recordings, embed_tokens`. NULL means human-authored — existing rows preserved exactly.
+   - HTTP middleware reads five `X-Noralos-Actor-*` headers on POST/PUT/PATCH/DELETE, upserts the actor row, stashes the row id + run id + display label in a request-scoped ContextVar.
+   - SQLAlchemy `before_insert` / `before_update` listeners on the eight attributed models stamp the columns from the ContextVar. No-op when unset.
+   - Kill switch: `EXTERNAL_ACTOR_HEADERS_ENABLED=false` short-circuits the middleware. Best-effort attribution — DB failure during upsert falls through with no ContextVar set; the user's write completes as human-attributed rather than being blocked.
+   - 11/11 unit tests pass. Integration test against real DB lands separately.
+
+### Deferred (queued as 7.5-UI)
+
+- **NV UI attribution rendering** — depends on PR #17 deployed *and* the NoralOS plugin sending the headers (Phase 9-B below). After both, render:
+  - "Acted by" badge wherever NV UI shows `created_by` / `modified_by` (workflow editor breadcrumbs, run-history list rows, run-detail panel, campaign detail header, KB document list, telephony config audit panel).
+  - "Acted by → [Human users / NoralOS agents / All]" filter on run-history and audit pages, persisted in localStorage, default "All".
+
+**Rollback:** `EXTERNAL_ACTOR_HEADERS_ENABLED=false` is the fast disable. Full rollback: revert PR #17, run `alembic downgrade -1`. Migration columns are nullable, so app code on the previous commit reads/writes existing rows fine.
+
+**DoD (per source memo §3.5):**
+- ✓ A write with the 5 headers populates `external_actors` + the FK columns on the target table.
+- ✓ A write without the headers persists unchanged.
+- (deferred) Human in `voice.noral.ai` sees the badge and can filter by it.
+
+---
+
+## Phase 9 — Full tool parity
+
+**Status (2026-05-19):** 9-A shipped; 9-B in flight.
+
+**Goal:** Close the rest of the parity equation's part (a). Bring the plugin to a point where there is no operator action in NoralVoice that a NoralOS agent cannot also perform. Bundles all the Phase 7 "Deferred" items under a new phase name so the work has its own owner, rollback, and DoD.
+
+Source memo: `noralOS/PARITY_AND_VISIBILITY_PLAN.md` §4 (working memo, retire after this phase completes).
+
+### Shipped
+
+1. **9-A — NV response_model fixups** ([Noral-AI/NoralVoice#16](https://github.com/Noral-AI/NoralVoice/pull/16)):
+   - Annotated `response_model=` (or `responses=` for the one CSV-streaming endpoint) on every NV route tagged with `**sdk_expose(...)` that previously emitted `unknown` in OpenAPI. 29 routes across 8 files. Plan estimated 12 — actual was 29, the plan was stale because Phase 7 had already widened `@sdk_expose` coverage further.
+   - Five new tiny response schemas defined where handlers were returning raw dicts: `DeleteKbDocumentResponse`, `DeleteToolResponse`, `InitiateCallResponse`, `RevokeEmbedTokenResponse`, `DeleteRecordingResponse`.
+   - OpenAPI regen confirms 45/45 sdk_expose ops typed. Unblocks 9-B's SDK migration.
+
+### In flight
+
+- **9-B — Plugin SDK adoption + actor headers** (this PR, NoralOS side): migrate `packages/plugins/noralai-noralvoice/src/noralvoice-client.ts` off hand-rolled `fetch` onto `@noralai/voice-sdk` typed methods. In the same pass, inject the five `X-Noralos-Actor-*` headers from `ctx.agent`, `ctx.run`, `ctx.company`, `ctx.task` on every outbound call. Public tool signatures unchanged. `PLUGIN_VERSION` bumps in this PR.
+
+### Deferred (queued)
+
+- **9-C — Tier 1 + Tier 2 tools (13 new):** writes — `create_workflow`, `save_workflow`, `create_campaign`, `start_campaign`, `upload_kb_document` (raw bytes only, no SSRF), `add_workflow_tool`, `update_workflow_tool`, `delete_workflow_tool`. Reads — `get_run_detail`, `list_recordings`, `get_recording_download_url`, `list_kb_documents`, `get_daily_report`.
+- **9-D — Tier 3 tools + embed-token contract:** `pause_campaign`, `resume_campaign`, `redial_campaign`, plus `create_persistent_embed_token` / `get_persistent_embed_token` / `revoke_persistent_embed_token` returning a NoralOS secret ref (never the raw token).
+
+**Rollback:** Each PR cluster (9-A through 9-D) is independently revertable. Plugin version bumps trigger `upgradePlugin` on next deploy.
+
+**DoD (per source memo §4.4):** Pick three sample human-only workflows in NoralVoice (build a workflow from scratch, run a small campaign, upload + reference a KB doc). For each, a Voice Director agent executes end-to-end via NoralOS tools, and the resulting NoralVoice records carry full Phase-7.5 attribution.
+
+---
+
 ## Phase 8 — MPS rename + standalone independence
 
 **Goal:** No more `services.dograh.com`. Verify NoralVoice runs cleanly with no Noral-cloud services attached, except the renamed managed-key issuer.

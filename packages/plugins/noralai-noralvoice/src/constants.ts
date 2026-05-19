@@ -8,7 +8,10 @@
  */
 
 export const PLUGIN_ID = "noralai.noralvoice";
-export const PLUGIN_VERSION = "0.4.0";
+// 0.4.1 — Phase 9-B: NoralVoice client now stamps X-Noralos-Actor-* headers
+// on every outbound call so the NV-side actor-attribution middleware
+// (NoralVoice PR #17) can record which agent / run made each write.
+export const PLUGIN_VERSION = "0.4.1";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";
