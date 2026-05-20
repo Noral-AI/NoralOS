@@ -1468,10 +1468,37 @@ export function pluginLoader(
       log.info("plugin-loader: loading all ready plugins");
 
       // Fetch all plugins in ready status, ordered by installOrder
-      const readyPlugins = (await registry.listByStatus("ready")) as PluginRecord[];
+      const allReady = (await registry.listByStatus("ready")) as PluginRecord[];
+
+      if (allReady.length === 0) {
+        log.info("plugin-loader: no ready plugins to load");
+        return { total: 0, succeeded: 0, failed: 0, results: [] };
+      }
+
+      // Skip plugins whose worker is already running. Auto-register hooks
+      // for workspace-local plugins (NoralVoice, NoralSign, Slack) call
+      // `loadSingle` inline when they detect a manifest version bump, which
+      // activates the worker before loadAll runs. Without this guard,
+      // activatePlugin → startWorker would then throw "Worker already
+      // registered (status: running)" and pin the row to `error` via
+      // markError, breaking the sidebar slot until manual recovery.
+      const { workerManager } = runtimeServices;
+      const readyPlugins = allReady.filter((plugin) => {
+        if (workerManager.isRunning(plugin.id)) {
+          log.info(
+            { pluginId: plugin.id, pluginKey: plugin.pluginKey },
+            "plugin-loader: plugin worker already running, skipping activation",
+          );
+          return false;
+        }
+        return true;
+      });
 
       if (readyPlugins.length === 0) {
-        log.info("plugin-loader: no ready plugins to load");
+        log.info(
+          { totalReady: allReady.length },
+          "plugin-loader: all ready plugins already running, nothing to activate",
+        );
         return { total: 0, succeeded: 0, failed: 0, results: [] };
       }
 
@@ -1607,9 +1634,12 @@ export function pluginLoader(
       // 3. Unregister agent tools
       toolDispatcher.unregisterPluginTools(pluginKey);
 
-      // 4. Stop the worker process
+      // 4. Stop the worker process. Use getWorker, not isRunning — a handle
+      // in `starting`, `crashed`, or `backoff` status is still registered in
+      // the worker map and will collide with the next startWorker call. Only
+      // a truly stopped (deleted-from-map) worker is safe to leave alone.
       try {
-        if (workerManager.isRunning(pluginId)) {
+        if (workerManager.getWorker(pluginId)) {
           await workerManager.stopWorker(pluginId);
         }
       } catch (err) {
