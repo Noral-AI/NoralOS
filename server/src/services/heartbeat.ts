@@ -1592,7 +1592,7 @@ async function listUnresolvedBlockerSummaries(
 export function formatRuntimeWorkspaceWarningLog(warning: string) {
   return {
     stream: "stdout" as const,
-    chunk: `[paperclip] ${warning}\n`,
+    chunk: `[noralos] ${warning}\n`,
   };
 }
 
@@ -5760,7 +5760,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       if (runScopedMentionedSkillKeys.length > 0) {
         await onLog(
           "stdout",
-          `[paperclip] Enabled run-scoped skills from issue mentions: ${runScopedMentionedSkillKeys.join(", ")}\n`,
+          `[noralos] Enabled run-scoped skills from issue mentions: ${runScopedMentionedSkillKeys.join(", ")}\n`,
         );
       }
       for (const warning of runtimeWorkspaceWarnings) {
@@ -5812,7 +5812,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         } catch (err) {
           await onLog(
             "stderr",
-            `[paperclip] Failed to post workspace-ready comment: ${err instanceof Error ? err.message : String(err)}\n`,
+            `[noralos] Failed to post workspace-ready comment: ${err instanceof Error ? err.message : String(err)}\n`,
           );
         }
       }
@@ -5917,7 +5917,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           } catch (err) {
             await onLog(
               "stderr",
-              `[paperclip] Failed to post adapter-managed runtime comment: ${err instanceof Error ? err.message : String(err)}\n`,
+              `[noralos] Failed to post adapter-managed runtime comment: ${err instanceof Error ? err.message : String(err)}\n`,
             );
           }
         }
@@ -6078,7 +6078,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           } catch (err) {
             await onLog(
               "stderr",
-              `[paperclip] Failed to post run summary comment: ${err instanceof Error ? err.message : String(err)}\n`,
+              `[noralos] Failed to post run summary comment: ${err instanceof Error ? err.message : String(err)}\n`,
             );
           }
         }
