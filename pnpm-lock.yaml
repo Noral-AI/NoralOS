@@ -444,6 +444,25 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@24.12.0)(jsdom@28.1.0(@noble/hashes@2.0.1))(lightningcss@1.30.2)
 
+  packages/plugins/noralai-google-sheets:
+    dependencies:
+      '@noralos/plugin-sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@noralos/shared':
+        specifier: workspace:*
+        version: link:../../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@24.12.0)(jsdom@28.1.0(@noble/hashes@2.0.1))(lightningcss@1.30.2)
+
   packages/plugins/noralai-noralsign:
     dependencies:
       '@noralos/plugin-sdk':
@@ -529,6 +548,25 @@ importers:
       '@slack/web-api':
         specifier: ^7.10.0
         version: 7.15.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.0
+        version: 24.12.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@24.12.0)(jsdom@28.1.0(@noble/hashes@2.0.1))(lightningcss@1.30.2)
+
+  packages/plugins/noralai-zoho:
+    dependencies:
+      '@noralos/plugin-sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@noralos/shared':
+        specifier: workspace:*
+        version: link:../../shared
     devDependencies:
       '@types/node':
         specifier: ^24.6.0

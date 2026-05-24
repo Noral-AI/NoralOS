@@ -96,8 +96,20 @@ export interface IntegrationOAuthSpec {
   authorizeUrlTemplate: string;
   /** OAuth 2.0 token endpoint template. */
   tokenUrlTemplate: string;
-  /** Scope strings — joined with spaces and passed as `scope=`. */
+  /**
+   * Scope strings — joined by `scopeSeparator` (default `","` for
+   * historical Zoho compatibility) and passed as the authorize URL's
+   * `scope=` parameter.
+   */
   scopes: string[];
+  /**
+   * Separator used to join `scopes` for the authorize URL. RFC 6749
+   * defines scope as a space-separated list, but historically the first
+   * OAuth provider on the platform (Zoho) required commas; we default to
+   * `","` for backwards compatibility and let standards-compliant
+   * providers like Google override to `" "`.
+   */
+  scopeSeparator?: string;
   /** Extra static parameters appended to the authorize URL (e.g. `access_type=offline`). */
   extraAuthorizeParams?: Record<string, string>;
   /**
@@ -524,7 +536,26 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       okStatuses: [200],
       safeErrorPrefix: "Zoho CRM rejected the access token",
     },
-    assignableSlots: [],
+    assignableSlots: [
+      {
+        // The noralai-zoho plugin's instanceConfigSchema requires
+        // `secretRef` (the encrypted JSON blob with
+        // clientId+clientSecret+refreshToken) and `dataCenter` (so the
+        // worker knows which accounts.zoho.<tld> + www.zohoapis.<tld>
+        // to call). Both ship through this slot — `secretRef` gets the
+        // secretId via the standard assignment writer, and `dataCenter`
+        // is propagated from `credential.metadata.fields.dataCenter`
+        // via `pairedFields`. Without the pairing, the plugin's
+        // instanceConfig validation fails on the missing `dataCenter`
+        // and the operator has to hand-edit `plugin_config.config_json`.
+        pluginKey: "noralai.zoho",
+        configPath: "secretRef",
+        label: "Zoho CRM — OAuth credential",
+        pairedFields: [
+          { sourceField: "dataCenter", targetConfigPath: "dataCenter" },
+        ],
+      },
+    ],
     oauth: {
       authorizeUrlTemplate:
         "https://accounts.zoho.{dataCenterTld}/oauth/v2/auth" +
@@ -550,6 +581,98 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
         "dataCenter:au": "https://accounts.zoho.com.au",
         "dataCenter:jp": "https://accounts.zoho.jp",
         "dataCenter:ca": "https://accounts.zohocloud.ca",
+      },
+    },
+  },
+  // ── Google Sheets ───────────────────────────────────────────────
+  // Google OAuth 2.0 (authorization-code + refresh-token) provider.
+  // The admin supplies clientId + clientSecret at create time; the
+  // platform handles the redirect dance to mint a refresh token via
+  // Google's global token endpoint (`oauth2.googleapis.com`). Unlike
+  // Zoho, Google has no per-region accounts server — the same
+  // `accounts.google.com` authorizes every Google account and the
+  // resulting refresh token works against the global Sheets and Drive
+  // API hosts.
+  //
+  // The two scopes below are the minimum surface for the
+  // `noralai.google-sheets` plugin's v0.1.0 tools:
+  //   - `drive.readonly` lets `gsheets_list_spreadsheets` enumerate
+  //     spreadsheets the user has access to.
+  //   - `spreadsheets` is the read+write scope for the Sheets API
+  //     itself (cells, ranges, sheet tabs). A narrower
+  //     `spreadsheets.readonly` scope exists but would block append /
+  //     update; we'd rather ask for write up-front than re-consent
+  //     later.
+  google_sheets: {
+    id: "google_sheets",
+    category: "other",
+    credentialType: "oauth_refresh_token",
+    displayName: "Google Sheets",
+    description:
+      "Google Sheets via OAuth 2.0. After saving the OAuth app's client id and secret, NoralOS redirects to Google for consent and persists the resulting refresh token. Access tokens are minted on demand. Used by the noralai.google-sheets plugin for spreadsheet read/write from agent tools.",
+    fields: [
+      {
+        key: "clientId",
+        label: "Client ID",
+        inputType: "text",
+        required: true,
+        helpText:
+          "From Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Client ID. Public identifier; the client secret is the credential half.",
+      },
+      {
+        key: "clientSecret",
+        label: "Client Secret",
+        inputType: "secret",
+        required: true,
+        helpText:
+          "From Google Cloud Console → APIs & Services → Credentials → your OAuth 2.0 Client ID → Client secret. Stored encrypted; never displayed again.",
+      },
+    ],
+    test: {
+      kind: "http",
+      method: "GET",
+      // The `userinfo` endpoint is the canonical low-cost probe Google
+      // recommends for confirming an access token is live. We send the
+      // standard Bearer auth scheme — Google does NOT use a custom
+      // header like Zoho's `Zoho-oauthtoken`.
+      urlTemplate: "https://www.googleapis.com/oauth2/v3/userinfo",
+      headers: { Authorization: "Bearer {{accessToken}}" },
+      okStatuses: [200],
+      safeErrorPrefix: "Google rejected the access token",
+    },
+    assignableSlots: [
+      {
+        pluginKey: "noralai.google-sheets",
+        configPath: "secretRef",
+        label: "Google Sheets — OAuth credential",
+      },
+    ],
+    oauth: {
+      // Google's standard installed/web-app authorize endpoint. Note that
+      // we pass `access_type=offline` and `prompt=consent` so we receive
+      // a refresh_token on every consent (without `prompt=consent`,
+      // Google omits the refresh_token on subsequent re-consents from
+      // the same account — the credential would silently lose offline
+      // access on token rotation).
+      authorizeUrlTemplate:
+        "https://accounts.google.com/o/oauth2/v2/auth" +
+        "?response_type=code" +
+        "&client_id={clientId}" +
+        "&scope={scopes}" +
+        "&redirect_uri={redirectUri}" +
+        "&state={state}" +
+        "&access_type=offline" +
+        "&prompt=consent",
+      tokenUrlTemplate: "https://oauth2.googleapis.com/token",
+      scopes: [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive.readonly",
+      ],
+      // RFC 6749 default. Google enforces this — comma-joined scopes
+      // are rejected with `invalid_scope`.
+      scopeSeparator: " ",
+      extraAuthorizeParams: {
+        include_granted_scopes: "true",
       },
     },
   },
@@ -629,6 +752,28 @@ export const ASSIGNMENT_TARGETS: Array<{
         configPath: "apiKeyRef",
         label: "NoralVoice — API key",
         expectsProvider: "noralvoice",
+      },
+    ],
+  },
+  {
+    pluginKey: "noralai.zoho",
+    pluginDisplayName: "Zoho CRM",
+    slots: [
+      {
+        configPath: "secretRef",
+        label: "Zoho CRM — OAuth credential",
+        expectsProvider: "zoho",
+      },
+    ],
+  },
+  {
+    pluginKey: "noralai.google-sheets",
+    pluginDisplayName: "Google Sheets",
+    slots: [
+      {
+        configPath: "secretRef",
+        label: "Google Sheets — OAuth credential",
+        expectsProvider: "google_sheets",
       },
     ],
   },

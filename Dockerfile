@@ -63,6 +63,14 @@ COPY packages/plugins/noralai-slack/package.json packages/plugins/noralai-slack/
 # Runtime auto-registers from the workspace path via
 # `server/src/services/auto-register-noralvoice.ts`.
 COPY packages/plugins/noralai-noralvoice/package.json packages/plugins/noralai-noralvoice/
+# noralai-zoho: Zoho CRM integration. Same in-tree workspace-plugin pattern.
+# Runtime auto-registers from the workspace path via
+# `server/src/services/auto-register-zoho.ts`.
+COPY packages/plugins/noralai-zoho/package.json packages/plugins/noralai-zoho/
+# noralai-google-sheets: Google Sheets v4 integration. Same pattern.
+# Runtime auto-registers from the workspace path via
+# `server/src/services/auto-register-google-sheets.ts`.
+COPY packages/plugins/noralai-google-sheets/package.json packages/plugins/noralai-google-sheets/
 COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
@@ -91,6 +99,16 @@ RUN pnpm --filter @noralos-plugins/noralai-slack build
 # `ensureNoralVoiceRegistered` finds the workspace path but no manifest
 # file and aborts auto-registration on first boot.
 RUN pnpm --filter @noralos-plugins/noralai-noralvoice build
+# noralai-zoho builds tsc output (manifest, worker, Zoho REST client). No UI
+# bundle in v0.1.0 — the plugin is agent-tools-only. Without this step
+# `ensureZohoRegistered` finds the workspace path but no manifest file
+# and aborts auto-registration on first boot.
+RUN pnpm --filter @noralos-plugins/noralai-zoho build
+# noralai-google-sheets builds tsc output (manifest, worker, Sheets/Drive
+# REST client). No UI bundle in v0.1.0 — agent-tools-only. Without this
+# step `ensureGoogleSheetsRegistered` finds the workspace path but no
+# manifest file and aborts auto-registration on first boot.
+RUN pnpm --filter @noralos-plugins/noralai-google-sheets build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
 RUN test -f packages/plugins/voice-config/dist/worker.js || (echo "ERROR: voice-config build output missing" && exit 1)
 RUN test -f packages/plugins/voice-cascade/dist/worker.js || (echo "ERROR: voice-cascade build output missing" && exit 1)
@@ -103,6 +121,10 @@ RUN test -f packages/plugins/noralai-slack/dist/manifest.js || (echo "ERROR: nor
 RUN test -f packages/plugins/noralai-noralvoice/dist/worker.js || (echo "ERROR: noralai-noralvoice build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-noralvoice/dist/manifest.js || (echo "ERROR: noralai-noralvoice manifest build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-noralvoice/dist/ui/index.js || (echo "ERROR: noralai-noralvoice UI bundle missing" && exit 1)
+RUN test -f packages/plugins/noralai-zoho/dist/worker.js || (echo "ERROR: noralai-zoho build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-zoho/dist/manifest.js || (echo "ERROR: noralai-zoho manifest build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-google-sheets/dist/worker.js || (echo "ERROR: noralai-google-sheets build output missing" && exit 1)
+RUN test -f packages/plugins/noralai-google-sheets/dist/manifest.js || (echo "ERROR: noralai-google-sheets manifest build output missing" && exit 1)
 
 FROM base AS production
 ARG USER_UID=1000

@@ -51,6 +51,8 @@ import { DEFAULT_LOCAL_PLUGIN_DIR, pluginLoader } from "./services/plugin-loader
 import { ensureNoralSignRegistered } from "./services/auto-register-noralsign.js";
 import { ensureNoralVoiceRegistered } from "./services/auto-register-noralvoice.js";
 import { ensureSlackRegistered } from "./services/auto-register-slack.js";
+import { ensureZohoRegistered } from "./services/auto-register-zoho.js";
+import { ensureGoogleSheetsRegistered } from "./services/auto-register-google-sheets.js";
 import { createPluginWorkerManager, type PluginWorkerManager } from "./services/plugin-worker-manager.js";
 import { createPluginJobScheduler } from "./services/plugin-job-scheduler.js";
 import { pluginJobStore } from "./services/plugin-job-store.js";
@@ -446,6 +448,8 @@ export async function createApp(
     ensureNoralSignRegistered(db, loader),
     ensureNoralVoiceRegistered(db, loader),
     ensureSlackRegistered(db, loader),
+    ensureZohoRegistered(db, loader),
+    ensureGoogleSheetsRegistered(db, loader),
   ])
     .then(() => loader.loadAll())
     .then((result) => {
