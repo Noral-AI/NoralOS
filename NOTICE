@@ -1,0 +1,13 @@
+NoralOS
+Copyright (c) 2026 Noral-AI
+
+This product is built on the upstream open-source project hosted at
+https://github.com/paperclipai/paperclip, which is licensed under the
+MIT License (Copyright (c) 2025 Paperclip AI). The full upstream LICENSE
+text — including the required copyright notice and permission notice — is
+preserved verbatim in the LICENSE file alongside this NOTICE.
+
+Per the MIT License terms, attribution to the upstream copyright holder
+is preserved here and in LICENSE. This NOTICE file may be updated to
+reflect ongoing modifications and additional contributors to NoralOS, but
+the upstream attribution above must not be removed.

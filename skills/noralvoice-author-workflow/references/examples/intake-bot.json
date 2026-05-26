@@ -1,0 +1,106 @@
+{
+  "nodes": [
+    {
+      "id": "start-1",
+      "type": "startCall",
+      "position": { "x": 0, "y": 0 },
+      "data": {
+        "name": "Greeting",
+        "prompt": "You are a friendly intake agent for ACME. Greet the caller warmly and let them know you'll ask a few quick questions so the team can route their request.",
+        "is_start": true,
+        "greeting": "Hi there, thanks for calling ACME. I'll ask you a few quick questions to make sure your request gets to the right team.",
+        "greeting_type": "text",
+        "wait_for_user_response": false,
+        "allow_interrupt": false,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-name",
+      "type": "agentNode",
+      "position": { "x": 0, "y": 200 },
+      "data": {
+        "name": "Capture name",
+        "prompt": "Ask the caller for their full name. If they only give a first name, ask for their last name.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Capture the caller's full name.",
+        "extraction_variables": [
+          { "name": "full_name", "type": "string", "prompt": "Caller's full name." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-reason",
+      "type": "agentNode",
+      "position": { "x": 0, "y": 400 },
+      "data": {
+        "name": "Capture reason",
+        "prompt": "Ask why they're calling today. Listen for whether it's sales, support, or something else, and capture a one-sentence summary.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Capture the caller's reason and category.",
+        "extraction_variables": [
+          { "name": "reason", "type": "string", "prompt": "One-sentence summary of why they called." },
+          { "name": "category", "type": "string", "prompt": "One of: sales, support, billing, other." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-callback",
+      "type": "agentNode",
+      "position": { "x": 0, "y": 600 },
+      "data": {
+        "name": "Capture callback preference",
+        "prompt": "Confirm the best phone number to reach them at and the best time of day. Default to their current number if they don't want to give another one.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Capture callback number and best time.",
+        "extraction_variables": [
+          { "name": "callback_number", "type": "string", "prompt": "Phone number, E.164 if possible." },
+          { "name": "best_time", "type": "string", "prompt": "Time of day they prefer, e.g. 'mornings' or '2-5pm PT'." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "end-1",
+      "type": "endCall",
+      "position": { "x": 0, "y": 800 },
+      "data": {
+        "name": "Confirm and end",
+        "prompt": "Summarize what you captured ('Got it — you're {full_name}, calling about {reason}, best reached at {callback_number} during {best_time}'), thank them, and say someone from the {category} team will follow up within one business day.",
+        "is_end": true,
+        "allow_interrupt": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-start-name",
+      "source": "start-1",
+      "target": "agent-name",
+      "data": { "label": "After greeting", "condition": "always" }
+    },
+    {
+      "id": "e-name-reason",
+      "source": "agent-name",
+      "target": "agent-reason",
+      "data": { "label": "Once name captured", "condition": "full_name has been captured" }
+    },
+    {
+      "id": "e-reason-callback",
+      "source": "agent-reason",
+      "target": "agent-callback",
+      "data": { "label": "Once reason captured", "condition": "reason and category have been captured" }
+    },
+    {
+      "id": "e-callback-end",
+      "source": "agent-callback",
+      "target": "end-1",
+      "data": { "label": "Once callback captured", "condition": "callback_number has been captured" }
+    }
+  ]
+}

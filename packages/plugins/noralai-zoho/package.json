@@ -1,0 +1,32 @@
+{
+  "name": "@noralos-plugins/noralai-zoho",
+  "version": "0.1.0",
+  "description": "NoralAI Zoho CRM integration. Wraps the Zoho CRM REST API behind a NoralOS-branded plugin surface using OAuth 2.0 (refresh-token) credentials from the company's integration_credentials row. Exposes agent tools for searching modules, reading/creating/updating records (Leads, Contacts, Accounts, Deals, etc.) so Brooklyn and director-tier agents can read CRM context and log activity mid-conversation.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "noralosPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @noralos/plugin-sdk ensure-build-deps",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  }
+}

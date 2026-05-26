@@ -1,0 +1,28 @@
+{
+  "name": "@noralos-plugins/noralai-brooklyn",
+  "version": "0.1.0",
+  "description": "Brooklyn LLM (NORALAI) external adapter plugin for NoralOS. Surfaces a NORALAI-branded chat-completion provider; the upstream OpenAI-compatible backend is configured per-agent and per-company.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts",
+    "./ui": "./src/ui/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noralos/adapter-utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  }
+}

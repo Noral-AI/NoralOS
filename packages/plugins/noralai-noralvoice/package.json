@@ -1,0 +1,42 @@
+{
+  "name": "@noralos-plugins/noralai-noralvoice",
+  "version": "0.1.0",
+  "description": "NoralVoice — voice-AI workflow runtime integration for NoralOS. Wraps NoralVoice (voice.noral.ai) behind a NoralOS-branded plugin surface. Exposes agent tools for managing voice agents (list_workflows, run_call, get_run), receives webhook events on call completion, and ships with a Voice Director agent template that owns voice operations for the company.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "noralosPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js",
+    "ui": "./dist/ui/"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @noralos/plugin-sdk ensure-build-deps",
+    "build": "tsc && node ./scripts/build-ui.mjs",
+    "clean": "rm -rf dist",
+    "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*",
+    "@noralai/voice-sdk": "https://github.com/Noral-AI/NoralVoice/releases/download/sdks-v0.3.0-prerelease/noralai-voice-sdk-0.3.0.tgz"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.3",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}
