@@ -27,12 +27,6 @@ It is intentionally narrower than [PLUGIN_SPEC.md](./PLUGIN_SPEC.md). The spec i
 Use the CLI scaffold command:
 
 ```bash
-<<<<<<< v2026.525.0
-paperclipai plugin init @yourscope/plugin-name --output /absolute/path/to/plugin-repos
-```
-
-That creates `<output>/plugin-name/` with:
-=======
 pnpm --filter @noralos/create-noralos-plugin build
 node packages/plugins/create-noralos-plugin/dist/index.js @yourscope/plugin-name --output ./packages/plugins/examples
 ```
@@ -47,7 +41,6 @@ node packages/plugins/create-noralos-plugin/dist/index.js @yourscope/plugin-name
 ```
 
 That creates a package with:
->>>>>>> master
 
 - `src/manifest.ts`
 - `src/worker.ts`
@@ -58,11 +51,7 @@ That creates a package with:
 
 Inside this monorepo, the scaffold uses `workspace:*` for `@noralos/plugin-sdk`.
 
-<<<<<<< v2026.525.0
-Outside this monorepo, the scaffold snapshots `@paperclipai/plugin-sdk` from the local Paperclip checkout into a `.paperclip-sdk/` tarball so you can build and test a plugin without publishing anything to npm first. Pass `--sdk-path /absolute/path/to/paperclip/packages/plugins/sdk` if you have more than one Paperclip checkout.
-=======
 Outside this monorepo, the scaffold snapshots `@noralos/plugin-sdk` from the local Paperclip checkout into a `.paperclip-sdk/` tarball so you can build and test a plugin without publishing anything to npm first.
->>>>>>> master
 
 ## Local development workflow
 

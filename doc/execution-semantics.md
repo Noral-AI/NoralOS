@@ -156,11 +156,7 @@ If a parent is truly waiting on a child, model that with blockers. Do not rely o
 
 For agent-owned, non-terminal issues, NoralOS should never leave work in a state where nobody is responsible for the next move and nothing will wake or surface it.
 
-<<<<<<< v2026.525.0
-This is a visibility contract, not an auto-completion contract. If Paperclip cannot safely infer the next action, it should surface the ambiguity with a blocked state, a visible notice, or an explicit recovery action. It must not silently mark work done from prose comments or guess that a dependency is complete.
-=======
-This is a visibility contract, not an auto-completion contract. If NoralOS cannot safely infer the next action, it should surface the ambiguity with a blocked state, a visible comment, or an explicit recovery issue. It must not silently mark work done from prose comments or guess that a dependency is complete.
->>>>>>> master
+This is a visibility contract, not an auto-completion contract. If NoralOS cannot safely infer the next action, it should surface the ambiguity with a blocked state, a visible notice, or an explicit recovery action. It must not silently mark work done from prose comments or guess that a dependency is complete.
 
 An issue is healthy when the product can answer "what moves this forward next?" without requiring a human to reconstruct intent from the whole thread. An issue is stalled when it is non-terminal but has no live execution path, no explicit waiting path, and no recovery path.
 
@@ -258,8 +254,7 @@ A healthy `in_review` issue has at least one valid action path:
 
 Agent-assigned `in_review` with no typed participant is only healthy when one of the other paths exists. Assignment to the same agent that produced the handoff is not, by itself, a review path.
 
-<<<<<<< v2026.525.0
-An `in_review` issue is stalled when it has no typed participant, no pending interaction or approval, no user owner, no active monitor, no active run, no queued wake, and no explicit recovery action. Paperclip should surface that state as recovery work rather than silently completing the issue or leaving blocker chains parked indefinitely.
+An `in_review` issue is stalled when it has no typed participant, no pending interaction or approval, no user owner, no active monitor, no active run, no queued wake, and no explicit recovery action. NoralOS should surface that state as recovery work rather than silently completing the issue or leaving blocker chains parked indefinitely.
 
 ### Issue monitors
 
@@ -269,22 +264,19 @@ Use a monitor when the current assignee owns a future check against an async sys
 
 Monitor policy lives under `executionPolicy.monitor` and includes:
 
-- `nextCheckAt`: when Paperclip should wake the assignee
+- `nextCheckAt`: when NoralOS should wake the assignee
 - `notes`: non-secret instructions for what the assignee should check
 - `serviceName`: optional non-secret external-service context
-- `externalRef`: optional external-service reference input; Paperclip treats it as secret-adjacent, redacts it before persistence/visibility, and omits it from activity and wake payloads
+- `externalRef`: optional external-service reference input; NoralOS treats it as secret-adjacent, redacts it before persistence/visibility, and omits it from activity and wake payloads
 - `timeoutAt`, `maxAttempts`, and `recoveryPolicy`: optional recovery hints for bounded waits
 
-Monitors are not recurring intervals. When a monitor fires, Paperclip clears the scheduled monitor and queues an `issue_monitor_due` wake for the assignee. If the external service is still pending, the assignee must explicitly re-arm the monitor with a new `nextCheckAt`. If the issue moves to `done`, `cancelled`, an invalid status, or a human/unassigned owner, the monitor is cleared.
+Monitors are not recurring intervals. When a monitor fires, NoralOS clears the scheduled monitor and queues an `issue_monitor_due` wake for the assignee. If the external service is still pending, the assignee must explicitly re-arm the monitor with a new `nextCheckAt`. If the issue moves to `done`, `cancelled`, an invalid status, or a human/unassigned owner, the monitor is cleared.
 
 Because `serviceName` and `notes` remain visible in issue activity and wake context, operators should keep them short and non-secret. Put enough context for the assignee to know what to inspect, but do not include signed URLs, bearer tokens, customer secrets, tenant-private identifiers, or provider links with embedded credentials.
 
-Monitor bounds are enforced. Paperclip rejects attempts to re-arm a monitor whose `timeoutAt` or `maxAttempts` is already exhausted. When a scheduled monitor reaches an exhausted bound at trigger time, Paperclip clears it and follows `recoveryPolicy`: `wake_owner` queues a bounded recovery wake for the assignee, `create_recovery_issue` opens visible issue-backed recovery work, and `escalate_to_board` records a board-visible escalation comment/activity.
+Monitor bounds are enforced. NoralOS rejects attempts to re-arm a monitor whose `timeoutAt` or `maxAttempts` is already exhausted. When a scheduled monitor reaches an exhausted bound at trigger time, NoralOS clears it and follows `recoveryPolicy`: `wake_owner` queues a bounded recovery wake for the assignee, `create_recovery_issue` opens visible issue-backed recovery work, and `escalate_to_board` records a board-visible escalation comment/activity.
 
-Use `blocked` instead of a monitor when no Paperclip assignee owns a responsible polling path. In that case, name the external owner/action or create first-class recovery/blocker work.
-=======
-An `in_review` issue is stalled when it has no typed participant, no pending interaction or approval, no user owner, no active run, no queued wake, and no explicit recovery issue. NoralOS should surface that state as recovery work rather than silently completing the issue or leaving blocker chains parked indefinitely.
->>>>>>> master
+Use `blocked` instead of a monitor when no NoralOS assignee owns a responsible polling path. In that case, name the external owner/action or create first-class recovery/blocker work.
 
 ### `blocked`
 
@@ -317,13 +309,8 @@ Example:
 
 Recovery rule:
 
-<<<<<<< v2026.525.0
-- if the latest issue-linked run failed/timed out/cancelled and no live execution path remains, Paperclip queues one automatic assignment recovery wake
-- if that recovery wake also finishes and the issue is still stranded, Paperclip moves the issue to `blocked` and opens or updates an explicit recovery action when a bounded owner/action is known; the visible comment is evidence, not the recovery path by itself
-=======
 - if the latest issue-linked run failed/timed out/cancelled and no live execution path remains, NoralOS queues one automatic assignment recovery wake
-- if that recovery wake also finishes and the issue is still stranded, NoralOS moves the issue to `blocked` and posts a visible comment
->>>>>>> master
+- if that recovery wake also finishes and the issue is still stranded, NoralOS moves the issue to `blocked` and opens or updates an explicit recovery action when a bounded owner/action is known; the visible comment is evidence, not the recovery path by itself
 
 This is a dispatch recovery, not a continuation recovery.
 
@@ -338,13 +325,8 @@ Example:
 
 Recovery rule:
 
-<<<<<<< v2026.525.0
-- Paperclip queues one automatic continuation wake
-- if that continuation wake also finishes and the issue is still stranded, Paperclip moves the issue to `blocked` and opens or updates an explicit recovery action when a bounded owner/action is known; the visible comment is evidence, not the recovery path by itself
-=======
 - NoralOS queues one automatic continuation wake
-- if that continuation wake also finishes and the issue is still stranded, NoralOS moves the issue to `blocked` and posts a visible comment
->>>>>>> master
+- if that continuation wake also finishes and the issue is still stranded, NoralOS moves the issue to `blocked` and opens or updates an explicit recovery action when a bounded owner/action is known; the visible comment is evidence, not the recovery path by itself
 
 This is an active-work continuity recovery.
 
@@ -358,11 +340,7 @@ Automatic retries that can continue source work must use the original/normal mod
 
 Startup recovery and periodic recovery are different from normal wakeup delivery.
 
-<<<<<<< v2026.525.0
-On startup and on the periodic recovery loop, Paperclip now does five things in sequence:
-=======
-On startup and on the periodic recovery loop, NoralOS now does four things in sequence:
->>>>>>> master
+On startup and on the periodic recovery loop, NoralOS now does five things in sequence:
 
 1. reap orphaned `running` runs
 2. resume persisted `queued` runs
@@ -442,11 +420,7 @@ Auto-recovery preserves the existing owner. It does not choose a replacement age
 
 ### Explicit Recovery Action
 
-<<<<<<< v2026.525.0
-Paperclip opens an explicit recovery action when the system can identify a problem but cannot safely complete the work itself.
-=======
-NoralOS creates an explicit recovery issue when the system can identify a problem but cannot safely complete the work itself.
->>>>>>> master
+NoralOS opens an explicit recovery action when the system can identify a problem but cannot safely complete the work itself.
 
 Examples:
 

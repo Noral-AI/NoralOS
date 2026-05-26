@@ -239,15 +239,9 @@ function tableKey(schemaName: string, tableName: string): string {
 }
 
 function nonSystemSchemaPredicate(identifier: string): string {
-<<<<<<< v2026.525.0
   // PostgreSQL reserves pg_ prefixes for system schemas, including temp/toast variants.
   return `${identifier} <> 'information_schema'
     AND ${identifier} NOT LIKE 'pg\\_%' ESCAPE '\\'`;
-=======
-  return `${identifier} NOT IN ('pg_catalog', 'information_schema')
-    AND ${identifier} NOT LIKE 'pg_toast%'
-    AND ${identifier} NOT LIKE 'pg_temp_%'`;
->>>>>>> master
 }
 
 function hasBackupTransforms(opts: RunDatabaseBackupOptions): boolean {
@@ -836,14 +830,9 @@ export async function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise
       JOIN pg_namespace srcn ON srcn.oid = src.relnamespace
       JOIN pg_class tgt ON tgt.oid = c.confrelid
       JOIN pg_namespace tgtn ON tgtn.oid = tgt.relnamespace
-<<<<<<< v2026.525.0
       JOIN LATERAL unnest(c.conkey, c.confkey) WITH ORDINALITY AS key_columns(source_attnum, target_attnum, ordinal_position) ON true
       JOIN pg_attribute sa ON sa.attrelid = src.oid AND sa.attnum = key_columns.source_attnum
       JOIN pg_attribute ta ON ta.attrelid = tgt.oid AND ta.attnum = key_columns.target_attnum
-=======
-      JOIN pg_attribute sa ON sa.attrelid = src.oid AND sa.attnum = ANY(c.conkey)
-      JOIN pg_attribute ta ON ta.attrelid = tgt.oid AND ta.attnum = ANY(c.confkey)
->>>>>>> master
       WHERE c.contype = 'f'
         AND ${sql.unsafe(nonSystemSchemaPredicate("srcn.nspname"))}
       GROUP BY c.conname, srcn.nspname, src.relname, tgtn.nspname, tgt.relname, c.confupdtype, c.confdeltype

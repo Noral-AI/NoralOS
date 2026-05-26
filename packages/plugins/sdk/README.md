@@ -14,17 +14,6 @@ Reference: `doc/plugins/PLUGIN_SPEC.md`
 
 | Import | Purpose |
 |--------|--------|
-<<<<<<< v2026.525.0
-| `@paperclipai/plugin-sdk` | Worker entry: `definePlugin`, `runWorker`, context types, protocol helpers |
-| `@paperclipai/plugin-sdk/ui` | UI entry: `usePluginData`, `usePluginAction`, `usePluginStream`, `useHostContext`, `useHostNavigation`, slot prop types |
-| `@paperclipai/plugin-sdk/ui/hooks` | Hooks only |
-| `@paperclipai/plugin-sdk/ui/types` | UI types and slot prop interfaces |
-| `@paperclipai/plugin-sdk/testing` | `createTestHarness` for unit/integration tests |
-| `@paperclipai/plugin-sdk/bundlers` | `createPluginBundlerPresets` for worker/manifest/ui builds |
-| `@paperclipai/plugin-sdk/dev-server` | `startPluginDevServer`, `getUiBuildSnapshot` |
-| `@paperclipai/plugin-sdk/protocol` | JSON-RPC protocol types and helpers (advanced) |
-| `@paperclipai/plugin-sdk/types` | Worker context and API types (advanced) |
-=======
 | `@noralos/plugin-sdk` | Worker entry: `definePlugin`, `runWorker`, context types, protocol helpers |
 | `@noralos/plugin-sdk/ui` | UI entry: `usePluginData`, `usePluginAction`, `usePluginStream`, `useHostContext`, slot prop types |
 | `@noralos/plugin-sdk/ui/hooks` | Hooks only |
@@ -34,7 +23,6 @@ Reference: `doc/plugins/PLUGIN_SPEC.md`
 | `@noralos/plugin-sdk/dev-server` | `startPluginDevServer`, `getUiBuildSnapshot` |
 | `@noralos/plugin-sdk/protocol` | JSON-RPC protocol types and helpers (advanced) |
 | `@noralos/plugin-sdk/types` | Worker context and API types (advanced) |
->>>>>>> master
 
 ## Manifest entrypoints
 
@@ -931,14 +919,7 @@ Plugins can add a link under each project in the sidebar via the `projectSidebar
 Minimal React component that links to the project’s plugin tab (see project detail tabs in the spec):
 
 ```tsx
-<<<<<<< v2026.525.0
-import {
-  useHostNavigation,
-  type PluginProjectSidebarItemProps,
-} from "@paperclipai/plugin-sdk/ui";
-=======
 import type { PluginProjectSidebarItemProps } from "@noralos/plugin-sdk/ui";
->>>>>>> master
 
 export function FilesLink({ context }: PluginProjectSidebarItemProps) {
   const hostNavigation = useHostNavigation();

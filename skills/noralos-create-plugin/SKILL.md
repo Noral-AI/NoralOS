@@ -1,18 +1,6 @@
 ---
 name: noralos-create-plugin
 description: >
-<<<<<<< v2026.525.0:skills/paperclip-create-plugin/SKILL.md
-  Create and develop external Paperclip plugins with the CLI-first workflow.
-  Use when scaffolding a new plugin, working on a local plugin against a running
-  Paperclip instance, or updating plugin authoring docs. Covers `paperclipai
-  plugin init`, the local install loop via `paperclipai plugin install <path>`,
-  worker/UI rebuild and reload semantics, and the required success checklist.
----
-
-# Create and develop a Paperclip plugin
-
-Use this skill when the task is to create, scaffold, or iterate on a Paperclip plugin against a local Paperclip instance.
-=======
   Create new NoralOS plugins with the current alpha SDK/runtime. Use when
   scaffolding a plugin package, adding a new example plugin, or updating plugin
   authoring docs. Covers the supported worker/UI surface, route conventions,
@@ -22,7 +10,6 @@ Use this skill when the task is to create, scaffold, or iterate on a Paperclip p
 # Create a NoralOS Plugin
 
 Use this skill when the task is to create, scaffold, or document a NoralOS plugin.
->>>>>>> master:skills/noralos-create-plugin/SKILL.md
 
 ## 1. Default: build the plugin OUTSIDE Paperclip core
 
@@ -56,28 +43,6 @@ Current runtime assumptions:
 Use `paperclipai plugin init`. Do not invoke the scaffold package node entrypoint by hand unless the CLI command is unavailable in the environment.
 
 ```bash
-<<<<<<< v2026.525.0:skills/paperclip-create-plugin/SKILL.md
-paperclipai plugin init @acme/my-plugin --output ~/dev/paperclip-plugins
-```
-
-Useful flags (all optional):
-
-- `--output <dir>` — parent directory; the command creates `<dir>/<unscoped-name>/`. Defaults to the current directory.
-- `--template <default|connector|workspace|environment>` — starter template.
-- `--category <connector|workspace|automation|ui|environment>` — manifest category.
-- `--display-name <name>`, `--description <text>`, `--author <name>` — manifest metadata.
-- `--sdk-path <path>` — snapshot the local SDK from a Paperclip checkout into `.paperclip-sdk/` (useful when developing against an unreleased SDK).
-
-On success the command prints the exact next commands (`cd`, `pnpm install`, `pnpm dev`, `paperclipai plugin install <abs-path>`). Run them in order.
-
-If `paperclipai` is not on PATH in your environment, fall back to:
-
-```bash
-pnpm --filter @paperclipai/create-paperclip-plugin build
-node packages/plugins/create-paperclip-plugin/dist/index.js @acme/my-plugin \
-  --output /absolute/path \
-  --sdk-path /absolute/path/to/paperclip/packages/plugins/sdk
-=======
 pnpm --filter @noralos/create-noralos-plugin build
 node packages/plugins/create-noralos-plugin/dist/index.js <npm-package-name> --output <target-dir>
 ```
@@ -89,7 +54,6 @@ pnpm --filter @noralos/create-noralos-plugin build
 node packages/plugins/create-noralos-plugin/dist/index.js @acme/plugin-name \
   --output /absolute/path/to/plugin-repos \
   --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
->>>>>>> master:skills/noralos-create-plugin/SKILL.md
 ```
 
 ## 4. Local install + rebuild loop

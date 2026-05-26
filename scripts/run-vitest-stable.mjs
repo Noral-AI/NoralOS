@@ -241,15 +241,9 @@ function runVitest(args, label) {
   // Keep per-run paths compact so Unix socket fixtures stay under macOS path limits.
   const env = {
     ...process.env,
-<<<<<<< v2026.525.0
-    PAPERCLIP_HOME: path.join(testRoot, "h"),
-    PAPERCLIP_INSTANCE_ID: `vt-${process.pid}-${invocationIndex}`,
-    TMPDIR: path.join(testRoot, "t"),
-=======
     NORALOS_HOME: path.join(testRoot, "home"),
     NORALOS_INSTANCE_ID: `vitest-${process.pid}-${invocationIndex}`,
     TMPDIR: path.join(testRoot, "tmp"),
->>>>>>> master
   };
   mkdirSync(env.NORALOS_HOME, { recursive: true });
   mkdirSync(env.TMPDIR, { recursive: true });
@@ -330,28 +324,6 @@ const routeTests = walk(serverTestsDir)
   }))
   .sort((a, b) => a.repoPath.localeCompare(b.repoPath));
 
-<<<<<<< v2026.525.0
-const options = parseCliOptions(process.argv.slice(2));
-if (options.dryRun) {
-  const serializedSuites =
-    options.mode === serializedModeName
-      ? selectSerializedSuites(routeTests, options.shardIndex, options.shardCount)
-      : routeTests;
-  console.log(
-    JSON.stringify(
-      {
-        mode: options.mode,
-        shardIndex: options.shardIndex,
-        shardCount: options.shardCount,
-        group: options.group,
-        availableGeneralGroups: generalGroupNames,
-        serializedSuiteCount: routeTests.length,
-        selectedSerializedSuites: serializedSuites.map((routeTest) => routeTest.repoPath),
-      },
-      null,
-      2,
-    ),
-=======
 const excludeRouteArgs = routeTests.flatMap((file) => ["--exclude", file.serverPath]);
 for (const project of nonServerProjects) {
   runVitest(["--project", project], `non-server project ${project}`);
@@ -372,7 +344,6 @@ for (const routeTest of routeTests) {
       "--poolOptions.forks.isolate=true",
     ],
     routeTest.repoPath,
->>>>>>> master
   );
   process.exit(0);
 }
