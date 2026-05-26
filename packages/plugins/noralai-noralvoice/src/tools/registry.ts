@@ -69,6 +69,14 @@ export const CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "create_persistent_embed_
 export const GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "get_persistent_embed_token";
 export const REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "revoke_persistent_embed_token";
 
+// Phase 10A — workflow lifecycle: validate (read) + publish (write).
+// These close the agent-authoring loop: agents can self-check a draft
+// they assembled with `create_workflow` / `save_workflow` before
+// promoting it to executable. Without these, drafts created by an agent
+// never reach the runtime — they stay editor-only.
+export const VALIDATE_WORKFLOW_TOOL_NAME = "validate_workflow";
+export const PUBLISH_WORKFLOW_TOOL_NAME = "publish_workflow";
+
 export const ALL_TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
@@ -104,6 +112,9 @@ export const ALL_TOOL_NAMES = [
   CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
   REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
+  // Phase 10A
+  VALIDATE_WORKFLOW_TOOL_NAME,
+  PUBLISH_WORKFLOW_TOOL_NAME,
 ] as const;
 
 /**
@@ -158,4 +169,8 @@ export const TOOL_MIN_TIER_V3: Record<string, AgentTier> = {
   [CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME]: "manager",
   [GET_PERSISTENT_EMBED_TOKEN_TOOL_NAME]: "manager",
   [REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME]: "manager",
+  // Phase 10A — validate is read-only (worker); publish promotes a draft
+  // to executable, gating the runtime, so it requires manager tier.
+  [VALIDATE_WORKFLOW_TOOL_NAME]: "worker",
+  [PUBLISH_WORKFLOW_TOOL_NAME]: "manager",
 };

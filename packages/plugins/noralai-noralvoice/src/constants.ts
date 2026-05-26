@@ -16,7 +16,12 @@ export const PLUGIN_ID = "noralai.noralvoice";
 // 0.6.0 — Phase 9-D: 6 final Tier 3 tools (campaign lifecycle: pause/resume/redial
 // + embed-token CRUD: create/get/revoke). Embed-token tools use ctx.state for
 // secret storage — the raw token never crosses the tool boundary. Tool count: 26 → 32.
-export const PLUGIN_VERSION = "0.6.0";
+//
+// 0.7.0 — Phase 10-A: workflow lifecycle tools (validate_workflow,
+// publish_workflow). Closes the agent-authoring loop: agents that
+// produce a draft via create_workflow / save_workflow can now self-check
+// and promote to executable without operator intervention. Tool count: 32 → 34.
+export const PLUGIN_VERSION = "0.7.0";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";

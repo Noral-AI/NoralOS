@@ -88,6 +88,7 @@ import {
   LIST_VOICES_TOOL_NAME,
   PAUSE_CAMPAIGN_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  PUBLISH_WORKFLOW_TOOL_NAME,
   REDIAL_CAMPAIGN_TOOL_NAME,
   RESUME_CAMPAIGN_TOOL_NAME,
   REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
@@ -98,6 +99,7 @@ import {
   TOOL_MIN_TIER_V3,
   UPDATE_WORKFLOW_TOOL_TOOL_NAME,
   UPLOAD_KB_DOCUMENT_TOOL_NAME,
+  VALIDATE_WORKFLOW_TOOL_NAME,
 } from "./tools/registry.js";
 import { executeAddWorkflowTool } from "./tools/add_workflow_tool.js";
 import { executeCreateCampaign } from "./tools/create_campaign.js";
@@ -111,10 +113,12 @@ import { executeGetRunDetail } from "./tools/get_run_detail.js";
 import { executeListKbDocuments } from "./tools/list_kb_documents.js";
 import { executeListRecordings } from "./tools/list_recordings.js";
 import { executePauseCampaign } from "./tools/pause_campaign.js";
+import { executePublishWorkflow } from "./tools/publish_workflow.js";
 import { executeRedialCampaign } from "./tools/redial_campaign.js";
 import { executeResumeCampaign } from "./tools/resume_campaign.js";
 import { executeRevokePersistentEmbedToken } from "./tools/revoke_persistent_embed_token.js";
 import { executeSaveWorkflow } from "./tools/save_workflow.js";
+import { executeValidateWorkflow } from "./tools/validate_workflow.js";
 import { executeStartCampaign } from "./tools/start_campaign.js";
 import { executeUpdateWorkflowTool } from "./tools/update_workflow_tool.js";
 import { executeUploadKbDocument } from "./tools/upload_kb_document.js";
@@ -1343,6 +1347,63 @@ const plugin = definePlugin({
           companyId: runCtx.companyId,
           agentId: runCtx.agentId,
           workflowId: params.workflowId,
+        });
+        return result;
+      },
+    );
+
+    // ---- validate_workflow (Phase 10A, read-only) -----------------------
+    registerTool<{ workflowId: number }>(
+      VALIDATE_WORKFLOW_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${VALIDATE_WORKFLOW_TOOL_NAME}.workflowId must be a positive integer.`,
+          };
+        }
+        return { ok: true, value: { workflowId: raw.workflowId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeValidateWorkflow(config, params);
+        ctx.logger.info("NoralVoice validate_workflow ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+          valid: result.data.valid,
+          errorCount: result.data.errors.length,
+        });
+        return result;
+      },
+    );
+
+    // ---- publish_workflow (Phase 10A, write) ----------------------------
+    registerTool<{ workflowId: number }>(
+      PUBLISH_WORKFLOW_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${PUBLISH_WORKFLOW_TOOL_NAME}.workflowId must be a positive integer.`,
+          };
+        }
+        return { ok: true, value: { workflowId: raw.workflowId } };
+      },
+      async (params, config, runCtx) => {
+        const result = await executePublishWorkflow(config, params);
+        ctx.logger.info("NoralVoice publish_workflow ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+          versionNumber: result.data.version_number,
         });
         return result;
       },
