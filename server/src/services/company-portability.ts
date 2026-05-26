@@ -52,7 +52,7 @@ import {
   readNoralosSkillSyncPreference,
   writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
-import { ensureOpenCodeModelConfiguredAndAvailable } from "@noralos/adapter-opencode-local/server";
+import { ensureOpenCodeModelConfiguredAndAvailable, requireOpenCodeModelId } from "@noralos/adapter-opencode-local/server";
 import { findServerAdapter } from "../adapters/index.js";
 import { forbidden, notFound, unprocessable } from "../errors.js";
 import { ghFetch, gitHubApiBase, resolveRawGitHubUrl } from "./github-fetch.js";

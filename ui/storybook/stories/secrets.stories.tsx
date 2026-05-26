@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useCompany } from "@/context/CompanyContext";
 import { queryKeys } from "@/lib/queryKeys";
-import { storybookCompanies, storybookSecrets } from "../fixtures/paperclipData";
+import { storybookCompanies, storybookSecrets } from "../fixtures/noralosData";
 
 const COMPANY_ID = "company-storybook";
 

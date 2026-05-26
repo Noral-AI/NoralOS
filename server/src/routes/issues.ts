@@ -78,7 +78,7 @@ import {
 } from "../services/index.js";
 import { logger } from "../middleware/logger.js";
 import { conflict, forbidden, HttpError, notFound, unauthorized, unprocessable } from "../errors.js";
-import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+import { actorCanViewAllCompanyIssues, assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
 import {
   assertNoAgentHostWorkspaceCommandMutation,
   collectIssueWorkspaceCommandPaths,

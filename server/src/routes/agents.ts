@@ -79,12 +79,6 @@ import { renderOrgChartSvg, renderOrgChartPng, type OrgNode, type OrgChartStyle,
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { runClaudeLogin } from "@noralos/adapter-claude-local/server";
 import {
-  DEFAULT_ACPX_LOCAL_AGENT,
-  DEFAULT_ACPX_LOCAL_MODE,
-  DEFAULT_ACPX_LOCAL_NON_INTERACTIVE_PERMISSIONS,
-  DEFAULT_ACPX_LOCAL_PERMISSION_MODE,
-} from "@noralos/adapter-acpx-local";
-import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
 } from "@noralos/adapter-codex-local";
@@ -927,7 +921,6 @@ export function agentRoutes(
       { strictMode: strictSecretsMode },
     );
     await assertAdapterConfigConstraints(
-      input.companyId,
       input.adapterType,
       input.constraintAdapterConfig
         ? { ...input.constraintAdapterConfig, ...normalizedAdapterConfig }
@@ -993,21 +986,6 @@ export function agentRoutes(
     adapterConfig: Record<string, unknown>,
   ): Record<string, unknown> {
     const next = { ...adapterConfig };
-    if (adapterType === "acpx_local") {
-      if (!asNonEmptyString(next.agent)) {
-        next.agent = DEFAULT_ACPX_LOCAL_AGENT;
-      }
-      if (!asNonEmptyString(next.mode)) {
-        next.mode = DEFAULT_ACPX_LOCAL_MODE;
-      }
-      if (!asNonEmptyString(next.permissionMode)) {
-        next.permissionMode = DEFAULT_ACPX_LOCAL_PERMISSION_MODE;
-      }
-      if (!asNonEmptyString(next.nonInteractivePermissions)) {
-        next.nonInteractivePermissions = DEFAULT_ACPX_LOCAL_NON_INTERACTIVE_PERMISSIONS;
-      }
-      return ensureGatewayDeviceKey(adapterType, next);
-    }
     if (adapterType === "codex_local") {
       if (!asNonEmptyString(next.model)) {
         next.model = DEFAULT_CODEX_LOCAL_MODEL;

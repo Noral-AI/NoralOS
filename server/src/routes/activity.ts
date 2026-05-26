@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { Db } from "@noralos/db";
-import type { Db } from "@noralos/db";
 import { normalizeIssueIdentifier } from "@noralos/shared";
 import { validate } from "../middleware/validate.js";
 import { activityService, normalizeActivityLimit } from "../services/activity.js";

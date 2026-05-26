@@ -1,9 +1,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { Request, RequestHandler } from "express";
 import { and, eq, isNull } from "drizzle-orm";
-import { agentApiKeys, agents, companyMemberships, instanceUserRoles } from "@noralos/db";
-import type { Db } from "@noralos/db";
 import { agentApiKeys, agents, authUsers, companies, companyMemberships, instanceUserRoles } from "@noralos/db";
+import type { Db } from "@noralos/db";
 import { verifyLocalAgentJwt } from "../agent-auth-jwt.js";
 import type { DeploymentMode } from "@noralos/shared";
 import type { BetterAuthSessionResult } from "../auth/better-auth.js";

@@ -369,8 +369,8 @@ export function pluginDatabaseService(db: PluginDatabaseRootClient) {
       manifest.id,
       manifest.database.namespaceSlug,
     );
-    await client.execute(sql.raw(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(namespaceName)}`));
-    const rows = await client
+    await db.execute(sql.raw(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(namespaceName)}`));
+    const rows = await db
       .insert(pluginDatabaseNamespaces)
       .values({
         pluginId,
@@ -391,10 +391,6 @@ export function pluginDatabaseService(db: PluginDatabaseRootClient) {
       })
       .returning();
     return rows[0] ?? null;
-  }
-
-  async function ensureNamespace(pluginId: string, manifest: NoralosPluginManifestV1) {
-    return ensureNamespaceWithClient(db, pluginId, manifest);
   }
 
   async function getNamespace(pluginId: string) {
@@ -456,7 +452,7 @@ export function pluginDatabaseService(db: PluginDatabaseRootClient) {
   return {
     ensureNamespace,
 
-    async applyMigrations(pluginId: string, manifest: NoralosPluginManifestV1, packageRoot: string) {
+    async applyMigrations(pluginId: string, manifest: NoralosPluginManifestV1, packageRoot: string, options: ApplyPluginMigrationsOptions = {}) {
       if (!manifest.database) return null;
       const namespace = await ensureNamespace(pluginId, manifest);
       if (!namespace) return null;

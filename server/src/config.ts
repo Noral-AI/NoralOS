@@ -120,12 +120,6 @@ export function loadConfig(): Config {
   const fileDatabaseBackup = fileConfig?.database.backup;
   const fileSecrets = fileConfig?.secrets;
   const fileStorage = fileConfig?.storage;
-  const strictModeFromEnv = process.env.NORALOS_SECRETS_STRICT_MODE;
-  const secretsStrictMode =
-    strictModeFromEnv !== undefined
-      ? strictModeFromEnv === "true"
-      : (fileSecrets?.strictMode ?? false);
-
   const providerFromEnvRaw = process.env.NORALOS_SECRETS_PROVIDER;
   const providerFromEnv =
     providerFromEnvRaw && SECRET_PROVIDERS.includes(providerFromEnvRaw as SecretProvider)

@@ -30,7 +30,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { StatusBadge } from "@/components/StatusBadge";
-import { storybookAgents, storybookProjects, storybookIssues } from "../fixtures/paperclipData";
+import { storybookAgents, storybookProjects, storybookIssues } from "../fixtures/noralosData";
 
 const agentsById = new Map(storybookAgents.map((agent) => [agent.id, agent]));
 

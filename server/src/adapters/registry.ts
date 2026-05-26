@@ -1,5 +1,5 @@
-import type { AdapterModelProfileDefinition, ServerAdapterModule } from "./types.js";
-import { getAdapterSessionManagement } from "@noralos/adapter-utils";
+import type { AdapterModel, AdapterModelProfileDefinition, AdapterRuntimeCommandSpec, ServerAdapterModule } from "./types.js";
+import { buildSandboxNpmInstallCommand, getAdapterSessionManagement } from "@noralos/adapter-utils";
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -86,18 +86,6 @@ import {
   agentConfigurationDoc as piAgentConfigurationDoc,
   modelProfiles as piModelProfiles,
 } from "@noralos/adapter-pi-local";
-import {
-  execute as hermesExecute,
-  testEnvironment as hermesTestEnvironment,
-  sessionCodec as hermesSessionCodec,
-  listSkills as hermesListSkills,
-  syncSkills as hermesSyncSkills,
-  detectModel as detectModelFromHermes,
-} from "hermes-paperclip-adapter/server";
-import {
-  agentConfigurationDoc as hermesAgentConfigurationDoc,
-  models as hermesModels,
-} from "hermes-paperclip-adapter";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
@@ -195,18 +183,6 @@ function prefixAdapterModelLabels(models: AdapterModel[], provider: "Claude" | "
   }));
 }
 
-async function listAcpxModels(): Promise<AdapterModel[]> {
-  const [claude, codex] = await Promise.all([
-    listClaudeModels().catch(() => claudeModels),
-    listCodexModels().catch(() => codexModels),
-  ]);
-  return dedupeAdapterModels([
-    ...acpxModels,
-    ...prefixAdapterModelLabels(claude, "Claude"),
-    ...prefixAdapterModelLabels(codex, "Codex"),
-  ]);
-}
-
 const claudeLocalAdapter: ServerAdapterModule = {
   type: "claude_local",
   execute: claudeExecute,
@@ -226,27 +202,6 @@ const claudeLocalAdapter: ServerAdapterModule = {
     buildNpmRuntimeCommandSpec(config, "claude", "@anthropic-ai/claude-code"),
   agentConfigurationDoc: claudeAgentConfigurationDoc,
   getQuotaWindows: claudeGetQuotaWindows,
-};
-
-const acpxLocalAdapter: ServerAdapterModule = {
-  type: "acpx_local",
-  execute: acpxExecute,
-  testEnvironment: acpxTestEnvironment,
-  listSkills: listAcpxSkills,
-  syncSkills: syncAcpxSkills,
-  sessionCodec: acpxSessionCodec,
-  sessionManagement: getAdapterSessionManagement("acpx_local") ?? undefined,
-  models: dedupeAdapterModels([
-    ...prefixAdapterModelLabels(claudeModels, "Claude"),
-    ...prefixAdapterModelLabels(codexModels, "Codex"),
-  ]),
-  listModels: listAcpxModels,
-  supportsLocalAgentJwt: true,
-  supportsInstructionsBundle: true,
-  instructionsPathKey: "instructionsFilePath",
-  requiresMaterializedRuntimeSkills: false,
-  agentConfigurationDoc: acpxAgentConfigurationDoc,
-  getConfigSchema: getAcpxConfigSchema,
 };
 
 const codexLocalAdapter: ServerAdapterModule = {
@@ -289,21 +244,6 @@ const cursorLocalAdapter: ServerAdapterModule = {
   agentConfigurationDoc: cursorAgentConfigurationDoc,
 };
 
-const cursorCloudAdapter: ServerAdapterModule = {
-  type: "cursor_cloud",
-  execute: cursorCloudExecute,
-  testEnvironment: cursorCloudTestEnvironment,
-  sessionCodec: cursorCloudSessionCodec,
-  sessionManagement: getAdapterSessionManagement("cursor_cloud") ?? undefined,
-  models: [],
-  supportsLocalAgentJwt: false,
-  supportsInstructionsBundle: true,
-  instructionsPathKey: "instructionsFilePath",
-  requiresMaterializedRuntimeSkills: false,
-  agentConfigurationDoc: cursorCloudAgentConfigurationDoc,
-  getConfigSchema: getCursorCloudConfigSchema,
-};
-
 const geminiLocalAdapter: ServerAdapterModule = {
   type: "gemini_local",
   execute: geminiExecute,
@@ -321,27 +261,6 @@ const geminiLocalAdapter: ServerAdapterModule = {
   getRuntimeCommandSpec: (config) =>
     buildNpmRuntimeCommandSpec(config, "gemini", "@google/gemini-cli"),
   agentConfigurationDoc: geminiAgentConfigurationDoc,
-};
-
-const grokLocalAdapter: ServerAdapterModule = {
-  type: "grok_local",
-  execute: grokExecute,
-  testEnvironment: grokTestEnvironment,
-  listSkills: listGrokSkills,
-  syncSkills: syncGrokSkills,
-  sessionCodec: grokSessionCodec,
-  sessionManagement: getAdapterSessionManagement("grok_local") ?? undefined,
-  models: grokModels,
-  supportsLocalAgentJwt: true,
-  supportsInstructionsBundle: true,
-  instructionsPathKey: "instructionsFilePath",
-  requiresMaterializedRuntimeSkills: true,
-  getRuntimeCommandSpec: (config) => ({
-    command: readConfiguredCommand(config, "grok"),
-    detectCommand: readConfiguredCommand(config, "grok"),
-    installCommand: null,
-  }),
-  agentConfigurationDoc: grokAgentConfigurationDoc,
 };
 
 const openclawGatewayAdapter: ServerAdapterModule = {
@@ -394,72 +313,6 @@ const piLocalAdapter: ServerAdapterModule = {
   agentConfigurationDoc: piAgentConfigurationDoc,
 };
 
-// hermes-paperclip-adapter v0.2.0 predates the authToken field; cast is
-// intentional until hermes ships a matching AdapterExecutionContext type.
-const executeHermesLocal = hermesExecute as unknown as ServerAdapterModule["execute"];
-
-const hermesLocalAdapter: ServerAdapterModule = {
-  type: "hermes_local",
-  execute: async (ctx) => {
-    const normalizedCtx = normalizeHermesConfig(ctx);
-    if (!normalizedCtx.authToken) return executeHermesLocal(normalizedCtx);
-
-    const existingConfig = (normalizedCtx.agent.adapterConfig ?? {}) as Record<string, unknown>;
-    const existingEnv =
-      typeof existingConfig.env === "object" && existingConfig.env !== null && !Array.isArray(existingConfig.env)
-        ? (existingConfig.env as Record<string, string>)
-        : {};
-    const explicitApiKey =
-      typeof existingEnv.NORALOS_API_KEY === "string" && existingEnv.NORALOS_API_KEY.trim().length > 0;
-    const promptTemplate =
-      typeof existingConfig.promptTemplate === "string" && existingConfig.promptTemplate.trim().length > 0
-        ? existingConfig.promptTemplate
-        : "";
-    const authGuardPrompt = [
-      "NoralOS API safety rule:",
-      "Use Authorization: Bearer $NORALOS_API_KEY on every NoralOS API request.",
-      "Use X-NoralOS-Run-Id: $NORALOS_RUN_ID on every NoralOS API request that writes or mutates data, including comments and issue updates.",
-      "Never use a board, browser, or local-board session for NoralOS API writes.",
-    ].join("\n");
-
-    const patchedConfig: Record<string, unknown> = {
-      ...existingConfig,
-      env: {
-        ...existingEnv,
-        ...(!explicitApiKey ? { NORALOS_API_KEY: normalizedCtx.authToken } : {}),
-        NORALOS_RUN_ID: normalizedCtx.runId,
-      },
-    };
-
-    // Only inject the auth guard into promptTemplate when a custom template already exists.
-    // When no custom template is set, Hermes uses its built-in default heartbeat/task prompt —
-    // overwriting it with only the auth guard text would strip the assigned issue/workflow instructions.
-    if (promptTemplate) {
-      patchedConfig.promptTemplate = `${authGuardPrompt}\n\n${promptTemplate}`;
-    }
-
-    const patchedCtx = {
-      ...normalizedCtx,
-      agent: {
-        ...normalizedCtx.agent,
-        adapterConfig: patchedConfig,
-      },
-    };
-
-    return executeHermesLocal(patchedCtx);
-  },
-  testEnvironment: (ctx) => hermesTestEnvironment(normalizeHermesConfig(ctx) as never),
-  sessionCodec: hermesSessionCodec,
-  listSkills: hermesListSkills,
-  syncSkills: hermesSyncSkills,
-  models: hermesModels,
-  supportsLocalAgentJwt: true,
-  supportsInstructionsBundle: false,
-  requiresMaterializedRuntimeSkills: false,
-  agentConfigurationDoc: hermesAgentConfigurationDoc,
-  detectModel: () => detectModelFromHermes(),
-};
-
 const adaptersByType = new Map<string, ServerAdapterModule>();
 
 // For builtin types that are overridden by an external adapter, we keep the
@@ -473,17 +326,13 @@ const pausedOverrides = new Set<string>();
 
 function registerBuiltInAdapters() {
   for (const adapter of [
-    acpxLocalAdapter,
     claudeLocalAdapter,
     codexLocalAdapter,
     openCodeLocalAdapter,
     piLocalAdapter,
-    cursorCloudAdapter,
     cursorLocalAdapter,
     geminiLocalAdapter,
-    grokLocalAdapter,
     openclawGatewayAdapter,
-    hermesLocalAdapter,
     processAdapter,
     httpAdapter,
   ]) {

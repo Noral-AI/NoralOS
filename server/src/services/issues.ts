@@ -693,7 +693,7 @@ function nonPluginOperationIssueCondition() {
   return sql<boolean>`NOT (
     ${issues.originKind} LIKE 'plugin:%:operation'
     OR ${issues.originKind} LIKE 'plugin:%:operation:%'
-    OR ${inArray(issues.originKind, LEGACY_PLUGIN_OPERATION_ORIGIN_KINDS)}
+    OR ${inArray(issues.originKind, [...LEGACY_PLUGIN_OPERATION_ORIGIN_KINDS])}
   )`;
 }
 
@@ -1394,28 +1394,6 @@ async function listIssueBlockerAttentionMap(
           ),
         );
       for (const row of approvalRows) explicitWaitingIssueIds.add(row.issueId);
-    }
-
-    // Recovery rows are intentionally company-wide: a liveness escalation for
-    // the same leaf blocker represents an active waiting path even when that
-    // blocker is reached through another blocked graph.
-    const recoveryRows: Array<{ id: string; originId: string | null }> = await dbOrTx
-      .select({ id: issues.id, originId: issues.originId })
-      .from(issues)
-      .where(
-        and(
-          eq(issues.companyId, companyId),
-          eq(issues.originKind, BLOCKER_ATTENTION_OPEN_RECOVERY_ORIGIN_KIND),
-          isNull(issues.hiddenAt),
-          notInArray(issues.status, BLOCKER_ATTENTION_OPEN_RECOVERY_TERMINAL_STATUSES),
-        ),
-      );
-    for (const row of recoveryRows) {
-      const parsed = parseIssueGraphLivenessIncidentKey(row.originId);
-      if (!parsed || parsed.companyId !== companyId) continue;
-      explicitWaitingIssueIds.add(row.id);
-      explicitWaitingIssueIds.add(parsed.issueId);
-      explicitWaitingIssueIds.add(parsed.leafIssueId);
     }
 
     // Recovery rows are intentionally company-wide: a liveness escalation for
