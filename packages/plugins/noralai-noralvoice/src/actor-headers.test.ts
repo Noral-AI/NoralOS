@@ -92,4 +92,52 @@ describe("actor headers", () => {
     const headers = (init as RequestInit).headers as Record<string, string>;
     expect(headers["X-API-Key"]).toBe("real-key");
   });
+
+  it("forwards delegated-identity user headers when present", async () => {
+    // The worker builds these from ToolRunContext.triggeredByUser* —
+    // populated server-side from the wakeup chain. Verify the client
+    // transmits them verbatim so NoralVoice's delegation-aware auth
+    // can map the request to the human user.
+    const config: NoralVoiceClientConfig = {
+      baseUrl: "https://voice.example.test",
+      apiKey: "test-key",
+      actorHeaders: {
+        "X-Noralos-Actor-Agent-Id": "agent-abc-123",
+        "X-Noralos-Run-Id": "run-xyz-789",
+        "X-Noralos-Company-Id": "company-def-456",
+        "X-Noralos-Actor-User-Id": "ba-user-quentin",
+        "X-Noralos-Actor-User-Email": "quentin@noral.ai",
+      },
+    };
+
+    await listWorkflows(config, {});
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect(headers["X-Noralos-Actor-User-Id"]).toBe("ba-user-quentin");
+    expect(headers["X-Noralos-Actor-User-Email"]).toBe("quentin@noral.ai");
+  });
+
+  it("does not attach delegated-identity headers when the user is unknown", async () => {
+    // System-triggered or agent-chained runs have no triggering user.
+    // The worker omits the X-Noralos-Actor-User-* headers entirely so
+    // NoralVoice falls back to api_key.created_by ownership (existing
+    // pre-delegation behavior).
+    const config: NoralVoiceClientConfig = {
+      baseUrl: "https://voice.example.test",
+      apiKey: "test-key",
+      actorHeaders: {
+        "X-Noralos-Actor-Agent-Id": "agent-abc-123",
+        "X-Noralos-Run-Id": "run-xyz-789",
+        "X-Noralos-Company-Id": "company-def-456",
+      },
+    };
+
+    await listWorkflows(config, {});
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect(headers["X-Noralos-Actor-User-Id"]).toBeUndefined();
+    expect(headers["X-Noralos-Actor-User-Email"]).toBeUndefined();
+  });
 });

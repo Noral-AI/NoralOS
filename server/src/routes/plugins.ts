@@ -28,6 +28,8 @@ import { and, desc, eq, gte } from "drizzle-orm";
 import type { Db } from "@noralos/db";
 import {
   agents,
+  agentWakeupRequests,
+  authUsers,
   companies,
   heartbeatRuns,
   pluginLogs,
@@ -602,6 +604,50 @@ export function pluginRoutes(
   }
 
   /**
+   * Server-resolves the human who triggered the given run, when known.
+   *
+   * Chain: heartbeat_runs.wakeup_request_id → agent_wakeup_requests
+   * (requestedByActorType="user", requestedByActorId=Better Auth user id)
+   * → user.email.
+   *
+   * Returns `null` for system-triggered, agent-chained, or wakeup-less runs.
+   * Plugins that opt into delegated identity (forwarded as
+   * X-Noralos-Actor-User-* headers to external systems) read these fields
+   * from ToolRunContext rather than the request body — the assertion is
+   * server-resolved so callers cannot spoof identity.
+   */
+  async function resolveTriggeringUser(
+    runId: string,
+  ): Promise<{ userId: string; userEmail: string | null } | null> {
+    try {
+      const [row] = await db
+        .select({
+          actorType: agentWakeupRequests.requestedByActorType,
+          actorId: agentWakeupRequests.requestedByActorId,
+          email: authUsers.email,
+        })
+        .from(heartbeatRuns)
+        .innerJoin(agentWakeupRequests, eq(agentWakeupRequests.id, heartbeatRuns.wakeupRequestId))
+        .leftJoin(authUsers, eq(authUsers.id, agentWakeupRequests.requestedByActorId))
+        .where(eq(heartbeatRuns.id, runId))
+        .limit(1);
+      if (!row || row.actorType !== "user" || !row.actorId) {
+        return null;
+      }
+      return { userId: row.actorId, userEmail: row.email ?? null };
+    } catch (err) {
+      // Never block tool execution on a wakeup-chain lookup failure.
+      // Plugins fall back to api_key.created_by ownership when delegated
+      // identity is unavailable, which is the pre-delegation behavior.
+      console.warn("resolveTriggeringUser failed", {
+        runId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+      return null;
+    }
+  }
+
+  /**
    * GET /api/plugins
    *
    * List all installed plugins, optionally filtered by lifecycle status.
@@ -808,11 +854,22 @@ export function pluginRoutes(
       return;
     }
 
+    // Server-resolve the triggering user from the wakeup chain.
+    // Plugins read this from ToolRunContext to forward delegated identity
+    // (e.g. noralai.noralvoice creating workflows owned by the human user).
+    // Resolved server-side so callers cannot spoof the assertion.
+    const triggeredBy = await resolveTriggeringUser(runContext.runId);
+    const enrichedContext: ToolRunContext = {
+      ...runContext,
+      triggeredByUserId: triggeredBy?.userId ?? null,
+      triggeredByUserEmail: triggeredBy?.userEmail ?? null,
+    };
+
     try {
       const result = await toolDeps.toolDispatcher.executeTool(
         tool,
         parameters ?? {},
-        runContext,
+        enrichedContext,
       );
       res.json(result);
     } catch (err) {

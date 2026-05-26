@@ -414,6 +414,17 @@ async function buildActorHeaders(
     "X-Noralos-Run-Id": runCtx.runId,
     "X-Noralos-Company-Id": runCtx.companyId,
   };
+  // Delegated-identity assertion: when the run was triggered by a human user,
+  // forward their NoralOS user id (and email, for JIT provisioning) so
+  // NoralVoice can stamp the created entity as owned by that user instead of
+  // by whoever minted the shared API key. NoralVoice only honors these
+  // headers when the API key is flagged delegation_capable on its side.
+  if (runCtx.triggeredByUserId) {
+    headers["X-Noralos-Actor-User-Id"] = runCtx.triggeredByUserId;
+    if (runCtx.triggeredByUserEmail) {
+      headers["X-Noralos-Actor-User-Email"] = runCtx.triggeredByUserEmail;
+    }
+  }
   try {
     const agent = await ctx.agents.get(runCtx.agentId, runCtx.companyId);
     if (agent && agent.name) {
