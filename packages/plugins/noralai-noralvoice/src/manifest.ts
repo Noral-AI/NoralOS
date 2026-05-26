@@ -62,6 +62,7 @@ import {
   LIST_VOICES_TOOL_NAME,
   PAUSE_CAMPAIGN_TOOL_NAME,
   PROVISION_VOICE_AGENT_TOOL_NAME,
+  PUBLISH_WORKFLOW_TOOL_NAME,
   REDIAL_CAMPAIGN_TOOL_NAME,
   RESUME_CAMPAIGN_TOOL_NAME,
   REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
@@ -71,6 +72,7 @@ import {
   START_CAMPAIGN_TOOL_NAME,
   UPDATE_WORKFLOW_TOOL_TOOL_NAME,
   UPLOAD_KB_DOCUMENT_TOOL_NAME,
+  VALIDATE_WORKFLOW_TOOL_NAME,
 } from "./tools/registry.js";
 
 export const manifest: NoralosPluginManifestV1 = {
@@ -810,6 +812,42 @@ export const manifest: NoralosPluginManifestV1 = {
             type: "object",
             description: "Replacement workflow graph (nodes + edges).",
             additionalProperties: true,
+          },
+        },
+      },
+    },
+    {
+      name: VALIDATE_WORKFLOW_TOOL_NAME,
+      displayName: "Validate a NoralVoice workflow draft",
+      description:
+        "Dry-run NoralVoice's publish-gate validator on the current draft of a workflow. Returns `{ valid: true, errors: [] }` when the draft is publishable, or `{ valid: false, errors: [...] }` with structured per-node/edge findings. Call after `create_workflow` or `save_workflow` to self-check before `publish_workflow`. Read-only — any tier may invoke.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowId"],
+        properties: {
+          workflowId: {
+            type: "integer",
+            description: "NoralVoice numeric workflow id.",
+            minimum: 1,
+          },
+        },
+      },
+    },
+    {
+      name: PUBLISH_WORKFLOW_TOOL_NAME,
+      displayName: "Publish a NoralVoice workflow draft",
+      description:
+        "Promote the current draft of a workflow to a published version that the runtime will execute. NoralVoice re-runs the full validator on publish — a draft that already passed `validate_workflow` should pass here too. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowId"],
+        properties: {
+          workflowId: {
+            type: "integer",
+            description: "NoralVoice numeric workflow id.",
+            minimum: 1,
           },
         },
       },

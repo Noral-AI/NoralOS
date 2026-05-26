@@ -1477,6 +1477,88 @@ export async function agentSaveWorkflow(
   };
 }
 
+// ---- Workflow lifecycle (Phase 10A) ---------------------------------------
+
+/** Shape of a single validation finding returned by NoralVoice. */
+export interface WorkflowValidationError {
+  kind: string;
+  id: string;
+  field: string | null;
+  message: string;
+}
+
+/**
+ * POST /api/v1/workflow/{workflow_id}/validate.
+ *
+ * Read-only: runs the same DTO + graph checks that the publish gate uses,
+ * without promoting the draft. Lets an agent self-check before committing
+ * to a publish (which throws 422 on the same errors).
+ *
+ * On success returns ``{ valid: true, errors: [] }``. On schema/graph
+ * failures, NoralVoice returns 422 with a body the underlying
+ * ``request`` helper packages into a ``NoralVoiceClientError`` — caller
+ * sees the structured findings via ``err.message`` (already includes
+ * the validation summary).
+ */
+export async function agentValidateWorkflow(
+  config: NoralVoiceClientConfig,
+  params: { workflowId: number },
+): Promise<{ valid: boolean; errors: WorkflowValidationError[] }> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/workflow/${params.workflowId}/validate`,
+    undefined,
+  );
+  // NoralVoice returns { is_valid: true, errors: [] } on success.
+  // On validation failures it returns 422 (handled by `request`).
+  const errorsRaw = Array.isArray(body.errors) ? body.errors : [];
+  const errors: WorkflowValidationError[] = errorsRaw
+    .filter((e): e is Record<string, unknown> => typeof e === "object" && e !== null)
+    .map((e) => ({
+      kind: String(e.kind ?? ""),
+      id: String(e.id ?? ""),
+      field: typeof e.field === "string" ? e.field : null,
+      message: String(e.message ?? ""),
+    }));
+  return {
+    valid: body.is_valid === true,
+    errors,
+  };
+}
+
+/**
+ * POST /api/v1/workflow/{workflow_id}/publish.
+ *
+ * Promotes the current draft to a published version that the runtime
+ * will execute. Gated by the same validator as ``validate_workflow`` —
+ * agents that pre-validated will pass; agents that didn't may get 422.
+ *
+ * Returns the published version's id, version number, and timestamp.
+ */
+export async function agentPublishWorkflow(
+  config: NoralVoiceClientConfig,
+  params: { workflowId: number },
+): Promise<{
+  id: number;
+  version_number: number;
+  status: string;
+  published_at: string | null;
+}> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "POST",
+    `/api/v1/workflow/${params.workflowId}/publish`,
+    undefined,
+  );
+  return {
+    id: Number(body.id ?? 0),
+    version_number: Number(body.version_number ?? 0),
+    status: String(body.status ?? ""),
+    published_at: typeof body.published_at === "string" ? body.published_at : null,
+  };
+}
+
 // ---- Campaign write wrappers -----------------------------------------------
 
 export interface CreateCampaignResult {
