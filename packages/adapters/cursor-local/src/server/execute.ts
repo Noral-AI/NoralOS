@@ -5,10 +5,7 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-<<<<<<< v2026.525.0
-=======
   adapterExecutionTargetNoralosApiUrl,
->>>>>>> master
   adapterExecutionTargetRemoteCwd,
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
@@ -32,25 +29,16 @@ import {
   asNumber,
   asStringArray,
   parseObject,
-<<<<<<< v2026.525.0
-  buildPaperclipEnv,
-=======
   applyNoralosWorkspaceEnv,
   buildNoralosEnv,
->>>>>>> master
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-  refreshPaperclipWorkspaceEnvForExecution,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolvePaperclipDesiredSkillNames,
-=======
+  refreshNoralosWorkspaceEnvForExecution,
   readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
   resolveNoralosDesiredSkillNames,
->>>>>>> master
   removeMaintainerOnlySkillSymlinks,
   renderTemplate,
   renderNoralosWakePrompt,
@@ -282,12 +270,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-<<<<<<< v2026.525.0
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-=======
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
->>>>>>> master
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
   if (wakeTaskId) {
     env.NORALOS_TASK_ID = wakeTaskId;
   }
@@ -329,8 +313,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionTargetIsRemote,
     executionCwd: effectiveExecutionCwd,
   });
-<<<<<<< v2026.525.0
-=======
   if (workspaceHints.length > 0) {
     env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
   }
@@ -341,7 +323,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   for (const [k, v] of Object.entries(envConfig)) {
     if (typeof v === "string") env[k] = v;
   }
->>>>>>> master
   if (!hasExplicitApiKey && authToken) {
     env.NORALOS_API_KEY = authToken;
   }
@@ -444,9 +425,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         }],
       });
       restoreRemoteWorkspace = () => preparedExecutionTargetRuntime.restoreWorkspace();
-<<<<<<< v2026.525.0
       effectiveExecutionCwd = preparedExecutionTargetRuntime.workspaceRemoteDir ?? effectiveExecutionCwd;
-      refreshPaperclipWorkspaceEnvForExecution({
+      refreshNoralosWorkspaceEnvForExecution({
         env,
         envConfig,
         workspaceCwd: effectiveWorkspaceCwd,
@@ -459,8 +439,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         executionTargetIsRemote,
         executionCwd: effectiveExecutionCwd,
       });
-=======
->>>>>>> master
       remoteRuntimeRootDir = preparedExecutionTargetRuntime.runtimeRootDir;
       const managedHome = adapterExecutionTargetUsesManagedHome(executionTarget);
       if (managedHome && preparedExecutionTargetRuntime.runtimeRootDir) {

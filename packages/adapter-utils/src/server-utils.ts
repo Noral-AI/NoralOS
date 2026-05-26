@@ -82,12 +82,8 @@ const TERMINAL_RESULT_SCAN_OVERLAP_CHARS = 64 * 1024;
 const DEFAULT_PAPERCLIP_INSTANCE_ID = "default";
 const PATH_SEGMENT_RE = /^[a-zA-Z0-9_-]+$/;
 const SENSITIVE_ENV_KEY = /(key|token|secret|password|passwd|authorization|cookie)/i;
-<<<<<<< v2026.525.0
 const REDACTED_LOG_VALUE = "***REDACTED***";
-const PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
-=======
 const NORALOS_SKILL_ROOT_RELATIVE_CANDIDATES = [
->>>>>>> master
   "../../skills",
   "../../../../../skills",
 ];
@@ -391,21 +387,13 @@ type NoralosWakePayload = {
   treeHoldInteraction: boolean;
   activeTreeHold: NoralosWakeTreeHoldSummary | null;
   unresolvedBlockerIssueIds: string[];
-<<<<<<< v2026.525.0
-  unresolvedBlockerSummaries: PaperclipWakeBlockerSummary[];
-  executionStage: PaperclipWakeExecutionStage | null;
-  continuationSummary: PaperclipWakeContinuationSummary | null;
-  livenessContinuation: PaperclipWakeLivenessContinuation | null;
-  interactionKind: string | null;
-  interactionStatus: string | null;
-  childIssueSummaries: PaperclipWakeChildIssueSummary[];
-=======
   unresolvedBlockerSummaries: NoralosWakeBlockerSummary[];
   executionStage: NoralosWakeExecutionStage | null;
   continuationSummary: NoralosWakeContinuationSummary | null;
   livenessContinuation: NoralosWakeLivenessContinuation | null;
+  interactionKind: string | null;
+  interactionStatus: string | null;
   childIssueSummaries: NoralosWakeChildIssueSummary[];
->>>>>>> master
   childIssueSummaryTruncated: boolean;
   commentIds: string[];
   latestCommentId: string | null;
@@ -635,20 +623,16 @@ export function stringifyNoralosWakePayload(value: unknown): string | null {
   return JSON.stringify(normalized);
 }
 
-<<<<<<< v2026.525.0
-export function readPaperclipIssueWorkModeFromContext(value: unknown): string | null {
+export function readNoralosIssueWorkModeFromContext(value: unknown): string | null {
   const context = parseObject(value);
-  const issue = parseObject(context.paperclipIssue);
+  const issue = parseObject(context.noralosIssue);
   const direct = asString(issue.workMode, "").trim();
   if (direct) return direct;
-  const wake = normalizePaperclipWakePayload(context.paperclipWake);
+  const wake = normalizeNoralosWakePayload(context.noralosWake);
   return wake?.issue?.workMode ?? null;
 }
 
-export function renderPaperclipWakePrompt(
-=======
 export function renderNoralosWakePrompt(
->>>>>>> master
   value: unknown,
   options: { resumedSession?: boolean } = {},
 ): string {
@@ -968,8 +952,7 @@ export function applyNoralosWorkspaceEnv(
   return env;
 }
 
-<<<<<<< v2026.525.0
-export function shapePaperclipWorkspaceEnvForExecution(input: {
+export function shapeNoralosWorkspaceEnvForExecution(input: {
   workspaceCwd?: string | null;
   workspaceWorktreePath?: string | null;
   workspaceHints?: Array<Record<string, unknown>>;
@@ -1011,7 +994,7 @@ export function shapePaperclipWorkspaceEnvForExecution(input: {
   if (executionCwd === null) {
     // eslint-disable-next-line no-console
     console.warn(
-      "[paperclip] shapePaperclipWorkspaceEnvForExecution called with executionCwd=null on a remote target; " +
+      "[noralos] shapeNoralosWorkspaceEnvForExecution called with executionCwd=null on a remote target; " +
         "stripping workspaceCwd to avoid leaking local paths into the remote environment.",
     );
   }
@@ -1079,7 +1062,7 @@ export function rewriteWorkspaceCwdEnvVarsForExecution(input: {
   return nextEnv;
 }
 
-export function refreshPaperclipWorkspaceEnvForExecution(input: {
+export function refreshNoralosWorkspaceEnvForExecution(input: {
   env: Record<string, string>;
   envConfig?: Record<string, unknown>;
   workspaceCwd?: string | null;
@@ -1099,7 +1082,7 @@ export function refreshPaperclipWorkspaceEnvForExecution(input: {
   workspaceWorktreePath: string | null;
   workspaceHints: Array<Record<string, unknown>>;
 } {
-  const shapedWorkspaceEnv = shapePaperclipWorkspaceEnvForExecution({
+  const shapedWorkspaceEnv = shapeNoralosWorkspaceEnvForExecution({
     workspaceCwd: input.workspaceCwd,
     workspaceWorktreePath: input.workspaceWorktreePath,
     workspaceHints: input.workspaceHints,
@@ -1107,11 +1090,11 @@ export function refreshPaperclipWorkspaceEnvForExecution(input: {
     executionCwd: input.executionCwd,
   });
 
-  delete input.env.PAPERCLIP_WORKSPACE_CWD;
-  delete input.env.PAPERCLIP_WORKSPACE_WORKTREE_PATH;
-  delete input.env.PAPERCLIP_WORKSPACES_JSON;
+  delete input.env.NORALOS_WORKSPACE_CWD;
+  delete input.env.NORALOS_WORKSPACE_WORKTREE_PATH;
+  delete input.env.NORALOS_WORKSPACES_JSON;
 
-  applyPaperclipWorkspaceEnv(input.env, {
+  applyNoralosWorkspaceEnv(input.env, {
     workspaceCwd: shapedWorkspaceEnv.workspaceCwd,
     workspaceSource: input.workspaceSource,
     workspaceStrategy: input.workspaceStrategy,
@@ -1124,7 +1107,7 @@ export function refreshPaperclipWorkspaceEnvForExecution(input: {
   });
 
   if (shapedWorkspaceEnv.workspaceHints.length > 0) {
-    input.env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(shapedWorkspaceEnv.workspaceHints);
+    input.env.NORALOS_WORKSPACES_JSON = JSON.stringify(shapedWorkspaceEnv.workspaceHints);
   }
 
   const shapedEnvConfig = rewriteWorkspaceCwdEnvVarsForExecution({
@@ -1140,10 +1123,7 @@ export function refreshPaperclipWorkspaceEnvForExecution(input: {
   return shapedWorkspaceEnv;
 }
 
-export function sanitizeInheritedPaperclipEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-=======
 export function sanitizeInheritedNoralosEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
->>>>>>> master
   const env: NodeJS.ProcessEnv = { ...baseEnv };
   for (const key of Object.keys(env)) {
     if (!key.startsWith("PAPERCLIP_")) continue;

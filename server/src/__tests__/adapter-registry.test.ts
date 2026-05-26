@@ -233,7 +233,6 @@ describe("server adapter registry", () => {
     await expect(listAdapterModelProfiles("pi_local")).resolves.toEqual([]);
   });
 
-<<<<<<< v2026.525.0
   it("wraps built-in npm runtime installs with the sandbox-aware install helper", () => {
     const expectedClaudeInstall = `if ! command -v 'claude' >/dev/null 2>&1; then ${buildSandboxNpmInstallCommand("@anthropic-ai/claude-code")}; fi`;
     const expectedCodexInstall = `if ! command -v 'codex' >/dev/null 2>&1; then ${buildSandboxNpmInstallCommand("@openai/codex")}; fi`;
@@ -262,8 +261,6 @@ describe("server adapter registry", () => {
     });
   });
 
-=======
->>>>>>> master
   it("switches active adapter behavior back to the builtin when an override is paused", async () => {
     const builtIn = findServerAdapter("claude_local");
     expect(builtIn).not.toBeNull();

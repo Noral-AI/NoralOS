@@ -8,10 +8,7 @@ import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { companiesApi } from "../api/companies";
 import { assetsApi } from "../api/assets";
-<<<<<<< v2026.525.0
 import { instanceSettingsApi } from "../api/instanceSettings";
-=======
->>>>>>> master
 import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
 import { Settings, CloudUpload, Download, Upload } from "lucide-react";
@@ -19,10 +16,6 @@ import { CompanyPatternIcon } from "../components/CompanyPatternIcon";
 import {
   Field,
   ToggleField,
-<<<<<<< v2026.525.0
-} from "../components/agent-config-primitives";
-
-=======
   HintIcon,
 } from "../components/agent-config-primitives";
 
@@ -32,7 +25,6 @@ type AgentSnippetInput = {
   testResolutionUrl?: string | null;
 };
 
->>>>>>> master
 const BYTES_PER_MIB = 1024 * 1024;
 const DEFAULT_COMPANY_ATTACHMENT_MAX_MIB = DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES / BYTES_PER_MIB;
 const MAX_COMPANY_ATTACHMENT_MAX_MIB = MAX_COMPANY_ATTACHMENT_MAX_BYTES / BYTES_PER_MIB;
@@ -67,23 +59,17 @@ export function CompanySettings() {
     setLogoUrl(selectedCompany.logoUrl ?? "");
   }, [selectedCompany]);
 
-<<<<<<< v2026.525.0
-=======
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSnippet, setInviteSnippet] = useState<string | null>(null);
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetCopyDelightId, setSnippetCopyDelightId] = useState(0);
 
->>>>>>> master
   const attachmentMaxBytes = Number.parseInt(attachmentMaxMiB, 10) * BYTES_PER_MIB;
   const attachmentMaxValid =
     Number.isInteger(attachmentMaxBytes)
     && attachmentMaxBytes >= BYTES_PER_MIB
     && attachmentMaxBytes <= MAX_COMPANY_ATTACHMENT_MAX_BYTES;
-<<<<<<< v2026.525.0
   const cloudSyncEnabled = experimentalSettings?.enableCloudSync === true;
-=======
->>>>>>> master
 
   const generalDirty =
     !!selectedCompany &&
@@ -150,8 +136,6 @@ export function CompanySettings() {
     clearLogoMutation.mutate();
   }
 
-<<<<<<< v2026.525.0
-=======
   useEffect(() => {
     setInviteError(null);
     setInviteSnippet(null);
@@ -159,7 +143,6 @@ export function CompanySettings() {
     setSnippetCopyDelightId(0);
   }, [selectedCompanyId]);
 
->>>>>>> master
   const archiveMutation = useMutation({
     mutationFn: ({
       companyId,
@@ -579,8 +562,6 @@ export function CompanySettings() {
     </div>
   );
 }
-<<<<<<< v2026.525.0
-=======
 
 function buildAgentSnippet(input: AgentSnippetInput) {
   const candidateUrls = buildCandidateOnboardingUrls(input);
@@ -695,4 +676,3 @@ function buildResolutionTestUrl(input: AgentSnippetInput): string | null {
     return null;
   }
 }
->>>>>>> master

@@ -84,22 +84,16 @@ function createFreshConfigPath() {
 describe("onboard", () => {
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
-<<<<<<< v2026.525.0
-    delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
-    delete process.env.PAPERCLIP_SECRETS_MASTER_KEY;
-    delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
-    delete process.env.PAPERCLIP_HOME;
-    delete process.env.PAPERCLIP_CONFIG;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
-    delete process.env.PAPERCLIP_BIND;
-    delete process.env.PAPERCLIP_BIND_HOST;
-    delete process.env.PAPERCLIP_TAILNET_BIND_HOST;
-    delete process.env.HOST;
-=======
     delete process.env.NORALOS_AGENT_JWT_SECRET;
     delete process.env.NORALOS_SECRETS_MASTER_KEY;
     delete process.env.NORALOS_SECRETS_MASTER_KEY_FILE;
->>>>>>> master
+    delete process.env.NORALOS_HOME;
+    delete process.env.NORALOS_CONFIG;
+    delete process.env.NORALOS_INSTANCE_ID;
+    delete process.env.NORALOS_BIND;
+    delete process.env.NORALOS_BIND_HOST;
+    delete process.env.NORALOS_TAILNET_BIND_HOST;
+    delete process.env.HOST;
   });
 
   afterEach(() => {
@@ -177,12 +171,8 @@ describe("onboard", () => {
 
   it("keeps tailnet quickstart on loopback until tailscale is available", async () => {
     const configPath = createFreshConfigPath();
-<<<<<<< v2026.525.0
-    delete process.env.PAPERCLIP_TAILNET_BIND_HOST;
-    process.env.PATH = "";
-=======
     delete process.env.NORALOS_TAILNET_BIND_HOST;
->>>>>>> master
+    process.env.PATH = "";
 
     try {
       await onboard({ config: configPath, yes: true, invokedByRun: true, bind: "tailnet" });

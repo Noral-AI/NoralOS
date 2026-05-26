@@ -335,8 +335,6 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const statePath = path.join(fixtureRoot, "state.json");
     const fixture = await startSshEnvLabFixture({ statePath });
     const sshConfig = await buildSshEnvLabFixtureConfig(fixture);
-<<<<<<< v2026.525.0
-=======
     const healthServer = createServer((req, res) => {
       if (req.url === "/api/health") {
         res.writeHead(200, { "content-type": "application/json" });
@@ -357,7 +355,6 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const runtimeApiUrl = `http://127.0.0.1:${address.port}`;
     const previousCandidates = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
     process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
->>>>>>> master
     const { companyId, environment, runId } = await seedEnvironment({
       driver: "ssh",
       name: "Fixture SSH",
@@ -381,10 +378,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         username: sshConfig.username,
         remoteWorkspacePath: sshConfig.remoteWorkspacePath,
         remoteCwd: sshConfig.remoteWorkspacePath,
-<<<<<<< v2026.525.0
-=======
         noralosApiUrl: runtimeApiUrl,
->>>>>>> master
       });
 
       const released = await runtime.releaseRunLeases(runId);
@@ -393,15 +387,12 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       expect(released[0]?.environment.driver).toBe("ssh");
       expect(released[0]?.lease.status).toBe("released");
     } finally {
-<<<<<<< v2026.525.0
-=======
       if (previousCandidates === undefined) {
         delete process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
       } else {
         process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
       }
       await new Promise<void>((resolve) => healthServer.close(() => resolve()));
->>>>>>> master
     }
   });
 

@@ -302,11 +302,8 @@ If the issue identifier is available, prefer the document deep link over a plain
 If you're asked to make a plan, _do not mark the issue as done_. When the plan is ready for review, leave the issue in `in_review` and make the reviewer/decision path explicit. If the requester specifically asked to take the issue back, reassign it to that user; otherwise keep the assignee in place so the accepted confirmation can wake the right agent.
 
 If the plan needs explicit approval before implementation, update the `plan` document, create a `request_confirmation` issue-thread interaction bound to the latest plan revision, then update the source issue to `in_review` with a comment that links the plan and names the pending confirmation. This is a deliberate waiting path, not an abandoned productive run. Wait for acceptance before creating implementation subtasks. See `references/api-reference.md` for the interaction payload.
-<<<<<<< v2026.525.0:skills/paperclip/SKILL.md
 
-When asked to convert a plan into executable Paperclip tasks — depth, assignment, dependencies, parallelization — use the companion skill `paperclip-converting-plans-to-tasks`.
-=======
->>>>>>> master:skills/noralos/SKILL.md
+When asked to convert a plan into executable Noralos tasks — depth, assignment, dependencies, parallelization — use the companion skill `noralos-converting-plans-to-tasks`.
 
 When asked to convert a plan into executable NoralOS tasks — depth, assignment, dependencies, parallelization — use the companion skill `noralos-converting-plans-to-tasks`.
 
@@ -366,10 +363,6 @@ Results are ranked by relevance: title matches first, then identifier, descripti
 
 ## Full Reference
 
-<<<<<<< v2026.525.0:skills/paperclip/SKILL.md
-For detailed API tables, JSON response schemas, worked examples (IC and Manager heartbeats), governance/approvals, cross-team delegation rules, error codes, issue lifecycle diagram, and the common mistakes table, read: `skills/paperclip/references/api-reference.md`
+For detailed API tables, JSON response schemas, worked examples (IC and Manager heartbeats), governance/approvals, cross-team delegation rules, error codes, issue lifecycle diagram, and the common mistakes table, read: `skills/noralos/references/api-reference.md`
 
 Again, rule #1 is: never ask a human to do what an agent could do. Try harder. Try again. Ask another agent to help. Keep working until the goal is fully accomplished.
-=======
-For detailed API tables, JSON response schemas, worked examples (IC and Manager heartbeats), governance/approvals, cross-team delegation rules, error codes, issue lifecycle diagram, and the common mistakes table, read: `skills/noralos/references/api-reference.md`
->>>>>>> master:skills/noralos/SKILL.md

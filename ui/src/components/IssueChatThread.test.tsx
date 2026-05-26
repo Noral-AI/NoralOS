@@ -967,12 +967,9 @@ describe("IssueChatThread", () => {
       authorAgentId: "agent-perf-codex",
       authorUserId: null,
       body: "Older loaded comment",
-<<<<<<< v2026.525.0
       authorType: "agent" as const,
       presentation: null,
       metadata: null,
-=======
->>>>>>> master
       createdAt: new Date("2026-04-06T12:00:00.000Z"),
       updatedAt: new Date("2026-04-06T12:00:00.000Z"),
     };

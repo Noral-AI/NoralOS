@@ -866,8 +866,6 @@ export async function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise
       emit("");
     }
 
-<<<<<<< v2026.525.0
-=======
     // Unique constraints
     const allUniqueConstraints = await sql<{
       constraint_name: string;
@@ -899,7 +897,6 @@ export async function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise
       emit("");
     }
 
->>>>>>> master
     // Indexes (non-primary, non-unique-constraint)
     const allIndexes = await sql<{ schema_name: string; tablename: string; indexdef: string }[]>`
       SELECT schemaname AS schema_name, tablename, indexdef

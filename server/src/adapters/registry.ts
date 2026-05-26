@@ -63,18 +63,14 @@ import {
   agentConfigurationDoc as cursorAgentConfigurationDoc,
   models as cursorModels,
   modelProfiles as cursorModelProfiles,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-cursor-local";
+} from "@noralos/adapter-cursor-local";
 import {
   execute as cursorCloudExecute,
   getConfigSchema as getCursorCloudConfigSchema,
   sessionCodec as cursorCloudSessionCodec,
   testEnvironment as cursorCloudTestEnvironment,
-} from "@paperclipai/adapter-cursor-cloud/server";
-import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@paperclipai/adapter-cursor-cloud";
-=======
-} from "@noralos/adapter-cursor-local";
->>>>>>> master
+} from "@noralos/adapter-cursor-cloud/server";
+import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@noralos/adapter-cursor-cloud";
 import {
   execute as geminiExecute,
   listGeminiSkills,
@@ -86,22 +82,18 @@ import {
   agentConfigurationDoc as geminiAgentConfigurationDoc,
   models as geminiModels,
   modelProfiles as geminiModelProfiles,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-gemini-local";
+} from "@noralos/adapter-gemini-local";
 import {
   execute as grokExecute,
   listGrokSkills,
   syncGrokSkills,
   testEnvironment as grokTestEnvironment,
   sessionCodec as grokSessionCodec,
-} from "@paperclipai/adapter-grok-local/server";
+} from "@noralos/adapter-grok-local/server";
 import {
   agentConfigurationDoc as grokAgentConfigurationDoc,
   models as grokModels,
-} from "@paperclipai/adapter-grok-local";
-=======
-} from "@noralos/adapter-gemini-local";
->>>>>>> master
+} from "@noralos/adapter-grok-local";
 import {
   execute as openCodeExecute,
   listOpenCodeSkills,

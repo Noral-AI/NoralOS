@@ -269,12 +269,9 @@ describeEmbeddedPostgres("environment runtime driver contract", () => {
     fixtureRoots.push(fixtureRoot);
     const fixture = await startSshEnvLabFixture({ statePath: path.join(fixtureRoot, "state.json") });
     const sshConfig = await buildSshEnvLabFixtureConfig(fixture);
-<<<<<<< v2026.525.0
-=======
     const runtimeApiUrl = await startHealthServer();
     const previousCandidates = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
     process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
->>>>>>> master
 
     await runContract({
       name: "ssh",
@@ -288,10 +285,6 @@ describeEmbeddedPostgres("environment runtime driver contract", () => {
           username: sshConfig.username,
           remoteWorkspacePath: sshConfig.remoteWorkspacePath,
           remoteCwd: sshConfig.remoteWorkspacePath,
-<<<<<<< v2026.525.0
-        });
-      },
-=======
           noralosApiUrl: runtimeApiUrl,
         });
       },
@@ -302,7 +295,6 @@ describeEmbeddedPostgres("environment runtime driver contract", () => {
           process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
         }
       },
->>>>>>> master
     });
   });
 });

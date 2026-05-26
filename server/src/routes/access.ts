@@ -1736,8 +1736,6 @@ export function buildInviteOnboardingTextDocument(
     onboarding.registrationEndpoint.url
   }
 
-<<<<<<< v2026.525.0
-=======
     IMPORTANT: You MUST include agentDefaultsPayload.headers.x-openclaw-token with your gateway token.
     Legacy x-openclaw-auth is also accepted, but x-openclaw-token is preferred.
     Use adapterType "openclaw_gateway" and a ws:// or wss:// gateway URL.
@@ -1747,7 +1745,6 @@ export function buildInviteOnboardingTextDocument(
     - First run may return "pairing required" once; approve the pending pairing request in OpenClaw, then retry.
     Do NOT use /v1/responses or /hooks/* in this gateway join flow.
 
->>>>>>> master
     Body (JSON):
     {
       "requestType": "agent",

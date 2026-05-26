@@ -1,20 +1,13 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-<<<<<<< v2026.525.0
-import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
-import { resolvePaperclipInstanceRootForAdapter } from "@paperclipai/adapter-utils/server-utils";
-=======
 import type { AdapterExecutionContext } from "@noralos/adapter-utils";
->>>>>>> master
+import { resolveNoralosInstanceRootForAdapter } from "@noralos/adapter-utils/server-utils";
 
 const TRUTHY_ENV_RE = /^(1|true|yes|on)$/i;
 const COPIED_SHARED_FILES = ["config.json", "config.toml", "instructions.md"] as const;
 const SYMLINKED_SHARED_FILES = ["auth.json"] as const;
-<<<<<<< v2026.525.0
-=======
 const DEFAULT_NORALOS_INSTANCE_ID = "default";
->>>>>>> master
 
 function nonEmpty(value: string | undefined): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -172,12 +165,9 @@ export async function prepareManagedCodexHome(
     );
   }
 
-<<<<<<< v2026.525.0
-=======
   await onLog(
     "stdout",
     `[paperclip] Using ${isWorktreeMode(env) ? "worktree-isolated" : "NoralOS-managed"} Codex home "${targetHome}" (seeded from "${sourceHome}").\n`,
   );
->>>>>>> master
   return targetHome;
 }

@@ -139,15 +139,14 @@ describe("command managed runtime", () => {
       .toMatchObject({ code: "ENOENT" });
     expect(calls.every((call) => call.stdin == null)).toBe(true);
   });
-<<<<<<< v2026.525.0
 
   it("runs setup commands from a stable root cwd when staging into a nested remote workspace dir", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-command-runtime-nested-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "noralos-command-runtime-nested-"));
     cleanupDirs.push(rootDir);
 
     const localWorkspaceDir = path.join(rootDir, "local-workspace");
     const remoteBaseDir = path.join(rootDir, "remote-base");
-    const remoteWorkspaceDir = path.join(remoteBaseDir, ".paperclip-runtime", "runs", "test", "workspace");
+    const remoteWorkspaceDir = path.join(remoteBaseDir, ".noralos-runtime", "runs", "test", "workspace");
     await mkdir(localWorkspaceDir, { recursive: true });
     await mkdir(remoteBaseDir, { recursive: true });
     await writeFile(path.join(localWorkspaceDir, "README.md"), "local workspace\n", "utf8");
@@ -226,6 +225,4 @@ describe("command managed runtime", () => {
     expect(calls.every((call) => call.cwd === "/")).toBe(true);
     await expect(readFile(path.join(remoteWorkspaceDir, "README.md"), "utf8")).resolves.toBe("local workspace\n");
   });
-=======
->>>>>>> master
 });

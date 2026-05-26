@@ -218,7 +218,6 @@ describe("claude_local environment diagnostics", () => {
     ).toBe(true);
     expect(result.checks.some((check) => check.code === "claude_cwd_invalid")).toBe(false);
   });
-<<<<<<< v2026.525.0
 
   it("uses --allowedTools instead of --dangerously-skip-permissions for sandbox hello probes", async () => {
     const executeCalls: Array<{ command: string; args?: string[] }> = [];
@@ -233,7 +232,7 @@ describe("claude_local environment diagnostics", () => {
         kind: "remote",
         transport: "sandbox",
         providerKey: "cloudflare",
-        remoteCwd: "/workspace/paperclip",
+        remoteCwd: "/workspace/noralos",
         runner: {
           execute: async (input) => {
             executeCalls.push({ command: input.command, args: input.args });
@@ -279,6 +278,4 @@ describe("claude_local environment diagnostics", () => {
     // approval that no human is present to answer.
     expect(probeCall?.args).toContain("--allowedTools");
   });
-=======
->>>>>>> master
 });

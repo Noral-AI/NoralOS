@@ -115,14 +115,11 @@ function timestampValue(value: Date | string | null | undefined) {
 
 function compareNullableText(left: string | null | undefined, right: string | null | undefined) {
   return (left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
-<<<<<<< v2026.525.0
-=======
 }
 
 function formatRoutineRunStatus(value: string | null | undefined) {
   if (!value) return null;
   return value.replaceAll("_", " ");
->>>>>>> master
 }
 
 function buildRoutineMutationPayload(input: {
@@ -205,13 +202,10 @@ export function sortRoutines(
     if (result !== 0) return result * direction;
     return compareNullableText(left.title, right.title);
   });
-<<<<<<< v2026.525.0
-=======
 }
 
 function buildRoutinesTabHref(tab: RoutinesTab) {
   return tab === "runs" ? "/routines?tab=runs" : "/routines";
->>>>>>> master
 }
 
 function buildRoutinesTabHref(tab: RoutinesTab) {

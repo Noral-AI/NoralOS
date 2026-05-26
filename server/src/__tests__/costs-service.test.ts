@@ -83,11 +83,8 @@ const mockCostService = vi.hoisted(() => ({
     inputTokens: 0,
     cachedInputTokens: 0,
     outputTokens: 0,
-<<<<<<< v2026.525.0
     runCount: 0,
     runtimeMs: 0,
-=======
->>>>>>> master
   }),
   windowSpend: vi.fn().mockResolvedValue([]),
   byProject: vi.fn().mockResolvedValue([]),
@@ -277,11 +274,8 @@ describe("cost routes", () => {
       inputTokens: 0,
       cachedInputTokens: 0,
       outputTokens: 0,
-<<<<<<< v2026.525.0
       runCount: 0,
       runtimeMs: 0,
-=======
->>>>>>> master
     });
   });
 
@@ -435,11 +429,8 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
   afterEach(async () => {
     await db.delete(financeEvents);
     await db.delete(costEvents);
-<<<<<<< v2026.525.0
     await db.delete(activityLog);
     await db.delete(heartbeatRuns);
-=======
->>>>>>> master
     await db.delete(issues);
     await db.delete(projects);
     await db.delete(agents);
@@ -659,7 +650,6 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
       inputTokens: 60,
       cachedInputTokens: 6,
       outputTokens: 12,
-<<<<<<< v2026.525.0
       runCount: 0,
       runtimeMs: 0,
     });
@@ -675,7 +665,7 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "Noralos",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -827,11 +817,6 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
     expect(descendantsOnly.runtimeMs).toBeLessThan(150_000 + 60_000);
   });
 
-=======
-    });
-  });
-
->>>>>>> master
   it("aggregates finance event sums above int32 without raising Postgres integer overflow", async () => {
     const companyId = randomUUID();
 

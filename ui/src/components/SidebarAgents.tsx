@@ -7,13 +7,9 @@ import {
   Pencil,
   PlayCircle,
   Plus,
-<<<<<<< v2026.525.0
-  Users,
-=======
   Trash2,
   Users,
   Building2,
->>>>>>> master
 } from "lucide-react";
 import {
   DndContext,

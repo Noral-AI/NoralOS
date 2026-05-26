@@ -22,10 +22,7 @@ import {
   addIssueCommentSchema,
   acceptIssueThreadInteractionSchema,
   cancelIssueThreadInteractionSchema,
-<<<<<<< v2026.525.0
   companySearchQuerySchema,
-=======
->>>>>>> master
   createIssueAttachmentMetadataSchema,
   createIssueThreadInteractionSchema,
   createIssueWorkProductSchema,
@@ -54,15 +51,10 @@ import {
   type CompanySearchQuery,
   type CompanySearchResponse,
   type ExecutionWorkspace,
-<<<<<<< v2026.525.0
   type IssueRelationIssueSummary,
   type SuccessfulRunHandoffState,
-} from "@paperclipai/shared";
-import { trackAgentTaskCompleted } from "@paperclipai/shared/telemetry";
-=======
 } from "@noralos/shared";
 import { trackAgentTaskCompleted } from "@noralos/shared/telemetry";
->>>>>>> master
 import { getTelemetryClient } from "../telemetry.js";
 import type { StorageService } from "../storage/types.js";
 import { validate } from "../middleware/validate.js";

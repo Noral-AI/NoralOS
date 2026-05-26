@@ -19,8 +19,6 @@ type PartialConfig = {
   };
 };
 
-<<<<<<< v2026.525.0
-=======
 function expandHomePrefix(value: string): string {
   if (value === "~") return os.homedir();
   if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
@@ -45,7 +43,6 @@ function resolveDefaultConfigPath(): string {
   return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "config.json");
 }
 
->>>>>>> master
 function readConfig(configPath: string): PartialConfig | null {
   if (!existsSync(configPath)) return null;
   try {
@@ -79,13 +76,10 @@ function resolveConnectionString(config: PartialConfig | null): string {
   return `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`;
 }
 
-<<<<<<< v2026.525.0
-=======
 function resolveDefaultBackupDir(): string {
   return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "data", "backups");
 }
 
->>>>>>> master
 function resolveBackupDir(config: PartialConfig | null): string {
   const raw = config?.database?.backup?.dir;
   if (typeof raw === "string" && raw.trim().length > 0) {

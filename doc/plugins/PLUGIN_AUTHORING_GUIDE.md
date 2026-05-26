@@ -77,8 +77,6 @@ pnpm test
 pnpm build
 ```
 
-<<<<<<< v2026.525.0
-=======
 For local development, install it into NoralOS from an absolute local path through the plugin manager or API. The server supports local filesystem installs and watches local-path plugins for file changes so worker restarts happen automatically after rebuilds.
 
 Example:
@@ -89,7 +87,6 @@ curl -X POST http://127.0.0.1:3100/api/plugins/install \
   -d '{"packageName":"/absolute/path/to/your-plugin","isLocalPath":true}'
 ```
 
->>>>>>> master
 ## Supported alpha surface
 
 Worker:

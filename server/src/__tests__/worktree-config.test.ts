@@ -553,21 +553,13 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(worktreeRoot);
-<<<<<<< v2026.525.0
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
-    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-878-create-a-mine-tab-in-inbox";
-    process.env.PAPERCLIP_HOME = isolatedHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "pap-878-create-a-mine-tab-in-inbox";
-    process.env.PAPERCLIP_CONFIG = configPath;
-    delete process.env.PORT;
-    delete process.env.DATABASE_URL;
-=======
     process.env.NORALOS_IN_WORKTREE = "true";
     process.env.NORALOS_WORKTREE_NAME = "PAP-878-create-a-mine-tab-in-inbox";
     process.env.NORALOS_HOME = isolatedHome;
     process.env.NORALOS_INSTANCE_ID = "pap-878-create-a-mine-tab-in-inbox";
     process.env.NORALOS_CONFIG = configPath;
->>>>>>> master
+    delete process.env.PORT;
+    delete process.env.DATABASE_URL;
 
     maybePersistWorktreeRuntimePorts({
       serverPort: 3103,
@@ -645,21 +637,13 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(worktreeRoot);
-<<<<<<< v2026.525.0
-    process.env.PAPERCLIP_IN_WORKTREE = "true";
-    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-125-public-base-url";
-    process.env.PAPERCLIP_HOME = isolatedHome;
-    process.env.PAPERCLIP_INSTANCE_ID = "pap-125-public-base-url";
-    process.env.PAPERCLIP_CONFIG = configPath;
-    delete process.env.PORT;
-    delete process.env.DATABASE_URL;
-=======
     process.env.NORALOS_IN_WORKTREE = "true";
     process.env.NORALOS_WORKTREE_NAME = "PAP-125-public-base-url";
     process.env.NORALOS_HOME = isolatedHome;
     process.env.NORALOS_INSTANCE_ID = "pap-125-public-base-url";
     process.env.NORALOS_CONFIG = configPath;
->>>>>>> master
+    delete process.env.PORT;
+    delete process.env.DATABASE_URL;
 
     maybePersistWorktreeRuntimePorts({
       serverPort: 3103,

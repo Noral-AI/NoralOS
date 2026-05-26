@@ -8,24 +8,15 @@ const repoRoot = process.cwd();
 const serverRoot = path.join(repoRoot, "server");
 const serverTestsDir = path.join(repoRoot, "server", "src", "__tests__");
 const nonServerProjects = [
-<<<<<<< v2026.525.0
-  "@paperclipai/shared",
-  "@paperclipai/db",
-  "@paperclipai/adapter-utils",
-  "@paperclipai/adapter-acpx-local",
-  "@paperclipai/adapter-codex-local",
-  "@paperclipai/adapter-opencode-local",
-  "@paperclipai/plugin-sdk",
-  "@paperclipai/ui",
-  "paperclipai",
-=======
   "@noralos/shared",
   "@noralos/db",
   "@noralos/adapter-utils",
+  "@noralos/adapter-acpx-local",
   "@noralos/adapter-codex-local",
   "@noralos/adapter-opencode-local",
+  "@noralos/plugin-sdk",
   "@noralos/ui",
->>>>>>> master
+  "paperclipai",
 ];
 const routeTestPattern = /[^/]*(?:route|routes|authz)[^/]*\.test\.ts$/;
 const additionalSerializedServerTests = new Set([

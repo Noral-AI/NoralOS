@@ -38,14 +38,10 @@ import type {
   IssueBlockerAttention,
   IssueRecoveryAction,
   IssueRelationIssueSummary,
-<<<<<<< v2026.525.0
   IssueScheduledRetry,
   SuccessfulRunHandoffState,
   IssueWorkMode,
-} from "@paperclipai/shared";
-=======
 } from "@noralos/shared";
->>>>>>> master
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
 import { useNoralosIssueRuntime, type NoralosIssueRuntimeReassignment } from "../hooks/useNoralosIssueRuntime";
@@ -182,11 +178,8 @@ interface IssueChatMessageContext {
   onCancelInteraction?: (
     interaction: AskUserQuestionsInteraction,
   ) => Promise<void> | void;
-<<<<<<< v2026.525.0
   issueStatus?: string;
   successfulRunHandoff?: SuccessfulRunHandoffState | null;
-=======
->>>>>>> master
 }
 
 const IssueChatCtx = createContext<IssueChatMessageContext>({
@@ -4224,11 +4217,8 @@ export function IssueChatThread({
       onRejectInteraction: stableOnRejectInteraction,
       onSubmitInteractionAnswers: stableOnSubmitInteractionAnswers,
       onCancelInteraction: stableOnCancelInteraction,
-<<<<<<< v2026.525.0
       issueStatus,
       successfulRunHandoff,
-=======
->>>>>>> master
     }),
     [
       feedbackDataSharingPreference,
@@ -4249,11 +4239,8 @@ export function IssueChatThread({
       stableOnRejectInteraction,
       stableOnSubmitInteractionAnswers,
       stableOnCancelInteraction,
-<<<<<<< v2026.525.0
       issueStatus,
       successfulRunHandoff,
-=======
->>>>>>> master
     ],
   );
 

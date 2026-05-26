@@ -37,8 +37,6 @@ export type ResolvedDatabaseTarget =
       envPath: string;
     };
 
-<<<<<<< v2026.525.0
-=======
 function expandHomePrefix(value: string): string {
   if (value === "~") return os.homedir();
   if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
@@ -72,7 +70,6 @@ function resolveDefaultEmbeddedPostgresDir(): string {
   return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "db");
 }
 
->>>>>>> master
 function resolveHomeAwarePath(value: string): string {
   return path.resolve(expandHomePrefix(value));
 }

@@ -159,12 +159,8 @@ export function deriveAuthTrustedOrigins(config: Config, opts?: { listenPort?: n
 
 export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins: string[]): BetterAuthInstance {
   const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
-<<<<<<< v2026.525.0
-  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim() || baseUrl;
-  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.PAPERCLIP_AGENT_JWT_SECRET;
-=======
+  const publicUrl = process.env.NORALOS_PUBLIC_URL?.trim() || baseUrl;
   const secret = process.env.BETTER_AUTH_SECRET ?? process.env.NORALOS_AGENT_JWT_SECRET;
->>>>>>> master
   if (!secret) {
     throw new Error(
       "BETTER_AUTH_SECRET (or NORALOS_AGENT_JWT_SECRET) must be set. " +

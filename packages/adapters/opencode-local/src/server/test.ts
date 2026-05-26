@@ -5,12 +5,8 @@ import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestContext,
   AdapterEnvironmentTestResult,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
-=======
 } from "@noralos/adapter-utils";
->>>>>>> master
+import type { AdapterExecutionTarget } from "@noralos/adapter-utils/execution-target";
 import {
   asBoolean,
   asNumber,
@@ -18,27 +14,17 @@ import {
   asStringArray,
   parseObject,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
-import {
-  ensureAdapterExecutionTargetCommandResolvable,
-  maybeRunSandboxInstallCommand,
-=======
 } from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
->>>>>>> master
+  maybeRunSandboxInstallCommand,
   ensureAdapterExecutionTargetDirectory,
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-<<<<<<< v2026.525.0
   prepareAdapterExecutionTargetRuntime,
   overrideAdapterExecutionTargetRemoteCwd,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import { discoverOpenCodeModels, ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { parseOpenCodeJsonl } from "./parse.js";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";
@@ -87,10 +73,7 @@ export async function testEnvironment(
   const command = asString(config.command, "opencode");
   const target = ctx.executionTarget ?? null;
   const targetIsRemote = target?.kind === "remote";
-<<<<<<< v2026.525.0
   const targetIsSandbox = target?.kind === "remote" && target.transport === "sandbox";
-=======
->>>>>>> master
   const cwd = resolveAdapterExecutionTargetCwd(target, asString(config.cwd, ""), process.cwd());
   const targetLabel = targetIsRemote
     ? ctx.environmentName ?? describeAdapterExecutionTarget(target)

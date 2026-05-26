@@ -173,15 +173,10 @@ Secret-aware env bindings are supported by agents, projects, and routines. Routi
 For local/default installs, the active provider is `local_encrypted`:
 
 - Secret material is encrypted at rest with a local master key.
-<<<<<<< v2026.525.0
-- Default key file: `~/.paperclip/instances/default/secrets/master.key` (auto-created if missing).
-- CLI config location: `~/.paperclip/instances/default/config.json` under `secrets.localEncrypted.keyFilePath`.
-- Backup/restore requires both the database metadata and the local master key file; either artifact alone is insufficient.
-- The server best-effort enforces `0600` key file permissions and provider health reports permission warnings.
-=======
 - Default key file: `~/.noralos/instances/default/secrets/master.key` (auto-created if missing).
 - CLI config location: `~/.noralos/instances/default/config.json` under `secrets.localEncrypted.keyFilePath`.
->>>>>>> master
+- Backup/restore requires both the database metadata and the local master key file; either artifact alone is insufficient.
+- The server best-effort enforces `0600` key file permissions and provider health reports permission warnings.
 
 Optional overrides:
 

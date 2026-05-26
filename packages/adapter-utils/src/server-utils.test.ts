@@ -8,22 +8,15 @@ import {
   appendWithByteCap,
   buildInvocationEnvForLogs,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-<<<<<<< v2026.525.0
-  materializePaperclipSkillCopy,
-  refreshPaperclipWorkspaceEnvForExecution,
-  renderPaperclipWakePrompt,
-  runningProcesses,
-  runChildProcess,
-  sanitizeSshRemoteEnv,
-  shapePaperclipWorkspaceEnvForExecution,
-  rewriteWorkspaceCwdEnvVarsForExecution,
-  stringifyPaperclipWakePayload,
-=======
+  materializeNoralosSkillCopy,
+  refreshNoralosWorkspaceEnvForExecution,
   renderNoralosWakePrompt,
   runningProcesses,
   runChildProcess,
+  sanitizeSshRemoteEnv,
+  shapeNoralosWorkspaceEnvForExecution,
+  rewriteWorkspaceCwdEnvVarsForExecution,
   stringifyNoralosWakePayload,
->>>>>>> master
 } from "./server-utils.js";
 
 function isPidAlive(pid: number) {

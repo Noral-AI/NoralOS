@@ -3,14 +3,10 @@ import test from "node:test";
 
 import {
   collectInternalDependencyProblems,
-<<<<<<< v2026.525.0
   createManifestLookupKey,
   fetchRegistryJson,
   isCanaryVersion,
   verifyPackageRegistryProblems,
-=======
-  isCanaryVersion,
->>>>>>> master
   verifyPackageRegistryState,
 } from "./verify-release-registry-state.mjs";
 
@@ -296,12 +292,11 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
     [],
   );
 });
-<<<<<<< v2026.525.0
 
 test("verifyPackageRegistryState still fails when the dist-tag is stale", () => {
   const packageDocsByName = new Map([
     [
-      "@paperclipai/ui",
+      "@noralos/ui",
       {
         "dist-tags": {
           canary: "2026.429.0-canary.2",
@@ -312,9 +307,9 @@ test("verifyPackageRegistryState still fails when the dist-tag is stale", () => 
   ]);
   const packageManifestsByKey = new Map([
     [
-      createManifestLookupKey("@paperclipai/ui", "2026.430.0-canary.0"),
+      createManifestLookupKey("@noralos/ui", "2026.430.0-canary.0"),
       {
-        name: "@paperclipai/ui",
+        name: "@noralos/ui",
         version: "2026.430.0-canary.0",
       },
     ],
@@ -322,8 +317,8 @@ test("verifyPackageRegistryState still fails when the dist-tag is stale", () => 
 
   assert.deepEqual(
     verifyPackageRegistryState({
-      packageName: "@paperclipai/ui",
-      packageDoc: packageDocsByName.get("@paperclipai/ui"),
+      packageName: "@noralos/ui",
+      packageDoc: packageDocsByName.get("@noralos/ui"),
       packageDocsByName,
       packageManifestsByKey,
       channel: "canary",
@@ -331,14 +326,14 @@ test("verifyPackageRegistryState still fails when the dist-tag is stale", () => 
       targetVersion: "2026.430.0-canary.0",
       allowCanaryLatest: false,
     }),
-    ["@paperclipai/ui: dist-tag canary resolves to 2026.429.0-canary.2, expected 2026.430.0-canary.0"],
+    ["@noralos/ui: dist-tag canary resolves to 2026.429.0-canary.2, expected 2026.430.0-canary.0"],
   );
 });
 
 test("verifyPackageRegistryState ignores internal peer dependency ranges", () => {
   const packageDocsByName = new Map([
     [
-      "@paperclipai/plugin-sdk",
+      "@noralos/plugin-sdk",
       {
         "dist-tags": {
           canary: "2026.430.0-canary.0",
@@ -346,7 +341,7 @@ test("verifyPackageRegistryState ignores internal peer dependency ranges", () =>
         versions: {
           "2026.430.0-canary.0": {
             peerDependencies: {
-              "@paperclipai/server": "^2026.430.0-canary.0",
+              "@noralos/server": "^2026.430.0-canary.0",
             },
           },
         },
@@ -356,8 +351,8 @@ test("verifyPackageRegistryState ignores internal peer dependency ranges", () =>
 
   assert.deepEqual(
     verifyPackageRegistryState({
-      packageName: "@paperclipai/plugin-sdk",
-      packageDoc: packageDocsByName.get("@paperclipai/plugin-sdk"),
+      packageName: "@noralos/plugin-sdk",
+      packageDoc: packageDocsByName.get("@noralos/plugin-sdk"),
       packageDocsByName,
       channel: "canary",
       distTag: "canary",
@@ -389,5 +384,3 @@ test("fetchRegistryJson times out hung requests", async () => {
     globalThis.fetch = originalFetch;
   }
 });
-=======
->>>>>>> master

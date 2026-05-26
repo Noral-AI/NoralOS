@@ -5,10 +5,7 @@ import type { AdapterExecutionContext, AdapterExecutionResult } from "@noralos/a
 import type { RunProcessResult } from "@noralos/adapter-utils/server-utils";
 import {
   adapterExecutionTargetIsRemote,
-<<<<<<< v2026.525.0
-=======
   adapterExecutionTargetNoralosApiUrl,
->>>>>>> master
   adapterExecutionTargetRemoteCwd,
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
@@ -33,16 +30,10 @@ import {
   asStringArray,
   parseObject,
   parseJson,
-<<<<<<< v2026.525.0
-  applyPaperclipWorkspaceEnv,
-  buildPaperclipEnv,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-=======
   applyNoralosWorkspaceEnv,
   buildNoralosEnv,
   readNoralosRuntimeSkillEntries,
->>>>>>> master
+  readNoralosIssueWorkModeFromContext,
   joinPromptSections,
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
@@ -223,12 +214,8 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-<<<<<<< v2026.525.0
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-=======
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
->>>>>>> master
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
 
   if (wakeTaskId) {
     env.NORALOS_TASK_ID = wakeTaskId;
@@ -419,24 +406,21 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const maxTurns = asNumber(config.maxTurnsPerRun, 0);
   const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, true);
   const configEnv = parseObject(config.env);
-<<<<<<< v2026.525.0
-  const workspaceContext = parseObject(context.paperclipWorkspace);
+  const workspaceContext = parseObject(context.noralosWorkspace);
   const workspaceCwd = asString(workspaceContext.cwd, "");
   const workspaceSource = asString(workspaceContext.source, "");
   const workspaceStrategy = asString(workspaceContext.strategy, "");
   const workspaceBranch = asString(workspaceContext.branchName, "") || null;
   const workspaceWorktreePath = asString(workspaceContext.worktreePath, "") || null;
   const agentHome = asString(workspaceContext.agentHome, "") || null;
-  const workspaceHints = Array.isArray(context.paperclipWorkspaces)
-    ? context.paperclipWorkspaces.filter(
+  const workspaceHints = Array.isArray(context.noralosWorkspaces)
+    ? context.noralosWorkspaces.filter(
         (value): value is Record<string, unknown> => typeof value === "object" && value !== null,
       )
     : [];
   const configuredCwd = asString(config.cwd, "");
   const useConfiguredInsteadOfAgentHome = workspaceSource === "agent_home" && configuredCwd.length > 0;
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
-=======
->>>>>>> master
   const hasExplicitClaudeConfigDir =
     typeof configEnv.CLAUDE_CONFIG_DIR === "string" && configEnv.CLAUDE_CONFIG_DIR.trim().length > 0;
   const instructionsFilePath = asString(config.instructionsFilePath, "").trim();

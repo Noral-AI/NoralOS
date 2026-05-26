@@ -36,14 +36,11 @@ export interface IssueCostSummary {
   inputTokens: number;
   cachedInputTokens: number;
   outputTokens: number;
-<<<<<<< v2026.525.0
   /** number of distinct heartbeat runs aggregated across the issue tree */
   runCount: number;
   /** sum of wall-clock duration of each run in the tree (ms);
    * still-running runs contribute (now - startedAt) so this ticks up live */
   runtimeMs: number;
-=======
->>>>>>> master
 }
 
 export interface CostByAgent {

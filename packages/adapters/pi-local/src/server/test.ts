@@ -7,22 +7,13 @@ import {
   asString,
   parseObject,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   asStringArray,
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   maybeRunSandboxInstallCommand,
-=======
-} from "@noralos/adapter-utils/server-utils";
-import {
-  asStringArray,
-} from "@noralos/adapter-utils/server-utils";
-import {
-  ensureAdapterExecutionTargetCommandResolvable,
->>>>>>> master
   ensureAdapterExecutionTargetDirectory,
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,

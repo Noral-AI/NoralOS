@@ -214,18 +214,12 @@ vi.mock("../components/InlineEditor", () => ({
 
 vi.mock("../components/IssueChatThread", () => ({
   IssueChatThread: (props: {
-<<<<<<< v2026.525.0
     onWorkModeChange?: (workMode: string) => void;
     issueWorkMode?: string;
     onStopRun?: (runId: string) => Promise<void>;
     stopRunLabel?: string;
     stoppingRunLabel?: string;
     footer?: ReactNode;
-=======
-    onStopRun?: (runId: string) => Promise<void>;
-    stopRunLabel?: string;
-    stoppingRunLabel?: string;
->>>>>>> master
   }) => {
     mockIssueChatThreadRender(props);
     return (
@@ -236,10 +230,7 @@ vi.mock("../components/IssueChatThread", () => ({
             {props.stopRunLabel ?? "Stop run"}
           </button>
         ) : null}
-<<<<<<< v2026.525.0
         {props.footer}
-=======
->>>>>>> master
       </div>
     );
   },
@@ -1244,10 +1235,7 @@ describe("IssueDetail", () => {
     expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0]).toMatchObject({
       stopRunLabel: "Pause work",
       stoppingRunLabel: "Pausing...",
-<<<<<<< v2026.525.0
       issueWorkMode: "standard",
-=======
->>>>>>> master
     });
 
     const chatPauseButton = Array.from(container.querySelectorAll("button"))
@@ -1278,7 +1266,6 @@ describe("IssueDetail", () => {
     expect(pauseMenuButton).toBeTruthy();
   });
 
-<<<<<<< v2026.525.0
   it("passes planning work mode to the issue chat thread", async () => {
     mockIssuesApi.get.mockResolvedValue(createIssue({ workMode: "planning" }));
     await act(async () => {
@@ -1312,7 +1299,7 @@ describe("IssueDetail", () => {
         uploadedAt: new Date("2026-04-21T00:02:00.000Z"),
       },
     ]);
-    localStorage.setItem("paperclip:issue-comment-draft:issue-1", "Draft follow-up message");
+    localStorage.setItem("noralos:issue-comment-draft:issue-1", "Draft follow-up message");
     mockIssuesApi.update.mockResolvedValue(createIssue({ workMode: "planning" }));
 
     await act(async () => {
@@ -1335,13 +1322,11 @@ describe("IssueDetail", () => {
     await flushReact();
 
     expect(mockIssuesApi.update).toHaveBeenCalledWith(issue.identifier, { workMode: "planning" });
-    expect(localStorage.getItem("paperclip:issue-comment-draft:issue-1")).toBe("Draft follow-up message");
+    expect(localStorage.getItem("noralos:issue-comment-draft:issue-1")).toBe("Draft follow-up message");
     expect(container.textContent).toContain("planning-notes.txt");
-    localStorage.removeItem("paperclip:issue-comment-draft:issue-1");
+    localStorage.removeItem("noralos:issue-comment-draft:issue-1");
   });
 
-=======
->>>>>>> master
   it("renders Paused by board distinctly and defaults leaf resume to wake the assignee", async () => {
     const activeHold = createPauseHold();
     const releasedHold = createPauseHold({

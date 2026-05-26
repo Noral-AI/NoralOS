@@ -170,13 +170,10 @@ export function parseSshRemoteExecutionSpec(value: unknown): SshRemoteExecutionS
     port: portValue,
     username,
     remoteCwd,
-<<<<<<< v2026.525.0
-=======
     noralosApiUrl:
       typeof parsed.noralosApiUrl === "string" && parsed.noralosApiUrl.trim().length > 0
         ? parsed.noralosApiUrl.trim()
         : null,
->>>>>>> master
     remoteWorkspacePath:
       typeof parsed.remoteWorkspacePath === "string" && parsed.remoteWorkspacePath.trim().length > 0
         ? parsed.remoteWorkspacePath.trim()
@@ -188,8 +185,6 @@ export function parseSshRemoteExecutionSpec(value: unknown): SshRemoteExecutionS
   };
 }
 
-<<<<<<< v2026.525.0
-=======
 function normalizeHttpUrlCandidate(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
@@ -234,7 +229,6 @@ export async function findReachableNoralosApiUrlOverSsh(input: {
   return null;
 }
 
->>>>>>> master
 async function execFileText(
   file: string,
   args: string[],

@@ -6,10 +6,7 @@ import { fileURLToPath } from "node:url";
 import type { AdapterExecutionContext, AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-<<<<<<< v2026.525.0
-=======
   adapterExecutionTargetNoralosApiUrl,
->>>>>>> master
   adapterExecutionTargetRemoteCwd,
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
@@ -33,26 +30,17 @@ import {
   asNumber,
   asString,
   asStringArray,
-<<<<<<< v2026.525.0
-  buildPaperclipEnv,
-=======
   applyNoralosWorkspaceEnv,
   buildNoralosEnv,
->>>>>>> master
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   joinPromptSections,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-  refreshPaperclipWorkspaceEnvForExecution,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolvePaperclipDesiredSkillNames,
-=======
+  refreshNoralosWorkspaceEnvForExecution,
   readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
   resolveNoralosDesiredSkillNames,
->>>>>>> master
   removeMaintainerOnlySkillSymlinks,
   parseObject,
   renderTemplate,
@@ -379,9 +367,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         }],
       });
       restoreRemoteWorkspace = () => preparedExecutionTargetRuntime.restoreWorkspace();
-<<<<<<< v2026.525.0
       effectiveExecutionCwd = preparedExecutionTargetRuntime.workspaceRemoteDir ?? effectiveExecutionCwd;
-      refreshPaperclipWorkspaceEnvForExecution({
+      refreshNoralosWorkspaceEnvForExecution({
         env,
         envConfig,
         workspaceCwd: effectiveWorkspaceCwd,
@@ -394,8 +381,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         executionTargetIsRemote,
         executionCwd: effectiveExecutionCwd,
       });
-=======
->>>>>>> master
       remoteRuntimeRootDir = preparedExecutionTargetRuntime.runtimeRootDir;
       const managedHome = adapterExecutionTargetUsesManagedHome(executionTarget);
       if (managedHome && preparedExecutionTargetRuntime.runtimeRootDir) {

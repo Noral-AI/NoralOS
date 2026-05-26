@@ -217,10 +217,7 @@ const MENTION_MENU_HEIGHT = 208;
 const MENTION_MENU_PADDING = 8;
 const MENTION_MENU_ROW_HEIGHT = 34;
 const MENTION_MENU_CHROME_HEIGHT = 8;
-<<<<<<< v2026.525.0
 const MAX_AUTOCOMPLETE_OPTIONS = 50;
-=======
->>>>>>> master
 /** Roughly one space-width of breathing room between the caret and the menu. */
 const MENTION_MENU_CARET_GAP = 10;
 
@@ -1284,12 +1281,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
                 key={option.id}
                 type="button"
                 tabIndex={-1}
-<<<<<<< v2026.525.0
                 ref={(node) => {
                   autocompleteOptionRefs.current[i] = node;
                 }}
-=======
->>>>>>> master
                 className={cn(
                   "flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-accent/50 transition-colors",
                   i === mentionIndex && "bg-accent",

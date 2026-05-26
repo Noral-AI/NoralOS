@@ -39,18 +39,14 @@ import type {
   RoutineRun,
   Agent,
   Goal,
-<<<<<<< v2026.525.0
   HumanCompanyMembershipRole,
   InviteJoinType,
   MembershipStatus,
   PermissionKey,
   PrincipalPermissionGrant,
   PrincipalType,
-} from "@paperclipai/shared";
-import type { PluginPerformActionContext } from "./protocol.js";
-=======
 } from "@noralos/shared";
->>>>>>> master
+import type { PluginPerformActionContext } from "./protocol.js";
 
 // ---------------------------------------------------------------------------
 // Re-exports from @noralos/shared (plugin authors import from one place)
@@ -131,17 +127,13 @@ export type {
   IssueSurfaceVisibility,
   Agent,
   Goal,
-<<<<<<< v2026.525.0
   HumanCompanyMembershipRole,
   InviteJoinType,
   MembershipStatus,
   PermissionKey,
   PrincipalPermissionGrant,
   PrincipalType,
-} from "@paperclipai/shared";
-=======
 } from "@noralos/shared";
->>>>>>> master
 
 // ---------------------------------------------------------------------------
 // Scope key — identifies where plugin state is stored

@@ -998,10 +998,7 @@ export function agentRoutes(
       { strictMode: strictSecretsMode },
     );
     await assertAdapterConfigConstraints(
-<<<<<<< v2026.525.0
-=======
       input.companyId,
->>>>>>> master
       input.adapterType,
       input.constraintAdapterConfig
         ? { ...input.constraintAdapterConfig, ...normalizedAdapterConfig }

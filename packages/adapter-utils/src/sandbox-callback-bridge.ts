@@ -8,10 +8,7 @@ import os from "node:os";
 import path from "node:path";
 
 import type { CommandManagedRuntimeRunner } from "./command-managed-runtime.js";
-<<<<<<< v2026.525.0
 import { preferredShellForSandbox, shellCommandArgs } from "./sandbox-shell.js";
-=======
->>>>>>> master
 import type { RunProcessResult } from "./server-utils.js";
 
 const DEFAULT_BRIDGE_TOKEN_BYTES = 24;
@@ -22,11 +19,8 @@ const DEFAULT_BRIDGE_MAX_QUEUE_DEPTH = 64;
 const DEFAULT_BRIDGE_MAX_BODY_BYTES = 256 * 1024;
 const REMOTE_WRITE_BASE64_CHUNK_SIZE = 32 * 1024;
 const SANDBOX_CALLBACK_BRIDGE_ENTRYPOINT = "paperclip-bridge-server.mjs";
-<<<<<<< v2026.525.0
-const SANDBOX_EXEC_CHANNEL_ENV = "PAPERCLIP_SANDBOX_EXEC_CHANNEL";
+const SANDBOX_EXEC_CHANNEL_ENV = "NORALOS_SANDBOX_EXEC_CHANNEL";
 const SANDBOX_EXEC_CHANNEL_BRIDGE = "bridge";
-=======
->>>>>>> master
 
 export const DEFAULT_SANDBOX_CALLBACK_BRIDGE_MAX_BODY_BYTES = DEFAULT_BRIDGE_MAX_BODY_BYTES;
 
@@ -169,7 +163,6 @@ export interface SandboxCallbackBridgeQueueClient {
   listJsonFiles(remotePath: string): Promise<string[]>;
   readTextFile(remotePath: string): Promise<string>;
   writeTextFile(remotePath: string, body: string): Promise<void>;
-<<<<<<< v2026.525.0
   writeResponseFile?(
     responsePath: string,
     body: string,
@@ -177,8 +170,6 @@ export interface SandboxCallbackBridgeQueueClient {
       requestPath?: string | null;
     },
   ): Promise<{ wrote: boolean }>;
-=======
->>>>>>> master
   rename(fromPath: string, toPath: string): Promise<void>;
   remove(remotePath: string): Promise<void>;
 }
@@ -266,7 +257,6 @@ function base64Chunks(body: string): string[] {
   return out;
 }
 
-<<<<<<< v2026.525.0
 async function pathExists(filePath: string): Promise<boolean> {
   return await fs.stat(filePath).then(() => true).catch(() => false);
 }
@@ -304,8 +294,6 @@ function buildRemotePidLockCleanupScript(lockDirExpr: string, cleanupLines: stri
   ];
 }
 
-=======
->>>>>>> master
 export function createSandboxCallbackBridgeToken(bytes = DEFAULT_BRIDGE_TOKEN_BYTES): string {
   return randomBytes(bytes).toString("base64url");
 }
@@ -403,11 +391,10 @@ export function createFileSystemSandboxCallbackBridgeQueueClient(): SandboxCallb
       await fs.mkdir(path.posix.dirname(remotePath), { recursive: true });
       await fs.writeFile(remotePath, body, "utf8");
     },
-<<<<<<< v2026.525.0
     writeResponseFile: async (responsePath, body, options = {}) => {
       const responseDir = path.posix.dirname(responsePath);
       const tempPath = `${responsePath}.tmp`;
-      const lockDir = `${responsePath}.paperclip-write.lock`;
+      const lockDir = `${responsePath}.noralos-write.lock`;
       const lockPidFile = `${lockDir}/pid`;
       if (options.requestPath) {
         const requestExists = await pathExists(options.requestPath);
@@ -478,8 +465,6 @@ export function createFileSystemSandboxCallbackBridgeQueueClient(): SandboxCallb
         await fs.rm(lockDir, { recursive: true, force: true }).catch(() => undefined);
       }
     },
-=======
->>>>>>> master
     rename: async (fromPath, toPath) => {
       await fs.mkdir(path.posix.dirname(toPath), { recursive: true });
       await fs.rename(fromPath, toPath);
@@ -525,10 +510,7 @@ export function createCommandManagedSandboxCallbackBridgeQueueClient(input: {
           "fi",
         ].join("\n"),
         timeoutMs,
-<<<<<<< v2026.525.0
         shellCommand,
-=======
->>>>>>> master
       );
       requireSuccessfulResult(`list ${remotePath}`, result);
       return result.stdout
@@ -560,11 +542,10 @@ export function createCommandManagedSandboxCallbackBridgeQueueClient(input: {
         `base64 -d < ${shellQuote(tempPath)} > ${shellQuote(remotePath)} && rm -f ${shellQuote(tempPath)}`,
       );
     },
-<<<<<<< v2026.525.0
     writeResponseFile: async (responsePath, body, options = {}) => {
       const responseDir = path.posix.dirname(responsePath);
       const tempPath = `${responsePath}.tmp`;
-      const lockDir = `${responsePath}.paperclip-write.lock`;
+      const lockDir = `${responsePath}.noralos-write.lock`;
       const requestPath = options.requestPath?.trim() || "";
       const result = await runShell(
         input.runner,
@@ -608,8 +589,6 @@ export function createCommandManagedSandboxCallbackBridgeQueueClient(input: {
         );
       }
     },
-=======
->>>>>>> master
     rename: async (fromPath, toPath) => {
       await runChecked(
         `rename ${fromPath}`,
@@ -677,11 +656,8 @@ export async function startSandboxCallbackBridgeWorker(input: {
   });
   const authorizeRequest = input.authorizeRequest ??
     ((request: SandboxCallbackBridgeRequest) => authorizeSandboxCallbackBridgeRequestWithRoutes(request));
-<<<<<<< v2026.525.0
   const buildWorkerFailureMessage = (error: unknown) =>
     `Sandbox callback bridge worker failed: ${error instanceof Error ? error.message : String(error)}`;
-=======
->>>>>>> master
 
   const processRequestFile = async (fileName: string) => {
     const requestPath = path.posix.join(directories.requestsDir, fileName);
@@ -783,11 +759,8 @@ export async function startSandboxCallbackBridgeWorker(input: {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ error: message }),
           completedAt: new Date().toISOString(),
-<<<<<<< v2026.525.0
         }, {
           requireRequestPath: false,
-=======
->>>>>>> master
         });
       } catch (error) {
         console.warn(
@@ -823,19 +796,16 @@ export async function startSandboxCallbackBridgeWorker(input: {
           break;
         }
       }
-<<<<<<< v2026.525.0
     } catch (error) {
       const message = buildWorkerFailureMessage(error);
-      console.warn(`[paperclip] ${message}`);
+      console.warn(`[noralos] ${message}`);
       try {
         await failPendingRequests(message);
       } catch (failPendingError) {
         console.warn(
-          `[paperclip] sandbox callback bridge failed to abort queued requests after worker failure: ${failPendingError instanceof Error ? failPendingError.message : String(failPendingError)}`,
+          `[noralos] sandbox callback bridge failed to abort queued requests after worker failure: ${failPendingError instanceof Error ? failPendingError.message : String(failPendingError)}`,
         );
       }
-=======
->>>>>>> master
     } finally {
       settled = true;
       if (settleResolve) {
@@ -862,7 +832,6 @@ export async function startSandboxCallbackBridgeWorker(input: {
   };
 }
 
-<<<<<<< v2026.525.0
 export async function syncSandboxCallbackBridgeEntrypoint(input: {
   runner: CommandManagedRuntimeRunner;
   remoteCwd: string;
@@ -875,8 +844,8 @@ export async function syncSandboxCallbackBridgeEntrypoint(input: {
   const shellCommand = preferredShellForSandbox(input.shellCommand);
   const remoteEntrypoint = path.posix.join(input.assetRemoteDir, SANDBOX_CALLBACK_BRIDGE_ENTRYPOINT);
   const remoteEntrypointPartial = `${remoteEntrypoint}.partial`;
-  const remoteUploadPath = `${remoteEntrypoint}.paperclip-upload.b64`;
-  const remoteLockDir = path.posix.join(input.assetRemoteDir, ".paperclip-bridge-upload.lock");
+  const remoteUploadPath = `${remoteEntrypoint}.noralos-upload.b64`;
+  const remoteLockDir = path.posix.join(input.assetRemoteDir, ".noralos-bridge-upload.lock");
   const entrypointSource = await fs.readFile(input.bridgeAsset.entrypoint, "utf8");
   const entrypointBase64 = toBuffer(Buffer.from(entrypointSource, "utf8")).toString("base64");
   const sha256 = createHash("sha256").update(entrypointSource, "utf8").digest("hex");
@@ -956,8 +925,6 @@ export async function syncSandboxCallbackBridgeEntrypoint(input: {
   };
 }
 
-=======
->>>>>>> master
 export async function startSandboxCallbackBridgeServer(input: {
   runner: CommandManagedRuntimeRunner;
   remoteCwd: string;
@@ -971,10 +938,7 @@ export async function startSandboxCallbackBridgeServer(input: {
   responseTimeoutMs?: number | null;
   timeoutMs?: number | null;
   nodeCommand?: string;
-<<<<<<< v2026.525.0
   shellCommand?: "bash" | "sh" | null;
-=======
->>>>>>> master
   maxQueueDepth?: number | null;
   maxBodyBytes?: number | null;
 }): Promise<StartedSandboxCallbackBridgeServer> {
@@ -1073,10 +1037,7 @@ export async function startSandboxCallbackBridgeServer(input: {
       "exit 1",
     ].join("\n"),
     timeoutMs,
-<<<<<<< v2026.525.0
     shellCommand,
-=======
->>>>>>> master
   );
   requireSuccessfulResult("wait for sandbox callback bridge readiness", readyResult);
 

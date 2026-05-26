@@ -134,10 +134,7 @@ Make sure the plugin:
 - does not import host UI component stubs
 - keeps UI self-contained
 - uses `routePath` only on `page` slots
-<<<<<<< v2026.525.0:skills/paperclip-create-plugin/SKILL.md
-=======
 - is installed into NoralOS from an absolute local path during development
->>>>>>> master:skills/noralos-create-plugin/SKILL.md
 
 ## 6. Verification (run before declaring success)
 

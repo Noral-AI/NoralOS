@@ -72,10 +72,7 @@ import {
   parseProjectExecutionWorkspacePolicy,
 } from "./execution-workspace-policy.js";
 import { mergeExecutionWorkspaceConfig } from "./execution-workspaces.js";
-<<<<<<< v2026.525.0
 import { buildInitialIssueMonitorFields, normalizeIssueExecutionPolicy } from "./issue-execution-policy.js";
-=======
->>>>>>> master
 import { instanceSettingsService } from "./instance-settings.js";
 import { redactCurrentUserText } from "../log-redaction.js";
 import { redactSensitiveText } from "../redaction.js";
@@ -151,7 +148,6 @@ function buildReusedExecutionWorkspaceConfigPatchFromIssueSettings(
   };
 }
 
-<<<<<<< v2026.525.0
 function toTimestampMs(value: Date | string | null | undefined) {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
@@ -232,8 +228,6 @@ export function deriveIssueCommentRunLogAttribution(
   return derivedByCommentId;
 }
 
-=======
->>>>>>> master
 export interface IssueFilters {
   attention?: "blocked";
   status?: string;
@@ -1415,8 +1409,6 @@ async function listIssueBlockerAttentionMap(
           ),
         );
       for (const row of approvalRows) explicitWaitingIssueIds.add(row.issueId);
-<<<<<<< v2026.525.0
-=======
     }
 
     // Recovery rows are intentionally company-wide: a liveness escalation for
@@ -1439,7 +1431,6 @@ async function listIssueBlockerAttentionMap(
       explicitWaitingIssueIds.add(row.id);
       explicitWaitingIssueIds.add(parsed.issueId);
       explicitWaitingIssueIds.add(parsed.leafIssueId);
->>>>>>> master
     }
 
     // Recovery rows are intentionally company-wide: a liveness escalation for
@@ -1514,12 +1505,9 @@ async function listIssueBlockerAttentionMap(
     if (explicitWaitingIssueIds.has(node.id)) {
       return { covered: true, stalled: false, sampleBlockerIdentifier: nodeSample, sampleStalledBlockerIdentifier: null };
     }
-<<<<<<< v2026.525.0
     if (node.assigneeUserId && node.status !== "cancelled") {
       return { covered: true, stalled: false, sampleBlockerIdentifier: nodeSample, sampleStalledBlockerIdentifier: null };
     }
-=======
->>>>>>> master
     if (node.status === "in_review") {
       const hasWaitingPath = activeIssueIds.has(node.id) || Boolean(node.assigneeUserId);
       if (hasWaitingPath) {

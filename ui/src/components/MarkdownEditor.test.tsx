@@ -782,12 +782,11 @@ describe("MarkdownEditor", () => {
     });
   });
 
-<<<<<<< v2026.525.0
   it("marks the autocomplete portal as floating UI for modal pointer handling", async () => {
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(handleChange);
 
-    const menu = option.closest("[data-paperclip-floating-ui]");
+    const menu = option.closest("[data-noralos-floating-ui]");
     expect(menu).toBeTruthy();
     expect(menu?.className).toContain("pointer-events-auto");
 
@@ -796,8 +795,6 @@ describe("MarkdownEditor", () => {
     });
   });
 
-=======
->>>>>>> master
   it("does not preventDefault on touchstart so the mention menu can scroll on mobile", async () => {
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(handleChange);
@@ -815,13 +812,12 @@ describe("MarkdownEditor", () => {
     });
   });
 
-<<<<<<< v2026.525.0
   it("renders all mention matches inside a bounded scroll container", async () => {
     const handleChange = vi.fn();
     const mentions = Array.from({ length: 12 }, (_, index) => ({
       id: `project:project-${index}`,
       kind: "project" as const,
-      name: `Paperclip App ${index}`,
+      name: `Noralos App ${index}`,
       projectId: `project-${index}`,
       projectColor: "#336699",
     }));
@@ -849,7 +845,7 @@ describe("MarkdownEditor", () => {
     const mentions = Array.from({ length: 60 }, (_, index) => ({
       id: `project:project-${index}`,
       kind: "project" as const,
-      name: `Paperclip App ${index}`,
+      name: `Noralos App ${index}`,
       projectId: `project-${index}`,
       projectColor: "#336699",
     }));
@@ -875,7 +871,7 @@ describe("MarkdownEditor", () => {
     const mentions = Array.from({ length: 12 }, (_, index) => ({
       id: `project:project-${index}`,
       kind: "project" as const,
-      name: `Paperclip App ${index}`,
+      name: `Noralos App ${index}`,
       projectId: `project-${index}`,
       projectColor: "#336699",
     }));
@@ -909,8 +905,6 @@ describe("MarkdownEditor", () => {
     }
   });
 
-=======
->>>>>>> master
   it("does not select when the touch moves like a scroll", async () => {
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(handleChange);

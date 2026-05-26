@@ -223,15 +223,14 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return packageRoot;
   }
 
-<<<<<<< v2026.525.0
-  function llmWikiManifest(): PaperclipPluginManifestV1 {
+  function llmWikiManifest(): NoralosPluginManifestV1 {
     return {
       id: llmWikiPluginKey,
       apiVersion: 1,
       version: "0.1.0",
       displayName: "LLM Wiki",
       description: "Local-file LLM Wiki plugin.",
-      author: "Paperclip",
+      author: "Noralos",
       categories: ["automation", "ui"],
       capabilities: [
         "database.namespace.migrate",
@@ -248,7 +247,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   }
 
   async function createInstallablePluginPackage(
-    pluginManifest: PaperclipPluginManifestV1,
+    pluginManifest: NoralosPluginManifestV1,
     migrationSql: string,
   ) {
     const packageRoot = await createPluginPackage(pluginManifest, migrationSql);
@@ -258,7 +257,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
         name: pluginManifest.id,
         version: pluginManifest.version,
         type: "module",
-        paperclipPlugin: { manifest: "./manifest.js" },
+        noralosPlugin: { manifest: "./manifest.js" },
       }),
       "utf8",
     );
@@ -272,10 +271,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return packageRoot;
   }
 
-  async function installPluginRecord(manifest: PaperclipPluginManifestV1) {
-=======
   async function installPluginRecord(manifest: NoralosPluginManifestV1) {
->>>>>>> master
     const pluginId = randomUUID();
     await db.insert(plugins).values({
       id: pluginId,

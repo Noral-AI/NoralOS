@@ -78,11 +78,8 @@ export async function resolveEnvironmentExecutionTarget(input: {
       remoteCwd,
       environmentId: input.environment.id ?? null,
       leaseId: input.leaseId ?? null,
-<<<<<<< v2026.525.0
-=======
       noralosApiUrl,
       noralosTransport: noralosApiUrl ? "direct" : "bridge",
->>>>>>> master
       timeoutMs,
       runner: input.environmentRuntime && input.lease
         ? {
@@ -150,13 +147,10 @@ export async function resolveEnvironmentExecutionTarget(input: {
     environmentId: input.environment.id ?? null,
     leaseId: input.leaseId ?? null,
     remoteCwd,
-<<<<<<< v2026.525.0
-=======
     noralosApiUrl:
       typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
         ? input.leaseMetadata.noralosApiUrl.trim()
         : null,
->>>>>>> master
     spec: {
       host: parsed.config.host,
       port: parsed.config.port,
@@ -166,13 +160,10 @@ export async function resolveEnvironmentExecutionTarget(input: {
       knownHosts: parsed.config.knownHosts,
       strictHostKeyChecking: parsed.config.strictHostKeyChecking,
       remoteCwd,
-<<<<<<< v2026.525.0
-=======
       noralosApiUrl:
         typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
           ? input.leaseMetadata.noralosApiUrl.trim()
           : null,
->>>>>>> master
     },
   };
 }

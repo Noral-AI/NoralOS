@@ -260,8 +260,6 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
       }
 
       const { remoteCwd } = await ensureSshWorkspaceReady(parsed.config);
-<<<<<<< v2026.525.0
-=======
       const candidateUrls = (() => {
         const raw = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
         if (!raw) return [];
@@ -283,7 +281,6 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
           `SSH environment ${parsed.config.username}@${parsed.config.host} could not reach any NoralOS API candidates.`,
         );
       }
->>>>>>> master
       return await environmentsSvc.acquireLease({
         companyId: input.companyId,
         environmentId: input.environment.id,
@@ -301,10 +298,7 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
           username: parsed.config.username,
           remoteWorkspacePath: parsed.config.remoteWorkspacePath,
           remoteCwd,
-<<<<<<< v2026.525.0
-=======
           noralosApiUrl,
->>>>>>> master
         },
       });
     },
@@ -716,10 +710,7 @@ function createSandboxEnvironmentDriver(
             driverKey: providerKey,
             companyId: input.lease.companyId,
             environmentId: input.environment.id,
-<<<<<<< v2026.525.0
             issueId: input.lease.issueId,
-=======
->>>>>>> master
             config: sanitizedConfig,
             lease: {
               providerLeaseId: input.lease.providerLeaseId,

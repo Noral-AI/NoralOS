@@ -141,7 +141,6 @@ const ISSUE_THINKING_EFFORT_OPTIONS = {
   ],
 } as const;
 
-<<<<<<< v2026.525.0
 function isIssueWorkMode(value: unknown): value is IssueWorkMode {
   return value === "standard" || value === "planning";
 }
@@ -155,8 +154,6 @@ const ISSUE_WORK_MODE_OPTIONS: ReadonlyArray<{
   { value: "planning", label: "Planning", icon: ClipboardList },
 ];
 
-=======
->>>>>>> master
 function loadDraft(): IssueDraft | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);

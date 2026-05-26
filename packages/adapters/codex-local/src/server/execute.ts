@@ -4,10 +4,7 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-<<<<<<< v2026.525.0
-=======
   adapterExecutionTargetNoralosApiUrl,
->>>>>>> master
   adapterExecutionTargetRemoteCwd,
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
@@ -27,25 +24,16 @@ import {
   asString,
   asNumber,
   parseObject,
-<<<<<<< v2026.525.0
-  buildPaperclipEnv,
-=======
   applyNoralosWorkspaceEnv,
   buildNoralosEnv,
->>>>>>> master
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-  refreshPaperclipWorkspaceEnvForExecution,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolvePaperclipDesiredSkillNames,
-=======
+  refreshNoralosWorkspaceEnvForExecution,
   readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
   resolveNoralosDesiredSkillNames,
->>>>>>> master
   renderTemplate,
   renderNoralosWakePrompt,
   stringifyNoralosWakePayload,
@@ -444,12 +432,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-<<<<<<< v2026.525.0
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-=======
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
->>>>>>> master
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
   if (wakeTaskId) {
     env.NORALOS_TASK_ID = wakeTaskId;
   }
@@ -494,12 +478,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionTargetIsRemote,
     executionCwd: effectiveExecutionCwd,
   });
-<<<<<<< v2026.525.0
-=======
   if (workspaceHints.length > 0) {
     env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
   }
->>>>>>> master
   if (runtimeServiceIntents.length > 0) {
     env.NORALOS_RUNTIME_SERVICE_INTENTS_JSON = JSON.stringify(runtimeServiceIntents);
   }
@@ -509,8 +490,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (runtimePrimaryUrl) {
     env.NORALOS_RUNTIME_PRIMARY_URL = runtimePrimaryUrl;
   }
-<<<<<<< v2026.525.0
-=======
   const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
   if (targetNoralosApiUrl) {
     env.NORALOS_API_URL = targetNoralosApiUrl;
@@ -518,7 +497,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   for (const [k, v] of Object.entries(envConfig)) {
     if (typeof v === "string") env[k] = v;
   }
->>>>>>> master
   env.CODEX_HOME = remoteCodexHome ?? effectiveCodexHome;
   if (!hasExplicitApiKey && authToken) {
     env.NORALOS_API_KEY = authToken;

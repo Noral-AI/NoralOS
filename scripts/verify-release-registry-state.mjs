@@ -3,17 +3,13 @@
 import { pathToFileURL } from "node:url";
 
 const CANARY_VERSION_RE = /-canary\.\d+$/;
-<<<<<<< v2026.525.0
 const EXIT_RETRIABLE_FAILURE = 1;
 const EXIT_NON_RETRIABLE_FAILURE = 2;
-=======
->>>>>>> master
 
 export function isCanaryVersion(version) {
   return CANARY_VERSION_RE.test(version);
 }
 
-<<<<<<< v2026.525.0
 function createExitError(message, exitCode = EXIT_RETRIABLE_FAILURE) {
   return Object.assign(new Error(message), { exitCode });
 }
@@ -22,8 +18,6 @@ function createProblem(message, { retriable = true } = {}) {
   return { message, retriable };
 }
 
-=======
->>>>>>> master
 function usage() {
   process.stderr.write(
     [
@@ -238,13 +232,9 @@ export function collectInternalDependencyProblems(manifest, packageDocsByName) {
 
       if (typeof dependencyVersion !== "string" || !dependencyVersion) {
         problems.push(
-<<<<<<< v2026.525.0
           createProblem(
             `${sectionName} declares ${dependencyName} with a non-string version: ${JSON.stringify(dependencyVersion)}`,
           ),
-=======
-          `${sectionName} declares ${dependencyName} with a non-string version: ${JSON.stringify(dependencyVersion)}`,
->>>>>>> master
         );
         continue;
       }
@@ -425,7 +415,6 @@ export function verifyPackageRegistryState({
   return problems;
 }
 
-<<<<<<< v2026.525.0
 export function verifyPackageRegistryState(options) {
   return verifyPackageRegistryProblems(options).map((problem) => problem.message);
 }
@@ -439,7 +428,7 @@ function collectInternalDependencyVersions(manifest) {
     ["peerDependencies", manifest.peerDependencies ?? {}],
   ]) {
     for (const [dependencyName, dependencyVersion] of Object.entries(deps)) {
-      if (!dependencyName.startsWith("@paperclipai/")) {
+      if (!dependencyName.startsWith("@noralos/")) {
         continue;
       }
 
@@ -461,16 +450,11 @@ function collectInternalDependencyVersions(manifest) {
   return dependencyVersions;
 }
 
-=======
->>>>>>> master
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const packageNames = [...new Set(options.packages)];
   const packageDocsByName = new Map();
-<<<<<<< v2026.525.0
   const packageManifestsByKey = new Map();
-=======
->>>>>>> master
 
   await Promise.all(
     packageNames.map(async (packageName) => {

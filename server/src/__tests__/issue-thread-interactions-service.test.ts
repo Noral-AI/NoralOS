@@ -820,8 +820,6 @@ describeEmbeddedPostgres("issueThreadInteractionService", () => {
     const { companyId, issueId } = await seedConfirmationIssue();
     const commentId = randomUUID();
 
-<<<<<<< v2026.525.0
-=======
     await db.insert(companies).values({
       id: companyId,
       name: "NoralOS",
@@ -845,7 +843,6 @@ describeEmbeddedPostgres("issueThreadInteractionService", () => {
       priority: "medium",
     });
 
->>>>>>> master
     const created = await interactionsSvc.create({
       id: issueId,
       companyId,

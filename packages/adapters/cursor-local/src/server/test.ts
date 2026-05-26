@@ -9,8 +9,7 @@ import {
   asStringArray,
   parseObject,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetDirectory,
@@ -18,17 +17,7 @@ import {
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
-} from "@noralos/adapter-utils/server-utils";
-import {
-  ensureAdapterExecutionTargetCommandResolvable,
-  ensureAdapterExecutionTargetDirectory,
-  runAdapterExecutionTargetProcess,
-  describeAdapterExecutionTarget,
-  resolveAdapterExecutionTargetCwd,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -110,10 +99,7 @@ export async function testEnvironment(
   let command = asString(config.command, "agent");
   const target = ctx.executionTarget ?? null;
   const targetIsRemote = target?.kind === "remote";
-<<<<<<< v2026.525.0
   const targetIsSandbox = target?.kind === "remote" && target.transport === "sandbox";
-=======
->>>>>>> master
   const cwd = resolveAdapterExecutionTargetCwd(target, asString(config.cwd, ""), process.cwd());
   const targetLabel = targetIsRemote
     ? ctx.environmentName ?? describeAdapterExecutionTarget(target)
@@ -164,7 +150,6 @@ export async function testEnvironment(
   });
   command = sandboxCommand.command;
   env = sandboxCommand.env;
-<<<<<<< v2026.525.0
   const installCheck = await maybeRunSandboxInstallCommand({
     runId,
     target,
@@ -186,8 +171,6 @@ export async function testEnvironment(
   });
   command = finalSandboxCommand.command;
   env = finalSandboxCommand.env;
-=======
->>>>>>> master
   const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });
   try {
     await ensureAdapterExecutionTargetCommandResolvable(command, target, cwd, runtimeEnv);
@@ -320,15 +303,12 @@ export async function testEnvironment(
       if (extraArgs.length > 0) args.push(...extraArgs);
       args.push("Respond with hello.");
 
-<<<<<<< v2026.525.0
       // Sandbox bridges still add cursor CLI cold-start overhead, but the
       // standard-2 tier now completes probes fast enough that 90s is ample.
       const helloProbeTimeoutSec = Math.max(
         1,
         asNumber(config.helloProbeTimeoutSec, targetIsSandbox ? 90 : 45),
       );
-=======
->>>>>>> master
       const probe = await runAdapterExecutionTargetProcess(
         runId,
         target,

@@ -38,15 +38,10 @@ import type {
   RoutineRun,
   Agent,
   Goal,
-<<<<<<< v2026.525.0
   PluginLocalFolderDeclaration,
   PrincipalPermissionGrant,
-} from "@paperclipai/shared";
-export type { PluginLauncherRenderContextSnapshot } from "@paperclipai/shared";
-=======
 } from "@noralos/shared";
 export type { PluginLauncherRenderContextSnapshot } from "@noralos/shared";
->>>>>>> master
 
 import type {
   PluginEvent,

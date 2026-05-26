@@ -432,7 +432,6 @@ export function CompanyEnvironments() {
           remote-managed adapters, and sandbox environments appear only when a run-capable sandbox provider plugin is
           installed.
         </div>
-<<<<<<< v2026.525.0
         {sandboxCreationEnabled ? (
           <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
             Installed sandbox providers:{" "}
@@ -442,8 +441,6 @@ export function CompanyEnvironments() {
             . These are not adapter types. They back the Sandbox driver for adapters that support sandbox execution.
           </div>
         ) : null}
-=======
->>>>>>> master
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[34rem] text-left text-xs">

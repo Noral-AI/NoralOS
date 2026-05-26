@@ -409,7 +409,6 @@ describe("agent live run routes", () => {
     expect(limit).toHaveBeenCalledWith(50);
     expect(res.body).toHaveLength(50);
   });
-<<<<<<< v2026.525.0
 
   it("does not pad with recent runs when no minCount is requested", async () => {
     const liveRows = Array.from({ length: 8 }, (_, index) => ({
@@ -611,6 +610,4 @@ describe("agent live run routes", () => {
       },
     });
   });
-=======
->>>>>>> master
 });

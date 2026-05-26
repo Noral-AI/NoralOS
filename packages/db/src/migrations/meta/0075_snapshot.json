@@ -1189,15 +1189,12 @@
           "primaryKey": false,
           "notNull": false
         },
-<<<<<<< v2026.525.0
-=======
         "department_id": {
           "name": "department_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
->>>>>>> master
         "budget_monthly_cents": {
           "name": "budget_monthly_cents",
           "type": "integer",
@@ -1321,8 +1318,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-<<<<<<< v2026.525.0
-=======
         },
         "agents_company_department_idx": {
           "name": "agents_company_department_idx",
@@ -1344,7 +1339,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
->>>>>>> master
         }
       },
       "foreignKeys": {
@@ -1386,8 +1380,6 @@
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
-<<<<<<< v2026.525.0
-=======
         },
         "agents_department_id_departments_id_fk": {
           "name": "agents_department_id_departments_id_fk",
@@ -1401,7 +1393,6 @@
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
->>>>>>> master
         }
       },
       "compositePrimaryKeys": {},
@@ -4302,8 +4293,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< v2026.525.0
-=======
     "public.departments": {
       "name": "departments",
       "schema": "",
@@ -4426,7 +4415,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
->>>>>>> master
     "public.document_revisions": {
       "name": "document_revisions",
       "schema": "",
@@ -11292,7 +11280,6 @@
           "primaryKey": false,
           "notNull": false
         },
-<<<<<<< v2026.525.0
         "monitor_next_check_at": {
           "name": "monitor_next_check_at",
           "type": "timestamp with time zone",
@@ -11330,8 +11317,6 @@
           "primaryKey": false,
           "notNull": false
         },
-=======
->>>>>>> master
         "execution_workspace_id": {
           "name": "execution_workspace_id",
           "type": "uuid",
@@ -11576,7 +11561,6 @@
           "method": "btree",
           "with": {}
         },
-<<<<<<< v2026.525.0
         "issues_company_monitor_due_idx": {
           "name": "issues_company_monitor_due_idx",
           "columns": [
@@ -11598,8 +11582,6 @@
           "method": "btree",
           "with": {}
         },
-=======
->>>>>>> master
         "issues_identifier_idx": {
           "name": "issues_identifier_idx",
           "columns": [

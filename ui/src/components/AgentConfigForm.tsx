@@ -17,16 +17,10 @@ import { assetsApi } from "../api/assets";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
-=======
 } from "@noralos/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
->>>>>>> master
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@noralos/adapter-opencode-local";
 import {
   Popover,
   PopoverContent,
@@ -447,15 +441,12 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     const value = (adapterConfig as Record<string, unknown>).model;
     return typeof value === "string" ? value : "";
   }, [adapterCheapDefault]);
-<<<<<<< v2026.525.0
-=======
 
   // Create mode helpers
   const val = isCreate ? props.values : null;
   const set = isCreate
     ? (patch: Partial<CreateConfigValues>) => props.onChange(patch)
     : null;
->>>>>>> master
 
   function buildAdapterConfigForTest(): Record<string, unknown> {
     if (isCreate) {

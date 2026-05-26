@@ -310,7 +310,6 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
   );
 
   it(
-<<<<<<< v2026.525.0
     "preserves composite foreign key column order without duplicate referenced columns",
     async () => {
       const sourceConnectionString = await createTempDatabase();
@@ -318,7 +317,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
         sourceConnectionString,
         "paperclip_composite_fk_restore_target",
       );
-      const backupDir = createTempDir("paperclip-db-composite-fk-backup-");
+      const backupDir = createTempDir("noralos-db-composite-fk-backup-");
       const sourceSql = postgres(sourceConnectionString, { max: 1, onnotice: () => {} });
       const restoreSql = postgres(restoreConnectionString, { max: 1, onnotice: () => {} });
 
@@ -362,7 +361,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-composite-fk-test",
+          filenamePrefix: "noralos-composite-fk-test",
           backupEngine: "javascript",
         });
 
@@ -412,8 +411,6 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
   );
 
   it(
-=======
->>>>>>> master
     "restores legacy public-only backups without migration history",
     async () => {
       const restoreConnectionString = await createTempDatabase();

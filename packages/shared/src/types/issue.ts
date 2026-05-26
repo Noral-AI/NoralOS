@@ -15,14 +15,11 @@ import type {
   IssueExecutionStateStatus,
   IssueOriginKind,
   IssuePriority,
-<<<<<<< v2026.525.0
   IssueRecoveryActionKind,
   IssueRecoveryActionOutcome,
   IssueRecoveryActionOwnerType,
   IssueRecoveryActionStatus,
   IssueWorkMode,
-=======
->>>>>>> master
   ModelProfileKey,
   IssueThreadInteractionContinuationPolicy,
   IssueThreadInteractionKind,

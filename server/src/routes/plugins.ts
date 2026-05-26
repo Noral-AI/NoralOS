@@ -160,19 +160,15 @@ const REPO_ROOT = path.resolve(__dirname, "../../..");
 
 const BUNDLED_PLUGIN_EXAMPLES: AvailablePluginExample[] = [
   {
-<<<<<<< v2026.525.0
-    packageName: "@paperclipai/plugin-workspace-diff",
-    pluginKey: "paperclip.workspace-diff",
+    packageName: "@noralos/plugin-workspace-diff",
+    pluginKey: "noralos.workspace-diff",
     displayName: "Workspace Changes",
     description: "First-party workspace Changes tab backed by plugin-local Git diff computation.",
     localPath: "packages/plugins/plugin-workspace-diff",
     tag: "first-party",
   },
   {
-    packageName: "@paperclipai/plugin-hello-world-example",
-=======
     packageName: "@noralos/plugin-hello-world-example",
->>>>>>> master
     pluginKey: "paperclip.hello-world-example",
     displayName: "Hello World Widget (Example)",
     description: "Reference UI plugin that adds a simple Hello World widget to the NoralOS dashboard.",

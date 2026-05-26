@@ -401,10 +401,7 @@ function CodeBlock({
 }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
-<<<<<<< v2026.525.0
   const [wrapLines, setWrapLines] = useState(false);
-=======
->>>>>>> master
   const preRef = useRef<HTMLPreElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 

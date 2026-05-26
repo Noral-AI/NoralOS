@@ -8,16 +8,10 @@ import {
   asString,
   buildNoralosEnv,
   parseObject,
-<<<<<<< v2026.525.0
-  readPaperclipIssueWorkModeFromContext,
-  renderPaperclipWakePrompt,
-  stringifyPaperclipWakePayload,
-} from "@paperclipai/adapter-utils/server-utils";
-=======
+  readNoralosIssueWorkModeFromContext,
   renderNoralosWakePrompt,
   stringifyNoralosWakePayload,
 } from "@noralos/adapter-utils/server-utils";
->>>>>>> master
 import crypto, { randomUUID } from "node:crypto";
 import { WebSocket } from "ws";
 
@@ -353,21 +347,13 @@ function buildNoralosEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakeP
   if (noralosApiUrlOverride) {
     noralosEnv.NORALOS_API_URL = noralosApiUrlOverride;
   }
-<<<<<<< v2026.525.0
-  if (wakePayload.taskId) paperclipEnv.PAPERCLIP_TASK_ID = wakePayload.taskId;
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(ctx.context);
-  if (issueWorkMode) paperclipEnv.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakePayload.wakeReason) paperclipEnv.PAPERCLIP_WAKE_REASON = wakePayload.wakeReason;
-  if (wakePayload.wakeCommentId) paperclipEnv.PAPERCLIP_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
-  if (wakePayload.approvalId) paperclipEnv.PAPERCLIP_APPROVAL_ID = wakePayload.approvalId;
-  if (wakePayload.approvalStatus) paperclipEnv.PAPERCLIP_APPROVAL_STATUS = wakePayload.approvalStatus;
-=======
   if (wakePayload.taskId) noralosEnv.NORALOS_TASK_ID = wakePayload.taskId;
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(ctx.context);
+  if (issueWorkMode) noralosEnv.NORALOS_ISSUE_WORK_MODE = issueWorkMode;
   if (wakePayload.wakeReason) noralosEnv.NORALOS_WAKE_REASON = wakePayload.wakeReason;
   if (wakePayload.wakeCommentId) noralosEnv.NORALOS_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
   if (wakePayload.approvalId) noralosEnv.NORALOS_APPROVAL_ID = wakePayload.approvalId;
   if (wakePayload.approvalStatus) noralosEnv.NORALOS_APPROVAL_STATUS = wakePayload.approvalStatus;
->>>>>>> master
   if (wakePayload.issueIds.length > 0) {
     noralosEnv.NORALOS_LINKED_ISSUE_IDS = wakePayload.issueIds.join(",");
   }

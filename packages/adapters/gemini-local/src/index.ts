@@ -10,11 +10,8 @@ import type { AdapterModelProfileDefinition } from "@noralos/adapter-utils";
 export const type = "gemini_local";
 export const label = "Gemini CLI (local)";
 
-<<<<<<< v2026.525.0
 export const SANDBOX_INSTALL_COMMAND = buildSandboxNpmInstallCommand("@google/gemini-cli");
 
-=======
->>>>>>> master
 export const DEFAULT_GEMINI_LOCAL_MODEL = "auto";
 
 export const models = [

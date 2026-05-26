@@ -5,10 +5,7 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-<<<<<<< v2026.525.0
-=======
   adapterExecutionTargetNoralosApiUrl,
->>>>>>> master
   adapterExecutionTargetRemoteCwd,
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
@@ -24,51 +21,33 @@ import {
   resolveAdapterExecutionTargetTimeoutSec,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
-<<<<<<< v2026.525.0
   runAdapterExecutionTargetShellCommand,
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
   startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import {
   asString,
   asNumber,
   asStringArray,
   parseObject,
-<<<<<<< v2026.525.0
-  buildPaperclipEnv,
-=======
   applyNoralosWorkspaceEnv,
   buildNoralosEnv,
->>>>>>> master
   joinPromptSections,
   buildInvocationEnvForLogs,
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-  refreshPaperclipWorkspaceEnvForExecution,
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolvePaperclipDesiredSkillNames,
-=======
+  refreshNoralosWorkspaceEnvForExecution,
   readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
   resolveNoralosDesiredSkillNames,
->>>>>>> master
   removeMaintainerOnlySkillSymlinks,
   renderTemplate,
   renderNoralosWakePrompt,
   stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   runChildProcess,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
-=======
 } from "@noralos/adapter-utils/server-utils";
->>>>>>> master
+import { shellQuote } from "@noralos/adapter-utils/ssh";
 import { isPiUnknownSessionError, parsePiJsonl } from "./parse.js";
 import { ensurePiModelConfiguredAndAvailable } from "./models.js";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";
@@ -351,8 +330,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionTargetIsRemote,
     executionCwd: effectiveExecutionCwd,
   });
-<<<<<<< v2026.525.0
-=======
   if (workspaceHints.length > 0) env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
   const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
   if (targetNoralosApiUrl) env.NORALOS_API_URL = targetNoralosApiUrl;
@@ -360,7 +337,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   for (const [key, value] of Object.entries(envConfig)) {
     if (typeof value === "string") env[key] = value;
   }
->>>>>>> master
   if (!hasExplicitApiKey && authToken) {
     env.NORALOS_API_KEY = authToken;
   }

@@ -22,10 +22,7 @@ describe("sandbox adapter execution targets", () => {
   const cleanupDirs: string[] = [];
 
   afterEach(async () => {
-<<<<<<< v2026.525.0
     vi.unstubAllEnvs();
-=======
->>>>>>> master
     while (cleanupDirs.length > 0) {
       const dir = cleanupDirs.pop();
       if (!dir) continue;
@@ -422,10 +419,7 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd,
-<<<<<<< v2026.525.0
-=======
       noralosTransport: "bridge",
->>>>>>> master
       runner: createLocalSandboxRunner(),
       timeoutMs: 30_000,
     };
@@ -465,12 +459,11 @@ describe("sandbox adapter execution targets", () => {
     }
   });
 
-<<<<<<< v2026.525.0
   it("uses the effective adapter timeout when starting the sandbox callback bridge", async () => {
-    const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-timeout-"));
+    const rootDir = await mkdtemp(path.join(os.tmpdir(), "noralos-execution-target-bridge-timeout-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
-    const runtimeRootDir = path.join(remoteCwd, ".paperclip-runtime", "codex");
+    const runtimeRootDir = path.join(remoteCwd, ".noralos-runtime", "codex");
     await mkdir(runtimeRootDir, { recursive: true });
 
     const delegateRunner = createLocalSandboxRunner();
@@ -501,7 +494,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
+    const bridge = await startAdapterExecutionTargetNoralosBridge({
       runId: "run-bridge-timeout",
       target,
       runtimeRootDir,
@@ -520,8 +513,6 @@ describe("sandbox adapter execution targets", () => {
     }
   });
 
-=======
->>>>>>> master
   it("fails oversized host responses with a 502 before returning them to the sandbox client", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-limit-"));
     cleanupDirs.push(rootDir);
@@ -560,10 +551,7 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd,
-<<<<<<< v2026.525.0
-=======
       noralosTransport: "bridge",
->>>>>>> master
       runner: createLocalSandboxRunner(),
       timeoutMs: 30_000,
     };

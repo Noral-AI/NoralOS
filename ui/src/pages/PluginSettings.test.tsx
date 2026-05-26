@@ -12,11 +12,8 @@ const mockPluginsApi = vi.hoisted(() => ({
   dashboard: vi.fn(),
   logs: vi.fn(),
   getConfig: vi.fn(),
-<<<<<<< v2026.525.0
   listLocalFolders: vi.fn(),
   configureLocalFolder: vi.fn(),
-=======
->>>>>>> master
 }));
 
 const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
@@ -63,20 +60,19 @@ async function flushReact() {
   });
 }
 
-<<<<<<< v2026.525.0
 function basePlugin(overrides: Record<string, unknown> = {}) {
   return {
     id: "plugin-1",
-    pluginKey: "paperclip.e2b-sandbox-provider",
-    packageName: "@paperclipai/plugin-e2b",
+    pluginKey: "noralos.e2b-sandbox-provider",
+    packageName: "@noralos/plugin-e2b",
     version: "0.1.0",
     status: "error",
     categories: ["automation"],
     manifestJson: {
       displayName: "E2B Sandbox Provider",
       version: "0.1.0",
-      description: "E2B environments for Paperclip.",
-      author: "Paperclip",
+      description: "E2B environments for Noralos.",
+      author: "Noralos",
       capabilities: ["environment.drivers.register"],
       environmentDrivers: [
         {
@@ -140,8 +136,6 @@ async function renderSettings(container: HTMLDivElement) {
   return root;
 }
 
-=======
->>>>>>> master
 describe("PluginSettings", () => {
   let container: HTMLDivElement;
 
@@ -223,19 +217,18 @@ describe("PluginSettings", () => {
       root.unmount();
     });
   });
-<<<<<<< v2026.525.0
 
   it("renders unconfigured manifest local folders with required paths", async () => {
     const declaration = wikiFolderDeclaration();
     mockPluginsApi.get.mockResolvedValue(basePlugin({
       pluginKey: "paperclipai.plugin-llm-wiki",
-      packageName: "@paperclipai/plugin-llm-wiki",
+      packageName: "@noralos/plugin-llm-wiki",
       status: "ready",
       manifestJson: {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Noralos",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -268,7 +261,7 @@ describe("PluginSettings", () => {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Noralos",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -310,7 +303,7 @@ describe("PluginSettings", () => {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Noralos",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -349,7 +342,7 @@ describe("PluginSettings", () => {
         displayName: "LLM Wiki",
         version: "0.1.0",
         description: "Local-file LLM Wiki plugin.",
-        author: "Paperclip",
+        author: "Noralos",
         capabilities: ["local.folders"],
         localFolders: [declaration],
       },
@@ -385,6 +378,4 @@ describe("PluginSettings", () => {
       root.unmount();
     });
   });
-=======
->>>>>>> master
 });

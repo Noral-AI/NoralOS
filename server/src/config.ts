@@ -120,14 +120,11 @@ export function loadConfig(): Config {
   const fileDatabaseBackup = fileConfig?.database.backup;
   const fileSecrets = fileConfig?.secrets;
   const fileStorage = fileConfig?.storage;
-<<<<<<< v2026.525.0
-=======
   const strictModeFromEnv = process.env.NORALOS_SECRETS_STRICT_MODE;
   const secretsStrictMode =
     strictModeFromEnv !== undefined
       ? strictModeFromEnv === "true"
       : (fileSecrets?.strictMode ?? false);
->>>>>>> master
 
   const providerFromEnvRaw = process.env.NORALOS_SECRETS_PROVIDER;
   const providerFromEnv =
@@ -171,16 +168,12 @@ export function loadConfig(): Config {
       ? (deploymentModeFromEnvRaw as DeploymentMode)
       : null;
   const deploymentMode: DeploymentMode = deploymentModeFromEnv ?? fileConfig?.server.deploymentMode ?? "local_trusted";
-<<<<<<< v2026.525.0
-  const strictModeFromEnv = process.env.PAPERCLIP_SECRETS_STRICT_MODE;
+  const strictModeFromEnv = process.env.NORALOS_SECRETS_STRICT_MODE;
   const secretsStrictMode =
     strictModeFromEnv !== undefined
       ? strictModeFromEnv === "true"
       : (fileSecrets?.strictMode ?? deploymentMode === "authenticated");
-  const deploymentExposureFromEnvRaw = process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE;
-=======
   const deploymentExposureFromEnvRaw = process.env.NORALOS_DEPLOYMENT_EXPOSURE;
->>>>>>> master
   const deploymentExposureFromEnv =
     deploymentExposureFromEnvRaw &&
     DEPLOYMENT_EXPOSURES.includes(deploymentExposureFromEnvRaw as DeploymentExposure)

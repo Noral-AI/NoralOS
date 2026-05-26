@@ -15,14 +15,10 @@ import {
   heartbeatRuns,
   issueRelations,
   issues,
-<<<<<<< v2026.525.0
   pluginManagedResources,
   plugins,
   projects,
-} from "@paperclipai/db";
-=======
 } from "@noralos/db";
->>>>>>> master
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,

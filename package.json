@@ -19,15 +19,10 @@
     "test": "pnpm run test:run",
     "test:watch": "pnpm run preflight:workspace-links && vitest",
     "test:run": "pnpm run preflight:workspace-links && node scripts/run-vitest-stable.mjs",
-<<<<<<< v2026.525.0
-    "test:run:general": "pnpm run preflight:workspace-links && pnpm --filter @paperclipai/plugin-sdk ensure-build-deps && node scripts/run-vitest-stable.mjs --mode general",
-    "test:run:serialized": "pnpm run preflight:workspace-links && pnpm --filter @paperclipai/plugin-sdk ensure-build-deps && node scripts/run-vitest-stable.mjs --mode serialized",
-    "db:generate": "pnpm --filter @paperclipai/db generate",
-    "db:migrate": "pnpm --filter @paperclipai/db migrate",
-=======
+    "test:run:general": "pnpm run preflight:workspace-links && pnpm --filter @noralos/plugin-sdk ensure-build-deps && node scripts/run-vitest-stable.mjs --mode general",
+    "test:run:serialized": "pnpm run preflight:workspace-links && pnpm --filter @noralos/plugin-sdk ensure-build-deps && node scripts/run-vitest-stable.mjs --mode serialized",
     "db:generate": "pnpm --filter @noralos/db generate",
     "db:migrate": "pnpm --filter @noralos/db migrate",
->>>>>>> master
     "issue-references:backfill": "pnpm run preflight:workspace-links && tsx scripts/backfill-issue-reference-mentions.ts",
     "cost-events:backfill": "pnpm run preflight:workspace-links && pnpm --filter @noralos/server exec tsx ../scripts/backfill-cost-events-cents.ts",
     "secrets:migrate-inline-env": "tsx scripts/migrate-inline-env-secrets.ts",

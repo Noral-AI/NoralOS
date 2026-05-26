@@ -45,10 +45,7 @@ export interface AdapterSshExecutionTarget {
   environmentId?: string | null;
   leaseId?: string | null;
   remoteCwd: string;
-<<<<<<< v2026.525.0
-=======
   noralosApiUrl?: string | null;
->>>>>>> master
   spec: SshRemoteExecutionSpec;
 }
 
@@ -60,11 +57,8 @@ export interface AdapterSandboxExecutionTarget {
   environmentId?: string | null;
   leaseId?: string | null;
   remoteCwd: string;
-<<<<<<< v2026.525.0
-=======
   noralosApiUrl?: string | null;
   noralosTransport?: "direct" | "bridge";
->>>>>>> master
   timeoutMs?: number | null;
   runner?: CommandManagedRuntimeRunner;
 }
@@ -110,13 +104,10 @@ export interface AdapterExecutionTargetNoralosBridgeHandle {
   stop(): Promise<void>;
 }
 
-<<<<<<< v2026.525.0
 export { sanitizeRemoteExecutionEnv } from "./remote-execution-env.js";
 
 export const DEFAULT_REMOTE_SANDBOX_ADAPTER_TIMEOUT_SEC = 1_800;
 
-=======
->>>>>>> master
 function parseObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -885,11 +876,8 @@ export function adapterExecutionTargetSessionIdentity(
     environmentId: target.environmentId ?? null,
     leaseId: target.leaseId ?? null,
     remoteCwd: target.remoteCwd,
-<<<<<<< v2026.525.0
-=======
     noralosTransport,
     ...(noralosTransport === "direct" && target.noralosApiUrl ? { noralosApiUrl: target.noralosApiUrl } : {}),
->>>>>>> master
   };
 }
 
@@ -939,10 +927,7 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       environmentId: readStringMeta(parsed, "environmentId"),
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd: spec.remoteCwd,
-<<<<<<< v2026.525.0
-=======
       noralosApiUrl: readStringMeta(parsed, "noralosApiUrl") ?? spec.noralosApiUrl ?? null,
->>>>>>> master
       spec,
     };
   }
@@ -958,14 +943,11 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       environmentId: readStringMeta(parsed, "environmentId"),
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd,
-<<<<<<< v2026.525.0
-=======
       noralosApiUrl: readStringMeta(parsed, "noralosApiUrl"),
       noralosTransport:
         noralosTransport === "direct" || noralosTransport === "bridge"
           ? noralosTransport
           : undefined,
->>>>>>> master
       timeoutMs: typeof parsed.timeoutMs === "number" ? parsed.timeoutMs : null,
     };
   }
@@ -986,10 +968,7 @@ export function adapterExecutionTargetFromRemoteExecution(
       environmentId: metadata.environmentId ?? null,
       leaseId: metadata.leaseId ?? null,
       remoteCwd: ssh.remoteCwd,
-<<<<<<< v2026.525.0
-=======
       noralosApiUrl: ssh.noralosApiUrl ?? null,
->>>>>>> master
       spec: ssh,
     };
   }
@@ -1151,10 +1130,7 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
   target: AdapterExecutionTarget | null | undefined;
   runtimeRootDir: string | null | undefined;
   adapterKey: string;
-<<<<<<< v2026.525.0
   timeoutSec?: number | null;
-=======
->>>>>>> master
   hostApiToken: string | null | undefined;
   hostApiUrl?: string | null;
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
@@ -1196,21 +1172,15 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
       : DEFAULT_SANDBOX_CALLBACK_BRIDGE_MAX_BODY_BYTES;
   const hostApiUrl =
     input.hostApiUrl?.trim() ||
-<<<<<<< v2026.525.0
-    process.env.PAPERCLIP_RUNTIME_API_URL?.trim() ||
-    process.env.PAPERCLIP_API_URL?.trim() ||
-    resolveDefaultPaperclipApiUrl();
+    process.env.NORALOS_RUNTIME_API_URL?.trim() ||
+    process.env.NORALOS_API_URL?.trim() ||
+    resolveDefaultNoralosApiUrl();
   const shellCommand = adapterExecutionTargetShellCommand(target);
   const runner = adapterExecutionTargetCommandRunner(target);
   const bridgeTimeoutMs =
     typeof input.timeoutSec === "number" && Number.isFinite(input.timeoutSec) && input.timeoutSec > 0
       ? Math.trunc(input.timeoutSec * 1000)
       : adapterExecutionTargetTimeoutMs(target);
-=======
-    process.env.NORALOS_RUNTIME_API_URL?.trim() ||
-    process.env.NORALOS_API_URL?.trim() ||
-    resolveDefaultNoralosApiUrl();
->>>>>>> master
 
   await onLog(
     "stdout",
@@ -1246,16 +1216,13 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
       queueDir,
       maxBodyBytes,
       handleRequest: async (request) => {
-<<<<<<< v2026.525.0
         const method = request.method.trim().toUpperCase() || "GET";
         if (bridgeDebugEnabled) {
           await onLog(
             "stdout",
-            `[paperclip] Bridge proxy ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
+            `[noralos] Bridge proxy ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
           );
         }
-=======
->>>>>>> master
         const headers = new Headers();
         for (const [key, value] of Object.entries(request.headers)) {
           if (value.trim().length === 0) continue;
@@ -1263,25 +1230,19 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
         }
         headers.set("authorization", `Bearer ${hostApiToken}`);
         headers.set("x-paperclip-run-id", input.runId);
-<<<<<<< v2026.525.0
-=======
         const method = request.method.trim().toUpperCase() || "GET";
->>>>>>> master
         const response = await fetch(buildBridgeForwardUrl(hostApiUrl, request), {
           method,
           headers,
           ...(method === "GET" || method === "HEAD" ? {} : { body: request.body }),
           signal: AbortSignal.timeout(30_000),
         });
-<<<<<<< v2026.525.0
         if (bridgeDebugEnabled) {
           await onLog(
             "stdout",
-            `[paperclip] Bridge proxy response ${response.status} for ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
+            `[noralos] Bridge proxy response ${response.status} for ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
           );
         }
-=======
->>>>>>> master
         return {
           status: response.status,
           headers: buildBridgeResponseHeaders(response),

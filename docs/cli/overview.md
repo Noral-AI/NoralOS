@@ -57,7 +57,6 @@ pnpm noralos context set --api-key-env-var-name NORALOS_API_KEY
 export NORALOS_API_KEY=...
 ```
 
-<<<<<<< v2026.525.0
 Secret operations are available under `paperclipai secrets`:
 
 ```sh
@@ -68,10 +67,7 @@ pnpm paperclipai secrets doctor --company-id <company-id>
 pnpm paperclipai secrets migrate-inline-env --company-id <company-id> --apply
 ```
 
-Context is stored at `~/.paperclip/context.json`.
-=======
 Context is stored at `~/.noralos/context.json`.
->>>>>>> master
 
 ## Command Categories
 

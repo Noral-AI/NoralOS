@@ -456,7 +456,6 @@ describe("Routines page", () => {
     });
   });
 
-<<<<<<< v2026.525.0
   it("shows an outlined row-level run now button on the routines table", async () => {
     routinesListMock.mockResolvedValue([createRoutine({ id: "routine-1", title: "Morning sync" })]);
     issuesListMock.mockResolvedValue([]);
@@ -497,8 +496,6 @@ describe("Routines page", () => {
     });
   });
 
-=======
->>>>>>> master
   it("passes company mention options to the routine description editor", async () => {
     routinesListMock.mockResolvedValue([]);
     issuesListMock.mockResolvedValue([]);

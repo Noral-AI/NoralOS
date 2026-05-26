@@ -10,8 +10,7 @@ import {
   asStringArray,
   parseObject,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetDirectory,
@@ -19,17 +18,7 @@ import {
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
-} from "@noralos/adapter-utils/server-utils";
-import {
-  ensureAdapterExecutionTargetCommandResolvable,
-  ensureAdapterExecutionTargetDirectory,
-  runAdapterExecutionTargetProcess,
-  describeAdapterExecutionTarget,
-  resolveAdapterExecutionTargetCwd,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import path from "node:path";
 import { detectClaudeLoginRequired, parseClaudeStreamJson } from "./parse.js";
 import { isBedrockModelId } from "./models.js";
@@ -76,10 +65,7 @@ export async function testEnvironment(
   const command = asString(config.command, "claude");
   const target = ctx.executionTarget ?? null;
   const targetIsRemote = target?.kind === "remote";
-<<<<<<< v2026.525.0
   const targetIsSandbox = target?.kind === "remote" && target.transport === "sandbox";
-=======
->>>>>>> master
   const cwd = resolveAdapterExecutionTargetCwd(target, asString(config.cwd, ""), process.cwd());
   const targetLabel = targetIsRemote
     ? ctx.environmentName ?? describeAdapterExecutionTarget(target)
@@ -226,7 +212,6 @@ export async function testEnvironment(
       if (maxTurns > 0) args.push("--max-turns", String(maxTurns));
       if (extraArgs.length > 0) args.push(...extraArgs);
 
-<<<<<<< v2026.525.0
       // Sandbox bridges still add lease warmup and transport overhead, but
       // the standard-2 Cloudflare tier now probes fast enough that a 90s
       // budget leaves headroom without masking real hangs.
@@ -235,8 +220,6 @@ export async function testEnvironment(
         asNumber(config.helloProbeTimeoutSec, targetIsSandbox ? 90 : 45),
       );
 
-=======
->>>>>>> master
       const probe = await runAdapterExecutionTargetProcess(
         runId,
         target,

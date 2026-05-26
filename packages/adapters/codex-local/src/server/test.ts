@@ -7,8 +7,7 @@ import {
   asString,
   parseObject,
   ensurePathInEnv,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetDirectory,
@@ -17,18 +16,8 @@ import {
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
   prepareAdapterExecutionTargetRuntime,
-} from "@paperclipai/adapter-utils/execution-target";
-import fs from "node:fs/promises";
-=======
-} from "@noralos/adapter-utils/server-utils";
-import {
-  ensureAdapterExecutionTargetCommandResolvable,
-  ensureAdapterExecutionTargetDirectory,
-  runAdapterExecutionTargetProcess,
-  describeAdapterExecutionTarget,
-  resolveAdapterExecutionTargetCwd,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
+import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { parseCodexJsonl } from "./parse.js";
@@ -173,10 +162,7 @@ export async function testEnvironment(
   const command = asString(config.command, "codex");
   const target = ctx.executionTarget ?? null;
   const targetIsRemote = target?.kind === "remote";
-<<<<<<< v2026.525.0
   const targetIsSandbox = target?.kind === "remote" && target.transport === "sandbox";
-=======
->>>>>>> master
   const cwd = resolveAdapterExecutionTargetCwd(target, asString(config.cwd, ""), process.cwd());
   const targetLabel = targetIsRemote
     ? ctx.environmentName ?? describeAdapterExecutionTarget(target)

@@ -293,10 +293,7 @@ export function App() {
         <Route path="cli-auth/:id" element={<CliAuthPage />} />
         <Route path="invite/:token" element={<InviteLandingPage />} />
         <Route path="tests/perf/long-thread" element={<IssueChatLongThreadPerf />} />
-<<<<<<< v2026.525.0
         <Route path="ux-lab/cloud-upstream" element={<CloudUpstreamUxLab />} />
-=======
->>>>>>> master
 
         <Route element={<CloudAccessGate />}>
           <Route index element={<CompanyRootRedirect />} />

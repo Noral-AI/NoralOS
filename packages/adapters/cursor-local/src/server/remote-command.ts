@@ -2,9 +2,8 @@ import path from "node:path";
 import {
   runAdapterExecutionTargetShellCommand,
   type AdapterExecutionTarget,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/execution-target";
-import { ensurePathInEnv } from "@paperclipai/adapter-utils/server-utils";
+} from "@noralos/adapter-utils/execution-target";
+import { ensurePathInEnv } from "@noralos/adapter-utils/server-utils";
 
 const DEFAULT_CURSOR_COMMAND_BASENAMES = new Set(["agent", "cursor-agent"]);
 // `.local/bin` first because the official Cursor Agent installer drops the
@@ -15,12 +14,6 @@ const CURSOR_SANDBOX_BIN_DIRS = [
   path.posix.join(".local", "bin"),
   path.posix.join(".cursor", "bin"),
 ];
-=======
-} from "@noralos/adapter-utils/execution-target";
-import { ensurePathInEnv } from "@noralos/adapter-utils/server-utils";
-
-const DEFAULT_CURSOR_COMMAND_BASENAMES = new Set(["agent", "cursor-agent"]);
->>>>>>> master
 
 function commandBasename(command: string): string {
   return command.trim().split(/[\\/]/).pop()?.toLowerCase() ?? "";
@@ -37,7 +30,6 @@ function prependPosixPathEntry(pathValue: string, entry: string): string {
   return cleaned.length > 0 ? `${entry}:${cleaned}` : entry;
 }
 
-<<<<<<< v2026.525.0
 function prependPosixPathEntries(pathValue: string, entries: string[]): string {
   return entries.reduceRight((value, entry) => prependPosixPathEntry(value, entry), pathValue);
 }
@@ -64,8 +56,6 @@ function candidateSandboxPathEntries(homeDir: string): string[] {
   return CURSOR_SANDBOX_BIN_DIRS.map((relativeDir) => path.posix.join(homeDir, relativeDir));
 }
 
-=======
->>>>>>> master
 type SandboxCursorRuntimeInfo = {
   remoteSystemHomeDir: string | null;
   preferredCommandPath: string | null;
@@ -200,10 +190,7 @@ export async function prepareCursorSandboxCommand(input: {
   command: string;
   cwd: string;
   env: Record<string, string>;
-<<<<<<< v2026.525.0
   remoteSystemHomeDirHint?: string | null;
-=======
->>>>>>> master
   timeoutSec: number;
   graceSec: number;
 }): Promise<PreparedCursorSandboxCommand> {

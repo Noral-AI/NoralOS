@@ -484,16 +484,10 @@ those providers are enabled.
 
 Agent env vars now support secret references. By default, secret values are stored with local encryption and only secret refs are persisted in agent config.
 
-<<<<<<< v2026.525.0
-- Default local key path: `~/.paperclip/instances/default/secrets/master.key`
-- Override key material directly: `PAPERCLIP_SECRETS_MASTER_KEY`
-- Override key file path: `PAPERCLIP_SECRETS_MASTER_KEY_FILE`
-- Back up the key file and database together; either one alone is not enough to restore local encrypted secrets.
-=======
 - Default local key path: `~/.noralos/instances/default/secrets/master.key`
 - Override key material directly: `NORALOS_SECRETS_MASTER_KEY`
 - Override key file path: `NORALOS_SECRETS_MASTER_KEY_FILE`
->>>>>>> master
+- Back up the key file and database together; either one alone is not enough to restore local encrypted secrets.
 
 Strict mode (recommended outside local trusted machines):
 

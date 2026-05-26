@@ -3,13 +3,9 @@ import * as ssh from "./ssh.js";
 import * as serverUtils from "./server-utils.js";
 import {
   adapterExecutionTargetUsesManagedHome,
-<<<<<<< v2026.525.0
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
   resolveAdapterExecutionTargetCwd,
   runAdapterExecutionTargetProcess,
-=======
-  resolveAdapterExecutionTargetCwd,
->>>>>>> master
   runAdapterExecutionTargetShellCommand,
 } from "./execution-target.js";
 
@@ -221,7 +217,6 @@ describe("runAdapterExecutionTargetShellCommand", () => {
   });
 });
 
-<<<<<<< v2026.525.0
 describe("runAdapterExecutionTargetProcess", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -247,13 +242,13 @@ describe("runAdapterExecutionTargetProcess", () => {
       {
         kind: "remote",
         transport: "ssh",
-        remoteCwd: "/srv/paperclip/workspace",
+        remoteCwd: "/srv/noralos/workspace",
         spec: {
           host: "ssh.example.test",
           port: 22,
           username: "ssh-user",
-          remoteCwd: "/srv/paperclip/workspace",
-          remoteWorkspacePath: "/srv/paperclip/workspace",
+          remoteCwd: "/srv/noralos/workspace",
+          remoteWorkspacePath: "/srv/noralos/workspace",
           privateKey: null,
           knownHosts: null,
           strictHostKeyChecking: true,
@@ -340,13 +335,13 @@ describe("ensureAdapterExecutionTargetRuntimeCommandInstalled", () => {
       target: {
         kind: "remote",
         transport: "ssh",
-        remoteCwd: "/srv/paperclip/workspace",
+        remoteCwd: "/srv/noralos/workspace",
         spec: {
           host: "ssh.example.test",
           port: 22,
           username: "ssh-user",
-          remoteCwd: "/srv/paperclip/workspace",
-          remoteWorkspacePath: "/srv/paperclip/workspace",
+          remoteCwd: "/srv/noralos/workspace",
+          remoteWorkspacePath: "/srv/noralos/workspace",
           privateKey: null,
           knownHosts: null,
           strictHostKeyChecking: true,
@@ -361,8 +356,6 @@ describe("ensureAdapterExecutionTargetRuntimeCommandInstalled", () => {
   });
 });
 
-=======
->>>>>>> master
 describe("resolveAdapterExecutionTargetCwd", () => {
   const sshTarget = {
     kind: "remote" as const,

@@ -410,7 +410,6 @@ describe("E2B sandbox provider plugin", () => {
     });
   });
 
-<<<<<<< v2026.525.0
   it("refreshes the sandbox lifetime on every execute so long runs don't die mid-command", async () => {
     const sandbox = createMockSandbox();
     mockConnect.mockResolvedValue(sandbox);
@@ -464,8 +463,6 @@ describe("E2B sandbox provider plugin", () => {
     expect(result?.exitCode).toBe(0);
   });
 
-=======
->>>>>>> master
   it("cleans up staged stdin even when writing it fails", async () => {
     const sandbox = createMockSandbox();
     const failure = new Error("write failed");

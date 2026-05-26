@@ -3,7 +3,6 @@ import type { AdapterModelProfileDefinition } from "@noralos/adapter-utils";
 export const type = "cursor";
 export const label = "Cursor CLI (local)";
 
-<<<<<<< v2026.525.0
 // Cursor CLI is not distributed as an npm package — the official install
 // path is the upstream installer script at cursor.com/install. Other adapters
 // in this repo prefer `npm install -g <pkg>` which is content-addressed by the
@@ -13,8 +12,6 @@ export const label = "Cursor CLI (local)";
 // equivalent.
 export const SANDBOX_INSTALL_COMMAND = "curl https://cursor.com/install -fsS | bash";
 
-=======
->>>>>>> master
 export const DEFAULT_CURSOR_LOCAL_MODEL = "auto";
 
 const CURSOR_FALLBACK_MODEL_IDS = [

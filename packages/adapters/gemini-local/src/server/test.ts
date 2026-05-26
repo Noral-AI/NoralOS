@@ -11,16 +11,10 @@ import {
   asStringArray,
   ensurePathInEnv,
   parseObject,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
-import {
-  ensureAdapterExecutionTargetCommandResolvable,
-  maybeRunSandboxInstallCommand,
-=======
 } from "@noralos/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
->>>>>>> master
+  maybeRunSandboxInstallCommand,
   ensureAdapterExecutionTargetDirectory,
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,

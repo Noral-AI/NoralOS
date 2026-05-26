@@ -24,7 +24,6 @@ const cheapProfile: AdapterModelProfileDefinition = {
 };
 
 describe("heartbeat model profile application", () => {
-<<<<<<< v2026.525.0
   it("uses the Codex local adapter cheap default when the agent has no runtime override", async () => {
     const modelProfile = resolveModelProfileApplication({
       adapterModelProfiles: await listAdapterModelProfiles("codex_local"),
@@ -46,8 +45,6 @@ describe("heartbeat model profile application", () => {
     });
   });
 
-=======
->>>>>>> master
   it("applies cheap profile patches before explicit issue adapter config overrides", () => {
     const modelProfile = resolveModelProfileApplication({
       adapterModelProfiles: [cheapProfile],

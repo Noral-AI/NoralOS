@@ -19,15 +19,11 @@ import {
   type EnvironmentLeaseStatus,
   type ExecutionWorkspace,
   type ExecutionWorkspaceConfig,
-<<<<<<< v2026.525.0
   type IssueExecutionMonitorClearReason,
   type IssueExecutionMonitorPolicy,
   type IssueExecutionMonitorRecoveryPolicy,
   type ModelProfileKey,
   type RoutineRevisionSnapshotV1,
-=======
-  type ModelProfileKey,
->>>>>>> master
   type RunLivenessState,
 } from "@noralos/shared";
 import {
@@ -1239,8 +1235,6 @@ export function mergeModelProfileAdapterConfig(input: {
   baseConfig: Record<string, unknown>;
   modelProfile: ModelProfileApplication;
   issueAdapterConfig: Record<string, unknown> | null | undefined;
-<<<<<<< v2026.525.0
-=======
   /**
    * Highest-precedence override layer, supplied per-wakeup via
    * WakeupOptions.adapterConfigOverrides and persisted on the run's
@@ -1249,16 +1243,12 @@ export function mergeModelProfileAdapterConfig(input: {
    * (e.g. Conference Room asking for a lightweight profile).
    */
   wakeupAdapterOverrides?: Record<string, unknown> | null | undefined;
->>>>>>> master
 }): Record<string, unknown> {
   return {
     ...input.baseConfig,
     ...(input.modelProfile.adapterConfig ?? {}),
     ...(input.issueAdapterConfig ?? {}),
-<<<<<<< v2026.525.0
-=======
     ...(input.wakeupAdapterOverrides ?? {}),
->>>>>>> master
   };
 }
 
@@ -2156,13 +2146,9 @@ async function buildNoralosWakePayload(input: {
           instruction: readNonEmptyString(input.contextSnapshot.livenessContinuationInstruction),
         }
       : null,
-<<<<<<< v2026.525.0
     interactionKind: readNonEmptyString(input.contextSnapshot.interactionKind),
     interactionStatus: readNonEmptyString(input.contextSnapshot.interactionStatus),
-    checkedOutByHarness: input.contextSnapshot[PAPERCLIP_HARNESS_CHECKOUT_KEY] === true,
-=======
     checkedOutByHarness: input.contextSnapshot[NORALOS_HARNESS_CHECKOUT_KEY] === true,
->>>>>>> master
     dependencyBlockedInteraction: input.contextSnapshot.dependencyBlockedInteraction === true,
     treeHoldInteraction: input.contextSnapshot.treeHoldInteraction === true,
     activeTreeHold: parseObject(input.contextSnapshot.activeTreeHold),
@@ -7271,12 +7257,6 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     });
     const modelProfileMetadata = modelProfileRunMetadata(modelProfileApplication);
     if (modelProfileMetadata) {
-<<<<<<< v2026.525.0
-      context.paperclipModelProfile = modelProfileMetadata;
-      if (modelProfileApplication.requested) context.modelProfile = modelProfileApplication.requested;
-    } else {
-      delete context.paperclipModelProfile;
-=======
       context.noralosModelProfile = modelProfileMetadata;
       if (modelProfileApplication.requested) context.modelProfile = modelProfileApplication.requested;
     } else {
@@ -7301,17 +7281,13 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         },
         "heartbeat: applying per-call adapter config overrides for this run",
       );
->>>>>>> master
     }
     const mergedConfig = mergeModelProfileAdapterConfig({
       baseConfig: persistedWorkspaceManagedConfig,
       modelProfile: modelProfileApplication,
       issueAdapterConfig: issueAssigneeOverrides?.adapterConfig ?? null,
-<<<<<<< v2026.525.0
-=======
       wakeupAdapterOverrides:
         wakeupAdapterOverrideKeys.length > 0 ? wakeupAdapterOverrides : null,
->>>>>>> master
     });
     const configSnapshot = buildExecutionWorkspaceConfigSnapshot(mergedConfig, selectedEnvironmentId);
     const executionRunConfig = stripWorkspaceRuntimeFromExecutionRunConfig(mergedConfig);

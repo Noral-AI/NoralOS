@@ -159,10 +159,7 @@ describe("claude remote execution", () => {
           privateKey: "PRIVATE KEY",
           knownHosts: "[127.0.0.1]:2222 ssh-ed25519 AAAA",
           strictHostKeyChecking: true,
-<<<<<<< v2026.525.0
-=======
           noralosApiUrl: "http://198.51.100.10:3102",
->>>>>>> master
         },
       },
       onLog: async () => {},
