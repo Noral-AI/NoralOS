@@ -22,21 +22,13 @@ test("isCanaryVersion matches release canaries", () => {
 test("collectInternalDependencyProblems flags missing internal versions", () => {
   const manifest = {
     dependencies: {
-<<<<<<< v2026.525.0
-      "@paperclipai/plugin-sdk": "2026.425.0-canary.5",
-=======
       "@noralos/plugin-sdk": "2026.425.0-canary.5",
->>>>>>> master
       e2b: "^2.19.0",
     },
   };
   const packageDocsByName = new Map([
     [
-<<<<<<< v2026.525.0
-      "@paperclipai/plugin-sdk",
-=======
       "@noralos/plugin-sdk",
->>>>>>> master
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -169,11 +161,7 @@ test("verifyPackageRegistryState tolerates a stale root versions map when dist-t
 test("verifyPackageRegistryState fails when canary latest is left in place by default", () => {
   const packageDocsByName = new Map([
     [
-<<<<<<< v2026.525.0
-      "@paperclipai/plugin-e2b",
-=======
       "@noralos/plugin-e2b",
->>>>>>> master
       {
         "dist-tags": {
           latest: "2026.425.0-canary.5",
@@ -182,31 +170,19 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
         versions: {
           "2026.425.0-canary.5": {
             dependencies: {
-<<<<<<< v2026.525.0
-              "@paperclipai/plugin-sdk": "2026.425.0-canary.5",
-=======
               "@noralos/plugin-sdk": "2026.425.0-canary.5",
->>>>>>> master
             },
           },
           "2026.427.0-canary.3": {
             dependencies: {
-<<<<<<< v2026.525.0
-              "@paperclipai/plugin-sdk": "2026.427.0-canary.3",
-=======
               "@noralos/plugin-sdk": "2026.427.0-canary.3",
->>>>>>> master
             },
           },
         },
       },
     ],
     [
-<<<<<<< v2026.525.0
-      "@paperclipai/plugin-sdk",
-=======
       "@noralos/plugin-sdk",
->>>>>>> master
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -217,13 +193,8 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
 
   assert.deepEqual(
     verifyPackageRegistryState({
-<<<<<<< v2026.525.0
-      packageName: "@paperclipai/plugin-e2b",
-      packageDoc: packageDocsByName.get("@paperclipai/plugin-e2b"),
-=======
       packageName: "@noralos/plugin-e2b",
       packageDoc: packageDocsByName.get("@noralos/plugin-e2b"),
->>>>>>> master
       packageDocsByName,
       channel: "canary",
       distTag: "canary",
@@ -291,22 +262,14 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
         versions: {
           "2026.427.0-canary.3": {
             dependencies: {
-<<<<<<< v2026.525.0
-              "@paperclipai/server": "2026.427.0-canary.3",
-=======
               "@noralos/server": "2026.427.0-canary.3",
->>>>>>> master
             },
           },
         },
       },
     ],
     [
-<<<<<<< v2026.525.0
-      "@paperclipai/server",
-=======
       "@noralos/server",
->>>>>>> master
       {
         versions: {
           "2026.427.0-canary.3": {},

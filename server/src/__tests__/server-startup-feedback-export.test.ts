@@ -1,18 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-<<<<<<< v2026.525.0
-const ORIGINAL_PAPERCLIP_API_URL = process.env.PAPERCLIP_API_URL;
-const ORIGINAL_PAPERCLIP_RUNTIME_API_URL = process.env.PAPERCLIP_RUNTIME_API_URL;
-const ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
-const ORIGINAL_PAPERCLIP_LISTEN_HOST = process.env.PAPERCLIP_LISTEN_HOST;
-const ORIGINAL_PAPERCLIP_LISTEN_PORT = process.env.PAPERCLIP_LISTEN_PORT;
-=======
 const ORIGINAL_NORALOS_API_URL = process.env.NORALOS_API_URL;
 const ORIGINAL_PAPERCLIP_RUNTIME_API_URL = process.env.NORALOS_RUNTIME_API_URL;
 const ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
 const ORIGINAL_PAPERCLIP_LISTEN_HOST = process.env.NORALOS_LISTEN_HOST;
 const ORIGINAL_PAPERCLIP_LISTEN_PORT = process.env.NORALOS_LISTEN_PORT;
->>>>>>> master
 
 const {
   createAppMock,
@@ -315,29 +307,6 @@ describe("startServer NORALOS_API_URL handling", () => {
   });
 
   afterEach(() => {
-<<<<<<< v2026.525.0
-    if (ORIGINAL_PAPERCLIP_API_URL === undefined) delete process.env.PAPERCLIP_API_URL;
-    else process.env.PAPERCLIP_API_URL = ORIGINAL_PAPERCLIP_API_URL;
-
-    if (ORIGINAL_PAPERCLIP_RUNTIME_API_URL === undefined) delete process.env.PAPERCLIP_RUNTIME_API_URL;
-    else process.env.PAPERCLIP_RUNTIME_API_URL = ORIGINAL_PAPERCLIP_RUNTIME_API_URL;
-
-    if (ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON === undefined) {
-      delete process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
-    } else {
-      process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON = ORIGINAL_PAPERCLIP_RUNTIME_API_CANDIDATES_JSON;
-    }
-
-    if (ORIGINAL_PAPERCLIP_LISTEN_HOST === undefined) delete process.env.PAPERCLIP_LISTEN_HOST;
-    else process.env.PAPERCLIP_LISTEN_HOST = ORIGINAL_PAPERCLIP_LISTEN_HOST;
-
-    if (ORIGINAL_PAPERCLIP_LISTEN_PORT === undefined) delete process.env.PAPERCLIP_LISTEN_PORT;
-    else process.env.PAPERCLIP_LISTEN_PORT = ORIGINAL_PAPERCLIP_LISTEN_PORT;
-  });
-
-  it("uses the externally set PAPERCLIP_API_URL when provided", async () => {
-    process.env.PAPERCLIP_API_URL = "http://custom-api:3100";
-=======
     if (ORIGINAL_NORALOS_API_URL === undefined) delete process.env.NORALOS_API_URL;
     else process.env.NORALOS_API_URL = ORIGINAL_NORALOS_API_URL;
 
@@ -359,24 +328,15 @@ describe("startServer NORALOS_API_URL handling", () => {
 
   it("uses the externally set NORALOS_API_URL when provided", async () => {
     process.env.NORALOS_API_URL = "http://custom-api:3100";
->>>>>>> master
 
     const started = await startServer();
 
     expect(started.apiUrl).toBe("http://custom-api:3100");
-<<<<<<< v2026.525.0
-    expect(process.env.PAPERCLIP_API_URL).toBe("http://custom-api:3100");
-    expect(JSON.parse(process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON ?? "[]")).toEqual(
-      expect.arrayContaining(["http://custom-api:3100"]),
-    );
-    expect(JSON.parse(process.env.PAPERCLIP_RUNTIME_API_CANDIDATES_JSON ?? "[]")[0]).toBe("http://custom-api:3100");
-=======
     expect(process.env.NORALOS_API_URL).toBe("http://custom-api:3100");
     expect(JSON.parse(process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON ?? "[]")).toEqual(
       expect.arrayContaining(["http://custom-api:3100"]),
     );
     expect(JSON.parse(process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON ?? "[]")[0]).toBe("http://custom-api:3100");
->>>>>>> master
   });
 
   it("falls back to host-based URL when NORALOS_API_URL is not set", async () => {

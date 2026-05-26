@@ -192,10 +192,7 @@ const LEAF_WORK_CONTROL_MODE_HELP_TEXT: Partial<Record<IssueTreeControlMode, str
   pause: "Pause active execution on this issue until an explicit resume.",
   resume: "Release the active pause hold so this issue can continue.",
 };
-<<<<<<< v2026.525.0
-=======
 
->>>>>>> master
 function issueTreeControlLabel(mode: IssueTreeControlMode, scope: "leaf" | "subtree") {
   return scope === "leaf"
     ? LEAF_WORK_CONTROL_MODE_LABEL[mode] ?? TREE_CONTROL_MODE_LABEL[mode]

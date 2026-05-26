@@ -149,11 +149,7 @@ The plugin runtime tracks plugin-owned database namespaces and migrations in `pl
 
 ## Backups
 
-<<<<<<< v2026.525.0
-Paperclip supports automatic and manual logical database backups. These dumps include
-=======
 NoralOS supports automatic and manual logical database backups. These dumps include
->>>>>>> master
 non-system database schemas such as `public`, the Drizzle migration journal, and
 plugin-owned database schemas. See `doc/DEVELOPING.md` for the current
 `paperclipai db:backup` / `pnpm db:backup` commands and backup retention

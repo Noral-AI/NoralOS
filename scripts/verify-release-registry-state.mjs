@@ -232,11 +232,7 @@ export function collectInternalDependencyProblems(manifest, packageDocsByName) {
 
   for (const [sectionName, deps] of sections) {
     for (const [dependencyName, dependencyVersion] of Object.entries(deps)) {
-<<<<<<< v2026.525.0
-      if (!dependencyName.startsWith("@paperclipai/")) {
-=======
       if (!dependencyName.startsWith("@noralos/")) {
->>>>>>> master
         continue;
       }
 

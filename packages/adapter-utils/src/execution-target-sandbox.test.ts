@@ -13,11 +13,7 @@ import {
   resolveAdapterExecutionTargetTimeoutSec,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-<<<<<<< v2026.525.0
-  startAdapterExecutionTargetPaperclipBridge,
-=======
   startAdapterExecutionTargetNoralosBridge,
->>>>>>> master
   type AdapterSandboxExecutionTarget,
 } from "./execution-target.js";
 import { runChildProcess } from "./server-utils.js";
@@ -434,11 +430,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-<<<<<<< v2026.525.0
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
-=======
     const bridge = await startAdapterExecutionTargetNoralosBridge({
->>>>>>> master
       runId: "run-bridge",
       target,
       runtimeRootDir,
@@ -448,15 +440,6 @@ describe("sandbox adapter execution targets", () => {
     });
     try {
       expect(bridge).not.toBeNull();
-<<<<<<< v2026.525.0
-      expect(bridge?.env.PAPERCLIP_API_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(bridge?.env.PAPERCLIP_API_KEY).not.toBe("real-run-jwt");
-      expect(bridge?.env.PAPERCLIP_API_BRIDGE_MODE).toBe("queue_v1");
-
-      const response = await fetch(`${bridge!.env.PAPERCLIP_API_URL}/api/agents/me`, {
-        headers: {
-          authorization: `Bearer ${bridge!.env.PAPERCLIP_API_KEY}`,
-=======
       expect(bridge?.env.NORALOS_API_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
       expect(bridge?.env.NORALOS_API_KEY).not.toBe("real-run-jwt");
       expect(bridge?.env.NORALOS_API_BRIDGE_MODE).toBe("queue_v1");
@@ -464,7 +447,6 @@ describe("sandbox adapter execution targets", () => {
       const response = await fetch(`${bridge!.env.NORALOS_API_URL}/api/agents/me`, {
         headers: {
           authorization: `Bearer ${bridge!.env.NORALOS_API_KEY}`,
->>>>>>> master
           accept: "application/json",
         },
       });
@@ -586,11 +568,7 @@ describe("sandbox adapter execution targets", () => {
       timeoutMs: 30_000,
     };
 
-<<<<<<< v2026.525.0
-    const bridge = await startAdapterExecutionTargetPaperclipBridge({
-=======
     const bridge = await startAdapterExecutionTargetNoralosBridge({
->>>>>>> master
       runId: "run-bridge-limit",
       target,
       runtimeRootDir,
@@ -600,15 +578,9 @@ describe("sandbox adapter execution targets", () => {
       maxBodyBytes: 32,
     });
     try {
-<<<<<<< v2026.525.0
-      const response = await fetch(`${bridge!.env.PAPERCLIP_API_URL}/api/agents/me`, {
-        headers: {
-          authorization: `Bearer ${bridge!.env.PAPERCLIP_API_KEY}`,
-=======
       const response = await fetch(`${bridge!.env.NORALOS_API_URL}/api/agents/me`, {
         headers: {
           authorization: `Bearer ${bridge!.env.NORALOS_API_KEY}`,
->>>>>>> master
           accept: "application/json",
         },
       });

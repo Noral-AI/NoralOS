@@ -14,11 +14,7 @@ import {
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-<<<<<<< v2026.525.0
-  adapterExecutionTargetUsesPaperclipBridge,
-=======
   adapterExecutionTargetUsesNoralosBridge,
->>>>>>> master
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
@@ -28,13 +24,8 @@ import {
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-<<<<<<< v2026.525.0
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
   startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import {
   asString,
   asNumber,
@@ -1035,13 +1026,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
     return toAdapterResult(initial, { fallbackSessionId: runtimeSessionId || runtime.sessionId });
   } finally {
-<<<<<<< v2026.525.0
-    if (paperclipBridge) {
-      await paperclipBridge.stop();
-=======
     if (noralosBridge) {
       await noralosBridge.stop();
->>>>>>> master
     }
     if (restoreRemoteWorkspace) {
       await onLog(

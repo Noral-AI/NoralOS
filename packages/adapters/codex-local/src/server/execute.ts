@@ -12,11 +12,7 @@ import {
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
-<<<<<<< v2026.525.0
-  adapterExecutionTargetUsesPaperclipBridge,
-=======
   adapterExecutionTargetUsesNoralosBridge,
->>>>>>> master
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
@@ -25,13 +21,8 @@ import {
   resolveAdapterExecutionTargetTimeoutSec,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
-<<<<<<< v2026.525.0
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
   startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import {
   asString,
   asNumber,
@@ -421,11 +412,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const restoreRemoteWorkspace = preparedExecutionTargetRuntime
     ? () => preparedExecutionTargetRuntime.restoreWorkspace()
     : null;
-<<<<<<< v2026.525.0
-  let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
-=======
   let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
->>>>>>> master
   const remoteCodexHome = executionTargetIsRemote
     ? preparedExecutionTargetRuntime?.assetDirs.home ??
       path.posix.join(effectiveExecutionCwd, ".paperclip-runtime", "codex", "home")
@@ -907,13 +894,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
     return toResult(initial, false, false);
   } finally {
-<<<<<<< v2026.525.0
-    if (paperclipBridge) {
-      await paperclipBridge.stop();
-=======
     if (noralosBridge) {
       await noralosBridge.stop();
->>>>>>> master
     }
     if (restoreRemoteWorkspace) {
       await onLog(

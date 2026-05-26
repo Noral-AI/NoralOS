@@ -9,15 +9,9 @@ const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
 function parseArgs(argv) {
   const parsed = {
     keep: false,
-<<<<<<< v2026.525.0
-    sourceIssueId: process.env.PAPERCLIP_TASK_ID ?? null,
-    projectId: process.env.PAPERCLIP_PROJECT_ID ?? null,
-    goalId: process.env.PAPERCLIP_GOAL_ID ?? null,
-=======
     sourceIssueId: process.env.NORALOS_TASK_ID ?? null,
     projectId: process.env.NORALOS_PROJECT_ID ?? null,
     goalId: process.env.NORALOS_GOAL_ID ?? null,
->>>>>>> master
     runKey: null,
   };
 
@@ -56,15 +50,6 @@ function parseArgs(argv) {
 function printUsage() {
   console.log(`
 Usage:
-<<<<<<< v2026.525.0
-  PAPERCLIP_API_URL=http://localhost:3100 \\
-  PAPERCLIP_API_KEY=... \\
-  PAPERCLIP_COMPANY_ID=... \\
-  pnpm smoke:terminal-bench-loop-skill
-
-Options:
-  --source-issue-id <uuid>  Attach smoke issues under an existing Paperclip issue.
-=======
   NORALOS_API_URL=http://localhost:3100 \\
   NORALOS_API_KEY=... \\
   NORALOS_COMPANY_ID=... \\
@@ -72,7 +57,6 @@ Options:
 
 Options:
   --source-issue-id <uuid>  Attach smoke issues under an existing NoralOS issue.
->>>>>>> master
   --project-id <uuid>       Override inferred project id.
   --goal-id <uuid>          Override inferred goal id.
   --run-key <string>        Stable key used in smoke titles and mocked artifact paths.
@@ -83,11 +67,7 @@ Options:
 function requireEnv(name) {
   const value = process.env[name];
   if (!value) {
-<<<<<<< v2026.525.0
-    throw new Error(`${name} is required. Run against a local Paperclip server with an agent or board API token.`);
-=======
     throw new Error(`${name} is required. Run against a local NoralOS server with an agent or board API token.`);
->>>>>>> master
   }
   return value;
 }
@@ -133,11 +113,7 @@ function createApiClient({ apiUrl, apiKey, runId }) {
       headers["Content-Type"] = "application/json";
     }
     if (runId && method !== "GET") {
-<<<<<<< v2026.525.0
-      headers["X-Paperclip-Run-Id"] = runId;
-=======
       headers["X-NoralOS-Run-Id"] = runId;
->>>>>>> master
     }
 
     const response = await fetch(`${baseUrl}${path}`, {
@@ -156,17 +132,10 @@ function createApiClient({ apiUrl, apiKey, runId }) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-<<<<<<< v2026.525.0
-  const apiUrl = requireEnv("PAPERCLIP_API_URL");
-  const apiKey = requireEnv("PAPERCLIP_API_KEY");
-  const companyId = requireEnv("PAPERCLIP_COMPANY_ID");
-  const runId = process.env.PAPERCLIP_RUN_ID ?? null;
-=======
   const apiUrl = requireEnv("NORALOS_API_URL");
   const apiKey = requireEnv("NORALOS_API_KEY");
   const companyId = requireEnv("NORALOS_COMPANY_ID");
   const runId = process.env.NORALOS_RUN_ID ?? null;
->>>>>>> master
   const api = createApiClient({ apiUrl, apiKey, runId });
 
   await assertLocalSkillPackage();
@@ -252,11 +221,7 @@ async function main() {
         "",
         "Next-action owner: board/user must accept or reject the confirmation before implementation subtasks exist.",
         "",
-<<<<<<< v2026.525.0
-        "Failure taxonomy: Paperclip product gap, mocked for smoke coverage.",
-=======
         "Failure taxonomy: NoralOS product gap, mocked for smoke coverage.",
->>>>>>> master
         "",
         "Invariant check:",
         "",

@@ -535,11 +535,7 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-<<<<<<< v2026.525.0
-      name: "Paperclip",
-=======
       name: "NoralOS",
->>>>>>> master
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

@@ -2,13 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-<<<<<<< v2026.525.0
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
-import { execute } from "@paperclipai/adapter-codex-local/server";
-=======
 import { runChildProcess } from "@noralos/adapter-utils/server-utils";
 import { execute } from "@noralos/adapter-codex-local/server";
->>>>>>> master
 
 async function writeFakeCodexCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
@@ -19,21 +14,12 @@ const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
   codexHome: process.env.CODEX_HOME || null,
-<<<<<<< v2026.525.0
-  paperclipWakePayloadJson: process.env.PAPERCLIP_WAKE_PAYLOAD_JSON || null,
-  paperclipApiUrl: process.env.PAPERCLIP_API_URL || null,
-  paperclipApiKey: process.env.PAPERCLIP_API_KEY || null,
-  paperclipApiBridgeMode: process.env.PAPERCLIP_API_BRIDGE_MODE || null,
-  paperclipEnvKeys: Object.keys(process.env)
-    .filter((key) => key.startsWith("PAPERCLIP_"))
-=======
   noralosWakePayloadJson: process.env.NORALOS_WAKE_PAYLOAD_JSON || null,
   noralosApiUrl: process.env.NORALOS_API_URL || null,
   noralosApiKey: process.env.NORALOS_API_KEY || null,
   noralosApiBridgeMode: process.env.NORALOS_API_BRIDGE_MODE || null,
   noralosEnvKeys: Object.keys(process.env)
     .filter((key) => key.startsWith("NORALOS_"))
->>>>>>> master
     .sort(),
 };
 if (capturePath) {
@@ -60,19 +46,11 @@ type CapturePayload = {
   argv: string[];
   prompt: string;
   codexHome: string | null;
-<<<<<<< v2026.525.0
-  paperclipWakePayloadJson: string | null;
-  paperclipApiUrl?: string | null;
-  paperclipApiKey?: string | null;
-  paperclipApiBridgeMode?: string | null;
-  paperclipEnvKeys: string[];
-=======
   noralosWakePayloadJson: string | null;
   noralosApiUrl?: string | null;
   noralosApiKey?: string | null;
   noralosApiBridgeMode?: string | null;
   noralosEnvKeys: string[];
->>>>>>> master
 };
 
 type LogEntry = {
@@ -371,11 +349,7 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: localWorkspace,
           env: {
-<<<<<<< v2026.525.0
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
-=======
             NORALOS_TEST_CAPTURE_PATH: capturePath,
->>>>>>> master
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -399,15 +373,9 @@ describe("codex execute", () => {
 
       const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
       expect(capture.codexHome).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "codex", "home"));
-<<<<<<< v2026.525.0
-      expect(capture.paperclipApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(capture.paperclipApiKey).not.toBe("run-jwt-token");
-      expect(capture.paperclipApiBridgeMode).toBe("queue_v1");
-=======
       expect(capture.noralosApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
       expect(capture.noralosApiKey).not.toBe("run-jwt-token");
       expect(capture.noralosApiBridgeMode).toBe("queue_v1");
->>>>>>> master
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -417,11 +385,7 @@ describe("codex execute", () => {
     }
   });
 
-<<<<<<< v2026.525.0
-  it("injects structured Paperclip wake payloads into env and prompt", async () => {
-=======
   it("injects structured NoralOS wake payloads into env and prompt", async () => {
->>>>>>> master
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-codex-execute-wake-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "codex");

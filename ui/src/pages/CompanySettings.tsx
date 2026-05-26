@@ -3,11 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES,
   MAX_COMPANY_ATTACHMENT_MAX_BYTES,
-<<<<<<< v2026.525.0
-} from "@paperclipai/shared";
-=======
 } from "@noralos/shared";
->>>>>>> master
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { companiesApi } from "../api/companies";

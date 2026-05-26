@@ -6,11 +6,7 @@ import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
 import { companySkillsApi } from "../api/companySkills";
 import { queryKeys } from "../lib/queryKeys";
-<<<<<<< v2026.525.0
-import { AGENT_ROLES, type AdapterEnvironmentTestResult } from "@paperclipai/shared";
-=======
 import { AGENT_ROLES, type AdapterEnvironmentTestResult } from "@noralos/shared";
->>>>>>> master
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {

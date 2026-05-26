@@ -491,11 +491,7 @@ describe("E2B sandbox provider plugin", () => {
       timeoutMs: 1000,
     })).rejects.toThrow("write failed");
 
-<<<<<<< v2026.525.0
-    expect(sandbox.files.remove).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/paperclip-stdin-/));
-=======
     expect(sandbox.files.remove).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/noralos-stdin-/));
->>>>>>> master
     expect(sandbox.commands.sendStdin).not.toHaveBeenCalled();
     expect(sandbox.handle.wait).not.toHaveBeenCalled();
   });

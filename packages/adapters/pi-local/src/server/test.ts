@@ -27,11 +27,7 @@ import {
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/execution-target";
-=======
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import { discoverPiModelsCached } from "./models.js";
 import { parsePiJsonl } from "./parse.js";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";

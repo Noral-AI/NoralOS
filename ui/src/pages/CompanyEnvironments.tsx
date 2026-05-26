@@ -6,11 +6,7 @@ import {
   type Environment,
   type EnvironmentProbeResult,
   type JsonSchema,
-<<<<<<< v2026.525.0
-} from "@paperclipai/shared";
-=======
 } from "@noralos/shared";
->>>>>>> master
 import { Check, Settings } from "lucide-react";
 import { environmentsApi } from "@/api/environments";
 import { instanceSettingsApi } from "@/api/instanceSettings";
@@ -532,11 +528,7 @@ export function CompanyEnvironments() {
                           })()}
                         </div>
                       ) : (
-<<<<<<< v2026.525.0
-                        <div className="text-xs text-muted-foreground">Runs on this Paperclip host.</div>
-=======
                         <div className="text-xs text-muted-foreground">Runs on this NoralOS host.</div>
->>>>>>> master
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -669,19 +661,11 @@ export function CompanyEnvironments() {
                     onChange={(e) => setEnvironmentForm((current) => ({ ...current, sshUsername: e.target.value }))}
                   />
                 </Field>
-<<<<<<< v2026.525.0
-                <Field label="Remote workspace path" hint="Absolute path that Paperclip will verify during SSH connection tests.">
-                  <input
-                    className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
-                    type="text"
-                    placeholder="/Users/paperclip/workspace"
-=======
                 <Field label="Remote workspace path" hint="Absolute path that NoralOS will verify during SSH connection tests.">
                   <input
                     className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
                     type="text"
                     placeholder="/Users/noralos/workspace"
->>>>>>> master
                     value={environmentForm.sshRemoteWorkspacePath}
                     onChange={(e) =>
                       setEnvironmentForm((current) => ({ ...current, sshRemoteWorkspacePath: e.target.value }))}

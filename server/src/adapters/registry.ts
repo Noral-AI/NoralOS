@@ -33,20 +33,12 @@ import {
   testEnvironment as claudeTestEnvironment,
   sessionCodec as claudeSessionCodec,
   getQuotaWindows as claudeGetQuotaWindows,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-claude-local/server";
-=======
 } from "@noralos/adapter-claude-local/server";
->>>>>>> master
 import {
   agentConfigurationDoc as claudeAgentConfigurationDoc,
   models as claudeModels,
   modelProfiles as claudeModelProfiles,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-claude-local";
-=======
 } from "@noralos/adapter-claude-local";
->>>>>>> master
 import {
   execute as codexExecute,
   listCodexSkills,
@@ -54,31 +46,19 @@ import {
   testEnvironment as codexTestEnvironment,
   sessionCodec as codexSessionCodec,
   getQuotaWindows as codexGetQuotaWindows,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-codex-local/server";
-=======
 } from "@noralos/adapter-codex-local/server";
->>>>>>> master
 import {
   agentConfigurationDoc as codexAgentConfigurationDoc,
   models as codexModels,
   modelProfiles as codexModelProfiles,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-codex-local";
-=======
 } from "@noralos/adapter-codex-local";
->>>>>>> master
 import {
   execute as cursorExecute,
   listCursorSkills,
   syncCursorSkills,
   testEnvironment as cursorTestEnvironment,
   sessionCodec as cursorSessionCodec,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-cursor-local/server";
-=======
 } from "@noralos/adapter-cursor-local/server";
->>>>>>> master
 import {
   agentConfigurationDoc as cursorAgentConfigurationDoc,
   models as cursorModels,
@@ -101,11 +81,7 @@ import {
   syncGeminiSkills,
   testEnvironment as geminiTestEnvironment,
   sessionCodec as geminiSessionCodec,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-gemini-local/server";
-=======
 } from "@noralos/adapter-gemini-local/server";
->>>>>>> master
 import {
   agentConfigurationDoc as geminiAgentConfigurationDoc,
   models as geminiModels,
@@ -138,11 +114,7 @@ import {
   agentConfigurationDoc as openCodeAgentConfigurationDoc,
   models as openCodeModels,
   modelProfiles as openCodeModelProfiles,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-opencode-local";
-=======
 } from "@noralos/adapter-opencode-local";
->>>>>>> master
 import {
   execute as openclawGatewayExecute,
   testEnvironment as openclawGatewayTestEnvironment,
@@ -164,11 +136,7 @@ import {
 import {
   agentConfigurationDoc as piAgentConfigurationDoc,
   modelProfiles as piModelProfiles,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-pi-local";
-=======
 } from "@noralos/adapter-pi-local";
->>>>>>> master
 import {
   execute as hermesExecute,
   testEnvironment as hermesTestEnvironment,

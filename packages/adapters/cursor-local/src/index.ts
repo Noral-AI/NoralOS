@@ -1,8 +1,4 @@
-<<<<<<< v2026.525.0
-import type { AdapterModelProfileDefinition } from "@paperclipai/adapter-utils";
-=======
 import type { AdapterModelProfileDefinition } from "@noralos/adapter-utils";
->>>>>>> master
 
 export const type = "cursor";
 export const label = "Cursor CLI (local)";

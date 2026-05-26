@@ -367,22 +367,13 @@ describe("resolveAdapterExecutionTargetCwd", () => {
   const sshTarget = {
     kind: "remote" as const,
     transport: "ssh" as const,
-<<<<<<< v2026.525.0
-    remoteCwd: "/srv/paperclip/workspace",
-=======
     remoteCwd: "/srv/noralos/workspace",
->>>>>>> master
     spec: {
       host: "ssh.example.test",
       port: 22,
       username: "ssh-user",
-<<<<<<< v2026.525.0
-      remoteCwd: "/srv/paperclip/workspace",
-      remoteWorkspacePath: "/srv/paperclip/workspace",
-=======
       remoteCwd: "/srv/noralos/workspace",
       remoteWorkspacePath: "/srv/noralos/workspace",
->>>>>>> master
       privateKey: null,
       knownHosts: null,
       strictHostKeyChecking: true,
@@ -391,15 +382,6 @@ describe("resolveAdapterExecutionTargetCwd", () => {
 
   it("falls back to the remote cwd when no adapter cwd is configured", () => {
     expect(resolveAdapterExecutionTargetCwd(sshTarget, "", "/Users/host/repo/server")).toBe(
-<<<<<<< v2026.525.0
-      "/srv/paperclip/workspace",
-    );
-    expect(resolveAdapterExecutionTargetCwd(sshTarget, "   ", "/Users/host/repo/server")).toBe(
-      "/srv/paperclip/workspace",
-    );
-    expect(resolveAdapterExecutionTargetCwd(sshTarget, null, "/Users/host/repo/server")).toBe(
-      "/srv/paperclip/workspace",
-=======
       "/srv/noralos/workspace",
     );
     expect(resolveAdapterExecutionTargetCwd(sshTarget, "   ", "/Users/host/repo/server")).toBe(
@@ -407,7 +389,6 @@ describe("resolveAdapterExecutionTargetCwd", () => {
     );
     expect(resolveAdapterExecutionTargetCwd(sshTarget, null, "/Users/host/repo/server")).toBe(
       "/srv/noralos/workspace",
->>>>>>> master
     );
   });
 
@@ -415,17 +396,10 @@ describe("resolveAdapterExecutionTargetCwd", () => {
     expect(
       resolveAdapterExecutionTargetCwd(
         sshTarget,
-<<<<<<< v2026.525.0
-        "/srv/paperclip/custom-agent-dir",
-        "/Users/host/repo/server",
-      ),
-    ).toBe("/srv/paperclip/custom-agent-dir");
-=======
         "/srv/noralos/custom-agent-dir",
         "/Users/host/repo/server",
       ),
     ).toBe("/srv/noralos/custom-agent-dir");
->>>>>>> master
   });
 
   it("keeps the local fallback cwd for local targets", () => {

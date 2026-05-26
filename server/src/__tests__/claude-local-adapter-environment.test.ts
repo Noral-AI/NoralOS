@@ -192,11 +192,7 @@ describe("claude_local environment diagnostics", () => {
         kind: "remote",
         transport: "sandbox",
         providerKey: "test-provider",
-<<<<<<< v2026.525.0
-        remoteCwd: "/srv/paperclip/workspace",
-=======
         remoteCwd: "/srv/noralos/workspace",
->>>>>>> master
         runner: {
           execute: async () => ({
             exitCode: 0,
@@ -217,11 +213,7 @@ describe("claude_local environment diagnostics", () => {
       result.checks.some(
         (check) =>
           check.code === "claude_cwd_valid" &&
-<<<<<<< v2026.525.0
-          check.message === "Working directory is valid: /srv/paperclip/workspace",
-=======
           check.message === "Working directory is valid: /srv/noralos/workspace",
->>>>>>> master
       ),
     ).toBe(true);
     expect(result.checks.some((check) => check.code === "claude_cwd_invalid")).toBe(false);

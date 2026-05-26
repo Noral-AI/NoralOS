@@ -105,11 +105,7 @@ export interface AdapterExecutionTargetShellOptions {
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
 }
 
-<<<<<<< v2026.525.0
-export interface AdapterExecutionTargetPaperclipBridgeHandle {
-=======
 export interface AdapterExecutionTargetNoralosBridgeHandle {
->>>>>>> master
   env: Record<string, string>;
   stop(): Promise<void>;
 }
@@ -825,11 +821,7 @@ export async function ensureAdapterExecutionTargetFile(
  * For local targets this delegates to the local `ensureAbsoluteDirectory` helper
  * (Node fs). For remote (SSH/sandbox) targets it shells out and runs
  * `mkdir -p` (when allowed) followed by a `[ -d ]` check so the result reflects
-<<<<<<< v2026.525.0
- * the directory state inside the environment, not on the Paperclip host.
-=======
  * the directory state inside the environment, not on the NoralOS host.
->>>>>>> master
  *
  * Throws an Error with a human-readable message on failure.
  */
@@ -1154,11 +1146,7 @@ async function readBridgeForwardResponseBody(response: Response, maxBodyBytes: n
   return Buffer.concat(chunks, totalBytes).toString("utf8");
 }
 
-<<<<<<< v2026.525.0
-export async function startAdapterExecutionTargetPaperclipBridge(input: {
-=======
 export async function startAdapterExecutionTargetNoralosBridge(input: {
->>>>>>> master
   runId: string;
   target: AdapterExecutionTarget | null | undefined;
   runtimeRootDir: string | null | undefined;
@@ -1191,11 +1179,7 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
   const onLog = input.onLog ?? (async () => {});
   const hostApiToken = input.hostApiToken?.trim() ?? "";
   if (hostApiToken.length === 0) {
-<<<<<<< v2026.525.0
-    throw new Error("Sandbox bridge mode requires a host-side Paperclip API token.");
-=======
     throw new Error("Sandbox bridge mode requires a host-side NoralOS API token.");
->>>>>>> master
   }
 
   const runtimeRootDir =
@@ -1336,15 +1320,9 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
 
   return {
     env: {
-<<<<<<< v2026.525.0
-      PAPERCLIP_API_URL: server.baseUrl,
-      PAPERCLIP_API_KEY: bridgeToken,
-      PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
-=======
       NORALOS_API_URL: server.baseUrl,
       NORALOS_API_KEY: bridgeToken,
       NORALOS_API_BRIDGE_MODE: "queue_v1",
->>>>>>> master
     },
     stop: async () => {
       await Promise.allSettled([

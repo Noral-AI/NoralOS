@@ -14,11 +14,7 @@ import {
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-<<<<<<< v2026.525.0
-  adapterExecutionTargetUsesPaperclipBridge,
-=======
   adapterExecutionTargetUsesNoralosBridge,
->>>>>>> master
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
@@ -29,13 +25,8 @@ import {
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-<<<<<<< v2026.525.0
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
   startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import {
   asString,
   asNumber,
@@ -265,15 +256,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const envConfig = parseObject(config.env);
   const hasExplicitApiKey =
-<<<<<<< v2026.525.0
-    typeof envConfig.PAPERCLIP_API_KEY === "string" && envConfig.PAPERCLIP_API_KEY.trim().length > 0;
-  let env: Record<string, string> = { ...buildPaperclipEnv(agent) };
-  env.PAPERCLIP_RUN_ID = runId;
-=======
     typeof envConfig.NORALOS_API_KEY === "string" && envConfig.NORALOS_API_KEY.trim().length > 0;
   let env: Record<string, string> = { ...buildNoralosEnv(agent) };
   env.NORALOS_RUN_ID = runId;
->>>>>>> master
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
     (typeof context.issueId === "string" && context.issueId.trim().length > 0 && context.issueId.trim()) ||
@@ -435,11 +420,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   let restoreRemoteWorkspace: (() => Promise<void>) | null = null;
   let localSkillsDir: string | null = null;
   let remoteRuntimeRootDir: string | null = null;
-<<<<<<< v2026.525.0
-  let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
-=======
   let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
->>>>>>> master
 
   if (executionTargetIsRemote) {
     try {
@@ -857,13 +838,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     }
     return toResult(initial);
   } finally {
-<<<<<<< v2026.525.0
-    if (paperclipBridge) {
-      await paperclipBridge.stop();
-=======
     if (noralosBridge) {
       await noralosBridge.stop();
->>>>>>> master
     }
     if (restoreRemoteWorkspace) {
       await onLog(

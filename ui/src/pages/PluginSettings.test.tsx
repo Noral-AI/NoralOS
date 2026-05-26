@@ -33,11 +33,7 @@ vi.mock("@/context/BreadcrumbContext", () => ({
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
-<<<<<<< v2026.525.0
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
-=======
     selectedCompany: { id: "company-1", name: "NoralOS", issuePrefix: "PAP" },
->>>>>>> master
     selectedCompanyId: "company-1",
   }),
 }));

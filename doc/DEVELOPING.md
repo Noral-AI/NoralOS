@@ -442,11 +442,7 @@ If you set `DATABASE_URL`, the server will use that instead of embedded PostgreS
 
 ## Automatic DB Backups
 
-<<<<<<< v2026.525.0
-Paperclip can run automatic logical database backups on a timer. These backups cover
-=======
 NoralOS can run automatic logical database backups on a timer. These backups cover
->>>>>>> master
 non-system database schemas, including migration history and plugin-owned database
 schemas. Defaults:
 

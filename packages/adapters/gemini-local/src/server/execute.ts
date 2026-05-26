@@ -15,11 +15,7 @@ import {
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-<<<<<<< v2026.525.0
-  adapterExecutionTargetUsesPaperclipBridge,
-=======
   adapterExecutionTargetUsesNoralosBridge,
->>>>>>> master
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
@@ -30,13 +26,8 @@ import {
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
-<<<<<<< v2026.525.0
-  startAdapterExecutionTargetPaperclipBridge,
-} from "@paperclipai/adapter-utils/execution-target";
-=======
   startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
->>>>>>> master
 import {
   asBoolean,
   asNumber,
@@ -364,11 +355,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   let remoteSkillsDir: string | null = null;
   let localSkillsDir: string | null = null;
   let remoteRuntimeRootDir: string | null = null;
-<<<<<<< v2026.525.0
-  let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
-=======
   let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
->>>>>>> master
 
   if (executionTargetIsRemote) {
     try {
@@ -738,11 +725,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     return toResult(initial);
   } finally {
     await Promise.all([
-<<<<<<< v2026.525.0
-      paperclipBridge?.stop(),
-=======
       noralosBridge?.stop(),
->>>>>>> master
       restoreRemoteWorkspace?.(),
       localSkillsDir ? fs.rm(path.dirname(localSkillsDir), { recursive: true, force: true }).catch(() => undefined) : Promise.resolve(),
     ]);

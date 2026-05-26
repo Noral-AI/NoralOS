@@ -16,13 +16,8 @@ import {
 describe("resolveEnvironmentExecutionTarget", () => {
   beforeEach(() => {
     mockResolveEnvironmentDriverConfigForRuntime.mockReset();
-<<<<<<< v2026.525.0
-    delete process.env.PAPERCLIP_API_URL;
-    delete process.env.PAPERCLIP_RUNTIME_API_URL;
-=======
     delete process.env.NORALOS_API_URL;
     delete process.env.NORALOS_RUNTIME_API_URL;
->>>>>>> master
   });
 
   it("uses a bounded default cwd for sandbox targets when lease metadata omits remoteCwd", async () => {
@@ -93,11 +88,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
       },
       leaseId: "lease-1",
       leaseMetadata: {
-<<<<<<< v2026.525.0
-        paperclipApiUrl: "https://paperclip.example.test",
-=======
         noralosApiUrl: "https://noralos.example.test",
->>>>>>> master
       },
       lease: null,
       environmentRuntime: null,

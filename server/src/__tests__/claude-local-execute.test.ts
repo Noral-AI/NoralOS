@@ -64,15 +64,9 @@ const payload = {
   claudeConfigEntries: process.env.CLAUDE_CONFIG_DIR && fs.existsSync(process.env.CLAUDE_CONFIG_DIR)
     ? fs.readdirSync(process.env.CLAUDE_CONFIG_DIR).sort()
     : [],
-<<<<<<< v2026.525.0
-  paperclipApiUrl: process.env.PAPERCLIP_API_URL || null,
-  paperclipApiKey: process.env.PAPERCLIP_API_KEY || null,
-  paperclipApiBridgeMode: process.env.PAPERCLIP_API_BRIDGE_MODE || null,
-=======
   noralosApiUrl: process.env.NORALOS_API_URL || null,
   noralosApiKey: process.env.NORALOS_API_KEY || null,
   noralosApiBridgeMode: process.env.NORALOS_API_BRIDGE_MODE || null,
->>>>>>> master
 };
 if (capturePath) {
   fs.writeFileSync(capturePath, JSON.stringify(payload), "utf8");
@@ -94,15 +88,9 @@ type CapturePayload = {
   skillEntries: string[];
   claudeConfigDir: string | null;
   claudeConfigEntries?: string[];
-<<<<<<< v2026.525.0
-  paperclipApiUrl?: string | null;
-  paperclipApiKey?: string | null;
-  paperclipApiBridgeMode?: string | null;
-=======
   noralosApiUrl?: string | null;
   noralosApiKey?: string | null;
   noralosApiBridgeMode?: string | null;
->>>>>>> master
   appendedSystemPromptFilePath?: string | null;
   appendedSystemPromptFileContents?: string | null;
 };
