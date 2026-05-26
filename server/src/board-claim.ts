@@ -4,9 +4,6 @@ import { ensureHumanRoleDefaultGrants } from "./services/principal-access-compat
 import { companies, companyMemberships, instanceUserRoles } from "@noralos/db";
 import type { Db } from "@noralos/db";
 import type { DeploymentMode } from "@noralos/shared";
-import { companies, companyMemberships, instanceUserRoles } from "@noralos/db";
-import type { Db } from "@noralos/db";
-import type { DeploymentMode } from "@noralos/shared";
 
 const LOCAL_BOARD_USER_ID = "local-board";
 const CLAIM_TTL_MS = 1000 * 60 * 60 * 24;

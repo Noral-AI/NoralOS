@@ -40,13 +40,6 @@ import {
   modelProfiles as cursorModelProfiles,
 } from "@noralos/adapter-cursor-local";
 import {
-  execute as cursorCloudExecute,
-  getConfigSchema as getCursorCloudConfigSchema,
-  sessionCodec as cursorCloudSessionCodec,
-  testEnvironment as cursorCloudTestEnvironment,
-} from "@noralos/adapter-cursor-cloud/server";
-import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@noralos/adapter-cursor-cloud";
-import {
   execute as geminiExecute,
   listGeminiSkills,
   syncGeminiSkills,
@@ -58,17 +51,6 @@ import {
   models as geminiModels,
   modelProfiles as geminiModelProfiles,
 } from "@noralos/adapter-gemini-local";
-import {
-  execute as grokExecute,
-  listGrokSkills,
-  syncGrokSkills,
-  testEnvironment as grokTestEnvironment,
-  sessionCodec as grokSessionCodec,
-} from "@noralos/adapter-grok-local/server";
-import {
-  agentConfigurationDoc as grokAgentConfigurationDoc,
-  models as grokModels,
-} from "@noralos/adapter-grok-local";
 import {
   execute as openCodeExecute,
   listOpenCodeSkills,

@@ -1,6 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
 import type { Db } from "@noralos/db";
-import type { Db } from "@noralos/db";
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import {
   documents,

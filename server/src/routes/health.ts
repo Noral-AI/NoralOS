@@ -5,8 +5,6 @@ import { and, count, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { readPersistedDevServerStatus, toDevServerHealthStatus, writeDevServerRestartRequest } from "../dev-server-status.js";
 import { heartbeatRuns, instanceUserRoles, invites } from "@noralos/db";
 import type { DeploymentExposure, DeploymentMode } from "@noralos/shared";
-import { heartbeatRuns, instanceUserRoles, invites } from "@noralos/db";
-import type { DeploymentExposure, DeploymentMode } from "@noralos/shared";
 import { logger } from "../middleware/logger.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { serverVersion } from "../version.js";
