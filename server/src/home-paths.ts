@@ -1,13 +1,7 @@
+import os from "node:os";
 import path from "node:path";
-const PATH_SEGMENT_RE = /^[a-zA-Z0-9_-]+$/;
-const FRIENDLY_PATH_SEGMENT_RE = /[^a-zA-Z0-9._-]+/g;
 import {
   expandHomePrefix,
-  resolveDefaultBackupDir as resolveSharedDefaultBackupDir,
-  resolveDefaultEmbeddedPostgresDir as resolveSharedDefaultEmbeddedPostgresDir,
-  resolveDefaultLogsDir as resolveSharedDefaultLogsDir,
-  resolveDefaultSecretsKeyFilePath as resolveSharedDefaultSecretsKeyFilePath,
-  resolveDefaultStorageDir as resolveSharedDefaultStorageDir,
   resolveHomeAwarePath,
   resolvePaperclipConfigPathForInstance,
   resolvePaperclipHomeDir,
@@ -15,11 +9,18 @@ import {
   resolvePaperclipInstanceRoot,
 } from "@noralos/shared/home-paths";
 
-function expandHomePrefix(value: string): string {
-  if (value === "~") return os.homedir();
-  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
-  return value;
-}
+const PATH_SEGMENT_RE = /^[a-zA-Z0-9_-]+$/;
+const FRIENDLY_PATH_SEGMENT_RE = /[^a-zA-Z0-9._-]+/g;
+const DEFAULT_INSTANCE_ID = "default";
+const INSTANCE_ID_RE = /^[a-zA-Z0-9_-]+$/;
+
+export {
+  expandHomePrefix,
+  resolveHomeAwarePath,
+  resolvePaperclipHomeDir,
+  resolvePaperclipInstanceId,
+  resolvePaperclipInstanceRoot,
+};
 
 export function resolveNoralosHomeDir(): string {
   const envHome = process.env.NORALOS_HOME?.trim();
@@ -98,3 +99,5 @@ export function resolveManagedProjectWorkspaceDir(input: {
     sanitizeFriendlyPathSegment(input.repoName, "_default"),
   );
 }
+
+export { resolvePaperclipConfigPathForInstance };
