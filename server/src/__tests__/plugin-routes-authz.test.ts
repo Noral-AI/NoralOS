@@ -85,13 +85,23 @@ async function createApp(
 }
 
 function createSelectQueueDb(rows: Array<Array<Record<string, unknown>>>) {
+  // Builder supports two shapes used by the plugins route:
+  //   select().from().where().limit()
+  //   select().from().innerJoin().leftJoin().where().limit()
+  // (the second is resolveTriggeringUser walking the wakeup chain).
+  // Every chain consumes one row from the queue when limit() resolves.
+  const makeBuilder = (): unknown => {
+    const builder: Record<string, unknown> = {};
+    const advance = () => builder;
+    builder.innerJoin = vi.fn(advance);
+    builder.leftJoin = vi.fn(advance);
+    builder.where = vi.fn(advance);
+    builder.limit = vi.fn(() => Promise.resolve(rows.shift() ?? []));
+    return builder;
+  };
   return {
     select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn(() => Promise.resolve(rows.shift() ?? [])),
-        })),
-      })),
+      from: vi.fn(() => makeBuilder()),
     })),
   };
 }
@@ -150,7 +160,7 @@ describe.sequential("plugin install and upgrade authz", () => {
 
     const res = await request(app)
       .post("/api/plugins/install")
-      .send({ packageName: "paperclip-plugin-example" });
+      .send({ packageName: "noralos-plugin-example" });
 
     expect(res.status).toBe(403);
     expect(loader.installPlugin).not.toHaveBeenCalled();
@@ -168,13 +178,13 @@ describe.sequential("plugin install and upgrade authz", () => {
     mockRegistry.getByKey.mockResolvedValue({
       id: pluginId,
       pluginKey,
-      packageName: "paperclip-plugin-example",
+      packageName: "noralos-plugin-example",
       version: "1.0.0",
     });
     mockRegistry.getById.mockResolvedValue({
       id: pluginId,
       pluginKey,
-      packageName: "paperclip-plugin-example",
+      packageName: "noralos-plugin-example",
       version: "1.0.0",
     });
     mockLifecycle.load.mockResolvedValue(undefined);
@@ -192,11 +202,11 @@ describe.sequential("plugin install and upgrade authz", () => {
 
     const res = await request(app)
       .post("/api/plugins/install")
-      .send({ packageName: "paperclip-plugin-example" });
+      .send({ packageName: "noralos-plugin-example" });
 
     expect(res.status).toBe(200);
     expect(loader.installPlugin).toHaveBeenCalledWith({
-      packageName: "paperclip-plugin-example",
+      packageName: "noralos-plugin-example",
       version: undefined,
     });
     expect(mockLifecycle.load).toHaveBeenCalledWith(pluginId);
@@ -387,7 +397,7 @@ describe.sequential("scoped plugin API routes", () => {
     );
 
     const res = await request(app)
-      .get("/api/plugins/paperclip.example/api/smoke")
+      .get("/api/plugins/noralos.example/api/smoke")
       .query({ companyId: "company-1" });
 
     expect(res.status).toBe(202);
@@ -563,9 +573,10 @@ describe.sequential("plugin tool and bridge authz", () => {
     const executeTool = vi.fn().mockResolvedValue({ content: "ok" });
     const { app } = await createApp(boardActor(), {}, {
       db: createSelectQueueDb([
-        [{ companyId: companyA }],
-        [{ companyId: companyA, agentId: agentA }],
-        [{ companyId: companyA }],
+        [{ companyId: companyA }],                       // agent
+        [{ companyId: companyA, agentId: agentA }],       // run
+        [{ companyId: companyA }],                        // project
+        [],                                                // resolveTriggeringUser → no user
       ]),
       toolDeps: {
         toolDispatcher: {
@@ -598,8 +609,104 @@ describe.sequential("plugin tool and bridge authz", () => {
         runId: runA,
         companyId: companyA,
         projectId: projectA,
+        triggeredByUserId: null,
+        triggeredByUserEmail: null,
       },
     );
+  });
+
+  it("enriches runContext with triggering user when the run was wakened by a human", async () => {
+    const executeTool = vi.fn().mockResolvedValue({ content: "ok" });
+    const { app } = await createApp(boardActor(), {}, {
+      db: createSelectQueueDb([
+        [{ companyId: companyA }],                       // agent
+        [{ companyId: companyA, agentId: agentA }],       // run
+        [{ companyId: companyA }],                        // project
+        [                                                 // resolveTriggeringUser → user found
+          {
+            actorType: "user",
+            actorId: "ba-user-quentin",
+            email: "quentin@noral.ai",
+          },
+        ],
+      ]),
+      toolDeps: {
+        toolDispatcher: {
+          listToolsForAgent: vi.fn(),
+          getTool: vi.fn(() => ({ name: "paperclip.example:search" })),
+          executeTool,
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/plugins/tools/execute")
+      .send({
+        tool: "paperclip.example:search",
+        parameters: { q: "test" },
+        runContext: {
+          agentId: agentA,
+          runId: runA,
+          companyId: companyA,
+          projectId: projectA,
+        },
+      });
+
+    expect(res.status).toBe(200);
+    expect(executeTool).toHaveBeenCalledWith(
+      "paperclip.example:search",
+      { q: "test" },
+      {
+        agentId: agentA,
+        runId: runA,
+        companyId: companyA,
+        projectId: projectA,
+        triggeredByUserId: "ba-user-quentin",
+        triggeredByUserEmail: "quentin@noral.ai",
+      },
+    );
+  });
+
+  it("does not enrich runContext when the triggering wakeup actor is not a user", async () => {
+    // System-triggered or agent-chained runs: wakeup row exists but
+    // actorType !== "user". resolveTriggeringUser returns null,
+    // tool execution proceeds with null user fields.
+    const executeTool = vi.fn().mockResolvedValue({ content: "ok" });
+    const { app } = await createApp(boardActor(), {}, {
+      db: createSelectQueueDb([
+        [{ companyId: companyA }],
+        [{ companyId: companyA, agentId: agentA }],
+        [{ companyId: companyA }],
+        [{ actorType: "system", actorId: "scheduler", email: null }],
+      ]),
+      toolDeps: {
+        toolDispatcher: {
+          listToolsForAgent: vi.fn(),
+          getTool: vi.fn(() => ({ name: "paperclip.example:search" })),
+          executeTool,
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/plugins/tools/execute")
+      .send({
+        tool: "paperclip.example:search",
+        parameters: {},
+        runContext: {
+          agentId: agentA,
+          runId: runA,
+          companyId: companyA,
+          projectId: projectA,
+        },
+      });
+
+    expect(res.status).toBe(200);
+    const call = executeTool.mock.calls[0]!;
+    expect(call[2]).toMatchObject({
+      triggeredByUserId: null,
+      triggeredByUserEmail: null,
+    });
   });
 
   it.each([

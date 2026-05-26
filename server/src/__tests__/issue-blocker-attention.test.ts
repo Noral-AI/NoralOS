@@ -13,7 +13,7 @@ import {
   issueRelations,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -95,12 +95,18 @@ describeEmbeddedPostgres("issue blocker attention", () => {
     status: string;
     parentId?: string | null;
     assigneeAgentId?: string | null;
+<<<<<<< v2026.525.0
     assigneeUserId?: string | null;
     originKind?: string | null;
     originId?: string | null;
     originFingerprint?: string | null;
     executionState?: Record<string, unknown> | null;
     description?: string | null;
+=======
+    originKind?: string | null;
+    originId?: string | null;
+    originFingerprint?: string | null;
+>>>>>>> master
   }) {
     const id = input.id ?? randomUUID();
     await db.insert(issues).values({
@@ -112,12 +118,18 @@ describeEmbeddedPostgres("issue blocker attention", () => {
       priority: "medium",
       parentId: input.parentId ?? null,
       assigneeAgentId: input.assigneeAgentId ?? null,
+<<<<<<< v2026.525.0
       assigneeUserId: input.assigneeUserId ?? null,
       originKind: input.originKind ?? "manual",
       originId: input.originId ?? null,
       originFingerprint: input.originFingerprint ?? "default",
       executionState: input.executionState ?? null,
       description: input.description ?? null,
+=======
+      originKind: input.originKind ?? "manual",
+      originId: input.originId ?? null,
+      originFingerprint: input.originFingerprint ?? "default",
+>>>>>>> master
     });
     return id;
   }

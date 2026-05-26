@@ -68,11 +68,16 @@ describe("CompanySettingsNav", () => {
     expect(getCompanySettingsTab("/PAP/company/settings")).toBe("general");
     expect(getCompanySettingsTab("/company/settings/environments")).toBe("environments");
     expect(getCompanySettingsTab("/PAP/company/settings/environments")).toBe("environments");
+<<<<<<< v2026.525.0
     expect(getCompanySettingsTab("/company/settings/cloud-upstream")).toBe("cloud-upstream");
     expect(getCompanySettingsTab("/company/settings/members")).toBe("members");
     expect(getCompanySettingsTab("/PAP/company/settings/members")).toBe("members");
     expect(getCompanySettingsTab("/company/settings/access")).toBe("members");
     expect(getCompanySettingsTab("/PAP/company/settings/access")).toBe("members");
+=======
+    expect(getCompanySettingsTab("/company/settings/access")).toBe("access");
+    expect(getCompanySettingsTab("/PAP/company/settings/access")).toBe("access");
+>>>>>>> master
     expect(getCompanySettingsTab("/company/settings/invites")).toBe("invites");
     expect(getCompanySettingsTab("/PAP/company/settings/secrets")).toBe("secrets");
   });
@@ -92,8 +97,12 @@ describe("CompanySettingsNav", () => {
         items: [
           { value: "general", label: "General" },
           { value: "environments", label: "Environments" },
+<<<<<<< v2026.525.0
           { value: "cloud-upstream", label: "Cloud upstream" },
           { value: "members", label: "Members" },
+=======
+          { value: "access", label: "Access" },
+>>>>>>> master
           { value: "invites", label: "Invites" },
           { value: "secrets", label: "Secrets" },
         ],

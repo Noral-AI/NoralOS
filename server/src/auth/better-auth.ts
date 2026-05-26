@@ -3,15 +3,15 @@ import type { IncomingHttpHeaders } from "node:http";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { toNodeHandler } from "better-auth/node";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   authAccounts,
   authSessions,
   authUsers,
   authVerifications,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import type { Config } from "../config.js";
-import { resolvePaperclipInstanceId } from "../home-paths.js";
+import { resolveNoralosInstanceId } from "../home-paths.js";
 
 export type BetterAuthSessionUser = {
   id: string;
@@ -29,19 +29,64 @@ type BetterAuthInstance = ReturnType<typeof betterAuth>;
 const AUTH_COOKIE_PREFIX_FALLBACK = "default";
 const AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE = /[^a-zA-Z0-9_-]+/g;
 
-export function deriveAuthCookiePrefix(instanceId = resolvePaperclipInstanceId()): string {
+export function deriveAuthCookiePrefix(instanceId = resolveNoralosInstanceId()): string {
   const scopedInstanceId = instanceId
     .trim()
     .replace(AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE, "-")
     .replace(/^-+|-+$/g, "") || AUTH_COOKIE_PREFIX_FALLBACK;
-  return `paperclip-${scopedInstanceId}`;
+  return `noralos-${scopedInstanceId}`;
 }
 
-export function buildBetterAuthAdvancedOptions(input: { disableSecureCookies: boolean }) {
-  return {
+export function buildBetterAuthAdvancedOptions(input: {
+  disableSecureCookies: boolean;
+  /**
+   * When set, configures Better Auth to set the session/CSRF cookies with
+   * a leading-dot domain (e.g. `.noral.ai`) so they're sent to every
+   * subdomain of the same parent. Enables cross-product SSO between
+   * agent.noral.ai and voice.noral.ai (both `*.noral.ai`).
+   *
+   * MUST start with a leading dot to be valid. Operator opts in via the
+   * BETTER_AUTH_COOKIE_DOMAIN env var; default behaviour is unchanged.
+   *
+   * Side effect: enabling this invalidates existing per-host cookies —
+   * already-signed-in users will need to sign in once after the change.
+   */
+  crossSubDomainCookieDomain?: string;
+}) {
+  const advanced: Record<string, unknown> = {
     cookiePrefix: deriveAuthCookiePrefix(),
-    ...(input.disableSecureCookies ? { useSecureCookies: false } : {}),
   };
+  if (input.disableSecureCookies) {
+    advanced.useSecureCookies = false;
+  }
+  if (input.crossSubDomainCookieDomain) {
+    advanced.crossSubDomainCookies = {
+      enabled: true,
+      domain: input.crossSubDomainCookieDomain,
+    };
+  }
+  return advanced;
+}
+
+/**
+ * Resolve the cross-subdomain cookie domain from env. Validates it starts
+ * with a leading dot. Returns undefined when unset.
+ *
+ * Examples:
+ *   BETTER_AUTH_COOKIE_DOMAIN=.noral.ai → ".noral.ai"
+ *   BETTER_AUTH_COOKIE_DOMAIN=noral.ai  → throws (missing leading dot)
+ *   BETTER_AUTH_COOKIE_DOMAIN unset     → undefined
+ */
+export function resolveCrossSubDomainCookieDomain(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  const raw = env.BETTER_AUTH_COOKIE_DOMAIN?.trim();
+  if (!raw) return undefined;
+  if (!raw.startsWith(".")) {
+    throw new Error(
+      `BETTER_AUTH_COOKIE_DOMAIN must start with a leading dot for cross-subdomain ` +
+      `cookies to work (got '${raw}'). Example: '.noral.ai'.`,
+    );
+  }
+  return raw;
 }
 
 export function shouldDisableSecureAuthCookies(input: {
@@ -114,14 +159,19 @@ export function deriveAuthTrustedOrigins(config: Config, opts?: { listenPort?: n
 
 export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins: string[]): BetterAuthInstance {
   const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
+<<<<<<< v2026.525.0
   const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim() || baseUrl;
   const secret = process.env.BETTER_AUTH_SECRET ?? process.env.PAPERCLIP_AGENT_JWT_SECRET;
+=======
+  const secret = process.env.BETTER_AUTH_SECRET ?? process.env.NORALOS_AGENT_JWT_SECRET;
+>>>>>>> master
   if (!secret) {
     throw new Error(
-      "BETTER_AUTH_SECRET (or PAPERCLIP_AGENT_JWT_SECRET) must be set. " +
-      "For local development, set BETTER_AUTH_SECRET=paperclip-dev-secret in your .env file.",
+      "BETTER_AUTH_SECRET (or NORALOS_AGENT_JWT_SECRET) must be set. " +
+      "For local development, set BETTER_AUTH_SECRET=noralos-dev-secret in your .env file.",
     );
   }
+<<<<<<< v2026.525.0
   const disableSecureCookies = shouldDisableSecureAuthCookies({
     deploymentMode: config.deploymentMode,
     deploymentExposure: config.deploymentExposure,
@@ -129,8 +179,16 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
     authPublicBaseUrl: config.authPublicBaseUrl,
     publicUrl,
   });
+=======
+  const publicUrl = process.env.NORALOS_PUBLIC_URL ?? baseUrl;
+  const isHttpOnly = publicUrl ? publicUrl.startsWith("http://") : false;
+>>>>>>> master
 
-  const authConfig = {
+  const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const googleEnabled = Boolean(googleClientId && googleClientSecret);
+
+  const authConfig: Record<string, unknown> = {
     baseURL: baseUrl,
     secret,
     trustedOrigins,
@@ -148,14 +206,36 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
       requireEmailVerification: false,
       disableSignUp: config.authDisableSignUp,
     },
+<<<<<<< v2026.525.0
     advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies }),
+=======
+    advanced: buildBetterAuthAdvancedOptions({
+      disableSecureCookies: isHttpOnly,
+      crossSubDomainCookieDomain: resolveCrossSubDomainCookieDomain(),
+    }),
+>>>>>>> master
   };
 
-  if (!baseUrl) {
-    delete (authConfig as { baseURL?: string }).baseURL;
+  if (googleEnabled) {
+    authConfig.socialProviders = {
+      google: {
+        clientId: googleClientId,
+        clientSecret: googleClientSecret,
+      },
+    };
+    authConfig.account = {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ["google"],
+      },
+    };
   }
 
-  return betterAuth(authConfig);
+  if (!baseUrl) {
+    delete authConfig.baseURL;
+  }
+
+  return betterAuth(authConfig as Parameters<typeof betterAuth>[0]);
 }
 
 export function createBetterAuthHandler(auth: BetterAuthInstance): RequestHandler {

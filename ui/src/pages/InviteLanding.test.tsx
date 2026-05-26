@@ -147,7 +147,10 @@ describe("InviteLandingPage", () => {
     await flushReact();
     await flushReact();
 
-    expect(container.textContent).toContain("You've been invited to join Paperclip");
+    // The invite copy renders the noralAI brand wordmark, which produces the
+    // text "noralAI" (the company brand). Product strings elsewhere use
+    // "NoralOS" — the wordmark is intentionally the company logo.
+    expect(container.textContent).toContain("You've been invited to join noralAI");
     expect(container.textContent).toContain("Join Acme Robotics");
     expect(container.textContent).toContain("Create account");
     expect(container.textContent).toContain("I already have an account");
@@ -278,7 +281,7 @@ describe("InviteLandingPage", () => {
       password: "wrongpass",
     });
     expect(container.textContent).toContain(
-      "That email and password did not match an existing Paperclip account. Check both fields, or create an account first if you are new here.",
+      "That email and password did not match an existing NoralOS account. Check both fields, or create an account first if you are new here.",
     );
 
     await act(async () => {

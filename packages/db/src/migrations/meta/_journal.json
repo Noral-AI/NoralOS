@@ -530,27 +530,43 @@
     {
       "idx": 75,
       "version": "7",
+<<<<<<< v2026.525.0
       "when": 1777572332006,
       "tag": "0075_cultured_sebastian_shaw",
+=======
+      "when": 1777679548017,
+      "tag": "0075_quick_shiver_man",
+>>>>>>> master
       "breakpoints": true
     },
     {
       "idx": 76,
       "version": "7",
+<<<<<<< v2026.525.0
       "when": 1777675301279,
       "tag": "0076_useful_elektra",
+=======
+      "when": 1778075376100,
+      "tag": "0076_harsh_centennial",
+>>>>>>> master
       "breakpoints": true
     },
     {
       "idx": 77,
       "version": "7",
+<<<<<<< v2026.525.0
       "when": 1777933347806,
       "tag": "0077_unusual_karnak",
+=======
+      "when": 1778145000000,
+      "tag": "0077_integration_credentials",
+>>>>>>> master
       "breakpoints": true
     },
     {
       "idx": 78,
       "version": "7",
+<<<<<<< v2026.525.0
       "when": 1778004024976,
       "tag": "0078_white_darwin",
       "breakpoints": true
@@ -630,6 +646,10 @@
       "version": "7",
       "when": 1779129600000,
       "tag": "0089_cloud_upstreams",
+=======
+      "when": 1778845977000,
+      "tag": "0078_agents_voice_agent_uuid",
+>>>>>>> master
       "breakpoints": true
     }
   ]

@@ -368,7 +368,11 @@ describe("agent live run routes", () => {
     expect(mockHeartbeatService.buildRunOutputSilence).toHaveBeenCalledTimes(50);
   });
 
+<<<<<<< v2026.525.0
   it("treats explicit zero or invalid live run limit as the capped default", async () => {
+=======
+  it("treats explicit zero live run limits as the capped default", async () => {
+>>>>>>> master
     const rows = Array.from({ length: 75 }, (_, index) => ({
       id: `run-${index}`,
       companyId: "company-1",
@@ -405,6 +409,7 @@ describe("agent live run routes", () => {
     expect(limit).toHaveBeenCalledWith(50);
     expect(res.body).toHaveLength(50);
   });
+<<<<<<< v2026.525.0
 
   it("does not pad with recent runs when no minCount is requested", async () => {
     const liveRows = Array.from({ length: 8 }, (_, index) => ({
@@ -606,4 +611,6 @@ describe("agent live run routes", () => {
       },
     });
   });
+=======
+>>>>>>> master
 });

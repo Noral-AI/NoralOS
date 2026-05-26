@@ -15,11 +15,14 @@ import type {
   IssueExecutionStateStatus,
   IssueOriginKind,
   IssuePriority,
+<<<<<<< v2026.525.0
   IssueRecoveryActionKind,
   IssueRecoveryActionOutcome,
   IssueRecoveryActionOwnerType,
   IssueRecoveryActionStatus,
   IssueWorkMode,
+=======
+>>>>>>> master
   ModelProfileKey,
   IssueThreadInteractionContinuationPolicy,
   IssueThreadInteractionKind,
@@ -762,6 +765,15 @@ export type IssueThreadInteractionResult =
   | SuggestTasksResult
   | AskUserQuestionsResult
   | RequestConfirmationResult;
+
+export interface PendingConfirmationListItem {
+  interaction: RequestConfirmationInteraction;
+  issue: {
+    id: string;
+    identifier: string | null;
+    title: string;
+  };
+}
 
 export interface IssueAttachment {
   id: string;

@@ -127,7 +127,7 @@ describe.sequential("auth routes", () => {
     });
   });
 
-  it("accepts Paperclip asset paths for avatars", async () => {
+  it("accepts NoralOS asset paths for avatars", async () => {
     const app = await createApp(
       {
         type: "board",

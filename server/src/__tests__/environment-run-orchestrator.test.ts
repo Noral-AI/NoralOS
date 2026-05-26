@@ -16,7 +16,7 @@ vi.mock("../services/environment-execution-target.js", () => ({
   resolveEnvironmentExecutionTransport: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock("@paperclipai/adapter-utils/execution-target", () => ({
+vi.mock("@noralos/adapter-utils/execution-target", () => ({
   adapterExecutionTargetToRemoteSpec: mockAdapterExecutionTargetToRemoteSpec,
 }));
 
@@ -52,7 +52,7 @@ import {
   environmentRunOrchestrator,
   EnvironmentRunError,
 } from "../services/environment-run-orchestrator.ts";
-import type { Environment, EnvironmentLease, ExecutionWorkspace } from "@paperclipai/shared";
+import type { Environment, EnvironmentLease, ExecutionWorkspace } from "@noralos/shared";
 import type { RealizedExecutionWorkspace } from "../services/workspace-runtime.ts";
 import type { EnvironmentRuntimeService } from "../services/environment-runtime.ts";
 
@@ -420,6 +420,7 @@ describe("environmentRunOrchestrator — realizeForRun", () => {
     }));
   });
 
+<<<<<<< v2026.525.0
   it("runs project-level provision commands for ssh environments", async () => {
     mockBuildWorkspaceRealizationRequest.mockReturnValue({
       version: 1,
@@ -499,6 +500,8 @@ describe("environmentRunOrchestrator — realizeForRun", () => {
     expect(mockResolveEnvironmentExecutionTarget).toHaveBeenCalledOnce();
   });
 
+=======
+>>>>>>> master
   it("surfaces remote provision command failures before resolving the adapter target", async () => {
     mockBuildWorkspaceRealizationRequest.mockReturnValue({
       version: 1,

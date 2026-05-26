@@ -49,7 +49,7 @@ export type {
 } from "../constants.js";
 
 // ---------------------------------------------------------------------------
-// Manifest sub-types — nested declarations within PaperclipPluginManifestV1
+// Manifest sub-types — nested declarations within NoralosPluginManifestV1
 // ---------------------------------------------------------------------------
 
 /**
@@ -426,7 +426,7 @@ export interface PluginLauncherDeclaration {
 }
 
 /**
- * Lower-bound semver requirement for the Paperclip host.
+ * Lower-bound semver requirement for the NoralOS host.
  *
  * The host should reject installation when its running version is lower than
  * the declared minimum.
@@ -482,6 +482,31 @@ export interface PluginApiRouteDeclaration {
   companyResolution?: PluginApiRouteCompanyResolution;
 }
 
+/**
+ * Declares a reverse-tool — an external system can invoke this on the
+ * plugin via the plugin's reverse-RPC inbound (HMAC-verified webhook
+ * endpoint). Used by NoralVoice's `noralos://<pluginId>/<toolName>`
+ * tool URL scheme: a voice agent mid-call invokes the tool, NoralVoice
+ * signs + POSTs to the plugin's reverse-RPC URL, the plugin's
+ * `onReverseTool` hook dispatches by tool name and returns a result.
+ *
+ * Reverse-tools are CALLED BY external systems (the opposite
+ * direction of regular `tools`, which are EXPOSED TO local agents).
+ * The declaration is metadata for documentation + future host-side
+ * UIs; runtime dispatch happens through `onReverseTool` keyed on
+ * `toolName`.
+ */
+export interface PluginReverseToolDeclaration {
+  /** Tool name, unique within the plugin. Lowercase snake_case. */
+  toolName: string;
+  /** Human-readable name shown in plugin docs / operator UIs. */
+  displayName: string;
+  /** Description of what the tool does and when external systems would invoke it. */
+  description: string;
+  /** JSON Schema describing the tool's input parameters. */
+  parametersSchema: JsonSchema;
+}
+
 // ---------------------------------------------------------------------------
 // Plugin Manifest V1
 // ---------------------------------------------------------------------------
@@ -490,7 +515,7 @@ export interface PluginApiRouteDeclaration {
  * The manifest shape every plugin package must export.
  * See PLUGIN_SPEC.md §10.1 for the normative definition.
  */
-export interface PaperclipPluginManifestV1 {
+export interface NoralosPluginManifestV1 {
   /** Globally unique plugin identifier (e.g. `"acme.linear-sync"`). Must be lowercase alphanumeric with dots, hyphens, or underscores. */
   id: string;
   /** Plugin API version. Must be `1` for the current spec. */
@@ -514,7 +539,7 @@ export interface PaperclipPluginManifestV1 {
    * Legacy alias for `minimumHostVersion`.
    * Kept for backwards compatibility with existing manifests and docs.
    */
-  minimumPaperclipVersion?: PluginMinimumHostVersion;
+  minimumNoralosVersion?: PluginMinimumHostVersion;
   /** Capabilities this plugin requires from the host. Enforced at runtime. */
   capabilities: PluginCapability[];
   /** Entrypoint paths relative to the package root. */
@@ -536,6 +561,13 @@ export interface PaperclipPluginManifestV1 {
   database?: PluginDatabaseDeclaration;
   /** Scoped JSON API routes mounted under `/api/plugins/:pluginId/api/*`. */
   apiRoutes?: PluginApiRouteDeclaration[];
+  /**
+   * Reverse-tools the plugin accepts from external systems via its
+   * reverse-RPC inbound webhook. Routed at runtime through the
+   * `onReverseTool` lifecycle hook keyed on `toolName`. See
+   * `PluginReverseToolDeclaration`.
+   */
+  reverseTools?: PluginReverseToolDeclaration[];
   /** Environment drivers this plugin contributes. Requires `environment.drivers.register` capability. */
   environmentDrivers?: PluginEnvironmentDriverDeclaration[];
   /** Suggested company-scoped agents this plugin can provision and resolve by stable key. */
@@ -579,7 +611,7 @@ export interface PluginRecord {
   /** Plugin categories from the manifest. */
   categories: PluginCategory[];
   /** Full manifest snapshot persisted at install/upgrade time. */
-  manifestJson: PaperclipPluginManifestV1;
+  manifestJson: NoralosPluginManifestV1;
   /** Current lifecycle status. */
   status: PluginStatus;
   /** Deterministic load order (null if not yet assigned). */

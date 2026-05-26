@@ -63,9 +63,9 @@ const {
   })),
 }));
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@noralos/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/server-utils")>(
+    "@noralos/adapter-utils/server-utils",
   );
   return {
     ...actual,
@@ -75,9 +75,9 @@ vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/ssh", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/ssh")>(
-    "@paperclipai/adapter-utils/ssh",
+vi.mock("@noralos/adapter-utils/ssh", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/ssh")>(
+    "@noralos/adapter-utils/ssh",
   );
   return {
     ...actual,
@@ -141,7 +141,7 @@ describe("opencode remote execution", () => {
         model: "opencode/gpt-5-nano",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -170,6 +170,10 @@ describe("opencode remote execution", () => {
           privateKey: "PRIVATE KEY",
           knownHosts: "[127.0.0.1]:2222 ssh-ed25519 AAAA",
           strictHostKeyChecking: true,
+<<<<<<< v2026.525.0
+=======
+          noralosApiUrl: "http://198.51.100.10:3102",
+>>>>>>> master
         },
       },
       onLog: async () => {},
@@ -183,7 +187,12 @@ describe("opencode remote execution", () => {
         host: "127.0.0.1",
         port: 2222,
         username: "fixture",
+<<<<<<< v2026.525.0
         remoteCwd: managedRemoteWorkspace,
+=======
+        remoteCwd: "/remote/workspace",
+        noralosApiUrl: "http://198.51.100.10:3102",
+>>>>>>> master
       },
     });
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledTimes(1);
@@ -203,6 +212,7 @@ describe("opencode remote execution", () => {
     const runCall = runChildProcess.mock.calls.find((entry) => Array.isArray(entry[2]) && entry[2].includes("run")) as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
+<<<<<<< v2026.525.0
     const modelProbeCall = runChildProcess.mock.calls.find((entry) => Array.isArray(entry[2]) && entry[2].includes("models")) as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
@@ -237,6 +247,11 @@ describe("opencode remote execution", () => {
     expect(call?.[3].env.XDG_CONFIG_HOME).toBe(`${managedRemoteWorkspace}/.paperclip-runtime/opencode/xdgConfig`);
     expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
     expect(startAdapterExecutionTargetPaperclipBridge).toHaveBeenCalledTimes(1);
+=======
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://198.51.100.10:3102");
+    expect(call?.[3].env.XDG_CONFIG_HOME).toBe("/remote/workspace/.paperclip-runtime/opencode/xdgConfig");
+    expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
+>>>>>>> master
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
   });
 
@@ -340,7 +355,7 @@ describe("opencode remote execution", () => {
         model: "opencode/gpt-5-nano",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

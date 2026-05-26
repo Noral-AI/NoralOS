@@ -73,8 +73,7 @@ import { buildIssueTree, countDescendants } from "../lib/issue-tree";
 import { buildSubIssueDefaultsForViewer } from "../lib/subIssueDefaults";
 import { statusBadge } from "../lib/status-colors";
 import { workflowSort } from "../lib/workflow-sort";
-import { isSuccessfulRunHandoffRequired } from "../lib/successful-run-handoff";
-import { ISSUE_STATUSES, type Issue, type IssueStatus, type Project } from "@paperclipai/shared";
+import { ISSUE_STATUSES, type Issue, type IssueStatus, type Project } from "@noralos/shared";
 const ISSUE_SEARCH_DEBOUNCE_MS = 250;
 const ISSUE_SEARCH_RESULT_LIMIT = 200;
 const ISSUE_BOARD_COLUMN_RESULT_LIMIT = 200;
@@ -1706,7 +1705,6 @@ export function IssuesList({
                     <button
                       key={firstVisibleBlockerChip.blockerId}
                       type="button"
-                      data-slot="icon-button"
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();

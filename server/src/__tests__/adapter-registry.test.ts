@@ -233,6 +233,7 @@ describe("server adapter registry", () => {
     await expect(listAdapterModelProfiles("pi_local")).resolves.toEqual([]);
   });
 
+<<<<<<< v2026.525.0
   it("wraps built-in npm runtime installs with the sandbox-aware install helper", () => {
     const expectedClaudeInstall = `if ! command -v 'claude' >/dev/null 2>&1; then ${buildSandboxNpmInstallCommand("@anthropic-ai/claude-code")}; fi`;
     const expectedCodexInstall = `if ! command -v 'codex' >/dev/null 2>&1; then ${buildSandboxNpmInstallCommand("@openai/codex")}; fi`;
@@ -261,6 +262,8 @@ describe("server adapter registry", () => {
     });
   });
 
+=======
+>>>>>>> master
   it("switches active adapter behavior back to the builtin when an override is paused", async () => {
     const builtIn = findServerAdapter("claude_local");
     expect(builtIn).not.toBeNull();
@@ -307,7 +310,7 @@ describe("server adapter registry", () => {
     expect(detectModel).toHaveBeenCalledTimes(1);
   });
 
-  it("injects the local agent JWT and Paperclip API auth guidance into Hermes", async () => {
+  it("injects the local agent JWT and NoralOS API auth guidance into Hermes", async () => {
     const adapter = requireServerAdapter("hermes_local");
 
     await adapter.execute({
@@ -339,15 +342,15 @@ describe("server adapter registry", () => {
     expect(patchedCtx.agent.adapterConfig).toMatchObject({
       env: {
         OPENAI_API_KEY: "llm-token",
-        PAPERCLIP_API_KEY: "agent-run-jwt",
-        PAPERCLIP_RUN_ID: "run-123",
+        NORALOS_API_KEY: "agent-run-jwt",
+        NORALOS_RUN_ID: "run-123",
       },
     });
     expect(patchedCtx.agent.adapterConfig.promptTemplate).toContain(
-      "Authorization: Bearer $PAPERCLIP_API_KEY",
+      "Authorization: Bearer $NORALOS_API_KEY",
     );
     expect(patchedCtx.agent.adapterConfig.promptTemplate).toContain(
-      "X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID",
+      "X-NoralOS-Run-Id: $NORALOS_RUN_ID",
     );
     expect(patchedCtx.agent.adapterConfig.promptTemplate).toContain("Existing prompt");
   });
@@ -382,7 +385,7 @@ describe("server adapter registry", () => {
     const [patchedCtx] = hermesExecuteMock.mock.calls[0];
     expect(patchedCtx.config.hermesCommand).toBe("runtime-hermes");
     expect(patchedCtx.agent.adapterConfig.hermesCommand).toBe("agent-hermes");
-    expect(patchedCtx.agent.adapterConfig.env.PAPERCLIP_API_KEY).toBe("agent-run-jwt");
+    expect(patchedCtx.agent.adapterConfig.env.NORALOS_API_KEY).toBe("agent-run-jwt");
   });
 
   it("passes the original Hermes context through when authToken is absent", async () => {
@@ -397,7 +400,7 @@ describe("server adapter registry", () => {
         adapterType: "hermes_local",
         adapterConfig: {
           env: {
-            PAPERCLIP_API_KEY: "server-level-key",
+            NORALOS_API_KEY: "server-level-key",
           },
           promptTemplate: "Existing prompt",
         },
@@ -416,7 +419,7 @@ describe("server adapter registry", () => {
     expect(hermesExecuteMock).toHaveBeenCalledWith(ctx);
   });
 
-  it("preserves an explicit Hermes Paperclip API key and does not set promptTemplate when none was configured", async () => {
+  it("preserves an explicit Hermes NoralOS API key and does not set promptTemplate when none was configured", async () => {
     const adapter = requireServerAdapter("hermes_local");
 
     await adapter.execute({
@@ -429,8 +432,8 @@ describe("server adapter registry", () => {
         adapterType: "hermes_local",
         adapterConfig: {
           env: {
-            PAPERCLIP_API_KEY: "explicit-agent-key",
-            PAPERCLIP_RUN_ID: "stale-run-id",
+            NORALOS_API_KEY: "explicit-agent-key",
+            NORALOS_RUN_ID: "stale-run-id",
           },
         },
       },
@@ -444,8 +447,8 @@ describe("server adapter registry", () => {
     });
 
     const [patchedCtx] = hermesExecuteMock.mock.calls[0];
-    expect(patchedCtx.agent.adapterConfig.env.PAPERCLIP_API_KEY).toBe("explicit-agent-key");
-    expect(patchedCtx.agent.adapterConfig.env.PAPERCLIP_RUN_ID).toBe("run-123");
+    expect(patchedCtx.agent.adapterConfig.env.NORALOS_API_KEY).toBe("explicit-agent-key");
+    expect(patchedCtx.agent.adapterConfig.env.NORALOS_RUN_ID).toBe("run-123");
     // No custom promptTemplate was set — Hermes must use its built-in default.
     // Setting promptTemplate here would replace the full default with just the auth guard text,
     // stripping assigned issue / workflow instructions.
@@ -478,7 +481,7 @@ describe("server adapter registry", () => {
     // promptTemplate must remain unset so Hermes uses its built-in heartbeat/task prompt.
     expect(patchedCtx.agent.adapterConfig.promptTemplate).toBeUndefined();
     // Auth token is still injected.
-    expect(patchedCtx.agent.adapterConfig.env.PAPERCLIP_API_KEY).toBe("agent-run-jwt");
+    expect(patchedCtx.agent.adapterConfig.env.NORALOS_API_KEY).toBe("agent-run-jwt");
   });
 });
 

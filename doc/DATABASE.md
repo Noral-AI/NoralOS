@@ -1,6 +1,6 @@
 # Database
 
-Paperclip uses PostgreSQL via [Drizzle ORM](https://orm.drizzle.team/). There are three ways to run the database, from simplest to most production-ready.
+NoralOS uses PostgreSQL via [Drizzle ORM](https://orm.drizzle.team/). There are three ways to run the database, from simplest to most production-ready.
 
 ## 1. Embedded PostgreSQL — zero config
 
@@ -12,12 +12,12 @@ pnpm dev
 
 That's it. On first start the server:
 
-1. Creates a `~/.paperclip/instances/default/db/` directory for storage
-2. Ensures the `paperclip` database exists
+1. Creates a `~/.noralos/instances/default/db/` directory for storage
+2. Ensures the `noralos` database exists
 3. Runs migrations automatically for empty databases
 4. Starts serving requests
 
-Data persists across restarts in `~/.paperclip/instances/default/db/`. To reset local dev data, delete that directory.
+Data persists across restarts in `~/.noralos/instances/default/db/`. To reset local dev data, delete that directory.
 
 If you need to apply pending migrations manually, run:
 
@@ -25,7 +25,7 @@ If you need to apply pending migrations manually, run:
 pnpm db:migrate
 ```
 
-When `DATABASE_URL` is unset, this command targets the current embedded PostgreSQL instance for your active Paperclip config/instance.
+When `DATABASE_URL` is unset, this command targets the current embedded PostgreSQL instance for your active NoralOS config/instance.
 
 Issue reference mentions follow the normal migration path: the schema migration creates the tracking table, but it does not backfill historical issue titles, descriptions, comments, or documents automatically.
 
@@ -41,7 +41,7 @@ Future issue, comment, and document writes sync references automatically without
 
 This mode is ideal for local development and one-command installs.
 
-Docker note: the Docker quickstart image also uses embedded PostgreSQL by default. Persist `/paperclip` to keep DB state across container restarts (see `doc/DOCKER.md`).
+Docker note: the Docker quickstart image also uses embedded PostgreSQL by default. Persist `/noralos` to keep DB state across container restarts (see `doc/DOCKER.md`).
 
 ## 2. Local PostgreSQL (Docker)
 
@@ -56,13 +56,13 @@ This starts PostgreSQL 17 on `localhost:5432`. Then set the connection string:
 ```sh
 cp .env.example .env
 # .env already contains:
-# DATABASE_URL=postgres://paperclip:paperclip@localhost:5432/paperclip
+# DATABASE_URL=postgres://noralos:paperclip@localhost:5432/noralos
 ```
 
 Run migrations:
 
 ```sh
-DATABASE_URL=postgres://paperclip:paperclip@localhost:5432/paperclip \
+DATABASE_URL=postgres://noralos:paperclip@localhost:5432/noralos \
   pnpm db:migrate
 ```
 
@@ -106,14 +106,14 @@ For the application runtime, use a direct PostgreSQL connection unless the datab
 DATABASE_URL=postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres
 ```
 
-If you later run the app with a pooled runtime URL, set `DATABASE_MIGRATION_URL` to the direct connection URL. Paperclip uses it for startup schema checks/migrations and plugin namespace migrations, while the app continues to use `DATABASE_URL` for runtime queries:
+If you later run the app with a pooled runtime URL, set `DATABASE_MIGRATION_URL` to the direct connection URL. NoralOS uses it for startup schema checks/migrations and plugin namespace migrations, while the app continues to use `DATABASE_URL` for runtime queries:
 
 ```sh
 DATABASE_URL=postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
 DATABASE_MIGRATION_URL=postgres://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres
 ```
 
-If your hosted database requires transaction-pooling-only connections, use a direct or session-pooled connection for Paperclip until runtime pooling support is documented in this guide. Do not edit database client source files as part of deployment setup.
+If your hosted database requires transaction-pooling-only connections, use a direct or session-pooled connection for NoralOS until runtime pooling support is documented in this guide. Do not edit database client source files as part of deployment setup.
 
 ### Push the schema
 
@@ -137,7 +137,7 @@ The database mode is controlled by `DATABASE_URL`:
 
 | `DATABASE_URL` | Mode |
 |---|---|
-| Not set | Embedded PostgreSQL (`~/.paperclip/instances/default/db/`) |
+| Not set | Embedded PostgreSQL (`~/.noralos/instances/default/db/`) |
 | `postgres://...localhost...` | Local Docker PostgreSQL |
 | `postgres://...supabase.com...` | Hosted Supabase |
 
@@ -149,7 +149,11 @@ The plugin runtime tracks plugin-owned database namespaces and migrations in `pl
 
 ## Backups
 
+<<<<<<< v2026.525.0
 Paperclip supports automatic and manual logical database backups. These dumps include
+=======
+NoralOS supports automatic and manual logical database backups. These dumps include
+>>>>>>> master
 non-system database schemas such as `public`, the Drizzle migration journal, and
 plugin-owned database schemas. See `doc/DEVELOPING.md` for the current
 `paperclipai db:backup` / `pnpm db:backup` commands and backup retention
@@ -161,7 +165,7 @@ up separately when you need full instance disaster recovery.
 
 ## Secret storage
 
-Paperclip stores secret metadata and versions in:
+NoralOS stores secret metadata and versions in:
 
 - `company_secrets`
 - `company_secret_versions`
@@ -173,26 +177,31 @@ Secret-aware env bindings are supported by agents, projects, and routines. Routi
 For local/default installs, the active provider is `local_encrypted`:
 
 - Secret material is encrypted at rest with a local master key.
+<<<<<<< v2026.525.0
 - Default key file: `~/.paperclip/instances/default/secrets/master.key` (auto-created if missing).
 - CLI config location: `~/.paperclip/instances/default/config.json` under `secrets.localEncrypted.keyFilePath`.
 - Backup/restore requires both the database metadata and the local master key file; either artifact alone is insufficient.
 - The server best-effort enforces `0600` key file permissions and provider health reports permission warnings.
+=======
+- Default key file: `~/.noralos/instances/default/secrets/master.key` (auto-created if missing).
+- CLI config location: `~/.noralos/instances/default/config.json` under `secrets.localEncrypted.keyFilePath`.
+>>>>>>> master
 
 Optional overrides:
 
-- `PAPERCLIP_SECRETS_MASTER_KEY` (32-byte key as base64, hex, or raw 32-char string)
-- `PAPERCLIP_SECRETS_MASTER_KEY_FILE` (custom key file path)
+- `NORALOS_SECRETS_MASTER_KEY` (32-byte key as base64, hex, or raw 32-char string)
+- `NORALOS_SECRETS_MASTER_KEY_FILE` (custom key file path)
 
 Strict mode to block new inline sensitive env values:
 
 ```sh
-PAPERCLIP_SECRETS_STRICT_MODE=true
+NORALOS_SECRETS_STRICT_MODE=true
 ```
 
 You can set strict mode and provider defaults via:
 
 ```sh
-pnpm paperclipai configure --section secrets
+pnpm noralos configure --section secrets
 ```
 
 Inline secret migration command:

@@ -52,8 +52,18 @@ export function BreadcrumbProvider({ children, companyName }: BreadcrumbProvider
   }, []);
 
   useEffect(() => {
+<<<<<<< v2026.525.0
     document.title = buildDocumentTitle(breadcrumbs, companyName);
   }, [breadcrumbs, companyName]);
+=======
+    if (breadcrumbs.length === 0) {
+      document.title = "noralAI";
+    } else {
+      const parts = [...breadcrumbs].reverse().map((b) => b.label);
+      document.title = `${parts.join(" - ")} - noralAI`;
+    }
+  }, [breadcrumbs]);
+>>>>>>> master
 
   return (
     <BreadcrumbContext.Provider value={{ breadcrumbs, setBreadcrumbs, mobileToolbar, setMobileToolbar }}>

@@ -15,10 +15,14 @@ import {
   heartbeatRuns,
   issueRelations,
   issues,
+<<<<<<< v2026.525.0
   pluginManagedResources,
   plugins,
   projects,
 } from "@paperclipai/db";
+=======
+} from "@noralos/db";
+>>>>>>> master
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -55,7 +59,7 @@ describeEmbeddedPostgres("plugin orchestration APIs", () => {
   const tempRoots: string[] = [];
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-plugin-orchestration-");
+    tempDb = await startEmbeddedPostgresTestDatabase("noralos-plugin-orchestration-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -85,7 +89,7 @@ describeEmbeddedPostgres("plugin orchestration APIs", () => {
     const agentId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: issuePrefix(companyId),
       requireBoardApprovalForNewAgents: false,
     });

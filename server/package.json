@@ -1,5 +1,5 @@
 {
-  "name": "@paperclipai/server",
+  "name": "@noralos/server",
   "version": "0.3.1",
   "license": "MIT",
   "homepage": "https://github.com/paperclipai/paperclip",
@@ -33,17 +33,18 @@
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
-    "dev:watch": "cross-env PAPERCLIP_MIGRATION_PROMPT=never PAPERCLIP_MIGRATION_AUTO_APPLY=true tsx ./scripts/dev-watch.ts",
+    "dev:watch": "cross-env NORALOS_MIGRATION_PROMPT=never NORALOS_MIGRATION_AUTO_APPLY=true tsx ./scripts/dev-watch.ts",
     "prepare:ui-dist": "bash ../scripts/prepare-server-ui-dist.sh",
     "build": "tsc && mkdir -p dist/onboarding-assets && cp -R src/onboarding-assets/. dist/onboarding-assets/",
     "prepack": "pnpm run prepare:ui-dist",
     "postpack": "rm -rf ui-dist",
     "clean": "rm -rf dist",
     "start": "node dist/index.js",
-    "typecheck": "pnpm --filter @paperclipai/plugin-sdk ensure-build-deps && tsc --noEmit"
+    "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0",
+<<<<<<< v2026.525.0
     "@paperclipai/adapter-acpx-local": "workspace:*",
     "@paperclipai/adapter-claude-local": "workspace:*",
     "@paperclipai/adapter-codex-local": "workspace:*",
@@ -58,6 +59,19 @@
     "@paperclipai/db": "workspace:*",
     "@paperclipai/plugin-sdk": "workspace:*",
     "@paperclipai/shared": "workspace:*",
+=======
+    "@noralos/adapter-claude-local": "workspace:*",
+    "@noralos/adapter-codex-local": "workspace:*",
+    "@noralos/adapter-cursor-local": "workspace:*",
+    "@noralos/adapter-gemini-local": "workspace:*",
+    "@noralos/adapter-openclaw-gateway": "workspace:*",
+    "@noralos/adapter-opencode-local": "workspace:*",
+    "@noralos/adapter-pi-local": "workspace:*",
+    "@noralos/adapter-utils": "workspace:*",
+    "@noralos/db": "workspace:*",
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*",
+>>>>>>> master
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "better-auth": "1.4.18",

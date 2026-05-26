@@ -1,5 +1,5 @@
 /**
- * @fileoverview Frontend API client for the Paperclip plugin system.
+ * @fileoverview Frontend API client for the NoralOS plugin system.
  *
  * All functions in `pluginsApi` map 1:1 to REST endpoints on
  * `server/src/routes/plugins.ts`. Call sites should consume these functions
@@ -18,7 +18,7 @@ import type {
   PluginRecord,
   PluginConfig,
   PluginStatus,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { api } from "./client";
 
 /**
@@ -370,6 +370,23 @@ export const pluginsApi = {
    */
   saveConfig: (pluginId: string, configJson: Record<string, unknown>) =>
     api.post<PluginConfig>(`/plugins/${pluginId}/config`, { configJson }),
+
+  /**
+   * Shallow-merge a partial config into the plugin's instance configuration.
+   *
+   * Unlike `saveConfig` (which replaces the whole row), this preserves keys
+   * that aren't in the request body. Use for single-toggle admin actions
+   * like flipping `ttsMode` on voice-cascade without losing the existing
+   * apiKeyRefs.
+   *
+   * The server validates the MERGED config against the plugin's
+   * `instanceConfigSchema`, so an invalid combination still surfaces.
+   *
+   * @param pluginId - UUID of the plugin.
+   * @param configJson - Partial config values to merge into the existing row.
+   */
+  patchConfig: (pluginId: string, configJson: Record<string, unknown>) =>
+    api.patch<PluginConfig>(`/plugins/${pluginId}/config`, { configJson }),
 
   /**
    * Call the plugin's `validateConfig` RPC method to test the configuration

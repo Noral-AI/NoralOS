@@ -6,7 +6,11 @@ import {
   type Environment,
   type EnvironmentProbeResult,
   type JsonSchema,
+<<<<<<< v2026.525.0
 } from "@paperclipai/shared";
+=======
+} from "@noralos/shared";
+>>>>>>> master
 import { Check, Settings } from "lucide-react";
 import { environmentsApi } from "@/api/environments";
 import { instanceSettingsApi } from "@/api/instanceSettings";
@@ -432,6 +436,7 @@ export function CompanyEnvironments() {
           remote-managed adapters, and sandbox environments appear only when a run-capable sandbox provider plugin is
           installed.
         </div>
+<<<<<<< v2026.525.0
         {sandboxCreationEnabled ? (
           <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
             Installed sandbox providers:{" "}
@@ -441,6 +446,8 @@ export function CompanyEnvironments() {
             . These are not adapter types. They back the Sandbox driver for adapters that support sandbox execution.
           </div>
         ) : null}
+=======
+>>>>>>> master
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[34rem] text-left text-xs">
@@ -451,7 +458,11 @@ export function CompanyEnvironments() {
                 <th className="px-3 py-2 font-medium">Local</th>
                 <th className="px-3 py-2 font-medium">SSH</th>
                 {sandboxSupportVisible ? (
+<<<<<<< v2026.525.0
                   <th className="px-3 py-2 font-medium">Sandbox via plugin</th>
+=======
+                  <th className="px-3 py-2 font-medium">Sandbox</th>
+>>>>>>> master
                 ) : null}
               </tr>
             </thead>
@@ -521,7 +532,11 @@ export function CompanyEnvironments() {
                           })()}
                         </div>
                       ) : (
+<<<<<<< v2026.525.0
                         <div className="text-xs text-muted-foreground">Runs on this Paperclip host.</div>
+=======
+                        <div className="text-xs text-muted-foreground">Runs on this NoralOS host.</div>
+>>>>>>> master
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -654,11 +669,19 @@ export function CompanyEnvironments() {
                     onChange={(e) => setEnvironmentForm((current) => ({ ...current, sshUsername: e.target.value }))}
                   />
                 </Field>
+<<<<<<< v2026.525.0
                 <Field label="Remote workspace path" hint="Absolute path that Paperclip will verify during SSH connection tests.">
                   <input
                     className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
                     type="text"
                     placeholder="/Users/paperclip/workspace"
+=======
+                <Field label="Remote workspace path" hint="Absolute path that NoralOS will verify during SSH connection tests.">
+                  <input
+                    className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm outline-none"
+                    type="text"
+                    placeholder="/Users/noralos/workspace"
+>>>>>>> master
                     value={environmentForm.sshRemoteWorkspacePath}
                     onChange={(e) =>
                       setEnvironmentForm((current) => ({ ...current, sshRemoteWorkspacePath: e.target.value }))}

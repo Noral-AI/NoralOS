@@ -1,5 +1,9 @@
 {
+<<<<<<< v2026.525.0
   "id": "fdc9cd8b-5423-4d64-b255-9bc1497fdd6a",
+=======
+  "id": "9cb08fe5-824d-463b-93b3-407874fa818b",
+>>>>>>> master
   "prevId": "12b3d91e-98ee-4a48-aecb-891f5bde6eda",
   "version": "7",
   "dialect": "postgresql",
@@ -1185,6 +1189,15 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< v2026.525.0
+=======
+        "department_id": {
+          "name": "department_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+>>>>>>> master
         "budget_monthly_cents": {
           "name": "budget_monthly_cents",
           "type": "integer",
@@ -1308,6 +1321,30 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+<<<<<<< v2026.525.0
+=======
+        },
+        "agents_company_department_idx": {
+          "name": "agents_company_department_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "department_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+>>>>>>> master
         }
       },
       "foreignKeys": {
@@ -1349,6 +1386,22 @@
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
+<<<<<<< v2026.525.0
+=======
+        },
+        "agents_department_id_departments_id_fk": {
+          "name": "agents_department_id_departments_id_fk",
+          "tableFrom": "agents",
+          "tableTo": "departments",
+          "columnsFrom": [
+            "department_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+>>>>>>> master
         }
       },
       "compositePrimaryKeys": {},
@@ -4249,6 +4302,131 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+<<<<<<< v2026.525.0
+=======
+    "public.departments": {
+      "name": "departments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "departments_company_name_idx": {
+          "name": "departments_company_name_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "departments_company_sort_idx": {
+          "name": "departments_company_sort_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "departments_company_id_companies_id_fk": {
+          "name": "departments_company_id_companies_id_fk",
+          "tableFrom": "departments",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+>>>>>>> master
     "public.document_revisions": {
       "name": "document_revisions",
       "schema": "",
@@ -11114,6 +11292,7 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< v2026.525.0
         "monitor_next_check_at": {
           "name": "monitor_next_check_at",
           "type": "timestamp with time zone",
@@ -11151,6 +11330,8 @@
           "primaryKey": false,
           "notNull": false
         },
+=======
+>>>>>>> master
         "execution_workspace_id": {
           "name": "execution_workspace_id",
           "type": "uuid",
@@ -11395,6 +11576,7 @@
           "method": "btree",
           "with": {}
         },
+<<<<<<< v2026.525.0
         "issues_company_monitor_due_idx": {
           "name": "issues_company_monitor_due_idx",
           "columns": [
@@ -11416,6 +11598,8 @@
           "method": "btree",
           "with": {}
         },
+=======
+>>>>>>> master
         "issues_identifier_idx": {
           "name": "issues_identifier_idx",
           "columns": [

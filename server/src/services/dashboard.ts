@@ -1,6 +1,6 @@
-import { and, eq, gte, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { agents, approvals, companies, costEvents, heartbeatRuns, issues } from "@paperclipai/db";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import type { Db } from "@noralos/db";
+import { agents, approvals, companies, costEvents, heartbeatRuns, issues, issueThreadInteractions } from "@noralos/db";
 import { notFound } from "../errors.js";
 import { budgetService } from "./budgets.js";
 
@@ -49,7 +49,24 @@ export function dashboardService(db: Db) {
       const pendingApprovals = await db
         .select({ count: sql<number>`count(*)` })
         .from(approvals)
-        .where(and(eq(approvals.companyId, companyId), eq(approvals.status, "pending")))
+        .where(
+          and(
+            eq(approvals.companyId, companyId),
+            inArray(approvals.status, ["pending", "revision_requested"]),
+          ),
+        )
+        .then((rows) => Number(rows[0]?.count ?? 0));
+
+      const pendingConfirmations = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(issueThreadInteractions)
+        .where(
+          and(
+            eq(issueThreadInteractions.companyId, companyId),
+            eq(issueThreadInteractions.kind, "request_confirmation"),
+            eq(issueThreadInteractions.status, "pending"),
+          ),
+        )
         .then((rows) => Number(rows[0]?.count ?? 0));
 
       const agentCounts: Record<string, number> = {
@@ -149,6 +166,7 @@ export function dashboardService(db: Db) {
           monthUtilizationPercent: Number(utilization.toFixed(2)),
         },
         pendingApprovals,
+        pendingConfirmations,
         budgets: {
           activeIncidents: budgetOverview.activeIncidents.length,
           pendingApprovals: budgetOverview.pendingApprovalCount,

@@ -126,11 +126,11 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
           connectionString: sourceConnectionString,
           backupDir,
           retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
-          filenamePrefix: "paperclip-test",
+          filenamePrefix: "noralos-test",
           backupEngine: "javascript",
         });
 
-        expect(result.backupFile).toMatch(/paperclip-test-.*\.sql\.gz$/);
+        expect(result.backupFile).toMatch(/noralos-test-.*\.sql\.gz$/);
         expect(result.sizeBytes).toBeGreaterThan(0);
         expect(fs.existsSync(result.backupFile)).toBe(true);
 
@@ -310,6 +310,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
   );
 
   it(
+<<<<<<< v2026.525.0
     "preserves composite foreign key column order without duplicate referenced columns",
     async () => {
       const sourceConnectionString = await createTempDatabase();
@@ -411,6 +412,8 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
   );
 
   it(
+=======
+>>>>>>> master
     "restores legacy public-only backups without migration history",
     async () => {
       const restoreConnectionString = await createTempDatabase();
@@ -422,7 +425,7 @@ describeEmbeddedPostgres("runDatabaseBackup", () => {
         await fs.promises.writeFile(
           backupFile,
           [
-            "-- Paperclip database backup",
+            "-- NoralOS database backup",
             "-- Created: 2026-04-06T00:00:00.000Z",
             "",
             "BEGIN;",

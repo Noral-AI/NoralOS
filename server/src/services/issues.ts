@@ -1,6 +1,11 @@
 import { Buffer } from "node:buffer";
+<<<<<<< v2026.525.0
 import { and, asc, desc, eq, gt, inArray, isNull, like, lt, ne, notInArray, or, sql, type SQL } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
+=======
+import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, notInArray, or, sql } from "drizzle-orm";
+import type { Db } from "@noralos/db";
+>>>>>>> master
 import {
   activityLog,
   agentWakeupRequests,
@@ -27,7 +32,7 @@ import {
   labels,
   projectWorkspaces,
   projects,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import type {
   IssueCommentAuthorType,
   IssueCommentMetadata,
@@ -38,6 +43,7 @@ import type {
   IssueProductivityReview,
   IssueProductivityReviewTrigger,
   IssueRelationIssueSummary,
+<<<<<<< v2026.525.0
   SuccessfulRunHandoffState,
 } from "@paperclipai/shared";
 import {
@@ -53,6 +59,11 @@ import {
 import { conflict, HttpError, notFound, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import { parseObject } from "../adapters/utils.js";
+=======
+} from "@noralos/shared";
+import { clampIssueRequestDepth, extractAgentMentionIds, extractProjectMentionIds, isUuidLike } from "@noralos/shared";
+import { conflict, notFound, unprocessable } from "../errors.js";
+>>>>>>> master
 import {
   defaultIssueExecutionWorkspaceSettingsForProject,
   gateProjectExecutionWorkspacePolicy,
@@ -61,7 +72,10 @@ import {
   parseProjectExecutionWorkspacePolicy,
 } from "./execution-workspace-policy.js";
 import { mergeExecutionWorkspaceConfig } from "./execution-workspaces.js";
+<<<<<<< v2026.525.0
 import { buildInitialIssueMonitorFields, normalizeIssueExecutionPolicy } from "./issue-execution-policy.js";
+=======
+>>>>>>> master
 import { instanceSettingsService } from "./instance-settings.js";
 import { redactCurrentUserText } from "../log-redaction.js";
 import { redactSensitiveText } from "../redaction.js";
@@ -73,11 +87,15 @@ import {
   issueTreeControlService,
   type ActiveIssueTreePauseHoldGate,
 } from "./issue-tree-control.js";
+<<<<<<< v2026.525.0
 import {
   parseIssueGraphLivenessIncidentKey,
   RECOVERY_ORIGIN_KINDS,
 } from "./recovery/origins.js";
 import { classifyIssueGraphLiveness, type IssueLivenessFinding } from "./recovery/issue-graph-liveness.js";
+=======
+import { parseIssueGraphLivenessIncidentKey } from "./recovery/origins.js";
+>>>>>>> master
 
 const ALL_ISSUE_STATUSES = ["backlog", "todo", "in_progress", "in_review", "blocked", "done", "cancelled"];
 const MAX_ISSUE_COMMENT_PAGE_LIMIT = 500;
@@ -133,6 +151,7 @@ function buildReusedExecutionWorkspaceConfigPatchFromIssueSettings(
   };
 }
 
+<<<<<<< v2026.525.0
 function toTimestampMs(value: Date | string | null | undefined) {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
@@ -213,6 +232,8 @@ export function deriveIssueCommentRunLogAttribution(
   return derivedByCommentId;
 }
 
+=======
+>>>>>>> master
 export interface IssueFilters {
   attention?: "blocked";
   status?: string;
@@ -1394,6 +1415,31 @@ async function listIssueBlockerAttentionMap(
           ),
         );
       for (const row of approvalRows) explicitWaitingIssueIds.add(row.issueId);
+<<<<<<< v2026.525.0
+=======
+    }
+
+    // Recovery rows are intentionally company-wide: a liveness escalation for
+    // the same leaf blocker represents an active waiting path even when that
+    // blocker is reached through another blocked graph.
+    const recoveryRows: Array<{ id: string; originId: string | null }> = await dbOrTx
+      .select({ id: issues.id, originId: issues.originId })
+      .from(issues)
+      .where(
+        and(
+          eq(issues.companyId, companyId),
+          eq(issues.originKind, BLOCKER_ATTENTION_OPEN_RECOVERY_ORIGIN_KIND),
+          isNull(issues.hiddenAt),
+          notInArray(issues.status, BLOCKER_ATTENTION_OPEN_RECOVERY_TERMINAL_STATUSES),
+        ),
+      );
+    for (const row of recoveryRows) {
+      const parsed = parseIssueGraphLivenessIncidentKey(row.originId);
+      if (!parsed || parsed.companyId !== companyId) continue;
+      explicitWaitingIssueIds.add(row.id);
+      explicitWaitingIssueIds.add(parsed.issueId);
+      explicitWaitingIssueIds.add(parsed.leafIssueId);
+>>>>>>> master
     }
 
     // Recovery rows are intentionally company-wide: a liveness escalation for
@@ -1468,9 +1514,12 @@ async function listIssueBlockerAttentionMap(
     if (explicitWaitingIssueIds.has(node.id)) {
       return { covered: true, stalled: false, sampleBlockerIdentifier: nodeSample, sampleStalledBlockerIdentifier: null };
     }
+<<<<<<< v2026.525.0
     if (node.assigneeUserId && node.status !== "cancelled") {
       return { covered: true, stalled: false, sampleBlockerIdentifier: nodeSample, sampleStalledBlockerIdentifier: null };
     }
+=======
+>>>>>>> master
     if (node.status === "in_review") {
       const hasWaitingPath = activeIssueIds.has(node.id) || Boolean(node.assigneeUserId);
       if (hasWaitingPath) {

@@ -6,8 +6,8 @@ import type {
   CompanySecret,
   EnvBinding,
   Environment,
-} from "@paperclipai/shared";
-import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, supportedEnvironmentDriversForAdapter } from "@paperclipai/shared";
+} from "@noralos/shared";
+import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, supportedEnvironmentDriversForAdapter } from "@noralos/shared";
 import type { AdapterModel } from "../api/agents";
 import { agentsApi } from "../api/agents";
 import { environmentsApi } from "../api/environments";
@@ -17,10 +17,16 @@ import { assetsApi } from "../api/assets";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
 import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
+=======
+} from "@noralos/adapter-codex-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
+>>>>>>> master
 import {
   Popover,
   PopoverContent,
@@ -61,10 +67,10 @@ import { filterAcpxModelsByAgent } from "../lib/acpx-model-filter";
 
 /* ---- Create mode values ---- */
 
-// Canonical type lives in @paperclipai/adapter-utils; re-exported here
+// Canonical type lives in @noralos/adapter-utils; re-exported here
 // so existing imports from this file keep working.
-export type { CreateConfigValues } from "@paperclipai/adapter-utils";
-import type { CreateConfigValues } from "@paperclipai/adapter-utils";
+export type { CreateConfigValues } from "@noralos/adapter-utils";
+import type { CreateConfigValues } from "@noralos/adapter-utils";
 
 /* ---- Props ---- */
 
@@ -441,6 +447,15 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     const value = (adapterConfig as Record<string, unknown>).model;
     return typeof value === "string" ? value : "";
   }, [adapterCheapDefault]);
+<<<<<<< v2026.525.0
+=======
+
+  // Create mode helpers
+  const val = isCreate ? props.values : null;
+  const set = isCreate
+    ? (patch: Partial<CreateConfigValues>) => props.onChange(patch)
+    : null;
+>>>>>>> master
 
   function buildAdapterConfigForTest(): Record<string, unknown> {
     if (isCreate) {
@@ -467,9 +482,19 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
       if (!selectedCompanyId) {
         throw new Error("Select a company to test adapter environment");
       }
+      const selectedEnvironmentId = isCreate
+        ? val!.defaultEnvironmentId ?? null
+        : eff("identity", "defaultEnvironmentId", props.agent.defaultEnvironmentId ?? null);
       return agentsApi.testEnvironment(selectedCompanyId, adapterType, {
         adapterConfig: buildAdapterConfigForTest(),
+<<<<<<< v2026.525.0
         environmentId: currentDefaultEnvironmentId || null,
+=======
+        environmentId:
+          typeof selectedEnvironmentId === "string" && selectedEnvironmentId.length > 0
+            ? selectedEnvironmentId
+            : null,
+>>>>>>> master
       });
     },
   });
@@ -1044,6 +1069,20 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                 />
               )}
 
+              {supportsModelProfiles && (
+                <CheapModelSection
+                  enabled={currentCheapEnabled}
+                  model={currentCheapModel}
+                  models={models}
+                  adapterType={adapterType}
+                  adapterDefaultModel={adapterCheapDefaultModel}
+                  onEnabledChange={setCheapEnabled}
+                  onModelChange={setCheapModel}
+                  open={cheapModelOpen}
+                  onOpenChange={setCheapModelOpen}
+                />
+              )}
+
               {showThinkingEffort && (
                 <>
                   <ThinkingEffortDropdown
@@ -1165,6 +1204,31 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                   </Field>
                 </>
               )}
+          </div>
+        </div>
+      )}
+
+      {/* ---- Adapter configuration (HTTP / chat-completion adapters) ----
+           Local-CLI adapters render uiAdapter.ConfigFields inside the
+           "Permissions & Configuration" section above, alongside their
+           command / cwd / env / extra-args knobs. Non-CLI adapters
+           (noralai_brooklyn today, future chat-completion adapters)
+           don't have a Permissions & Configuration section at all
+           because the whole thing is gated on `isLocal`. Without this
+           block they would have nowhere to surface their required
+           per-agent fields (Base URL, credential picker, etc.), making
+           the adapter unusable from the dashboard even after it's
+           wired into the registry. Render the adapter-specific fields
+           in their own minimal section here so they always appear.
+      */}
+      {!isLocal && (
+        <div className={cn(!cards && "border-b border-border")}>
+          {cards
+            ? <h3 className="text-sm font-medium mb-3">Adapter configuration</h3>
+            : <div className="px-4 py-2 text-xs font-medium text-muted-foreground">Adapter configuration</div>
+          }
+          <div className={cn(cards ? "border border-border rounded-lg p-4 space-y-3" : "px-4 pb-3 space-y-3")}>
+            <uiAdapter.ConfigFields {...adapterFieldProps} />
           </div>
         </div>
       )}

@@ -2,11 +2,12 @@ import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestContext,
   AdapterEnvironmentTestResult,
-} from "@paperclipai/adapter-utils";
+} from "@noralos/adapter-utils";
 import {
   asString,
   parseObject,
   ensurePathInEnv,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-utils/server-utils";
 import {
   asStringArray,
@@ -14,11 +15,23 @@ import {
 import {
   ensureAdapterExecutionTargetCommandResolvable,
   maybeRunSandboxInstallCommand,
+=======
+} from "@noralos/adapter-utils/server-utils";
+import {
+  asStringArray,
+} from "@noralos/adapter-utils/server-utils";
+import {
+  ensureAdapterExecutionTargetCommandResolvable,
+>>>>>>> master
   ensureAdapterExecutionTargetDirectory,
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-utils/execution-target";
+=======
+} from "@noralos/adapter-utils/execution-target";
+>>>>>>> master
 import { discoverPiModelsCached } from "./models.js";
 import { parsePiJsonl } from "./parse.js";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";

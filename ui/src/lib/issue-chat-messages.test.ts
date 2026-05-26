@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
 import {
   buildAssistantPartsFromTranscript,
   buildIssueChatMessages,
@@ -37,7 +37,7 @@ function createAgent(id: string, name: string): Agent {
     pauseReason: null,
     pausedAt: null,
     urlKey: "codexcoder",
-    permissions: { canCreateAgents: false },
+    permissions: { canCreateAgents: false, canCreateDepartments: false },
   } as Agent;
 }
 

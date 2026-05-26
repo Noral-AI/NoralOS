@@ -15,6 +15,38 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # NoralSign — document e-signing engine bundled into NoralOS.
+  # Internal-only: not exposed to the host. The NoralOS server reaches it
+  # at http://docuseal:3000 via the project network; humans and customers
+  # hit it through the NoralOS-branded UI and signer-redirect surfaces.
+  #
+  # On first boot DocuSeal's Rails app creates its own `docuseal` database
+  # using the superuser credentials below. The data volume persists signed
+  # PDFs and template uploads independently of the Postgres data volume.
+  docuseal:
+    image: docuseal/docuseal:latest
+    environment:
+      # Reuse the bundled Postgres; DocuSeal owns the `docuseal` database.
+      DATABASE_URL: postgres://paperclip:paperclip@db:5432/docuseal
+      # Rails session/cookie key. Stable across restarts so signer-link
+      # tokens stay valid; rotate intentionally if leaked.
+      SECRET_KEY_BASE: "${DOCUSEAL_SECRET_KEY_BASE:-docuseal-dev-secret-do-not-use-in-prod}"
+      # Optional DocuSeal Pro / white-label license. Leave unset for OSS mode
+      # (which keeps "Powered by DocuSeal" on signer-facing pages).
+      LICENSE_KEY: "${DOCUSEAL_LICENSE_KEY:-}"
+      # Public host that DocuSeal stamps into outbound signer-invitation
+      # links. Should be the NoralOS public origin; the NoralSign plugin
+      # is responsible for rewriting paths so customers never see /docuseal
+      # in the URL bar.
+      HOST: "${NORALOS_PUBLIC_URL:-http://localhost:3100}"
+      FORCE_SSL: "false"
+    volumes:
+      - docuseal-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   server:
     build:
       context: ..
@@ -22,15 +54,18 @@ services:
     ports:
       - "3100:3100"
     environment:
-      DATABASE_URL: postgres://paperclip:paperclip@db:5432/paperclip
+      DATABASE_URL: postgres://noralos:paperclip@db:5432/noralos
       PORT: "3100"
       SERVE_UI: "true"
-      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
-      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
-      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
+      NORALOS_DEPLOYMENT_MODE: "authenticated"
+      NORALOS_DEPLOYMENT_EXPOSURE: "private"
+      NORALOS_PUBLIC_URL: "${NORALOS_PUBLIC_URL:-http://localhost:3100}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      # Internal URL the NoralSign plugin uses to reach the bundled
+      # DocuSeal service. Override only if running a dedicated cluster.
+      DOCUSEAL_INTERNAL_URL: "${DOCUSEAL_INTERNAL_URL:-http://docuseal:3000}"
     volumes:
-      - paperclip-data:/paperclip
+      - paperclip-data:/noralos
     depends_on:
       db:
         condition: service_healthy
@@ -38,3 +73,4 @@ services:
 volumes:
   pgdata:
   paperclip-data:
+  docuseal-data:

@@ -26,7 +26,7 @@ import {
   issueTreeHolds,
   issueWorkProducts,
   issues,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -50,9 +50,9 @@ vi.mock("../telemetry.ts", () => ({
   getTelemetryClient: () => mockTelemetryClient,
 }));
 
-vi.mock("@paperclipai/shared/telemetry", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/shared/telemetry")>(
-    "@paperclipai/shared/telemetry",
+vi.mock("@noralos/shared/telemetry", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/shared/telemetry")>(
+    "@noralos/shared/telemetry",
   );
   return {
     ...actual,
@@ -323,7 +323,6 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     await db.delete(costEvents);
     await db.delete(environmentLeases);
     await db.delete(environments);
-    await db.delete(issueWorkProducts);
     await db.delete(issueComments);
     await db.delete(issueDocuments);
     await db.delete(documentRevisions);
@@ -417,7 +416,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -549,7 +548,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -665,7 +664,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -831,7 +830,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2199,7 +2198,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const issuePrefix = `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });
@@ -2326,7 +2325,7 @@ describeEmbeddedPostgres("heartbeat orphaned process recovery", () => {
     const issuePrefix = `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });

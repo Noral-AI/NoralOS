@@ -1,10 +1,12 @@
 import { timingSafeEqual } from "node:crypto";
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import { and, count, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { readPersistedDevServerStatus, toDevServerHealthStatus, writeDevServerRestartRequest } from "../dev-server-status.js";
+import { heartbeatRuns, instanceUserRoles, invites } from "@noralos/db";
+import type { DeploymentExposure, DeploymentMode } from "@noralos/shared";
 import { heartbeatRuns, instanceUserRoles, invites } from "@paperclipai/db";
 import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
-import { readPersistedDevServerStatus, toDevServerHealthStatus, writeDevServerRestartRequest } from "../dev-server-status.js";
 import { logger } from "../middleware/logger.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { serverVersion } from "../version.js";
@@ -18,7 +20,7 @@ function shouldExposeFullHealthDetails(
 }
 
 function hasDevServerStatusToken(providedToken: string | undefined) {
-  const expectedToken = process.env.PAPERCLIP_DEV_SERVER_STATUS_TOKEN?.trim();
+  const expectedToken = process.env.NORALOS_DEV_SERVER_STATUS_TOKEN?.trim();
   const token = providedToken?.trim();
   if (!expectedToken || !token) return false;
 
@@ -85,7 +87,7 @@ export function healthRoutes(
       opts.deploymentMode,
     );
     const exposeDevServerDetails =
-      exposeFullDetails || hasDevServerStatusToken(req.get("x-paperclip-dev-server-status-token"));
+      exposeFullDetails || hasDevServerStatusToken(req.get("x-noralos-dev-server-status-token"));
 
     if (!db) {
       res.json(

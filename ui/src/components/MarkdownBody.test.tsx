@@ -11,7 +11,7 @@ import {
   buildRoutineMentionHref,
   buildSkillMentionHref,
   buildUserMentionHref,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { ThemeProvider } from "../context/ThemeContext";
 import { MarkdownBody } from "./MarkdownBody";
 import { queryKeys } from "../lib/queryKeys";
@@ -98,7 +98,11 @@ describe("MarkdownBody", () => {
       <QueryClientProvider client={new QueryClient()}>
         <ThemeProvider>
           <MarkdownBody>
+<<<<<<< v2026.525.0
             {`[@Taylor](${buildUserMentionHref("user-123")}) [@CodexCoder](${buildAgentMentionHref("agent-123", "code")}) [@Paperclip App](${buildProjectMentionHref("project-456", "#336699")}) [/release-changelog](${buildSkillMentionHref("skill-789", "release-changelog")}) [/routine:Weekly review](${buildRoutineMentionHref("routine-123")})`}
+=======
+            {`[@Taylor](${buildUserMentionHref("user-123")}) [@CodexCoder](${buildAgentMentionHref("agent-123", "code")}) [@NoralOS App](${buildProjectMentionHref("project-456", "#336699")}) [/release-changelog](${buildSkillMentionHref("skill-789", "release-changelog")})`}
+>>>>>>> master
           </MarkdownBody>
         </ThemeProvider>
       </QueryClientProvider>,
@@ -449,16 +453,20 @@ describe("MarkdownBody", () => {
     const html = renderMarkdown("```ts\nconst a = 1;\n```");
 
     expect(html).toContain("paperclip-markdown-codeblock");
+<<<<<<< v2026.525.0
     expect(html).toContain("paperclip-markdown-codeblock-actions");
     expect(html).toContain("position:absolute;top:0.4rem;right:0.4rem;display:inline-flex");
     expect(html).toContain("paperclip-markdown-codeblock-wrap");
     expect(html).toContain('aria-label="Wrap lines"');
     expect(html).toContain("position:static;opacity:1;display:inline-flex");
+=======
+>>>>>>> master
     expect(html).toContain("paperclip-markdown-codeblock-copy");
     expect(html).toContain('aria-label="Copy code"');
     expect(html).toContain("lucide-copy");
   });
 
+<<<<<<< v2026.525.0
   it("renders code block actions for indented preformatted markdown blocks", () => {
     const html = renderMarkdown("Plan:\n\n    source fetch/sync -> signal inbox");
 
@@ -468,6 +476,8 @@ describe("MarkdownBody", () => {
     expect(html).toContain("paperclip-markdown-codeblock-copy");
   });
 
+=======
+>>>>>>> master
   it("does not render a copy button on inline code", () => {
     const html = renderMarkdown("Reference `inline-code` here.");
 

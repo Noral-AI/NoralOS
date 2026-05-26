@@ -2,11 +2,12 @@ import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestContext,
   AdapterEnvironmentTestResult,
-} from "@paperclipai/adapter-utils";
+} from "@noralos/adapter-utils";
 import {
   asString,
   parseObject,
   ensurePathInEnv,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-utils/server-utils";
 import {
   ensureAdapterExecutionTargetCommandResolvable,
@@ -18,6 +19,16 @@ import {
   prepareAdapterExecutionTargetRuntime,
 } from "@paperclipai/adapter-utils/execution-target";
 import fs from "node:fs/promises";
+=======
+} from "@noralos/adapter-utils/server-utils";
+import {
+  ensureAdapterExecutionTargetCommandResolvable,
+  ensureAdapterExecutionTargetDirectory,
+  runAdapterExecutionTargetProcess,
+  describeAdapterExecutionTarget,
+  resolveAdapterExecutionTargetCwd,
+} from "@noralos/adapter-utils/execution-target";
+>>>>>>> master
 import path from "node:path";
 import os from "node:os";
 import { parseCodexJsonl } from "./parse.js";
@@ -162,7 +173,10 @@ export async function testEnvironment(
   const command = asString(config.command, "codex");
   const target = ctx.executionTarget ?? null;
   const targetIsRemote = target?.kind === "remote";
+<<<<<<< v2026.525.0
   const targetIsSandbox = target?.kind === "remote" && target.transport === "sandbox";
+=======
+>>>>>>> master
   const cwd = resolveAdapterExecutionTargetCwd(target, asString(config.cwd, ""), process.cwd());
   const targetLabel = targetIsRemote
     ? ctx.environmentName ?? describeAdapterExecutionTarget(target)
@@ -294,6 +308,7 @@ export async function testEnvironment(
         });
       }
 
+<<<<<<< v2026.525.0
       // Codex CLI (>= 0.122) ignores the OPENAI_API_KEY env var and only reads
       // credentials from $CODEX_HOME/auth.json. When we have a key available,
       // wrap the probe with a shell that materializes a per-run auth.json so
@@ -310,6 +325,11 @@ export async function testEnvironment(
         target,
         targetIsRemote,
         cwd,
+=======
+      const probe = await runAdapterExecutionTargetProcess(
+        runId,
+        target,
+>>>>>>> master
         command,
         args,
         env,

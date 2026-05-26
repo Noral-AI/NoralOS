@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { isUuidLike, type ProjectWorkspace } from "@paperclipai/shared";
+import { isUuidLike, type ProjectWorkspace } from "@noralos/shared";
 import { ArrowLeft, Check, ExternalLink, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -71,7 +71,7 @@ function orderProjectWorkspaceTabItems(items: OrderedProjectWorkspaceTabItem[]) 
 }
 
 const SOURCE_TYPE_OPTIONS: Array<{ value: ProjectWorkspaceSourceType; label: string; description: string }> = [
-  { value: "local_path", label: "Local git checkout", description: "A local path Paperclip can use directly." },
+  { value: "local_path", label: "Local git checkout", description: "A local path NoralOS can use directly." },
   { value: "non_git_path", label: "Local non-git path", description: "A local folder without git semantics." },
   { value: "git_repo", label: "Remote git repo", description: "A repo URL with optional refs and local checkout." },
   { value: "remote_managed", label: "Remote-managed workspace", description: "A hosted workspace tracked by external reference." },
@@ -483,11 +483,45 @@ export function ProjectWorkspaceDetail() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.9fr)]">
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-5">
+<<<<<<< v2026.525.0
             <p className="max-w-2xl text-sm text-muted-foreground">
               Configure the concrete workspace Paperclip attaches to this project. These values drive per-workspace
               checkout behavior, default runtime services for child execution workspaces, and let you override setup
               or cleanup commands when one workspace needs special handling.
             </p>
+=======
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                  Project workspace
+                </div>
+                <h1 className="text-2xl font-semibold">{workspace.name}</h1>
+                <p className="max-w-2xl text-sm text-muted-foreground">
+                  Configure the concrete workspace NoralOS attaches to this project. These values drive per-workspace
+                  checkout behavior, default runtime services for child execution workspaces, and let you override setup
+                  or cleanup commands when one workspace needs special handling.
+                </p>
+              </div>
+              {!workspace.isPrimary ? (
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  disabled={setPrimaryWorkspace.isPending}
+                  onClick={() => setPrimaryWorkspace.mutate()}
+                >
+                  {setPrimaryWorkspace.isPending
+                    ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    : <Check className="mr-2 h-4 w-4" />}
+                  Make primary
+                </Button>
+              ) : (
+                <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300 sm:max-w-sm">
+                  <Sparkles className="h-4 w-4" />
+                  This is the project’s primary codebase workspace.
+                </div>
+              )}
+            </div>
+>>>>>>> master
 
             <Separator className="my-5" />
 
@@ -624,7 +658,7 @@ export function ProjectWorkspaceDetail() {
               <details className="rounded-xl border border-dashed border-border/70 bg-background px-3 py-3">
                 <summary className="cursor-pointer text-sm font-medium">Advanced runtime JSON</summary>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Paperclip derives Services and Jobs from this JSON. Prefer editing named commands first; use raw JSON for advanced lifecycle, port, readiness, or environment settings.
+                  NoralOS derives Services and Jobs from this JSON. Prefer editing named commands first; use raw JSON for advanced lifecycle, port, readiness, or environment settings.
                 </p>
                 <div className="mt-3">
                   <Field label="Workspace commands JSON" hint="Execution workspaces inherit this config unless they override it. Legacy `services` arrays still work, but `commands` supports both services and jobs.">

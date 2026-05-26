@@ -151,8 +151,8 @@ describe("ssh env-lab fixture", () => {
           host: "ssh.example.test",
           port: 22,
           username: "ssh-user",
-          remoteCwd: "/srv/paperclip/workspace",
-          remoteWorkspacePath: "/srv/paperclip/workspace",
+          remoteCwd: "/srv/noralos/workspace",
+          remoteWorkspacePath: "/srv/noralos/workspace",
           privateKey: null,
           knownHosts: null,
           strictHostKeyChecking: true,
@@ -242,9 +242,14 @@ describe("ssh env-lab fixture", () => {
     const localRepo = path.join(rootDir, "local-workspace");
 
     await mkdir(localRepo, { recursive: true });
+<<<<<<< v2026.525.0
     await git(localRepo, ["init"]);
     await git(localRepo, ["checkout", "-b", "main"]);
     await git(localRepo, ["config", "user.name", "Paperclip Test"]);
+=======
+    await git(localRepo, ["init", "-b", "main"]);
+    await git(localRepo, ["config", "user.name", "NoralOS Test"]);
+>>>>>>> master
     await git(localRepo, ["config", "user.email", "test@paperclip.dev"]);
     await writeFile(path.join(localRepo, "tracked.txt"), "base\n", "utf8");
     await writeFile(path.join(localRepo, "._tracked.txt"), "should stay local only\n", "utf8");
@@ -278,7 +283,11 @@ describe("ssh env-lab fixture", () => {
 
     await runSshCommand(
       config,
+<<<<<<< v2026.525.0
       `cd ${JSON.stringify(started.workspaceDir)} && git config user.name "Paperclip SSH" && git config user.email "ssh@paperclip.dev" && git add tracked.txt untracked.txt && git commit -m "remote update" >/dev/null && printf "remote dirty\\n" > tracked.txt && printf "remote extra\\n" > remote-only.txt`,
+=======
+      `sh -lc 'cd ${JSON.stringify(started.workspaceDir)} && git config user.name "NoralOS SSH" && git config user.email "ssh@paperclip.dev" && git add tracked.txt untracked.txt && git commit -m "remote update" >/dev/null && printf "remote dirty\\n" > tracked.txt && printf "remote extra\\n" > remote-only.txt'`,
+>>>>>>> master
       { timeoutMs: 30_000, maxBuffer: 256 * 1024 },
     );
 

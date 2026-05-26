@@ -1,4 +1,4 @@
-# @paperclipai/adapter-utils
+# @noralos/adapter-utils
 
 ## 0.3.1
 

@@ -8,7 +8,7 @@ import type {
   CostWindowSpendRow,
   FinanceEvent,
   QuotaWindow,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronRight, Coins, DollarSign, ReceiptText } from "lucide-react";
 import { budgetsApi } from "../api/budgets";
 import { costsApi } from "../api/costs";
@@ -24,6 +24,7 @@ import { PageSkeleton } from "../components/PageSkeleton";
 import { PageTabBar } from "../components/PageTabBar";
 import { ProviderQuotaCard } from "../components/ProviderQuotaCard";
 import { StatusBadge } from "../components/StatusBadge";
+import { VoiceCostCard } from "../components/VoiceCostCard";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useCompany } from "../context/CompanyContext";
 import { useDateRange, PRESET_KEYS, PRESET_LABELS } from "../hooks/useDateRange";
@@ -652,6 +653,19 @@ export function Costs() {
                     />
                   ))}
                 </div>
+              ) : null}
+
+              {/* Phase 4 PR-B: Voice (NoralVoice) read-through card.
+                  Lives above the inference ledger so voice spend is
+                  visible at the same level as the main NoralOS-billed
+                  costs. The card is self-contained and renders its own
+                  loading / no-integration / ready / error states. */}
+              {selectedCompanyId ? (
+                <VoiceCostCard
+                  companyId={selectedCompanyId}
+                  windowFrom={from || undefined}
+                  windowTo={to || undefined}
+                />
               ) : null}
 
               <div className="grid gap-4 xl:grid-cols-[1.3fr,1fr]">

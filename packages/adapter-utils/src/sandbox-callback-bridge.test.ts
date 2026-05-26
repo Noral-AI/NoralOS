@@ -3,17 +3,27 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promis
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+<<<<<<< v2026.525.0
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { prepareCommandManagedRuntime } from "./command-managed-runtime.js";
 import {
   authorizeSandboxCallbackBridgeRequestWithRoutes,
   createCommandManagedSandboxCallbackBridgeQueueClient,
+=======
+import { afterEach, describe, expect, it } from "vitest";
+
+import { prepareCommandManagedRuntime } from "./command-managed-runtime.js";
+import {
+>>>>>>> master
   createFileSystemSandboxCallbackBridgeQueueClient,
   createSandboxCallbackBridgeAsset,
   createSandboxCallbackBridgeToken,
   sandboxCallbackBridgeDirectories,
+<<<<<<< v2026.525.0
   syncSandboxCallbackBridgeEntrypoint,
+=======
+>>>>>>> master
   startSandboxCallbackBridgeServer,
   startSandboxCallbackBridgeWorker,
 } from "./sandbox-callback-bridge.js";
@@ -40,6 +50,7 @@ describe("sandbox callback bridge", () => {
           ...process.env,
           ...input.env,
         };
+<<<<<<< v2026.525.0
         const command =
           input.command === "sh" ? "/bin/sh" : input.command === "bash" ? "/bin/bash" : input.command;
         const args = [...(input.args ?? [])];
@@ -51,6 +62,13 @@ describe("sandbox callback bridge", () => {
         ) {
           env.PAPERCLIP_TEST_STDIN = input.stdin;
           args[1] = `printf '%s' \"$PAPERCLIP_TEST_STDIN\" | (${args[1]})`;
+=======
+        const command = input.command === "sh" ? "/bin/sh" : input.command;
+        const args = [...(input.args ?? [])];
+        if (input.stdin != null && input.command === "sh" && args[0] === "-lc" && typeof args[1] === "string") {
+          env.NORALOS_TEST_STDIN = input.stdin;
+          args[1] = `printf '%s' \"$NORALOS_TEST_STDIN\" | (${args[1]})`;
+>>>>>>> master
         }
         try {
           const result = await execFile(command, args, {
@@ -422,6 +440,7 @@ describe("sandbox callback bridge", () => {
     );
   });
 
+<<<<<<< v2026.525.0
   it("handles SSH queue polling failures without emitting an unhandled rejection", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-ssh-failure-"));
     cleanupDirs.push(rootDir);
@@ -561,6 +580,8 @@ describe("sandbox callback bridge", () => {
     ).resolves.toEqual([]);
   });
 
+=======
+>>>>>>> master
   it("rejects non-JSON request bodies and full queues at the bridge server", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-server-guards-"));
     cleanupDirs.push(rootDir);
@@ -755,6 +776,7 @@ describe("sandbox callback bridge", () => {
       error: expect.stringMatching(/JSON|Unexpected|Unterminated/i),
     });
   });
+<<<<<<< v2026.525.0
 
   it("reuses an already-uploaded bridge entrypoint when the remote file hash matches", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-bridge-sync-"));
@@ -980,4 +1002,6 @@ describe("sandbox callback bridge", () => {
       },
     }));
   });
+=======
+>>>>>>> master
 });

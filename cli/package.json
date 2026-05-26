@@ -1,10 +1,10 @@
 {
-  "name": "paperclipai",
+  "name": "noralos-cli",
   "version": "0.3.1",
-  "description": "Paperclip CLI — orchestrate AI agent teams to run a business",
+  "description": "NoralOS CLI — orchestrate AI agent teams to run a business",
   "type": "module",
   "bin": {
-    "paperclipai": "./dist/index.js"
+    "noralos": "./dist/index.js"
   },
   "keywords": [
     "paperclip",
@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.10.0",
+<<<<<<< v2026.525.0
     "@paperclipai/adapter-acpx-local": "workspace:*",
     "@paperclipai/adapter-claude-local": "workspace:*",
     "@paperclipai/adapter-codex-local": "workspace:*",
@@ -52,6 +53,20 @@
     "@paperclipai/server": "workspace:*",
     "@paperclipai/shared": "workspace:*",
     "drizzle-orm": "0.45.2",
+=======
+    "@noralos/adapter-claude-local": "workspace:*",
+    "@noralos/adapter-codex-local": "workspace:*",
+    "@noralos/adapter-cursor-local": "workspace:*",
+    "@noralos/adapter-gemini-local": "workspace:*",
+    "@noralos/adapter-opencode-local": "workspace:*",
+    "@noralos/adapter-pi-local": "workspace:*",
+    "@noralos/adapter-openclaw-gateway": "workspace:*",
+    "@noralos/adapter-utils": "workspace:*",
+    "@noralos/db": "workspace:*",
+    "@noralos/server": "workspace:*",
+    "@noralos/shared": "workspace:*",
+    "drizzle-orm": "0.38.4",
+>>>>>>> master
     "dotenv": "^17.0.1",
     "commander": "^13.1.0",
     "embedded-postgres": "^18.1.0-beta.16",

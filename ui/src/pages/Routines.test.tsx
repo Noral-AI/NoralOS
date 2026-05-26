@@ -3,7 +3,7 @@
 import { act, type AnchorHTMLAttributes, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Issue, RoutineListItem } from "@paperclipai/shared";
+import type { Issue, RoutineListItem } from "@noralos/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Routines, buildRoutineGroups, sortRoutines } from "./Routines";
 
@@ -456,6 +456,7 @@ describe("Routines page", () => {
     });
   });
 
+<<<<<<< v2026.525.0
   it("shows an outlined row-level run now button on the routines table", async () => {
     routinesListMock.mockResolvedValue([createRoutine({ id: "routine-1", title: "Morning sync" })]);
     issuesListMock.mockResolvedValue([]);
@@ -496,6 +497,8 @@ describe("Routines page", () => {
     });
   });
 
+=======
+>>>>>>> master
   it("passes company mention options to the routine description editor", async () => {
     routinesListMock.mockResolvedValue([]);
     issuesListMock.mockResolvedValue([]);

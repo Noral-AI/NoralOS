@@ -25,25 +25,27 @@ import { fileURLToPath } from "node:url";
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { and, desc, eq, gte } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   agents,
+  agentWakeupRequests,
+  authUsers,
   companies,
   heartbeatRuns,
   pluginLogs,
   pluginWebhookDeliveries,
   projects,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import type {
   PluginApiRouteDeclaration,
   PluginStatus,
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginBridgeErrorCode,
   PluginLauncherRenderContextSnapshot,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   PLUGIN_STATUSES,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { pluginRegistryService } from "../services/plugin-registry.js";
 import { pluginLifecycleManager } from "../services/plugin-lifecycle.js";
 import { getPluginUiContributionMetadata, pluginLoader } from "../services/plugin-loader.js";
@@ -55,8 +57,13 @@ import type { PluginJobStore } from "../services/plugin-job-store.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import type { PluginStreamBus } from "../services/plugin-stream-bus.js";
 import type { PluginToolDispatcher } from "../services/plugin-tool-dispatcher.js";
+<<<<<<< v2026.525.0
 import type { PluginPerformActionActorContext, ToolRunContext } from "@paperclipai/plugin-sdk";
 import { JsonRpcCallError, PLUGIN_RPC_ERROR_CODES } from "@paperclipai/plugin-sdk";
+=======
+import type { ToolRunContext } from "@noralos/plugin-sdk";
+import { JsonRpcCallError, PLUGIN_RPC_ERROR_CODES } from "@noralos/plugin-sdk";
+>>>>>>> master
 import {
   assertAuthenticated,
   assertBoard,
@@ -80,9 +87,9 @@ import {
 import { badRequest, forbidden, notFound, unauthorized, unprocessable } from "../errors.js";
 
 /** UI slot declaration extracted from plugin manifest */
-type PluginUiSlotDeclaration = NonNullable<NonNullable<PaperclipPluginManifestV1["ui"]>["slots"]>[number];
+type PluginUiSlotDeclaration = NonNullable<NonNullable<NoralosPluginManifestV1["ui"]>["slots"]>[number];
 /** Launcher declaration extracted from plugin manifest */
-type PluginLauncherDeclaration = NonNullable<PaperclipPluginManifestV1["launchers"]>[number];
+type PluginLauncherDeclaration = NonNullable<NoralosPluginManifestV1["launchers"]>[number];
 
 /**
  * Normalized UI contribution for frontend slot host consumption.
@@ -153,6 +160,7 @@ const REPO_ROOT = path.resolve(__dirname, "../../..");
 
 const BUNDLED_PLUGIN_EXAMPLES: AvailablePluginExample[] = [
   {
+<<<<<<< v2026.525.0
     packageName: "@paperclipai/plugin-workspace-diff",
     pluginKey: "paperclip.workspace-diff",
     displayName: "Workspace Changes",
@@ -162,14 +170,17 @@ const BUNDLED_PLUGIN_EXAMPLES: AvailablePluginExample[] = [
   },
   {
     packageName: "@paperclipai/plugin-hello-world-example",
+=======
+    packageName: "@noralos/plugin-hello-world-example",
+>>>>>>> master
     pluginKey: "paperclip.hello-world-example",
     displayName: "Hello World Widget (Example)",
-    description: "Reference UI plugin that adds a simple Hello World widget to the Paperclip dashboard.",
+    description: "Reference UI plugin that adds a simple Hello World widget to the NoralOS dashboard.",
     localPath: "packages/plugins/examples/plugin-hello-world-example",
     tag: "example",
   },
   {
-    packageName: "@paperclipai/plugin-file-browser-example",
+    packageName: "@noralos/plugin-file-browser-example",
     pluginKey: "paperclip-file-browser-example",
     displayName: "File Browser (Example)",
     description: "Example plugin that adds a Files link in project navigation plus a project detail file browser.",
@@ -177,15 +188,15 @@ const BUNDLED_PLUGIN_EXAMPLES: AvailablePluginExample[] = [
     tag: "example",
   },
   {
-    packageName: "@paperclipai/plugin-kitchen-sink-example",
+    packageName: "@noralos/plugin-kitchen-sink-example",
     pluginKey: "paperclip-kitchen-sink-example",
     displayName: "Kitchen Sink (Example)",
-    description: "Reference plugin that demonstrates the current Paperclip plugin API surface, bridge flows, UI extension surfaces, jobs, webhooks, tools, streams, and trusted local workspace/process demos.",
+    description: "Reference plugin that demonstrates the current NoralOS plugin API surface, bridge flows, UI extension surfaces, jobs, webhooks, tools, streams, and trusted local workspace/process demos.",
     localPath: "packages/plugins/examples/plugin-kitchen-sink-example",
     tag: "example",
   },
   {
-    packageName: "@paperclipai/plugin-orchestration-smoke-example",
+    packageName: "@noralos/plugin-orchestration-smoke-example",
     pluginKey: "paperclipai.plugin-orchestration-smoke-example",
     displayName: "Orchestration Smoke (Example)",
     description: "Acceptance fixture for scoped plugin routes, restricted database namespaces, issue orchestration, documents, wakeups, summaries, and UI status surfaces.",
@@ -644,6 +655,50 @@ export function pluginRoutes(
   }
 
   /**
+   * Server-resolves the human who triggered the given run, when known.
+   *
+   * Chain: heartbeat_runs.wakeup_request_id → agent_wakeup_requests
+   * (requestedByActorType="user", requestedByActorId=Better Auth user id)
+   * → user.email.
+   *
+   * Returns `null` for system-triggered, agent-chained, or wakeup-less runs.
+   * Plugins that opt into delegated identity (forwarded as
+   * X-Noralos-Actor-User-* headers to external systems) read these fields
+   * from ToolRunContext rather than the request body — the assertion is
+   * server-resolved so callers cannot spoof identity.
+   */
+  async function resolveTriggeringUser(
+    runId: string,
+  ): Promise<{ userId: string; userEmail: string | null } | null> {
+    try {
+      const [row] = await db
+        .select({
+          actorType: agentWakeupRequests.requestedByActorType,
+          actorId: agentWakeupRequests.requestedByActorId,
+          email: authUsers.email,
+        })
+        .from(heartbeatRuns)
+        .innerJoin(agentWakeupRequests, eq(agentWakeupRequests.id, heartbeatRuns.wakeupRequestId))
+        .leftJoin(authUsers, eq(authUsers.id, agentWakeupRequests.requestedByActorId))
+        .where(eq(heartbeatRuns.id, runId))
+        .limit(1);
+      if (!row || row.actorType !== "user" || !row.actorId) {
+        return null;
+      }
+      return { userId: row.actorId, userEmail: row.email ?? null };
+    } catch (err) {
+      // Never block tool execution on a wakeup-chain lookup failure.
+      // Plugins fall back to api_key.created_by ownership when delegated
+      // identity is unavailable, which is the pre-delegation behavior.
+      console.warn("resolveTriggeringUser failed", {
+        runId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+      return null;
+    }
+  }
+
+  /**
    * GET /api/plugins
    *
    * List all installed plugins, optionally filtered by lifecycle status.
@@ -850,11 +905,22 @@ export function pluginRoutes(
       return;
     }
 
+    // Server-resolve the triggering user from the wakeup chain.
+    // Plugins read this from ToolRunContext to forward delegated identity
+    // (e.g. noralai.noralvoice creating workflows owned by the human user).
+    // Resolved server-side so callers cannot spoof the assertion.
+    const triggeredBy = await resolveTriggeringUser(runContext.runId);
+    const enrichedContext: ToolRunContext = {
+      ...runContext,
+      triggeredByUserId: triggeredBy?.userId ?? null,
+      triggeredByUserEmail: triggeredBy?.userEmail ?? null,
+    };
+
     try {
       const result = await toolDeps.toolDispatcher.executeTool(
         tool,
         parameters ?? {},
-        runContext,
+        enrichedContext,
       );
       res.json(result);
     } catch (err) {
@@ -2022,6 +2088,98 @@ export function pluginRoutes(
    * - 400 if request validation fails
    * - 404 if plugin not found
    */
+  /**
+   * PATCH /api/plugins/:pluginId/config
+   *
+   * Shallow-merge a partial config into the plugin's instance configuration.
+   * Same authz + validation + worker-notify path as POST, but the supplied
+   * keys are merged with the existing row instead of replacing it. Useful
+   * for one-toggle admin actions (e.g. flipping voice-cascade's `ttsMode`
+   * without having to round-trip every other field).
+   *
+   * Validation runs over the MERGED config — that way an invalid combination
+   * (e.g. `fallbackEnabled: true` without a `fallbackProvider`) still
+   * surfaces, even if the partial body only touched one of the two fields.
+   */
+  router.patch("/plugins/:pluginId/config", async (req, res) => {
+    assertInstanceAdmin(req);
+    const { pluginId } = req.params;
+
+    const plugin = await resolvePlugin(registry, pluginId);
+    if (!plugin) {
+      res.status(404).json({ error: "Plugin not found" });
+      return;
+    }
+
+    const body = req.body as { configJson?: Record<string, unknown> } | undefined;
+    if (!body?.configJson || typeof body.configJson !== "object") {
+      res.status(400).json({ error: '"configJson" is required and must be an object' });
+      return;
+    }
+
+    // Apply the same devUiUrl carve-out as the POST handler.
+    if (
+      "devUiUrl" in body.configJson &&
+      !(req.actor.type === "board" && req.actor.isInstanceAdmin)
+    ) {
+      delete body.configJson.devUiUrl;
+    }
+
+    const existing = await registry.getConfig(plugin.id);
+    const existingJson =
+      (existing?.configJson as Record<string, unknown> | undefined) ?? {};
+    const merged = { ...existingJson, ...body.configJson };
+
+    const schema = plugin.manifestJson?.instanceConfigSchema;
+    if (schema && Object.keys(schema).length > 0) {
+      const validation = validateInstanceConfig(merged, schema);
+      if (!validation.valid) {
+        res.status(400).json({
+          error: "Configuration does not match the plugin's instanceConfigSchema",
+          fieldErrors: validation.errors,
+        });
+        return;
+      }
+    }
+
+    try {
+      const result = await registry.patchConfig(plugin.id, {
+        configJson: body.configJson,
+      });
+      await logPluginMutationActivity(req, "plugin.config.patched", plugin.id, {
+        pluginId: plugin.id,
+        pluginKey: plugin.pluginKey,
+        configKeyCount: Object.keys(body.configJson).length,
+      });
+
+      // Same worker-notify path as the POST handler. We pass the MERGED
+      // config to the worker so onConfigChanged sees the full picture.
+      if (bridgeDeps?.workerManager.isRunning(plugin.id)) {
+        try {
+          await bridgeDeps.workerManager.call(plugin.id, "configChanged", {
+            config: merged,
+          });
+        } catch (rpcErr) {
+          if (
+            rpcErr instanceof JsonRpcCallError &&
+            rpcErr.code === PLUGIN_RPC_ERROR_CODES.METHOD_NOT_IMPLEMENTED
+          ) {
+            try {
+              await lifecycle.restartWorker(plugin.id);
+            } catch {
+              /* non-fatal */
+            }
+          }
+        }
+      }
+
+      res.json(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ error: `Failed to patch plugin config: ${message}` });
+    }
+  });
+
   router.post("/plugins/:pluginId/config", async (req, res) => {
     assertInstanceAdmin(req);
     const { pluginId } = req.params;
@@ -2469,6 +2627,10 @@ export function pluginRoutes(
       await webhookDeps.workerManager.call(plugin.id, "handleWebhook", {
         endpointKey,
         headers: req.headers as Record<string, string | string[]>,
+        // Pass the parsed query string so receivers can read tenancy
+        // hints like `?company=<uuid>` (NoralVoice plugin pattern).
+        // Mirrors the shape of `PluginScopedApiRequest.query`.
+        query: normalizeQuery(req.query),
         rawBody,
         parsedBody,
         requestId,

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { environmentLeases } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
+import { environmentLeases } from "@noralos/db";
 import type {
   Environment,
   EnvironmentLease,
@@ -9,13 +9,18 @@ import type {
   ExecutionWorkspace,
   PluginEnvironmentConfig,
   SandboxEnvironmentConfig,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import type {
   PluginEnvironmentExecuteResult,
   PluginEnvironmentLease,
   PluginEnvironmentRealizeWorkspaceResult,
+<<<<<<< v2026.525.0
 } from "@paperclipai/plugin-sdk";
 import { ensureSshWorkspaceReady } from "@paperclipai/adapter-utils/ssh";
+=======
+} from "@noralos/plugin-sdk";
+import { ensureSshWorkspaceReady, findReachableNoralosApiUrlOverSsh } from "@noralos/adapter-utils/ssh";
+>>>>>>> master
 import { environmentService } from "./environments.js";
 import {
   parseEnvironmentDriverConfig,
@@ -255,6 +260,30 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
       }
 
       const { remoteCwd } = await ensureSshWorkspaceReady(parsed.config);
+<<<<<<< v2026.525.0
+=======
+      const candidateUrls = (() => {
+        const raw = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
+        if (!raw) return [];
+        try {
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed)
+            ? parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+            : [];
+        } catch {
+          return [];
+        }
+      })();
+      const noralosApiUrl = await findReachableNoralosApiUrlOverSsh({
+        config: parsed.config,
+        candidates: candidateUrls,
+      });
+      if (!noralosApiUrl) {
+        throw new Error(
+          `SSH environment ${parsed.config.username}@${parsed.config.host} could not reach any NoralOS API candidates.`,
+        );
+      }
+>>>>>>> master
       return await environmentsSvc.acquireLease({
         companyId: input.companyId,
         environmentId: input.environment.id,
@@ -272,6 +301,10 @@ function createSshEnvironmentDriver(db: Db): EnvironmentRuntimeDriver {
           username: parsed.config.username,
           remoteWorkspacePath: parsed.config.remoteWorkspacePath,
           remoteCwd,
+<<<<<<< v2026.525.0
+=======
+          noralosApiUrl,
+>>>>>>> master
         },
       });
     },
@@ -683,7 +716,10 @@ function createSandboxEnvironmentDriver(
             driverKey: providerKey,
             companyId: input.lease.companyId,
             environmentId: input.environment.id,
+<<<<<<< v2026.525.0
             issueId: input.lease.issueId,
+=======
+>>>>>>> master
             config: sanitizedConfig,
             lease: {
               providerLeaseId: input.lease.providerLeaseId,

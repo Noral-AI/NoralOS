@@ -42,12 +42,12 @@ import { fileURLToPath } from "node:url";
 
 import type {
   AskUserQuestionsInteraction,
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   RequestConfirmationInteraction,
   SuggestTasksInteraction,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 
-import type { PaperclipPlugin } from "./define-plugin.js";
+import type { NoralosPlugin } from "./define-plugin.js";
 import type {
   PluginApiRequestInput,
   PluginHealthDiagnostics,
@@ -125,7 +125,7 @@ export interface WorkerRpcHostOptions {
    *
    * The worker entrypoint should import its plugin and pass it here.
    */
-  plugin: PaperclipPlugin;
+  plugin: NoralosPlugin;
 
   /**
    * Input stream to read JSON-RPC messages from.
@@ -228,7 +228,7 @@ export interface RunWorkerOptions {
  * ```
  */
 export function runWorker(
-  plugin: PaperclipPlugin,
+  plugin: NoralosPlugin,
   moduleUrl: string,
   options?: RunWorkerOptions,
 ): WorkerRpcHost | void {
@@ -258,7 +258,7 @@ export function runWorker(
  * ```ts
  * // worker-bootstrap.ts
  * import plugin from "./worker.js";
- * import { startWorkerRpcHost } from "@paperclipai/plugin-sdk";
+ * import { startWorkerRpcHost } from "@noralos/plugin-sdk";
  *
  * startWorkerRpcHost({ plugin });
  * ```
@@ -281,7 +281,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
 
   let running = true;
   let initialized = false;
-  let manifest: PaperclipPluginManifestV1 | null = null;
+  let manifest: NoralosPluginManifestV1 | null = null;
   let currentConfig: Record<string, unknown> = {};
   let databaseNamespace: string | null = null;
   const invocationContextStorage = new AsyncLocalStorage<PluginInvocationContext>();
@@ -296,7 +296,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
     (params: Record<string, unknown>, context: PluginPerformActionContext) => Promise<unknown>
   >();
   const toolHandlers = new Map<string, {
-    declaration: Pick<import("@paperclipai/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">;
+    declaration: Pick<import("@noralos/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">;
     fn: (params: unknown, runCtx: ToolRunContext) => Promise<ToolResult>;
   }>();
 
@@ -554,8 +554,16 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
             init: Object.keys(serializedInit).length > 0 ? serializedInit : undefined,
           });
 
-          // Reconstruct a Response-like object from the serialized result
-          return new Response(result.body, {
+          // Reconstruct a Response from the serialized result. The host emits
+          // base64 bytes for binary fidelity (so .arrayBuffer() / .blob()
+          // preserve raw response bytes for audio, images, PDFs, etc.). We
+          // also accept the legacy "utf8" encoding (or no encoding hint) so
+          // a new worker can talk to an older host without breaking.
+          const responseBody: BodyInit =
+            result.bodyEncoding === "base64"
+              ? Buffer.from(result.body, "base64")
+              : result.body;
+          return new Response(responseBody, {
             status: result.status,
             statusText: result.statusText,
             headers: result.headers,
@@ -999,6 +1007,23 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
           return callHost("agents.get", { agentId, companyId });
         },
 
+        async create(input) {
+          return callHost("agents.create", {
+            companyId: input.companyId,
+            name: input.name,
+            role: input.role,
+            title: input.title,
+            reportsTo: input.reportsTo,
+            capabilities: input.capabilities,
+            adapterType: input.adapterType,
+            adapterConfig: input.adapterConfig,
+            runtimeConfig: input.runtimeConfig,
+            defaultEnvironmentId: input.defaultEnvironmentId,
+            budgetMonthlyCents: input.budgetMonthlyCents,
+            metadata: input.metadata,
+          });
+        },
+
         async pause(agentId: string, companyId: string) {
           return callHost("agents.pause", { agentId, companyId });
         },
@@ -1043,6 +1068,13 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
             prompt: string;
             reason?: string;
             onEvent?: (event: AgentSessionEvent) => void;
+            /**
+             * Optional per-call shallow override applied on top of the
+             * agent's stored `adapter_config` for THIS run only. Host
+             * shallow-merges with highest precedence in
+             * `mergeModelProfileAdapterConfig`. Never persisted.
+             */
+            adapterConfigOverrides?: Record<string, unknown>;
           }) {
             if (opts.onEvent) {
               sessionEventCallbacks.set(sessionId, opts.onEvent);
@@ -1053,6 +1085,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
                 companyId,
                 prompt: opts.prompt,
                 reason: opts.reason,
+                adapterConfigOverrides: opts.adapterConfigOverrides,
               });
             } catch (err) {
               sessionEventCallbacks.delete(sessionId);
@@ -1220,7 +1253,7 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
       tools: {
         register(
           name: string,
-          declaration: Pick<import("@paperclipai/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">,
+          declaration: Pick<import("@noralos/shared").PluginToolDeclaration, "displayName" | "description" | "parametersSchema">,
           fn: (params: unknown, runCtx: ToolRunContext) => Promise<ToolResult>,
         ): void {
           toolHandlers.set(name, { declaration, fn });

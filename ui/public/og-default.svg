@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <defs>
+    <pattern id="dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="1.5" cy="1.5" r="1.5" fill="#0A1F2E" opacity="0.06"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="1200" fill="#FAF7F1"/>
+  <rect width="1200" height="1200" fill="url(#dots)"/>
+
+  <!-- Content vertically centered in 1200×1200 so center-crop to 1200×630 keeps it all -->
+  <!-- Brand mark + wordmark, around y=370 -->
+  <g transform="translate(60 290)">
+    <g transform="translate(95 120)">
+      <circle cx="0" cy="0" r="18" fill="#FF5B2E"/>
+      <path d="M 30 -30 A 44 44 0 0 1 30 30" stroke="#FF5B2E" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M 52 -46 A 70 70 0 0 1 52 46" stroke="#FF5B2E" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.55"/>
+      <path d="M 74 -62 A 96 96 0 0 1 74 62" stroke="#FF5B2E" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.25"/>
+    </g>
+  </g>
+  <text x="270" y="440"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif"
+        font-weight="800" font-size="64" letter-spacing="-2.9" fill="#0A1F2E">noral<tspan fill="#FF5B2E">AI</tspan></text>
+
+  <!-- Headline -->
+  <text x="80" y="620"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif"
+        font-weight="800" font-size="108" letter-spacing="-4.9" fill="#0A1F2E">We deploy</text>
+  <text x="80" y="740"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif"
+        font-weight="800" font-size="108" letter-spacing="-4.9" fill="#FF5B2E">AI workers.</text>
+
+  <!-- Eyebrow caption -->
+  <text x="80" y="830"
+        font-family="ui-monospace, 'SFMono-Regular', Menlo, monospace"
+        font-weight="500" font-size="18" letter-spacing="3.2" fill="#7d8a96">MANAGED AI INFRASTRUCTURE &amp; SERVICES</text>
+</svg>

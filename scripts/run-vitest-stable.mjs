@@ -8,6 +8,7 @@ const repoRoot = process.cwd();
 const serverRoot = path.join(repoRoot, "server");
 const serverTestsDir = path.join(repoRoot, "server", "src", "__tests__");
 const nonServerProjects = [
+<<<<<<< v2026.525.0
   "@paperclipai/shared",
   "@paperclipai/db",
   "@paperclipai/adapter-utils",
@@ -17,6 +18,14 @@ const nonServerProjects = [
   "@paperclipai/plugin-sdk",
   "@paperclipai/ui",
   "paperclipai",
+=======
+  "@noralos/shared",
+  "@noralos/db",
+  "@noralos/adapter-utils",
+  "@noralos/adapter-codex-local",
+  "@noralos/adapter-opencode-local",
+  "@noralos/ui",
+>>>>>>> master
 ];
 const routeTestPattern = /[^/]*(?:route|routes|authz)[^/]*\.test\.ts$/;
 const additionalSerializedServerTests = new Set([
@@ -241,11 +250,17 @@ function runVitest(args, label) {
   // Keep per-run paths compact so Unix socket fixtures stay under macOS path limits.
   const env = {
     ...process.env,
+<<<<<<< v2026.525.0
     PAPERCLIP_HOME: path.join(testRoot, "h"),
     PAPERCLIP_INSTANCE_ID: `vt-${process.pid}-${invocationIndex}`,
     TMPDIR: path.join(testRoot, "t"),
+=======
+    NORALOS_HOME: path.join(testRoot, "home"),
+    NORALOS_INSTANCE_ID: `vitest-${process.pid}-${invocationIndex}`,
+    TMPDIR: path.join(testRoot, "tmp"),
+>>>>>>> master
   };
-  mkdirSync(env.PAPERCLIP_HOME, { recursive: true });
+  mkdirSync(env.NORALOS_HOME, { recursive: true });
   mkdirSync(env.TMPDIR, { recursive: true });
   const result = spawnSync("pnpm", ["exec", "vitest", "run", ...args], {
     cwd: repoRoot,
@@ -324,6 +339,7 @@ const routeTests = walk(serverTestsDir)
   }))
   .sort((a, b) => a.repoPath.localeCompare(b.repoPath));
 
+<<<<<<< v2026.525.0
 const options = parseCliOptions(process.argv.slice(2));
 if (options.dryRun) {
   const serializedSuites =
@@ -344,6 +360,28 @@ if (options.dryRun) {
       null,
       2,
     ),
+=======
+const excludeRouteArgs = routeTests.flatMap((file) => ["--exclude", file.serverPath]);
+for (const project of nonServerProjects) {
+  runVitest(["--project", project], `non-server project ${project}`);
+}
+
+runVitest(
+  ["--project", "@noralos/server", ...excludeRouteArgs],
+  `server suites excluding ${routeTests.length} serialized suites`,
+);
+
+for (const routeTest of routeTests) {
+  runVitest(
+    [
+      "--project",
+      "@noralos/server",
+      routeTest.repoPath,
+      "--pool=forks",
+      "--poolOptions.forks.isolate=true",
+    ],
+    routeTest.repoPath,
+>>>>>>> master
   );
   process.exit(0);
 }

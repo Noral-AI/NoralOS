@@ -51,9 +51,9 @@ const {
   })),
 }));
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@noralos/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/server-utils")>(
+    "@noralos/adapter-utils/server-utils",
   );
   return {
     ...actual,
@@ -63,9 +63,9 @@ vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/ssh", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/ssh")>(
-    "@paperclipai/adapter-utils/ssh",
+vi.mock("@noralos/adapter-utils/ssh", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/ssh")>(
+    "@noralos/adapter-utils/ssh",
   );
   return {
     ...actual,
@@ -128,7 +128,7 @@ describe("gemini remote execution", () => {
         command: "gemini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -157,6 +157,10 @@ describe("gemini remote execution", () => {
           privateKey: "PRIVATE KEY",
           knownHosts: "[127.0.0.1]:2222 ssh-ed25519 AAAA",
           strictHostKeyChecking: true,
+<<<<<<< v2026.525.0
+=======
+          noralosApiUrl: "http://198.51.100.10:3102",
+>>>>>>> master
         },
       },
       onLog: async () => {},
@@ -170,7 +174,12 @@ describe("gemini remote execution", () => {
         host: "127.0.0.1",
         port: 2222,
         username: "fixture",
+<<<<<<< v2026.525.0
         remoteCwd: managedRemoteWorkspace,
+=======
+        remoteCwd: "/remote/workspace",
+        noralosApiUrl: "http://198.51.100.10:3102",
+>>>>>>> master
       },
     });
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledTimes(1);
@@ -187,6 +196,7 @@ describe("gemini remote execution", () => {
     const call = runChildProcess.mock.calls[0] as unknown as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
+<<<<<<< v2026.525.0
     expect(call?.[3].env.PAPERCLIP_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
     expect(JSON.parse(call?.[3].env.PAPERCLIP_WORKSPACES_JSON ?? "[]")).toEqual([
       {
@@ -206,6 +216,10 @@ describe("gemini remote execution", () => {
     expect(call?.[3].env.GEMINI_CLI_TRUST_WORKSPACE).toBe("true");
     expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
     expect(startAdapterExecutionTargetPaperclipBridge).toHaveBeenCalledTimes(1);
+=======
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://198.51.100.10:3102");
+    expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
+>>>>>>> master
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
   });
 
@@ -245,7 +259,7 @@ describe("gemini remote execution", () => {
         command: "gemini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -296,7 +310,7 @@ describe("gemini remote execution", () => {
         command: "gemini",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

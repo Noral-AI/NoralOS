@@ -316,6 +316,7 @@ export type {
   AgentChainOfCommandEntry,
   AgentDetail,
   AgentPermissions,
+  Department,
   AgentInstructionsBundleMode,
   AgentInstructionsFileSummary,
   AgentInstructionsFileDetail,
@@ -445,6 +446,7 @@ export type {
   IssueThreadInteraction,
   IssueThreadInteractionPayload,
   IssueThreadInteractionResult,
+  PendingConfirmationListItem,
   IssueDocument,
   IssueDocumentSummary,
   DocumentRevision,
@@ -627,7 +629,7 @@ export type {
   PluginDatabaseDeclaration,
   PluginApiRouteCompanyResolution,
   PluginApiRouteDeclaration,
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginRecord,
   PluginDatabaseNamespaceRecord,
   PluginMigrationRecord,
@@ -661,6 +663,50 @@ export {
 } from "./validators/sidebar-preferences.js";
 
 export { workspaceRuntimeControlTargetSchema } from "./validators/execution-workspace.js";
+
+export {
+  INTEGRATION_CATEGORIES,
+  INTEGRATION_CATEGORY_LABELS,
+  INTEGRATION_CATEGORY_ORDER,
+  INTEGRATION_CREDENTIAL_TYPES,
+  INTEGRATION_ENVIRONMENTS,
+  INTEGRATION_LAST_TEST_STATUSES,
+  INTEGRATION_PROVIDERS,
+  INTEGRATION_STATUSES,
+  ASSIGNMENT_TARGETS,
+  ZOHO_DATA_CENTER_TLD,
+  type IntegrationAssignableSlot,
+  type IntegrationAssignmentDto,
+  type IntegrationCategory,
+  type IntegrationCredentialDto,
+  type IntegrationCredentialType,
+  type IntegrationEnvironment,
+  type IntegrationField,
+  type IntegrationLastTestStatus,
+  type IntegrationOAuthSpec,
+  type IntegrationProvider,
+  type IntegrationProviderId,
+  type IntegrationProviderTestResult,
+  type IntegrationStatus,
+  type IntegrationTestSpec,
+  type ImportUnmanagedSecretInput,
+  type UnmanagedSecretDto,
+} from "./integration-providers.js";
+
+export {
+  assignIntegrationCredentialSchema,
+  createIntegrationCredentialSchema,
+  createOAuthIntegrationCredentialSchema,
+  importIntegrationCredentialSchema,
+  rotateIntegrationCredentialSchema,
+  updateIntegrationCredentialSchema,
+  type AssignIntegrationCredentialInput,
+  type CreateIntegrationCredentialInput,
+  type CreateOAuthIntegrationCredentialInput,
+  type ImportIntegrationCredentialInput,
+  type RotateIntegrationCredentialInput,
+  type UpdateIntegrationCredentialInput,
+} from "./validators/integrations.js";
 export {
   findWorkspaceCommandDefinition,
   listWorkspaceCommandDefinitions,
@@ -1063,6 +1109,10 @@ export {
   type PluginStateScopeKey,
   type SetPluginState,
   type ListPluginState,
+  createDepartmentSchema,
+  updateDepartmentSchema,
+  type CreateDepartment,
+  type UpdateDepartment,
 } from "./validators/index.js";
 
 export { API_PREFIX, API } from "./api.js";
@@ -1108,7 +1158,7 @@ export {
 } from "./routine-variables.js";
 
 export {
-  paperclipConfigSchema,
+  noralosConfigSchema,
   configMetaSchema,
   llmConfigSchema,
   databaseBackupConfigSchema,
@@ -1123,7 +1173,7 @@ export {
   secretsLocalEncryptedConfigSchema,
   telemetryConfigSchema,
   type TelemetryConfig,
-  type PaperclipConfig,
+  type NoralosConfig,
   type LlmConfig,
   type DatabaseBackupConfig,
   type DatabaseConfig,

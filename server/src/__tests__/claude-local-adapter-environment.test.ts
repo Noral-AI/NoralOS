@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { testEnvironment } from "@paperclipai/adapter-claude-local/server";
+import { testEnvironment } from "@noralos/adapter-claude-local/server";
 
 const ORIGINAL_ANTHROPIC = process.env.ANTHROPIC_API_KEY;
 const ORIGINAL_BEDROCK = process.env.CLAUDE_CODE_USE_BEDROCK;
@@ -192,7 +192,11 @@ describe("claude_local environment diagnostics", () => {
         kind: "remote",
         transport: "sandbox",
         providerKey: "test-provider",
+<<<<<<< v2026.525.0
         remoteCwd: "/srv/paperclip/workspace",
+=======
+        remoteCwd: "/srv/noralos/workspace",
+>>>>>>> master
         runner: {
           execute: async () => ({
             exitCode: 0,
@@ -213,11 +217,16 @@ describe("claude_local environment diagnostics", () => {
       result.checks.some(
         (check) =>
           check.code === "claude_cwd_valid" &&
+<<<<<<< v2026.525.0
           check.message === "Working directory is valid: /srv/paperclip/workspace",
+=======
+          check.message === "Working directory is valid: /srv/noralos/workspace",
+>>>>>>> master
       ),
     ).toBe(true);
     expect(result.checks.some((check) => check.code === "claude_cwd_invalid")).toBe(false);
   });
+<<<<<<< v2026.525.0
 
   it("uses --allowedTools instead of --dangerously-skip-permissions for sandbox hello probes", async () => {
     const executeCalls: Array<{ command: string; args?: string[] }> = [];
@@ -278,4 +287,6 @@ describe("claude_local environment diagnostics", () => {
     // approval that no human is present to answer.
     expect(probeCall?.args).toContain("--allowedTools");
   });
+=======
+>>>>>>> master
 });

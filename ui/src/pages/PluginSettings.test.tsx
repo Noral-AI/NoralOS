@@ -12,8 +12,11 @@ const mockPluginsApi = vi.hoisted(() => ({
   dashboard: vi.fn(),
   logs: vi.fn(),
   getConfig: vi.fn(),
+<<<<<<< v2026.525.0
   listLocalFolders: vi.fn(),
   configureLocalFolder: vi.fn(),
+=======
+>>>>>>> master
 }));
 
 const mockSetBreadcrumbs = vi.hoisted(() => vi.fn());
@@ -30,7 +33,11 @@ vi.mock("@/context/BreadcrumbContext", () => ({
 
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
+<<<<<<< v2026.525.0
     selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
+=======
+    selectedCompany: { id: "company-1", name: "NoralOS", issuePrefix: "PAP" },
+>>>>>>> master
     selectedCompanyId: "company-1",
   }),
 }));
@@ -60,6 +67,7 @@ async function flushReact() {
   });
 }
 
+<<<<<<< v2026.525.0
 function basePlugin(overrides: Record<string, unknown> = {}) {
   return {
     id: "plugin-1",
@@ -136,6 +144,8 @@ async function renderSettings(container: HTMLDivElement) {
   return root;
 }
 
+=======
+>>>>>>> master
 describe("PluginSettings", () => {
   let container: HTMLDivElement;
 
@@ -143,6 +153,7 @@ describe("PluginSettings", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
 
+<<<<<<< v2026.525.0
     mockPluginsApi.get.mockResolvedValue(basePlugin());
     mockPluginsApi.dashboard.mockResolvedValue(null);
     mockPluginsApi.health.mockResolvedValue({ pluginId: "plugin-1", status: "ready", healthy: true, checks: [] });
@@ -153,6 +164,32 @@ describe("PluginSettings", () => {
       declarations: [],
       folders: [],
     });
+=======
+    mockPluginsApi.get.mockResolvedValue({
+      id: "plugin-1",
+      pluginKey: "paperclip.e2b-sandbox-provider",
+      packageName: "@noralos/plugin-e2b",
+      version: "0.1.0",
+      status: "error",
+      categories: ["automation"],
+      manifestJson: {
+        displayName: "E2B Sandbox Provider",
+        version: "0.1.0",
+        description: "E2B environments for NoralOS.",
+        author: "NoralOS",
+        capabilities: ["environment.drivers.register"],
+        environmentDrivers: [
+          {
+            driverKey: "e2b",
+            kind: "sandbox_provider",
+            displayName: "E2B Cloud Sandbox",
+          },
+        ],
+      },
+      lastError: null,
+    });
+    mockPluginsApi.dashboard.mockResolvedValue(null);
+>>>>>>> master
   });
 
   afterEach(() => {
@@ -162,7 +199,24 @@ describe("PluginSettings", () => {
   });
 
   it("routes environment-provider plugins to company environments when they have no instance config", async () => {
+<<<<<<< v2026.525.0
     const root = await renderSettings(container);
+=======
+    const root = createRoot(container);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    await act(async () => {
+      root.render(
+        <QueryClientProvider client={queryClient}>
+          <PluginSettings />
+        </QueryClientProvider>,
+      );
+    });
+    await flushReact();
+    await flushReact();
+>>>>>>> master
 
     expect(container.textContent).toContain("Configure this plugin from Company Environments.");
     expect(container.textContent).toContain("company-scoped instead of instance-global");
@@ -173,6 +227,7 @@ describe("PluginSettings", () => {
       root.unmount();
     });
   });
+<<<<<<< v2026.525.0
 
   it("renders unconfigured manifest local folders with required paths", async () => {
     const declaration = wikiFolderDeclaration();
@@ -334,4 +389,6 @@ describe("PluginSettings", () => {
       root.unmount();
     });
   });
+=======
+>>>>>>> master
 });

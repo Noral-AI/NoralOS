@@ -1,6 +1,6 @@
 /**
  * Plugin secrets host-side handler — resolves secret references through the
- * Paperclip secret provider system.
+ * NoralOS secret provider system.
  *
  * When a plugin worker calls `ctx.secrets.resolve(secretRef)`, the JSON-RPC
  * request arrives at the host with `{ secretRef }`. This module provides the
@@ -33,7 +33,13 @@
  * @see services/secrets.ts — secretService used by agent env bindings
  */
 
+import { getSecretProvider } from "../secrets/provider-registry.js";
+import { pluginRegistryService } from "./plugin-registry.js";
+import { companySecretVersions, companySecrets, pluginConfig } from "@noralos/db";
+import type { Db } from "@noralos/db";
+import type { SecretProvider } from "@noralos/shared";
 import type { Db } from "@paperclipai/db";
+import { and, desc, eq } from "drizzle-orm";
 import {
   collectSecretRefPaths,
   isUuidSecretRef,

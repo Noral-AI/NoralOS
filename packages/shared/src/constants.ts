@@ -708,6 +708,10 @@ export const PLUGIN_CATEGORIES = [
   "workspace",
   "automation",
   "ui",
+  // Voice-AI runtime integrations (e.g. NoralVoice). Filtered as a
+  // distinct group in the plugin gallery alongside other channel
+  // categories.
+  "voice",
 ] as const;
 export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
 
@@ -760,11 +764,18 @@ export const PLUGIN_CAPABILITIES = [
   "agents.pause",
   "agents.resume",
   "agents.invoke",
+<<<<<<< v2026.525.0
   "agents.managed",
   "access.members.write",
   "access.invites.write",
   "authorization.grants.write",
   "authorization.policies.write",
+=======
+  // `agents.write` is broader than pause/resume/invoke — it permits a
+  // plugin to *create* new agents (e.g. shipping an agent template like
+  // the NoralVoice plugin's "Voice Director"). Gates `agents.create`.
+  "agents.write",
+>>>>>>> master
   "agent.sessions.create",
   "agent.sessions.list",
   "agent.sessions.send",
@@ -847,7 +858,7 @@ export type PluginApiRouteCheckoutPolicy = (typeof PLUGIN_API_ROUTE_CHECKOUT_POL
 
 /**
  * UI extension slot types. Each slot type corresponds to a mount point in the
- * Paperclip UI where plugin components can be rendered.
+ * NoralOS UI where plugin components can be rendered.
  *
  * @see PLUGIN_SPEC.md §19 — UI Extension Model
  */

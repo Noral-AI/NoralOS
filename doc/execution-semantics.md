@@ -4,13 +4,13 @@ Status: Current implementation guide
 Date: 2026-04-26
 Audience: Product and engineering
 
-This document explains how Paperclip interprets issue assignment, issue status, execution runs, wakeups, parent/sub-issue structure, and blocker relationships.
+This document explains how NoralOS interprets issue assignment, issue status, execution runs, wakeups, parent/sub-issue structure, and blocker relationships.
 
 `doc/SPEC-implementation.md` remains the V1 contract. This document is the detailed execution model behind that contract.
 
 ## 1. Core Model
 
-Paperclip separates four concepts that are easy to blur together:
+NoralOS separates four concepts that are easy to blur together:
 
 1. structure: parent/sub-issue relationships
 2. dependency: blocker relationships
@@ -27,11 +27,11 @@ An issue has at most one assignee.
 - `assigneeUserId` means the issue is owned by a human board user
 - both cannot be set at the same time
 
-This is a hard invariant. Paperclip is single-assignee by design.
+This is a hard invariant. NoralOS is single-assignee by design.
 
 ## 3. Status Semantics
 
-Paperclip issue statuses are not just UI labels. They imply different expectations about ownership and execution.
+NoralOS issue statuses are not just UI labels. They imply different expectations about ownership and execution.
 
 ### `backlog`
 
@@ -47,7 +47,7 @@ The issue is actionable but not actively claimed.
 
 - it may be assigned or unassigned
 - no checkout/execution lock is required yet
-- for agent-assigned work, Paperclip may still need a wake path to ensure the assignee actually sees it
+- for agent-assigned work, NoralOS may still need a wake path to ensure the assignee actually sees it
 
 ### `in_progress`
 
@@ -92,16 +92,16 @@ The execution model differs depending on assignee type.
 
 Agent-owned issues are part of the control plane's execution loop.
 
-- Paperclip can wake the assignee
-- Paperclip can track runs linked to the issue
-- Paperclip can recover some lost execution state after crashes/restarts
+- NoralOS can wake the assignee
+- NoralOS can track runs linked to the issue
+- NoralOS can recover some lost execution state after crashes/restarts
 
 ### User-owned issues
 
 User-owned issues are not executed by the heartbeat scheduler.
 
-- Paperclip can track the ownership and status
-- Paperclip cannot rely on heartbeat/run semantics to keep them moving
+- NoralOS can track the ownership and status
+- NoralOS cannot rely on heartbeat/run semantics to keep them moving
 - stranded-work reconciliation does not apply to them
 
 This is why `in_progress` can be strict for agents without forcing the same runtime rules onto human-held work.
@@ -119,11 +119,11 @@ These are related but not identical:
 - `checkoutRunId` answers who currently owns execution rights for the issue
 - `executionRunId` answers which run is actually live right now
 
-Paperclip already clears stale execution locks and can adopt some stale checkout locks when the original run is gone.
+NoralOS already clears stale execution locks and can adopt some stale checkout locks when the original run is gone.
 
 ## 6. Parent/Sub-Issue vs Blockers
 
-Paperclip uses two different relationships for different jobs.
+NoralOS uses two different relationships for different jobs.
 
 ### Parent/Sub-Issue (`parentId`)
 
@@ -148,15 +148,19 @@ Use it for:
 - explicit waiting relationships
 - automatic wakeups when all blockers resolve
 
-Blocked issues should stay idle while blockers remain unresolved. Paperclip should not create a queued heartbeat run for that issue until the final blocker is done and the `issue_blockers_resolved` wake can start real work.
+Blocked issues should stay idle while blockers remain unresolved. NoralOS should not create a queued heartbeat run for that issue until the final blocker is done and the `issue_blockers_resolved` wake can start real work.
 
 If a parent is truly waiting on a child, model that with blockers. Do not rely on the parent/child relationship alone.
 
 ## 7. Non-Terminal Issue Liveness Contract
 
-For agent-owned, non-terminal issues, Paperclip should never leave work in a state where nobody is responsible for the next move and nothing will wake or surface it.
+For agent-owned, non-terminal issues, NoralOS should never leave work in a state where nobody is responsible for the next move and nothing will wake or surface it.
 
+<<<<<<< v2026.525.0
 This is a visibility contract, not an auto-completion contract. If Paperclip cannot safely infer the next action, it should surface the ambiguity with a blocked state, a visible notice, or an explicit recovery action. It must not silently mark work done from prose comments or guess that a dependency is complete.
+=======
+This is a visibility contract, not an auto-completion contract. If NoralOS cannot safely infer the next action, it should surface the ambiguity with a blocked state, a visible comment, or an explicit recovery issue. It must not silently mark work done from prose comments or guess that a dependency is complete.
+>>>>>>> master
 
 An issue is healthy when the product can answer "what moves this forward next?" without requiring a human to reconstruct intent from the whole thread. An issue is stalled when it is non-terminal but has no live execution path, no explicit waiting path, and no recovery path.
 
@@ -254,6 +258,7 @@ A healthy `in_review` issue has at least one valid action path:
 
 Agent-assigned `in_review` with no typed participant is only healthy when one of the other paths exists. Assignment to the same agent that produced the handoff is not, by itself, a review path.
 
+<<<<<<< v2026.525.0
 An `in_review` issue is stalled when it has no typed participant, no pending interaction or approval, no user owner, no active monitor, no active run, no queued wake, and no explicit recovery action. Paperclip should surface that state as recovery work rather than silently completing the issue or leaving blocker chains parked indefinitely.
 
 ### Issue monitors
@@ -277,6 +282,9 @@ Because `serviceName` and `notes` remain visible in issue activity and wake cont
 Monitor bounds are enforced. Paperclip rejects attempts to re-arm a monitor whose `timeoutAt` or `maxAttempts` is already exhausted. When a scheduled monitor reaches an exhausted bound at trigger time, Paperclip clears it and follows `recoveryPolicy`: `wake_owner` queues a bounded recovery wake for the assignee, `create_recovery_issue` opens visible issue-backed recovery work, and `escalate_to_board` records a board-visible escalation comment/activity.
 
 Use `blocked` instead of a monitor when no Paperclip assignee owns a responsible polling path. In that case, name the external owner/action or create first-class recovery/blocker work.
+=======
+An `in_review` issue is stalled when it has no typed participant, no pending interaction or approval, no user owner, no active run, no queued wake, and no explicit recovery issue. NoralOS should surface that state as recovery work rather than silently completing the issue or leaving blocker chains parked indefinitely.
+>>>>>>> master
 
 ### `blocked`
 
@@ -294,7 +302,7 @@ A `blocked` issue is stalled when the unresolved blocker leaf has no active run,
 
 ## 8. Crash and Restart Recovery
 
-Paperclip now treats crash/restart recovery as a stranded-assigned-work problem, not just a stranded-run problem.
+NoralOS now treats crash/restart recovery as a stranded-assigned-work problem, not just a stranded-run problem.
 
 There are two distinct failure modes.
 
@@ -309,8 +317,13 @@ Example:
 
 Recovery rule:
 
+<<<<<<< v2026.525.0
 - if the latest issue-linked run failed/timed out/cancelled and no live execution path remains, Paperclip queues one automatic assignment recovery wake
 - if that recovery wake also finishes and the issue is still stranded, Paperclip moves the issue to `blocked` and opens or updates an explicit recovery action when a bounded owner/action is known; the visible comment is evidence, not the recovery path by itself
+=======
+- if the latest issue-linked run failed/timed out/cancelled and no live execution path remains, NoralOS queues one automatic assignment recovery wake
+- if that recovery wake also finishes and the issue is still stranded, NoralOS moves the issue to `blocked` and posts a visible comment
+>>>>>>> master
 
 This is a dispatch recovery, not a continuation recovery.
 
@@ -325,8 +338,13 @@ Example:
 
 Recovery rule:
 
+<<<<<<< v2026.525.0
 - Paperclip queues one automatic continuation wake
 - if that continuation wake also finishes and the issue is still stranded, Paperclip moves the issue to `blocked` and opens or updates an explicit recovery action when a bounded owner/action is known; the visible comment is evidence, not the recovery path by itself
+=======
+- NoralOS queues one automatic continuation wake
+- if that continuation wake also finishes and the issue is still stranded, NoralOS moves the issue to `blocked` and posts a visible comment
+>>>>>>> master
 
 This is an active-work continuity recovery.
 
@@ -340,7 +358,11 @@ Automatic retries that can continue source work must use the original/normal mod
 
 Startup recovery and periodic recovery are different from normal wakeup delivery.
 
+<<<<<<< v2026.525.0
 On startup and on the periodic recovery loop, Paperclip now does five things in sequence:
+=======
+On startup and on the periodic recovery loop, NoralOS now does four things in sequence:
+>>>>>>> master
 
 1. reap orphaned `running` runs
 2. resume persisted `queued` runs
@@ -352,7 +374,7 @@ The stranded-work pass closes the gap where issue state survives a crash but the
 
 ## 10. Silent Active-Run Watchdog
 
-An active run can still be unhealthy even when its process is `running`. Paperclip treats prolonged output silence as a watchdog signal, not as proof that the run is failed.
+An active run can still be unhealthy even when its process is `running`. NoralOS treats prolonged output silence as a watchdog signal, not as proof that the run is failed.
 
 The recovery service owns this contract:
 
@@ -404,7 +426,7 @@ Detached process cleanup is operational hygiene, not source issue liveness. Clea
 
 ## 11. Auto-Recover vs Explicit Recovery vs Human Escalation
 
-Paperclip uses three different recovery outcomes, depending on how much it can safely infer.
+NoralOS uses three different recovery outcomes, depending on how much it can safely infer.
 
 ### Auto-Recover
 
@@ -420,7 +442,11 @@ Auto-recovery preserves the existing owner. It does not choose a replacement age
 
 ### Explicit Recovery Action
 
+<<<<<<< v2026.525.0
 Paperclip opens an explicit recovery action when the system can identify a problem but cannot safely complete the work itself.
+=======
+NoralOS creates an explicit recovery issue when the system can identify a problem but cannot safely complete the work itself.
+>>>>>>> master
 
 Examples:
 
@@ -444,13 +470,13 @@ Examples:
 - the issue is human-owned rather than agent-owned
 - the run is intentionally quiet but needs an operator decision before cancellation or continuation
 
-In these cases Paperclip should leave a visible issue/comment trail instead of silently retrying.
+In these cases NoralOS should leave a visible issue/comment trail instead of silently retrying.
 
 ## 12. What This Does Not Mean
 
 These semantics do not change V1 into an auto-reassignment system.
 
-Paperclip still does not:
+NoralOS still does not:
 
 - automatically reassign work to a different agent
 - infer dependency semantics from `parentId` alone
@@ -472,4 +498,4 @@ For a board operator, the intended meaning is:
 - parent/sub-issue explains structure
 - blockers explain waiting
 
-That is the execution contract Paperclip should present to operators.
+That is the execution contract NoralOS should present to operators.

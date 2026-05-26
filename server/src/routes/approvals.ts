@@ -1,18 +1,19 @@
 import { Router, type Request } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   addApprovalCommentSchema,
   createApprovalSchema,
   requestApprovalRevisionSchema,
   resolveApprovalSchema,
   resubmitApprovalSchema,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { validate } from "../middleware/validate.js";
 import { logger } from "../middleware/logger.js";
 import {
   approvalService,
   heartbeatService,
   issueApprovalService,
+  issueThreadInteractionService,
   logActivity,
   secretService,
 } from "../services/index.js";
@@ -38,7 +39,7 @@ export function approvalRoutes(
   });
   const issueApprovalsSvc = issueApprovalService(db);
   const secretsSvc = secretService(db);
-  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.NORALOS_SECRETS_STRICT_MODE === "true";
 
   async function requireApprovalAccess(req: Request, id: string) {
     const approval = await svc.getById(id);
@@ -55,6 +56,13 @@ export function approvalRoutes(
     const status = req.query.status as string | undefined;
     const result = await svc.list(companyId, status);
     res.json(result.map((approval) => redactApprovalPayload(approval)));
+  });
+
+  router.get("/companies/:companyId/pending-confirmations", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+    const result = await issueThreadInteractionService(db).listPendingConfirmationsForCompany(companyId);
+    res.json(result);
   });
 
   router.get("/approvals/:id", async (req, res) => {

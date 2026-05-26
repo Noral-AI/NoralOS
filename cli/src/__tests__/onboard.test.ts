@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { onboard } from "../commands/onboard.js";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { NoralosConfig } from "../config/schema.js";
 
 const ORIGINAL_ENV = { ...process.env };
 const ORIGINAL_CWD = process.cwd();
@@ -13,7 +13,7 @@ function createExistingConfigFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-onboard-"));
   const runtimeRoot = path.join(root, "runtime");
   const configPath = path.join(root, ".paperclip", "config.json");
-  const config: PaperclipConfig = {
+  const config: NoralosConfig = {
     $meta: {
       version: 1,
       updatedAt: "2026-03-29T00:00:00.000Z",
@@ -84,6 +84,7 @@ function createFreshConfigPath() {
 describe("onboard", () => {
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
+<<<<<<< v2026.525.0
     delete process.env.PAPERCLIP_AGENT_JWT_SECRET;
     delete process.env.PAPERCLIP_SECRETS_MASTER_KEY;
     delete process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
@@ -94,6 +95,11 @@ describe("onboard", () => {
     delete process.env.PAPERCLIP_BIND_HOST;
     delete process.env.PAPERCLIP_TAILNET_BIND_HOST;
     delete process.env.HOST;
+=======
+    delete process.env.NORALOS_AGENT_JWT_SECRET;
+    delete process.env.NORALOS_SECRETS_MASTER_KEY;
+    delete process.env.NORALOS_SECRETS_MASTER_KEY_FILE;
+>>>>>>> master
   });
 
   afterEach(() => {
@@ -124,11 +130,11 @@ describe("onboard", () => {
   it("keeps --yes onboarding on local trusted loopback defaults", async () => {
     const configPath = createFreshConfigPath();
     process.env.HOST = "0.0.0.0";
-    process.env.PAPERCLIP_BIND = "lan";
+    process.env.NORALOS_BIND = "lan";
 
     await onboard({ config: configPath, yes: true, invokedByRun: true });
 
-    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as PaperclipConfig;
+    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as NoralosConfig;
     expect(raw.server.deploymentMode).toBe("local_trusted");
     expect(raw.server.exposure).toBe("private");
     expect(raw.server.bind).toBe("loopback");
@@ -158,11 +164,11 @@ describe("onboard", () => {
 
   it("supports authenticated/private quickstart bind presets", async () => {
     const configPath = createFreshConfigPath();
-    process.env.PAPERCLIP_TAILNET_BIND_HOST = "100.64.0.8";
+    process.env.NORALOS_TAILNET_BIND_HOST = "100.64.0.8";
 
     await onboard({ config: configPath, yes: true, invokedByRun: true, bind: "tailnet" });
 
-    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as PaperclipConfig;
+    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as NoralosConfig;
     expect(raw.server.deploymentMode).toBe("authenticated");
     expect(raw.server.exposure).toBe("private");
     expect(raw.server.bind).toBe("tailnet");
@@ -171,8 +177,12 @@ describe("onboard", () => {
 
   it("keeps tailnet quickstart on loopback until tailscale is available", async () => {
     const configPath = createFreshConfigPath();
+<<<<<<< v2026.525.0
     delete process.env.PAPERCLIP_TAILNET_BIND_HOST;
     process.env.PATH = "";
+=======
+    delete process.env.NORALOS_TAILNET_BIND_HOST;
+>>>>>>> master
 
     try {
       await onboard({ config: configPath, yes: true, invokedByRun: true, bind: "tailnet" });
@@ -180,7 +190,7 @@ describe("onboard", () => {
       process.env.PATH = ORIGINAL_PATH;
     }
 
-    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as PaperclipConfig;
+    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as NoralosConfig;
     expect(raw.server.deploymentMode).toBe("authenticated");
     expect(raw.server.exposure).toBe("private");
     expect(raw.server.bind).toBe("tailnet");
@@ -189,11 +199,11 @@ describe("onboard", () => {
 
   it("ignores deployment env overrides during --yes quickstart", async () => {
     const configPath = createFreshConfigPath();
-    process.env.PAPERCLIP_DEPLOYMENT_MODE = "authenticated";
+    process.env.NORALOS_DEPLOYMENT_MODE = "authenticated";
 
     await onboard({ config: configPath, yes: true, invokedByRun: true });
 
-    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as PaperclipConfig;
+    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as NoralosConfig;
     expect(raw.server.deploymentMode).toBe("local_trusted");
     expect(raw.server.exposure).toBe("private");
     expect(raw.server.bind).toBe("loopback");

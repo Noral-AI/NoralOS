@@ -19,6 +19,33 @@ type PartialConfig = {
   };
 };
 
+<<<<<<< v2026.525.0
+=======
+function expandHomePrefix(value: string): string {
+  if (value === "~") return os.homedir();
+  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
+  return value;
+}
+
+function resolveNoralosHomeDir(): string {
+  const envHome = process.env.NORALOS_HOME?.trim();
+  if (envHome) return path.resolve(expandHomePrefix(envHome));
+  return path.resolve(os.homedir(), ".paperclip");
+}
+
+function resolveNoralosInstanceId(): string {
+  const raw = process.env.NORALOS_INSTANCE_ID?.trim() || "default";
+  if (!/^[a-zA-Z0-9_-]+$/.test(raw)) {
+    throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
+  }
+  return raw;
+}
+
+function resolveDefaultConfigPath(): string {
+  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "config.json");
+}
+
+>>>>>>> master
 function readConfig(configPath: string): PartialConfig | null {
   if (!existsSync(configPath)) return null;
   try {
@@ -49,9 +76,16 @@ function resolveConnectionString(config: PartialConfig | null): string {
   }
 
   const port = resolveEmbeddedPort(config);
-  return `postgres://paperclip:paperclip@127.0.0.1:${port}/paperclip`;
+  return `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`;
 }
 
+<<<<<<< v2026.525.0
+=======
+function resolveDefaultBackupDir(): string {
+  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "data", "backups");
+}
+
+>>>>>>> master
 function resolveBackupDir(config: PartialConfig | null): string {
   const raw = config?.database?.backup?.dir;
   if (typeof raw === "string" && raw.trim().length > 0) {

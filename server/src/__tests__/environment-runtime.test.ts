@@ -9,7 +9,7 @@ import {
   getSshEnvLabSupport,
   startSshEnvLabFixture,
   stopSshEnvLabFixture,
-} from "@paperclipai/adapter-utils/ssh";
+} from "@noralos/adapter-utils/ssh";
 import {
   agents,
   companies,
@@ -20,7 +20,7 @@ import {
   environments,
   heartbeatRuns,
   plugins,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -290,7 +290,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         host: "ssh.example.test",
         port: 22,
         username: "ssh-user",
-        remoteWorkspacePath: "/srv/paperclip/workspace",
+        remoteWorkspacePath: "/srv/noralos/workspace",
         privateKey: null,
         knownHosts: null,
         strictHostKeyChecking: true,
@@ -335,6 +335,29 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     const statePath = path.join(fixtureRoot, "state.json");
     const fixture = await startSshEnvLabFixture({ statePath });
     const sshConfig = await buildSshEnvLabFixtureConfig(fixture);
+<<<<<<< v2026.525.0
+=======
+    const healthServer = createServer((req, res) => {
+      if (req.url === "/api/health") {
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify({ status: "ok" }));
+        return;
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((resolve, reject) => {
+      healthServer.once("error", reject);
+      healthServer.listen(0, "127.0.0.1", () => resolve());
+    });
+    const address = healthServer.address();
+    if (!address || typeof address === "string") {
+      await new Promise<void>((resolve) => healthServer.close(() => resolve()));
+      throw new Error("Expected the test health server to listen on a TCP port.");
+    }
+    const runtimeApiUrl = `http://127.0.0.1:${address.port}`;
+    const previousCandidates = process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
+    process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = JSON.stringify([runtimeApiUrl]);
+>>>>>>> master
     const { companyId, environment, runId } = await seedEnvironment({
       driver: "ssh",
       name: "Fixture SSH",
@@ -358,6 +381,10 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         username: sshConfig.username,
         remoteWorkspacePath: sshConfig.remoteWorkspacePath,
         remoteCwd: sshConfig.remoteWorkspacePath,
+<<<<<<< v2026.525.0
+=======
+        noralosApiUrl: runtimeApiUrl,
+>>>>>>> master
       });
 
       const released = await runtime.releaseRunLeases(runId);
@@ -366,6 +393,15 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
       expect(released[0]?.environment.driver).toBe("ssh");
       expect(released[0]?.lease.status).toBe("released");
     } finally {
+<<<<<<< v2026.525.0
+=======
+      if (previousCandidates === undefined) {
+        delete process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON;
+      } else {
+        process.env.NORALOS_RUNTIME_API_CANDIDATES_JSON = previousCandidates;
+      }
+      await new Promise<void>((resolve) => healthServer.close(() => resolve()));
+>>>>>>> master
     }
   });
 
@@ -427,7 +463,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "paperclip.fake-plugin-sandbox-provider",
-      packageName: "@paperclipai/plugin-fake-sandbox",
+      packageName: "@noralos/noralos-plugin-fake-sandbox",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -437,7 +473,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Fake Plugin Sandbox Provider",
         description: "Test fake plugin provider",
-        author: "Paperclip",
+        author: "NoralOS",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -531,7 +567,11 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     expect(released).toHaveLength(1);
     expect(released[0]?.lease.status).toBe("released");
     expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentExecute", expect.anything(), 31000);
+<<<<<<< v2026.525.0
     expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentReleaseLease", expect.anything(), 31234);
+=======
+    expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentReleaseLease", expect.anything());
+>>>>>>> master
   });
 
   it("uses resolved secret-ref config for plugin-backed sandbox execute and release", async () => {
@@ -580,7 +620,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Secure Sandbox Provider",
         description: "Test schema-driven provider",
-        author: "Paperclip",
+        author: "NoralOS",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -874,6 +914,98 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     );
   });
 
+  it("waits briefly for a ready sandbox provider plugin worker to come online", async () => {
+    const pluginId = randomUUID();
+    const { companyId, environment: baseEnvironment, runId } = await seedEnvironment();
+    const providerConfig = {
+      provider: "fake-plugin",
+      image: "fake:test",
+      timeoutMs: 1234,
+      reuseLease: false,
+    };
+    const environment = {
+      ...baseEnvironment,
+      name: "Eventually Running Plugin Sandbox",
+      driver: "sandbox",
+      config: providerConfig,
+    };
+    await environmentService(db).update(environment.id, {
+      driver: "sandbox",
+      name: environment.name,
+      config: providerConfig,
+    });
+    await db.insert(plugins).values({
+      id: pluginId,
+      pluginKey: "acme.eventually-running-sandbox-provider",
+      packageName: "@acme/eventually-running-sandbox-provider",
+      version: "1.0.0",
+      apiVersion: 1,
+      categories: ["automation"],
+      manifestJson: {
+        id: "acme.eventually-running-sandbox-provider",
+        apiVersion: 1,
+        version: "1.0.0",
+        displayName: "Eventually Running Sandbox Provider",
+        description: "Test plugin worker startup grace period",
+        author: "Acme",
+        categories: ["automation"],
+        capabilities: ["environment.drivers.register"],
+        entrypoints: { worker: "dist/worker.js" },
+        environmentDrivers: [
+          {
+            driverKey: "fake-plugin",
+            kind: "sandbox_provider",
+            displayName: "Fake Plugin",
+            configSchema: { type: "object" },
+          },
+        ],
+      },
+      status: "ready",
+      installOrder: 1,
+      updatedAt: new Date(),
+    } as any);
+
+    let runningChecks = 0;
+    const workerManager = {
+      isRunning: vi.fn((id: string) => {
+        if (id !== pluginId) return false;
+        runningChecks += 1;
+        return runningChecks >= 3;
+      }),
+      call: vi.fn(async (_pluginId: string, method: string) => {
+        if (method === "environmentAcquireLease") {
+          return {
+            providerLeaseId: "sandbox-1",
+            metadata: {
+              provider: "fake-plugin",
+              image: "fake:test",
+              timeoutMs: 1234,
+              reuseLease: false,
+            },
+          };
+        }
+        throw new Error(`Unexpected plugin method: ${method}`);
+      }),
+    } as unknown as PluginWorkerManager;
+    const runtimeWithPlugin = environmentRuntimeService(db, {
+      pluginWorkerManager: workerManager,
+      pluginWorkerReadyTimeoutMs: 25,
+      pluginWorkerReadyPollMs: 1,
+    });
+
+    const acquired = await runtimeWithPlugin.acquireRunLease({
+      companyId,
+      environment,
+      issueId: null,
+      heartbeatRunId: runId,
+      persistedExecutionWorkspace: null,
+    });
+
+    expect(acquired.lease.providerLeaseId).toBe("sandbox-1");
+    expect(workerManager.isRunning).toHaveBeenCalledTimes(3);
+    expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentAcquireLease", expect.anything());
+  });
+
   it("falls back to acquire when plugin-backed sandbox lease resume throws", async () => {
     const pluginId = randomUUID();
     const { companyId, environment: baseEnvironment, runId } = await seedEnvironment();
@@ -907,7 +1039,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
         version: "1.0.0",
         displayName: "Fake Sandbox Provider",
         description: "Test schema-driven provider",
-        author: "Paperclip",
+        author: "NoralOS",
         categories: ["automation"],
         capabilities: ["environment.drivers.register"],
         entrypoints: { worker: "dist/worker.js" },
@@ -1066,7 +1198,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/noralos-environments",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],
@@ -1217,7 +1349,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     await db.insert(plugins).values({
       id: pluginId,
       pluginKey: "acme.environments",
-      packageName: "@acme/paperclip-environments",
+      packageName: "@acme/noralos-environments",
       version: "1.0.0",
       apiVersion: 1,
       categories: ["automation"],

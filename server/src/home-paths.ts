@@ -15,6 +15,7 @@ import {
   resolvePaperclipInstanceRoot,
 } from "@paperclipai/shared/home-paths";
 
+<<<<<<< v2026.525.0
 export {
   expandHomePrefix,
   resolveHomeAwarePath,
@@ -45,6 +46,54 @@ export function resolveDefaultStorageDir(): string {
 
 export function resolveDefaultBackupDir(): string {
   return resolveSharedDefaultBackupDir();
+=======
+function expandHomePrefix(value: string): string {
+  if (value === "~") return os.homedir();
+  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
+  return value;
+}
+
+export function resolveNoralosHomeDir(): string {
+  const envHome = process.env.NORALOS_HOME?.trim();
+  if (envHome) return path.resolve(expandHomePrefix(envHome));
+  return path.resolve(os.homedir(), ".paperclip");
+}
+
+export function resolveNoralosInstanceId(): string {
+  const raw = process.env.NORALOS_INSTANCE_ID?.trim() || DEFAULT_INSTANCE_ID;
+  if (!INSTANCE_ID_RE.test(raw)) {
+    throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
+  }
+  return raw;
+}
+
+export function resolveNoralosInstanceRoot(): string {
+  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId());
+}
+
+export function resolveDefaultConfigPath(): string {
+  return path.resolve(resolveNoralosInstanceRoot(), "config.json");
+}
+
+export function resolveDefaultEmbeddedPostgresDir(): string {
+  return path.resolve(resolveNoralosInstanceRoot(), "db");
+}
+
+export function resolveDefaultLogsDir(): string {
+  return path.resolve(resolveNoralosInstanceRoot(), "logs");
+}
+
+export function resolveDefaultSecretsKeyFilePath(): string {
+  return path.resolve(resolveNoralosInstanceRoot(), "secrets", "master.key");
+}
+
+export function resolveDefaultStorageDir(): string {
+  return path.resolve(resolveNoralosInstanceRoot(), "data", "storage");
+}
+
+export function resolveDefaultBackupDir(): string {
+  return path.resolve(resolveNoralosInstanceRoot(), "data", "backups");
+>>>>>>> master
 }
 
 export function resolveDefaultAgentWorkspaceDir(agentId: string): string {
@@ -52,7 +101,7 @@ export function resolveDefaultAgentWorkspaceDir(agentId: string): string {
   if (!PATH_SEGMENT_RE.test(trimmed)) {
     throw new Error(`Invalid agent id for workspace path '${agentId}'.`);
   }
-  return path.resolve(resolvePaperclipInstanceRoot(), "workspaces", trimmed);
+  return path.resolve(resolveNoralosInstanceRoot(), "workspaces", trimmed);
 }
 
 function sanitizeFriendlyPathSegment(value: string | null | undefined, fallback = "_default"): string {
@@ -75,7 +124,7 @@ export function resolveManagedProjectWorkspaceDir(input: {
     throw new Error("Managed project workspace path requires companyId and projectId.");
   }
   return path.resolve(
-    resolvePaperclipInstanceRoot(),
+    resolveNoralosInstanceRoot(),
     "projects",
     sanitizeFriendlyPathSegment(companyId, "company"),
     sanitizeFriendlyPathSegment(projectId, "project"),

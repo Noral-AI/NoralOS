@@ -2,17 +2,19 @@ import express, { Router, type Request as ExpressRequest } from "express";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { Db } from "@paperclipai/db";
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import type { Db } from "@noralos/db";
+import type { DeploymentExposure, DeploymentMode } from "@noralos/shared";
 import type { StorageService } from "./storage/types.js";
 import { httpLogger, errorHandler } from "./middleware/index.js";
 import { actorMiddleware } from "./middleware/auth.js";
 import { boardMutationGuard } from "./middleware/board-mutation-guard.js";
 import { privateHostnameGuard, resolvePrivateHostnameAllowSet } from "./middleware/private-hostname-guard.js";
 import { healthRoutes } from "./routes/health.js";
+import { versionRoutes } from "./routes/version.js";
 import { companyRoutes } from "./routes/companies.js";
 import { companySkillRoutes } from "./routes/company-skills.js";
 import { agentRoutes } from "./routes/agents.js";
+import { departmentRoutes } from "./routes/departments.js";
 import { projectRoutes } from "./routes/projects.js";
 import { issueRoutes } from "./routes/issues.js";
 import { issueTreeControlRoutes } from "./routes/issue-tree-control.js";
@@ -22,6 +24,8 @@ import { executionWorkspaceRoutes } from "./routes/execution-workspaces.js";
 import { goalRoutes } from "./routes/goals.js";
 import { approvalRoutes } from "./routes/approvals.js";
 import { secretRoutes } from "./routes/secrets.js";
+import { integrationRoutes } from "./routes/integrations.js";
+import { integrationOAuthRoutes } from "./routes/integrations-oauth.js";
 import { costRoutes } from "./routes/costs.js";
 import { activityRoutes } from "./routes/activity.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
@@ -45,6 +49,9 @@ import { readBrandedStaticIndexHtml } from "./static-index-html.js";
 import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
 import { DEFAULT_LOCAL_PLUGIN_DIR, pluginLoader } from "./services/plugin-loader.js";
+import { ensureNoralSignRegistered } from "./services/auto-register-noralsign.js";
+import { ensureNoralVoiceRegistered } from "./services/auto-register-noralvoice.js";
+import { ensureSlackRegistered } from "./services/auto-register-slack.js";
 import { createPluginWorkerManager, type PluginWorkerManager } from "./services/plugin-worker-manager.js";
 import { createPluginJobScheduler } from "./services/plugin-job-scheduler.js";
 import { pluginJobStore } from "./services/plugin-job-store.js";
@@ -57,7 +64,7 @@ import { setPluginEventBus } from "./services/activity-log.js";
 import { createPluginDevWatcher } from "./services/plugin-dev-watcher.js";
 import { createPluginHostServiceCleanup } from "./services/plugin-host-service-cleanup.js";
 import { pluginRegistryService } from "./services/plugin-registry.js";
-import { createHostClientHandlers } from "@paperclipai/plugin-sdk";
+import { createHostClientHandlers } from "@noralos/plugin-sdk";
 import type { BetterAuthSessionResult } from "./auth/better-auth.js";
 import { createCachedViteHtmlRenderer } from "./vite-html-renderer.js";
 import { DEFAULT_JSON_BODY_LIMIT, PORTABLE_JSON_BODY_LIMIT } from "./http/body-limits.js";
@@ -206,9 +213,11 @@ export async function createApp(
       companyDeletionEnabled: opts.companyDeletionEnabled,
     }),
   );
+  api.use(versionRoutes());
   api.use("/companies", companyRoutes(db, opts.storageService));
   api.use(companySkillRoutes(db));
   api.use(agentRoutes(db, { pluginWorkerManager: workerManager }));
+  api.use(departmentRoutes(db));
   api.use(assetRoutes(db, opts.storageService));
   api.use(projectRoutes(db));
   api.use(issueRoutes(db, opts.storageService, {
@@ -303,6 +312,11 @@ export async function createApp(
       { workerManager },
     ),
   );
+  // Integrations routes need the worker manager + lifecycle so credential
+  // assignment can notify the running worker (or fall back to a restart)
+  // after patching `plugin_config.config_json`.
+  api.use(integrationRoutes(db, { workerManager, lifecycle }));
+  api.use(integrationOAuthRoutes(db));
   api.use(adapterRoutes());
   api.use(
     accessRoutes(db, {
@@ -458,6 +472,7 @@ export async function createApp(
   void toolDispatcher.initialize().catch((err) => {
     logger.error({ err }, "Failed to initialize plugin tool dispatcher");
   });
+<<<<<<< v2026.525.0
   const devWatcher = createPluginDevWatcher(
     lifecycle,
     async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
@@ -477,6 +492,38 @@ export async function createApp(
     if (appServicesShutdown) return;
     appServicesShutdown = true;
     disableFeedbackExportFlushes();
+=======
+  const devWatcher = opts.uiMode === "vite-dev"
+    ? createPluginDevWatcher(
+      lifecycle,
+      async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
+    )
+    : null;
+  // Auto-register the workspace-local plugins on first boot.
+  // Idempotent — subsequent boots short-circuit unless the workspace
+  // manifest version differs from the stored row (in which case
+  // upgradePlugin runs to refresh the DB manifest).
+  // Runs before loadAll() so a fresh deploy installs + activates in one cycle.
+  void Promise.all([
+    ensureNoralSignRegistered(db, loader),
+    ensureNoralVoiceRegistered(db, loader),
+    ensureSlackRegistered(db, loader),
+  ])
+    .then(() => loader.loadAll())
+    .then((result) => {
+      if (!result) return;
+      for (const loaded of result.results) {
+        if (devWatcher && loaded.success && loaded.plugin.packagePath) {
+          devWatcher.watch(loaded.plugin.id, loaded.plugin.packagePath);
+        }
+      }
+    })
+    .catch((err) => {
+      logger.error({ err }, "Failed to load ready plugins on startup");
+    });
+  process.once("exit", () => {
+    if (feedbackExportTimer) clearInterval(feedbackExportTimer);
+>>>>>>> master
     devWatcher?.close();
     viteHtmlRenderer?.dispose();
     hostServiceCleanup.disposeAll();

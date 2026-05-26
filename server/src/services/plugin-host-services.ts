@@ -1,4 +1,4 @@
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   activityLog,
   agentTaskSessions as agentTaskSessionsTable,
@@ -9,10 +9,15 @@ import {
   invites,
   issues as issuesTable,
   pluginLogs,
+<<<<<<< v2026.525.0
   principalPermissionGrants,
   projects as projectsTable,
 } from "@paperclipai/db";
 import { eq, and, like, desc, inArray, sql, isNull, isNotNull, gt, lte } from "drizzle-orm";
+=======
+} from "@noralos/db";
+import { eq, and, like, desc, inArray, sql } from "drizzle-orm";
+>>>>>>> master
 import type {
   HostServices,
   Company,
@@ -24,10 +29,15 @@ import type {
   IssueComment,
   PluginIssueAssigneeSummary,
   PluginIssueOrchestrationSummary,
+<<<<<<< v2026.525.0
   PluginExecutionWorkspaceMetadata,
 } from "@paperclipai/plugin-sdk";
 import type { CreateIssueThreadInteraction, InviteJoinType, IssueDocumentSummary, PermissionKey, PrincipalType } from "@paperclipai/shared";
 import { pluginOperationIssueOriginKind } from "@paperclipai/shared";
+=======
+} from "@noralos/plugin-sdk";
+import type { CreateIssueThreadInteraction, IssueDocumentSummary } from "@noralos/shared";
+>>>>>>> master
 import { companyService } from "./companies.js";
 import { agentService } from "./agents.js";
 import { projectService } from "./projects.js";
@@ -260,7 +270,13 @@ async function executePinnedHttpRequest(
   target: ValidatedFetchTarget,
   init: RequestInit | undefined,
   signal: AbortSignal,
-): Promise<{ status: number; statusText: string; headers: Record<string, string>; body: string }> {
+): Promise<{
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  body: string;
+  bodyEncoding: "utf8" | "base64";
+}> {
   const { options, body } = buildPinnedRequestOptions(target, init);
 
   const response = await new Promise<IncomingMessage>((resolve, reject) => {
@@ -302,11 +318,18 @@ async function executePinnedHttpRequest(
     }
   }
 
+  // Always base64-encode the response body. Until this fix the host did
+  // `.toString("utf8")` here, which corrupts every non-ASCII byte of a binary
+  // response (replaced with U+FFFD) — broke ElevenLabs MP3 audio for the
+  // Voice Cascade plugin and any other plugin reading a binary response. The
+  // worker side decodes based on `bodyEncoding` and reconstructs a Response
+  // whose `.text()` and `.arrayBuffer()` both behave correctly.
   return {
     status: response.statusCode ?? 500,
     statusText: response.statusMessage ?? "",
     headers,
-    body: Buffer.concat(chunks).toString("utf8"),
+    body: Buffer.concat(chunks).toString("base64"),
+    bodyEncoding: "base64" as const,
   };
 }
 
@@ -466,7 +489,7 @@ if (_logFlushInterval.unref) _logFlushInterval.unref();
  * buildHostServices — creates a concrete implementation of the `HostServices`
  * interface for a specific plugin.
  *
- * This implementation delegates to the core Paperclip domain services,
+ * This implementation delegates to the core NoralOS domain services,
  * providing the bridge between the plugin worker's SDK and the host platform.
  *
  * @param db - Database connection instance.
@@ -1197,7 +1220,7 @@ export function buildHostServices(
         await scopedBus.emit(params.name, params.companyId, params.payload);
       },
       async subscribe(params: { eventPattern: string; filter?: Record<string, unknown> | null }) {
-        const handler = async (event: import("@paperclipai/plugin-sdk").PluginEvent) => {
+        const handler = async (event: import("@noralos/plugin-sdk").PluginEvent) => {
           if (notifyWorker) {
             notifyWorker("onEvent", { event });
           }
@@ -2117,6 +2140,37 @@ export function buildHostServices(
         const agent = await agents.getById(params.agentId);
         return (inCompany(agent, companyId) ? agent : null) as Agent | null;
       },
+      async create(params) {
+        const companyId = ensureCompanyId(params.companyId);
+        await ensurePluginAvailableForCompany(companyId);
+        // Plugin-provisioned agents always carry plugin provenance in
+        // their metadata bag so audit / dashboards can tell who created
+        // them. We merge over any caller-supplied metadata, with our
+        // provenance fields taking precedence.
+        const metadata = {
+          ...(params.metadata ?? {}),
+          provisionedByPluginId: pluginId,
+          provisionedByPluginKey: pluginKey,
+          provisionedAt: new Date().toISOString(),
+        };
+        const created = await agents.create(companyId, {
+          name: params.name,
+          role: params.role,
+          title: params.title ?? null,
+          reportsTo: params.reportsTo ?? null,
+          capabilities: params.capabilities ?? null,
+          // adapterType has a NOT NULL DEFAULT in the schema — omit
+          // when the caller passes null/undefined so the column default
+          // applies. Pass an explicit string through verbatim.
+          ...(typeof params.adapterType === "string" ? { adapterType: params.adapterType } : {}),
+          adapterConfig: params.adapterConfig ?? {},
+          runtimeConfig: params.runtimeConfig ?? {},
+          defaultEnvironmentId: params.defaultEnvironmentId ?? null,
+          budgetMonthlyCents: params.budgetMonthlyCents ?? 0,
+          metadata,
+        });
+        return created as Agent;
+      },
       async pause(params) {
         const companyId = ensureCompanyId(params.companyId);
         await ensurePluginAvailableForCompany(companyId);
@@ -2540,9 +2594,24 @@ export function buildHostServices(
         await ensurePluginAvailableForCompany(companyId);
         const agent = await agents.getById(params.agentId);
         requireInCompany("Agent", agent, companyId);
-        const taskKey = params.taskKey ?? `plugin:${pluginKey}:session:${randomUUID()}`;
+        // Constrain plugin-provided taskKey to the plugin's reserved
+        // `plugin:<pluginKey>:session:*` namespace so a plugin cannot
+        // address another plugin's, or the system's, agent task sessions.
+        const requiredPrefix = `plugin:${pluginKey}:session:`;
+        if (params.taskKey != null && !params.taskKey.startsWith(requiredPrefix)) {
+          throw new Error(
+            `agents.sessions.create: taskKey must start with "${requiredPrefix}"`,
+          );
+        }
+        const taskKey = params.taskKey ?? `${requiredPrefix}${randomUUID()}`;
 
-        const row = await db
+        // Find-or-create on (company, agent, adapter, taskKey). The unique
+        // index on agent_task_sessions guarantees that two callers passing
+        // the same taskKey converge on a single row — required so a single
+        // authenticated participant's Conference Room sessions across
+        // browser tabs share one Claude session instead of colliding on the
+        // unique constraint.
+        const inserted = await db
           .insert(agentTaskSessionsTable)
           .values({
             companyId,
@@ -2554,15 +2623,44 @@ export function buildHostServices(
             lastRunId: null,
             lastError: null,
           })
+          .onConflictDoNothing({
+            target: [
+              agentTaskSessionsTable.companyId,
+              agentTaskSessionsTable.agentId,
+              agentTaskSessionsTable.adapterType,
+              agentTaskSessionsTable.taskKey,
+            ],
+          })
           .returning()
-          .then((rows) => rows[0]);
+          .then((rows) => rows[0] ?? null);
+
+        const row =
+          inserted ??
+          (await db
+            .select()
+            .from(agentTaskSessionsTable)
+            .where(
+              and(
+                eq(agentTaskSessionsTable.companyId, companyId),
+                eq(agentTaskSessionsTable.agentId, params.agentId),
+                eq(agentTaskSessionsTable.adapterType, agent!.adapterType),
+                eq(agentTaskSessionsTable.taskKey, taskKey),
+              ),
+            )
+            .then((rows) => rows[0] ?? null));
+
+        if (!row) {
+          throw new Error(
+            `agents.sessions.create: failed to upsert task session for taskKey="${taskKey}"`,
+          );
+        }
 
         return {
-          sessionId: row!.id,
+          sessionId: row.id,
           agentId: params.agentId,
           companyId,
           status: "active" as const,
-          createdAt: row!.createdAt.toISOString(),
+          createdAt: row.createdAt.toISOString(),
         };
       },
 
@@ -2612,6 +2710,16 @@ export function buildHostServices(
           .then((rows) => rows[0] ?? null);
         if (!session) throw new Error(`Session not found: ${params.sessionId}`);
 
+        // Per-call adapter override (Conference Room and any future plugin
+        // surface that wants a lightweight runtime profile for THIS run only).
+        // The override is shallow-merged on top of agents.adapter_config inside
+        // executeRun and never persisted back to the agent's stored config.
+        const adapterConfigOverrides =
+          params.adapterConfigOverrides &&
+          typeof params.adapterConfigOverrides === "object" &&
+          !Array.isArray(params.adapterConfigOverrides)
+            ? (params.adapterConfigOverrides as Record<string, unknown>)
+            : null;
         const run = await heartbeat.wakeup(session.agentId, {
           source: "automation",
           triggerDetail: "system",
@@ -2624,6 +2732,7 @@ export function buildHostServices(
           },
           requestedByActorType: "system",
           requestedByActorId: pluginId,
+          adapterConfigOverrides,
         });
         if (!run) throw new Error("Agent wakeup was skipped by heartbeat policy");
 

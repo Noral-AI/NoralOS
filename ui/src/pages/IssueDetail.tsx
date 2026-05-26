@@ -154,7 +154,7 @@ import {
   type RequestConfirmationInteraction,
   type SuggestTasksInteraction,
   type IssueTreeControlMode,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 
 type CommentReassignment = IssueCommentReassignment;
 type ActionableIssueThreadInteraction = SuggestTasksInteraction | RequestConfirmationInteraction;
@@ -168,7 +168,7 @@ type IssueDetailComment = (IssueComment | OptimisticIssueComment) & {
   queueReason?: "hold" | "active_run" | "other";
 };
 
-const FEEDBACK_TERMS_URL = import.meta.env.VITE_FEEDBACK_TERMS_URL?.trim() || "https://paperclip.ing/tos";
+const FEEDBACK_TERMS_URL = import.meta.env.VITE_FEEDBACK_TERMS_URL?.trim() || "https://noralos.ing/tos";
 const ISSUE_COMMENT_PAGE_SIZE = 50;
 const ISSUE_COMMENT_AUTOLOAD_LIMIT = ISSUE_COMMENT_PAGE_SIZE * 3;
 const JUMP_TO_LATEST_MAX_COMMENT_PAGES = 10;
@@ -192,6 +192,10 @@ const LEAF_WORK_CONTROL_MODE_HELP_TEXT: Partial<Record<IssueTreeControlMode, str
   pause: "Pause active execution on this issue until an explicit resume.",
   resume: "Release the active pause hold so this issue can continue.",
 };
+<<<<<<< v2026.525.0
+=======
+
+>>>>>>> master
 function issueTreeControlLabel(mode: IssueTreeControlMode, scope: "leaf" | "subtree") {
   return scope === "leaf"
     ? LEAF_WORK_CONTROL_MODE_LABEL[mode] ?? TREE_CONTROL_MODE_LABEL[mode]
@@ -675,9 +679,12 @@ type IssueDetailChatTabProps = {
     answers: AskUserQuestionsAnswer[],
   ) => Promise<void>;
   onCancelInteraction: (interaction: AskUserQuestionsInteraction) => Promise<void>;
+<<<<<<< v2026.525.0
   assigneeUserId: string | null;
   onResumeFromBacklog?: () => Promise<void> | void;
   resumeFromBacklogPending?: boolean;
+=======
+>>>>>>> master
 };
 
 const IssueDetailChatTab = memo(function IssueDetailChatTab({
@@ -734,9 +741,12 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
   onRejectInteraction,
   onSubmitInteractionAnswers,
   onCancelInteraction,
+<<<<<<< v2026.525.0
   assigneeUserId,
   onResumeFromBacklog,
   resumeFromBacklogPending,
+=======
+>>>>>>> master
 }: IssueDetailChatTabProps) {
   const { data: activity } = useQuery({
     queryKey: queryKeys.issues.activity(issueId),
@@ -941,8 +951,11 @@ const IssueDetailChatTab = memo(function IssueDetailChatTab({
           onSubmitInteractionAnswers(interaction, answers)
         }
         onCancelInteraction={onCancelInteraction}
+<<<<<<< v2026.525.0
         issueWorkMode={issueWorkMode}
         onWorkModeChange={onWorkModeChange}
+=======
+>>>>>>> master
         onCancelRun={runningIssueRun && onPauseWorkRun
           ? async () => {
               await onPauseWorkRun(runningIssueRun.id);
@@ -1090,7 +1103,10 @@ function IssueDetailActivityTab({
     && (issueTreeCostSummary.costCents > 0
       || issueTreeCostTokens > 0
       || issueTreeCostSummary.cachedInputTokens > 0
+<<<<<<< v2026.525.0
       || issueTreeCostSummary.runtimeMs > 0
+=======
+>>>>>>> master
       || issueTreeCostSummary.issueCount > 1);
   const shouldShowCostSummary =
     (linkedRuns && linkedRuns.length > 0) || hasIssueTreeCost;
@@ -1123,6 +1139,7 @@ function IssueDetailActivityTab({
                       : ` (in ${formatTokens(issueCostSummary.input)}, out ${formatTokens(issueCostSummary.output)})`}
                   </span>
                 ) : null}
+<<<<<<< v2026.525.0
                 {issueCostSummary.hasRuntime ? (
                   <span>
                     Runtime {formatDurationMs(issueCostSummary.runtimeMs)}
@@ -1130,6 +1147,9 @@ function IssueDetailActivityTab({
                   </span>
                 ) : null}
                 {!issueCostSummary.hasCost && !issueCostSummary.hasTokens && !issueCostSummary.hasRuntime ? (
+=======
+                {!issueCostSummary.hasCost && !issueCostSummary.hasTokens ? (
+>>>>>>> master
                   <span>No direct cost data.</span>
                 ) : null}
               </div>
@@ -1149,12 +1169,15 @@ function IssueDetailActivityTab({
                       ? ` (in ${formatTokens(issueTreeCostSummary.inputTokens)}, out ${formatTokens(issueTreeCostSummary.outputTokens)}, cached ${formatTokens(issueTreeCostSummary.cachedInputTokens)})`
                       : ` (in ${formatTokens(issueTreeCostSummary.inputTokens)}, out ${formatTokens(issueTreeCostSummary.outputTokens)})`}
                   </span>
+<<<<<<< v2026.525.0
                   {issueTreeCostSummary.runCount > 0 ? (
                     <span>
                       Runtime {formatDurationMs(issueTreeCostSummary.runtimeMs)}
                       {` (${issueTreeCostSummary.runCount} run${issueTreeCostSummary.runCount === 1 ? "" : "s"})`}
                     </span>
                   ) : null}
+=======
+>>>>>>> master
                   <span>{issueTreeCostSummary.issueCount} issue{issueTreeCostSummary.issueCount === 1 ? "" : "s"}</span>
                 </div>
               ) : null}
@@ -1171,6 +1194,7 @@ function IssueDetailActivityTab({
           agentMap={agentMap}
           hasLiveRuns={hasLiveRuns}
           activityEvents={activity ?? []}
+<<<<<<< v2026.525.0
           renderActivityEvent={(evt) => {
             const tone = successfulRunHandoffActivityTone(evt.action);
             const isHandoffWarning =
@@ -1190,6 +1214,18 @@ function IssueDetailActivityTab({
               </div>
             );
           }}
+=======
+          renderActivityEvent={(evt) => (
+            <div className="space-y-1.5 rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <ActorIdentity evt={evt} agentMap={agentMap} userProfileMap={userProfileMap} />
+                <span>{formatIssueActivityAction(evt.action, evt.details, { agentMap, userProfileMap, currentUserId })}</span>
+                <span className="ml-auto shrink-0">{relativeTime(evt.createdAt)}</span>
+              </div>
+              <IssueReferenceActivitySummary event={evt} />
+            </div>
+          )}
+>>>>>>> master
         />
       </div>
       {linkedApprovals && linkedApprovals.length > 0 && (
@@ -1213,12 +1249,15 @@ function IssueDetailActivityTab({
         </div>
       )}
       <IssueContinuationHandoff document={continuationHandoff} focusSignal={handoffFocusSignal} />
+<<<<<<< v2026.525.0
       <IssueScheduledRetryCard issueId={issue.id} scheduledRetry={issue.scheduledRetry ?? null} />
       <IssueMonitorActivityCard
         issue={issue}
         onCheckNow={onCheckMonitorNow}
         checkingNow={checkingMonitorNow}
       />
+=======
+>>>>>>> master
     </>
   );
 }
@@ -2994,6 +3033,7 @@ export function IssueDetail() {
   const handleCancelInteraction = useCallback(async (interaction: AskUserQuestionsInteraction) => {
     await cancelInteraction.mutateAsync({ interaction });
   }, [cancelInteraction]);
+<<<<<<< v2026.525.0
   const canResumeFromBacklog = issue?.status === "backlog" && Boolean(issue.assigneeAgentId || issue.assigneeUserId);
   const handleResumeFromBacklog = useCallback(async () => {
     await updateIssue.mutateAsync({ status: "todo" });
@@ -3023,6 +3063,8 @@ export function IssueDetail() {
     },
     [activeRecoveryActionId, resolveRecoveryAction.mutateAsync],
   );
+=======
+>>>>>>> master
 
   const treePreviewAffectedIssues = useMemo(
     () => (treeControlPreview?.issues ?? []).filter((candidate) => !candidate.skipped),
@@ -3962,11 +4004,14 @@ export function IssueDetail() {
               onPauseWorkRun={canManageTreeControl
                 ? (runId) => pauseIssueWorkRun.mutateAsync({ runId, scope: treeControlScope }).then(() => undefined)
                 : undefined}
+<<<<<<< v2026.525.0
               onWorkModeChange={(nextMode) => {
                 const currentMode: IssueWorkMode = issue.workMode ?? "standard";
                 if (currentMode === nextMode) return;
                 return updateIssue.mutateAsync({ workMode: nextMode }).then(() => undefined);
               }}
+=======
+>>>>>>> master
               onCancelQueued={handleCancelQueuedComment}
               interruptingQueuedRunId={interruptQueuedComment.isPending ? interruptQueuedComment.variables ?? null : null}
               pausingWorkRunId={pauseIssueWorkRun.isPending ? pauseIssueWorkRun.variables?.runId ?? null : null}
@@ -3975,11 +4020,14 @@ export function IssueDetail() {
               onRejectInteraction={handleRejectInteraction}
               onSubmitInteractionAnswers={handleSubmitInteractionAnswers}
               onCancelInteraction={handleCancelInteraction}
+<<<<<<< v2026.525.0
               assigneeUserId={issue.assigneeUserId ?? null}
               onResumeFromBacklog={canResumeFromBacklog ? handleResumeFromBacklog : undefined}
               resumeFromBacklogPending={
                 updateIssue.isPending && updateIssue.variables?.status === "todo"
               }
+=======
+>>>>>>> master
             />
           ) : null}
         </TabsContent>

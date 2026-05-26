@@ -1,0 +1,34 @@
+{
+  "name": "@noralos-plugins/noralai-slack",
+  "version": "0.1.0",
+  "description": "Slack channel for NoralOS agents. Operator installs a Slack bot once per workspace; the plugin opens a Socket Mode WebSocket and routes DMs + @-mentions into an agent.sessions conversation with the company's default agent (e.g. Brooklyn). Agent responses post back to Slack in the same thread.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "noralosPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @noralos/plugin-sdk ensure-build-deps",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*",
+    "@slack/socket-mode": "^2.0.4",
+    "@slack/web-api": "^7.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  }
+}

@@ -12,6 +12,17 @@ import type {
 
 export interface AgentPermissions {
   canCreateAgents: boolean;
+  canCreateDepartments: boolean;
+}
+
+export interface AgentModelProfileConfig {
+  enabled?: boolean;
+  label?: string;
+  adapterConfig: Record<string, unknown>;
+}
+
+export interface AgentRuntimeConfig extends Record<string, unknown> {
+  modelProfiles?: Partial<Record<ModelProfileKey, AgentModelProfileConfig>>;
 }
 
 export interface AgentModelProfileConfig {
@@ -85,6 +96,7 @@ export interface Agent {
   adapterConfig: Record<string, unknown>;
   runtimeConfig: AgentRuntimeConfig;
   defaultEnvironmentId?: string | null;
+  departmentId?: string | null;
   budgetMonthlyCents: number;
   spentMonthlyCents: number;
   pauseReason: PauseReason | null;

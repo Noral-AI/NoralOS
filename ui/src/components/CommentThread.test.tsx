@@ -4,7 +4,7 @@ import { act } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
-import type { Agent, Approval } from "@paperclipai/shared";
+import type { Agent, Approval } from "@noralos/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommentThread } from "./CommentThread";
 
@@ -108,7 +108,7 @@ describe("CommentThread", () => {
       spentMonthlyCents: 0,
       pauseReason: null,
       pausedAt: null,
-      permissions: { canCreateAgents: false },
+      permissions: { canCreateAgents: false, canCreateDepartments: false },
       lastHeartbeatAt: null,
       metadata: null,
       createdAt: new Date("2026-03-11T00:00:00.000Z"),
@@ -287,7 +287,7 @@ describe("CommentThread", () => {
       spentMonthlyCents: 0,
       pauseReason: null,
       pausedAt: null,
-      permissions: { canCreateAgents: false },
+      permissions: { canCreateAgents: false, canCreateDepartments: false },
       lastHeartbeatAt: null,
       metadata: null,
       createdAt: new Date("2026-03-11T00:00:00.000Z"),

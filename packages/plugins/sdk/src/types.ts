@@ -1,8 +1,8 @@
 /**
- * Core types for the Paperclip plugin worker-side SDK.
+ * Core types for the NoralOS plugin worker-side SDK.
  *
  * These types define the stable public API surface that plugin workers import
- * from `@paperclipai/plugin-sdk`.  The host provides a concrete implementation
+ * from `@noralos/plugin-sdk`.  The host provides a concrete implementation
  * of `PluginContext` to the plugin at initialisation time.
  *
  * @see PLUGIN_SPEC.md §14 — SDK Surface
@@ -10,7 +10,7 @@
  */
 
 import type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginStateScopeKind,
   PluginEventType,
   PluginToolDeclaration,
@@ -39,6 +39,7 @@ import type {
   RoutineRun,
   Agent,
   Goal,
+<<<<<<< v2026.525.0
   HumanCompanyMembershipRole,
   InviteJoinType,
   MembershipStatus,
@@ -47,13 +48,16 @@ import type {
   PrincipalType,
 } from "@paperclipai/shared";
 import type { PluginPerformActionContext } from "./protocol.js";
+=======
+} from "@noralos/shared";
+>>>>>>> master
 
 // ---------------------------------------------------------------------------
-// Re-exports from @paperclipai/shared (plugin authors import from one place)
+// Re-exports from @noralos/shared (plugin authors import from one place)
 // ---------------------------------------------------------------------------
 
 export type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginJobDeclaration,
   PluginWebhookDeclaration,
   PluginToolDeclaration,
@@ -127,6 +131,7 @@ export type {
   IssueSurfaceVisibility,
   Agent,
   Goal,
+<<<<<<< v2026.525.0
   HumanCompanyMembershipRole,
   InviteJoinType,
   MembershipStatus,
@@ -134,6 +139,9 @@ export type {
   PrincipalPermissionGrant,
   PrincipalType,
 } from "@paperclipai/shared";
+=======
+} from "@noralos/shared";
+>>>>>>> master
 
 // ---------------------------------------------------------------------------
 // Scope key — identifies where plugin state is stored
@@ -151,7 +159,7 @@ export type {
  * @see PLUGIN_SPEC.md §21.3 `plugin_state`
  */
 export interface ScopeKey {
-  /** What kind of Paperclip object this state is scoped to. */
+  /** What kind of NoralOS object this state is scoped to. */
   scopeKind: PluginStateScopeKind;
   /** UUID or text identifier for the scoped object. Omit for `instance` scope. */
   scopeId?: string;
@@ -249,6 +257,22 @@ export interface ToolRunContext {
   companyId: string;
   /** UUID of the project the run belongs to. */
   projectId: string;
+  /**
+   * Better Auth user ID of the human who triggered this run, when known.
+   * Present for user-initiated runs (chat, wakeup with actorType="user");
+   * null for system-triggered or agent-chained runs.
+   *
+   * Plugins that call external systems on behalf of the triggering user
+   * (e.g. noralai.noralvoice creating workflows owned by the user) can
+   * forward this as a delegated-identity assertion.
+   */
+  triggeredByUserId?: string | null;
+  /**
+   * Email of the triggering user, when known. Used by external systems
+   * for JIT-provisioning on first sight of a NoralOS user. Sent alongside
+   * `triggeredByUserId` only.
+   */
+  triggeredByUserEmail?: string | null;
 }
 
 /**
@@ -283,7 +307,7 @@ export interface PluginEntityUpsert {
   scopeId?: string;
   /** External identifier in the remote system (e.g. Linear issue ID). */
   externalId?: string;
-  /** Human-readable title for display in the Paperclip UI. */
+  /** Human-readable title for display in the NoralOS UI. */
   title?: string;
   /** Optional status string. */
   status?: string;
@@ -515,7 +539,7 @@ export interface PluginLocalFoldersClient {
 }
 
 /**
- * `ctx.events` — subscribe to and emit Paperclip domain events.
+ * `ctx.events` — subscribe to and emit NoralOS domain events.
  *
  * Requires `events.subscribe` capability for `on()`.
  * Requires `events.emit` capability for `emit()`.
@@ -524,7 +548,7 @@ export interface PluginLocalFoldersClient {
  */
 export interface PluginEventsClient {
   /**
-   * Subscribe to a core Paperclip domain event or a plugin-namespaced event.
+   * Subscribe to a core NoralOS domain event or a plugin-namespaced event.
    *
    * @param name - Event type, e.g. `"issue.created"` or `"plugin.@acme/linear.sync-done"`
    * @param fn - Async event handler
@@ -638,7 +662,7 @@ export interface PluginHttpClient {
  * Requires `secrets.read-ref` capability.
  *
  * Plugins store secret *references* in their config (e.g. a secret name).
- * This client resolves the reference through the Paperclip secret provider
+ * This client resolves the reference through the NoralOS secret provider
  * system and returns the resolved value at execution time.
  *
  * @see PLUGIN_SPEC.md §22 — Secrets
@@ -648,7 +672,7 @@ export interface PluginSecretsClient {
    * Resolve a secret reference to its current value.
    *
    * The reference is a string identifier pointing to a secret configured
-   * in the Paperclip secret provider (e.g. `"MY_API_KEY"`).
+   * in the NoralOS secret provider (e.g. `"MY_API_KEY"`).
    *
    * Secret values are resolved at call time and must never be cached or
    * written to logs, config, or other persistent storage.
@@ -1471,6 +1495,27 @@ export interface PluginIssuesClient {
 export interface PluginAgentsClient {
   list(input: { companyId: string; status?: Agent["status"]; limit?: number; offset?: number }): Promise<Agent[]>;
   get(agentId: string, companyId: string): Promise<Agent | null>;
+  /**
+   * Create a new agent in the given company. Requires `agents.write`
+   * capability. The host validates the company, deduplicates the name,
+   * normalises permissions for the role, and returns the persisted
+   * agent row. Used by plugins that ship agent templates (e.g. the
+   * NoralVoice plugin's Voice Director template).
+   */
+  create(input: {
+    companyId: string;
+    name: string;
+    role: string;
+    title?: string;
+    reportsTo?: string | null;
+    capabilities?: string;
+    adapterType?: string | null;
+    adapterConfig?: Record<string, unknown>;
+    runtimeConfig?: Record<string, unknown>;
+    defaultEnvironmentId?: string | null;
+    budgetMonthlyCents?: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<Agent>;
   /** Pause an agent. Throws if agent is terminated or not found. Requires `agents.pause`. */
   pause(agentId: string, companyId: string): Promise<Agent>;
   /** Resume a paused agent (sets status to idle). Throws if terminated, pending_approval, or not found. Requires `agents.resume`. */
@@ -1550,6 +1595,19 @@ export interface PluginAgentSessionsClient {
     prompt: string;
     reason?: string;
     onEvent?: (event: AgentSessionEvent) => void;
+    /**
+     * Optional shallow override applied on top of the agent's stored
+     * `adapter_config` for THIS run only. Host shallow-merges with highest
+     * precedence in `mergeModelProfileAdapterConfig` (after model-profile
+     * and issue-assignee overrides). Never persisted to
+     * `agents.adapter_config`.
+     *
+     * Use case: the Conference Room bridge sends a lightweight runtime
+     * profile (e.g. `chrome:false`, low `maxTurnsPerRun`) for
+     * conversational voice without changing the agent's base config used
+     * for issue/heartbeat work.
+     */
+    adapterConfigOverrides?: Record<string, unknown>;
   }): Promise<AgentSessionSendResult>;
 
   /** Close a session, releasing resources. Requires `agent.sessions.close`. */
@@ -1779,7 +1837,7 @@ export interface PluginAuthorizationClient {
  * ctx.streams.close("chat");
  * ```
  *
- * @see usePluginStream in `@paperclipai/plugin-sdk/ui`
+ * @see usePluginStream in `@noralos/plugin-sdk/ui`
  */
 export interface PluginStreamsClient {
   /**
@@ -1816,7 +1874,7 @@ export interface PluginStreamsClient {
  *
  * @example
  * ```ts
- * import { definePlugin } from "@paperclipai/plugin-sdk";
+ * import { definePlugin } from "@noralos/plugin-sdk";
  *
  * export default definePlugin({
  *   async setup(ctx) {
@@ -1836,7 +1894,7 @@ export interface PluginStreamsClient {
  */
 export interface PluginContext {
   /** The plugin's manifest as validated at install time. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: NoralosPluginManifestV1;
 
   /** Read resolved operator configuration. */
   config: PluginConfigClient;

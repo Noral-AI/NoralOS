@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execute } from "@paperclipai/adapter-pi-local/server";
+import { execute } from "@noralos/adapter-pi-local/server";
 
 async function writeFakePiCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
@@ -129,7 +129,7 @@ describe("pi_local execute", () => {
           cwd: workspace,
           model: "google/gemini-3-flash-preview",
           promptTemplate: "Keep working.",
-          paperclipRuntimeSkills: [
+          noralosRuntimeSkills: [
             { key: "demo-skill", runtimeName: "demo-skill", source: skillDir, required: true },
           ],
         },
@@ -185,9 +185,9 @@ describe("pi_local execute", () => {
           cwd: workspace,
           model: "google/gemini-3-flash-preview",
           promptTemplate: "Keep working.",
-          // required:false with no explicit paperclipSkillSync preference →
-          // resolvePaperclipDesiredSkillNames returns [] → skill is not injected.
-          paperclipRuntimeSkills: [
+          // required:false with no explicit noralosSkillSync preference →
+          // resolveNoralosDesiredSkillNames returns [] → skill is not injected.
+          noralosRuntimeSkills: [
             { key: "not-injected", runtimeName: "not-injected", source: nonInjectedSkillDir, required: false },
           ],
         },

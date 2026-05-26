@@ -264,7 +264,7 @@ describe.sequential("adapter management route authorization", () => {
     unregisterServerAdapter(EXTERNAL_ADAPTER_TYPE);
     setOverridePaused("claude_local", false);
     mocks.listAdapterPlugins.mockImplementation(() => [...mocks.externalRecords.values()]);
-    mocks.getAdapterPluginsDir.mockReturnValue("/tmp/paperclip-adapter-route-authz-test");
+    mocks.getAdapterPluginsDir.mockReturnValue("/tmp/noralos-adapter-route-authz-test");
     mocks.getDisabledAdapterTypes.mockReturnValue([]);
     mocks.setAdapterDisabled.mockReturnValue(true);
     mocks.buildExternalAdapters.mockResolvedValue([]);

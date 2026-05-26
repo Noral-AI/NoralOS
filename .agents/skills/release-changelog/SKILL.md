@@ -1,17 +1,17 @@
 ---
 name: release-changelog
 description: >
-  Generate the stable Paperclip release changelog at releases/vYYYY.MDD.P.md by
+  Generate the stable NoralOS release changelog at releases/vYYYY.MDD.P.md by
   reading commits, changesets, and merged PR context since the last stable tag.
 ---
 
 # Release Changelog Skill
 
-Generate the user-facing changelog for the **stable** Paperclip release.
+Generate the user-facing changelog for the **stable** NoralOS release.
 
 ## Versioning Model
 
-Paperclip uses **calendar versioning (calver)**:
+NoralOS uses **calendar versioning (calver)**:
 
 - Stable releases: `YYYY.MDD.P` (e.g. `2026.318.0`)
 - Canary releases: `YYYY.MDD.P-canary.N` (e.g. `2026.318.1-canary.0`)
@@ -178,7 +178,7 @@ real name or email). To find GitHub usernames:
 **Never expose contributor email addresses.** Use `@username` only.
 
 Exclude bot accounts (e.g. `lockfile-bot`, `dependabot`) from the list.
-Exclude Paperclip founders from the list (e.g. `cryppadotta`, `forgottendev`, `devinfoley`, `sockmonster`, `scotttong`)
+Exclude NoralOS founders from the list (e.g. `cryppadotta`, `forgottendev`, `devinfoley`, `sockmonster`, `scotttong`)
 
 List contributors in alphabetical order by GitHub username (case-insensitive).
 

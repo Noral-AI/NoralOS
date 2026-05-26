@@ -1,3 +1,4 @@
+<<<<<<< v2026.525.0
 import type {
   AdapterModel,
   AdapterModelProfileDefinition,
@@ -20,6 +21,10 @@ import {
   agentConfigurationDoc as acpxAgentConfigurationDoc,
   models as acpxModels,
 } from "@paperclipai/adapter-acpx-local";
+=======
+import type { AdapterModelProfileDefinition, ServerAdapterModule } from "./types.js";
+import { getAdapterSessionManagement } from "@noralos/adapter-utils";
+>>>>>>> master
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -28,12 +33,20 @@ import {
   testEnvironment as claudeTestEnvironment,
   sessionCodec as claudeSessionCodec,
   getQuotaWindows as claudeGetQuotaWindows,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-claude-local/server";
+=======
+} from "@noralos/adapter-claude-local/server";
+>>>>>>> master
 import {
   agentConfigurationDoc as claudeAgentConfigurationDoc,
   models as claudeModels,
   modelProfiles as claudeModelProfiles,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-claude-local";
+=======
+} from "@noralos/adapter-claude-local";
+>>>>>>> master
 import {
   execute as codexExecute,
   listCodexSkills,
@@ -41,23 +54,36 @@ import {
   testEnvironment as codexTestEnvironment,
   sessionCodec as codexSessionCodec,
   getQuotaWindows as codexGetQuotaWindows,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-codex-local/server";
+=======
+} from "@noralos/adapter-codex-local/server";
+>>>>>>> master
 import {
   agentConfigurationDoc as codexAgentConfigurationDoc,
   models as codexModels,
   modelProfiles as codexModelProfiles,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-codex-local";
+=======
+} from "@noralos/adapter-codex-local";
+>>>>>>> master
 import {
   execute as cursorExecute,
   listCursorSkills,
   syncCursorSkills,
   testEnvironment as cursorTestEnvironment,
   sessionCodec as cursorSessionCodec,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-cursor-local/server";
+=======
+} from "@noralos/adapter-cursor-local/server";
+>>>>>>> master
 import {
   agentConfigurationDoc as cursorAgentConfigurationDoc,
   models as cursorModels,
   modelProfiles as cursorModelProfiles,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-cursor-local";
 import {
   execute as cursorCloudExecute,
@@ -66,17 +92,25 @@ import {
   testEnvironment as cursorCloudTestEnvironment,
 } from "@paperclipai/adapter-cursor-cloud/server";
 import { agentConfigurationDoc as cursorCloudAgentConfigurationDoc } from "@paperclipai/adapter-cursor-cloud";
+=======
+} from "@noralos/adapter-cursor-local";
+>>>>>>> master
 import {
   execute as geminiExecute,
   listGeminiSkills,
   syncGeminiSkills,
   testEnvironment as geminiTestEnvironment,
   sessionCodec as geminiSessionCodec,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-gemini-local/server";
+=======
+} from "@noralos/adapter-gemini-local/server";
+>>>>>>> master
 import {
   agentConfigurationDoc as geminiAgentConfigurationDoc,
   models as geminiModels,
   modelProfiles as geminiModelProfiles,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-gemini-local";
 import {
   execute as grokExecute,
@@ -89,6 +123,9 @@ import {
   agentConfigurationDoc as grokAgentConfigurationDoc,
   models as grokModels,
 } from "@paperclipai/adapter-grok-local";
+=======
+} from "@noralos/adapter-gemini-local";
+>>>>>>> master
 import {
   execute as openCodeExecute,
   listOpenCodeSkills,
@@ -96,20 +133,24 @@ import {
   testEnvironment as openCodeTestEnvironment,
   sessionCodec as openCodeSessionCodec,
   listOpenCodeModels,
-} from "@paperclipai/adapter-opencode-local/server";
+} from "@noralos/adapter-opencode-local/server";
 import {
   agentConfigurationDoc as openCodeAgentConfigurationDoc,
   models as openCodeModels,
   modelProfiles as openCodeModelProfiles,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-opencode-local";
+=======
+} from "@noralos/adapter-opencode-local";
+>>>>>>> master
 import {
   execute as openclawGatewayExecute,
   testEnvironment as openclawGatewayTestEnvironment,
-} from "@paperclipai/adapter-openclaw-gateway/server";
+} from "@noralos/adapter-openclaw-gateway/server";
 import {
   agentConfigurationDoc as openclawGatewayAgentConfigurationDoc,
   models as openclawGatewayModels,
-} from "@paperclipai/adapter-openclaw-gateway";
+} from "@noralos/adapter-openclaw-gateway";
 import { listCodexModels, refreshCodexModels } from "./codex-models.js";
 import { listCursorModels } from "./cursor-models.js";
 import {
@@ -119,11 +160,15 @@ import {
   testEnvironment as piTestEnvironment,
   sessionCodec as piSessionCodec,
   listPiModels,
-} from "@paperclipai/adapter-pi-local/server";
+} from "@noralos/adapter-pi-local/server";
 import {
   agentConfigurationDoc as piAgentConfigurationDoc,
   modelProfiles as piModelProfiles,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-pi-local";
+=======
+} from "@noralos/adapter-pi-local";
+>>>>>>> master
 import {
   execute as hermesExecute,
   testEnvironment as hermesTestEnvironment,
@@ -141,6 +186,7 @@ import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+import { BROOKLYN_ADAPTER_TYPE, wrapBrooklynAdapter } from "./brooklyn-secret-ref.js";
 
 function readConfiguredCommand(config: Record<string, unknown>, fallback: string): string {
   const value = typeof config.command === "string" ? config.command.trim() : "";
@@ -447,24 +493,24 @@ const hermesLocalAdapter: ServerAdapterModule = {
         ? (existingConfig.env as Record<string, string>)
         : {};
     const explicitApiKey =
-      typeof existingEnv.PAPERCLIP_API_KEY === "string" && existingEnv.PAPERCLIP_API_KEY.trim().length > 0;
+      typeof existingEnv.NORALOS_API_KEY === "string" && existingEnv.NORALOS_API_KEY.trim().length > 0;
     const promptTemplate =
       typeof existingConfig.promptTemplate === "string" && existingConfig.promptTemplate.trim().length > 0
         ? existingConfig.promptTemplate
         : "";
     const authGuardPrompt = [
-      "Paperclip API safety rule:",
-      "Use Authorization: Bearer $PAPERCLIP_API_KEY on every Paperclip API request.",
-      "Use X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID on every Paperclip API request that writes or mutates data, including comments and issue updates.",
-      "Never use a board, browser, or local-board session for Paperclip API writes.",
+      "NoralOS API safety rule:",
+      "Use Authorization: Bearer $NORALOS_API_KEY on every NoralOS API request.",
+      "Use X-NoralOS-Run-Id: $NORALOS_RUN_ID on every NoralOS API request that writes or mutates data, including comments and issue updates.",
+      "Never use a board, browser, or local-board session for NoralOS API writes.",
     ].join("\n");
 
     const patchedConfig: Record<string, unknown> = {
       ...existingConfig,
       env: {
         ...existingEnv,
-        ...(!explicitApiKey ? { PAPERCLIP_API_KEY: normalizedCtx.authToken } : {}),
-        PAPERCLIP_RUN_ID: normalizedCtx.runId,
+        ...(!explicitApiKey ? { NORALOS_API_KEY: normalizedCtx.authToken } : {}),
+        NORALOS_RUN_ID: normalizedCtx.runId,
       },
     };
 
@@ -564,13 +610,23 @@ function getDisabledAdapterTypesFromStore(): string[] {
 export function resolveExternalAdapterRegistration(
   externalAdapter: ServerAdapterModule,
 ): ServerAdapterModule {
-  return {
+  const withSession: ServerAdapterModule = {
     ...externalAdapter,
     sessionManagement:
       externalAdapter.sessionManagement
         ?? getAdapterSessionManagement(externalAdapter.type)
         ?? undefined,
   };
+  // Brooklyn-specific host-layer concern: resolve `company-secret:<id>`
+  // references on `adapterConfig.apiKeyRef` to plaintext immediately
+  // before the adapter's `execute()` runs. The wrap is applied here
+  // (not inside the plugin) so the resolution layer has access to the
+  // server's `Db` handle and integration-credentials authorization
+  // checks. See `brooklyn-secret-ref.ts` for the full rationale.
+  if (withSession.type === BROOKLYN_ADAPTER_TYPE) {
+    return wrapBrooklynAdapter(withSession);
+  }
+  return withSession;
 }
 
 /**

@@ -116,6 +116,32 @@ export const pluginToolDeclarationSchema = z.object({
   parametersSchema: jsonSchemaSchema,
 });
 
+/**
+ * Validates a {@link PluginReverseToolDeclaration} — a tool the plugin
+ * accepts inbound from an external system via its reverse-RPC endpoint.
+ * Used by NoralVoice's `noralos://<pluginId>/<toolName>` URL scheme.
+ *
+ * Tool name is lower snake_case for parity with the existing
+ * agent-tool naming convention and the NoralVoice executor's
+ * client-side validation.
+ */
+export const pluginReverseToolDeclarationSchema = z.object({
+  toolName: z
+    .string()
+    .min(1)
+    .regex(
+      /^[a-z][a-z0-9_]*$/,
+      "Reverse-tool name must be lower snake_case (start with a letter, then letters/digits/underscores)",
+    ),
+  displayName: z.string().min(1),
+  description: z.string().min(1),
+  parametersSchema: jsonSchemaSchema,
+});
+
+export type PluginReverseToolDeclarationInput = z.infer<
+  typeof pluginReverseToolDeclarationSchema
+>;
+
 export const pluginEnvironmentDriverDeclarationSchema = z.object({
   driverKey: z.string().min(1).regex(
     /^[a-z0-9][a-z0-9._-]*$/,
@@ -572,7 +598,7 @@ export type PluginApiRouteDeclarationInput = z.infer<typeof pluginApiRouteDeclar
 // ---------------------------------------------------------------------------
 
 /**
- * Zod schema for {@link PaperclipPluginManifestV1} — the complete runtime
+ * Zod schema for {@link NoralosPluginManifestV1} — the complete runtime
  * validator for plugin manifests read at install time.
  *
  * Field-level constraints (see PLUGIN_SPEC.md §10.1 for the normative rules):
@@ -587,7 +613,7 @@ export type PluginApiRouteDeclarationInput = z.infer<typeof pluginApiRouteDeclar
  * | `author`                 | string     | 1–200 chars                                  |
  * | `categories`             | enum[]     | at least one; values from PLUGIN_CATEGORIES  |
  * | `minimumHostVersion`     | string?    | semver lower bound if present, no leading `v`|
- * | `minimumPaperclipVersion`| string?    | legacy alias of `minimumHostVersion`         |
+ * | `minimumNoralosVersion`| string?    | legacy alias of `minimumHostVersion`         |
  * | `capabilities`           | enum[]     | at least one; values from PLUGIN_CAPABILITIES|
  * | `entrypoints.worker`     | string     | min 1 char                                   |
  * | `entrypoints.ui`         | string?    | required when `ui.slots` is declared         |
@@ -605,7 +631,7 @@ export type PluginApiRouteDeclarationInput = z.infer<typeof pluginApiRouteDeclar
  * - duplicate `ui.slots[].id` values are rejected
  *
  * @see PLUGIN_SPEC.md §10.1 — Manifest shape
- * @see {@link PaperclipPluginManifestV1} — the inferred TypeScript type
+ * @see {@link NoralosPluginManifestV1} — the inferred TypeScript type
  */
 export const pluginManifestV1Schema = z.object({
   id: z.string().min(1).regex(
@@ -625,9 +651,9 @@ export const pluginManifestV1Schema = z.object({
     /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
     "minimumHostVersion must follow semver (e.g. 1.0.0)",
   ).optional(),
-  minimumPaperclipVersion: z.string().regex(
+  minimumNoralosVersion: z.string().regex(
     /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
-    "minimumPaperclipVersion must follow semver (e.g. 1.0.0)",
+    "minimumNoralosVersion must follow semver (e.g. 1.0.0)",
   ).optional(),
   capabilities: z.array(z.enum(PLUGIN_CAPABILITIES)).min(1),
   entrypoints: z.object({
@@ -640,6 +666,7 @@ export const pluginManifestV1Schema = z.object({
   tools: z.array(pluginToolDeclarationSchema).optional(),
   database: pluginDatabaseDeclarationSchema.optional(),
   apiRoutes: z.array(pluginApiRouteDeclarationSchema).optional(),
+  reverseTools: z.array(pluginReverseToolDeclarationSchema).optional(),
   environmentDrivers: z.array(pluginEnvironmentDriverDeclarationSchema).optional(),
   agents: z.array(pluginManagedAgentDeclarationSchema).optional(),
   projects: z.array(pluginManagedProjectDeclarationSchema).optional(),
@@ -667,12 +694,12 @@ export const pluginManifestV1Schema = z.object({
 
   if (
     manifest.minimumHostVersion
-    && manifest.minimumPaperclipVersion
-    && manifest.minimumHostVersion !== manifest.minimumPaperclipVersion
+    && manifest.minimumNoralosVersion
+    && manifest.minimumHostVersion !== manifest.minimumNoralosVersion
   ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "minimumHostVersion and minimumPaperclipVersion must match when both are declared",
+      message: "minimumHostVersion and minimumNoralosVersion must match when both are declared",
       path: ["minimumHostVersion"],
     });
   }

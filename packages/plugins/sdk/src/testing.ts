@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { pluginOperationIssueOriginKind } from "@paperclipai/shared";
 import type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginCapability,
   PluginEventType,
   PluginIssueOriginKind,
@@ -20,7 +20,7 @@ import type {
   IssueDocument,
   Agent,
   Goal,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import type {
   EventFilter,
   PluginContext,
@@ -63,7 +63,7 @@ import type {
 
 export interface TestHarnessOptions {
   /** Plugin manifest used to seed capability checks and metadata. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: NoralosPluginManifestV1;
   /** Optional capability override. Defaults to `manifest.capabilities`. */
   capabilities?: PluginCapability[];
   /** Initial config returned by `ctx.config.get()`. */
@@ -417,7 +417,7 @@ function allowsEvent(filter: EventFilter | undefined, event: PluginEvent): boole
   return true;
 }
 
-function requireCapability(manifest: PaperclipPluginManifestV1, allowed: Set<PluginCapability>, capability: PluginCapability) {
+function requireCapability(manifest: NoralosPluginManifestV1, allowed: Set<PluginCapability>, capability: PluginCapability) {
   if (allowed.has(capability)) return;
   throw new Error(`Plugin '${manifest.id}' is missing required capability '${capability}' in test harness`);
 }
@@ -438,7 +438,7 @@ function isInCompany<T extends { companyId: string | null | undefined }>(
  * Create an in-memory host harness for plugin worker tests.
  *
  * The harness enforces declared capabilities and simulates host APIs, so tests
- * can validate plugin behavior without spinning up the Paperclip server runtime.
+ * can validate plugin behavior without spinning up the NoralOS server runtime.
  */
 export function createTestHarness(options: TestHarnessOptions): TestHarness {
   const manifest = options.manifest;
@@ -1845,6 +1845,35 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
         const agent = agents.get(agentId);
         return isInCompany(agent, companyId) ? agent : null;
       },
+      async create(input) {
+        requireCapability(manifest, capabilitySet, "agents.write");
+        const companyId = requireCompanyId(input.companyId);
+        const id = randomUUID();
+        const now = new Date();
+        const agent: Agent = {
+          id,
+          companyId,
+          name: input.name,
+          role: input.role,
+          title: input.title ?? null,
+          reportsTo: input.reportsTo ?? null,
+          status: "idle",
+          permissions: [],
+          capabilities: input.capabilities ?? null,
+          adapterType: input.adapterType ?? null,
+          adapterConfig: input.adapterConfig ?? {},
+          runtimeConfig: input.runtimeConfig ?? {},
+          defaultEnvironmentId: input.defaultEnvironmentId ?? null,
+          budgetMonthlyCents: input.budgetMonthlyCents ?? 0,
+          metadata: input.metadata ?? {},
+          pauseReason: null,
+          pausedAt: null,
+          createdAt: now,
+          updatedAt: now,
+        } as unknown as Agent;
+        agents.set(id, agent);
+        return agent;
+      },
       async pause(agentId, companyId) {
         requireCapability(manifest, capabilitySet, "agents.pause");
         const cid = requireCompanyId(companyId);
@@ -2378,6 +2407,8 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
         runId: runCtx.runId ?? randomUUID(),
         companyId: runCtx.companyId ?? "company-test",
         projectId: runCtx.projectId ?? "project-test",
+        triggeredByUserId: runCtx.triggeredByUserId ?? null,
+        triggeredByUserEmail: runCtx.triggeredByUserEmail ?? null,
       };
       return await handler(params, ctxToPass) as T;
     },

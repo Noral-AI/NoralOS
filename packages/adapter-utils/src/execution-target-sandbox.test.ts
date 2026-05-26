@@ -13,7 +13,11 @@ import {
   resolveAdapterExecutionTargetTimeoutSec,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
+<<<<<<< v2026.525.0
   startAdapterExecutionTargetPaperclipBridge,
+=======
+  startAdapterExecutionTargetNoralosBridge,
+>>>>>>> master
   type AdapterSandboxExecutionTarget,
 } from "./execution-target.js";
 import { runChildProcess } from "./server-utils.js";
@@ -22,7 +26,10 @@ describe("sandbox adapter execution targets", () => {
   const cleanupDirs: string[] = [];
 
   afterEach(async () => {
+<<<<<<< v2026.525.0
     vi.unstubAllEnvs();
+=======
+>>>>>>> master
     while (cleanupDirs.length > 0) {
       const dir = cleanupDirs.pop();
       if (!dir) continue;
@@ -44,8 +51,12 @@ describe("sandbox adapter execution targets", () => {
         onSpawn?: (meta: { pid: number; startedAt: string }) => Promise<void>;
       }) => {
         counter += 1;
+<<<<<<< v2026.525.0
         const command = input.command === "bash" ? "/bin/bash" : input.command;
         return runChildProcess(`sandbox-run-${counter}`, command, input.args ?? [], {
+=======
+        return runChildProcess(`sandbox-run-${counter}`, input.command, input.args ?? [], {
+>>>>>>> master
           cwd: input.cwd ?? process.cwd(),
           env: input.env ?? {},
           stdin: input.stdin,
@@ -109,6 +120,7 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd: "/workspace",
+      noralosTransport: "bridge",
     });
   });
 
@@ -228,6 +240,7 @@ describe("sandbox adapter execution targets", () => {
     }));
   });
 
+<<<<<<< v2026.525.0
   it("strips inherited host identity env before sandbox execution", async () => {
     vi.stubEnv("PATH", "/host/bin:/usr/bin");
     vi.stubEnv("HOME", "/Users/local");
@@ -377,6 +390,9 @@ describe("sandbox adapter execution targets", () => {
   });
 
   it("starts a localhost Paperclip bridge for sandbox targets in bridge mode", async () => {
+=======
+  it("starts a localhost NoralOS bridge for sandbox targets in bridge mode", async () => {
+>>>>>>> master
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");
@@ -410,11 +426,19 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd,
+<<<<<<< v2026.525.0
+=======
+      noralosTransport: "bridge",
+>>>>>>> master
       runner: createLocalSandboxRunner(),
       timeoutMs: 30_000,
     };
 
+<<<<<<< v2026.525.0
     const bridge = await startAdapterExecutionTargetPaperclipBridge({
+=======
+    const bridge = await startAdapterExecutionTargetNoralosBridge({
+>>>>>>> master
       runId: "run-bridge",
       target,
       runtimeRootDir,
@@ -424,6 +448,7 @@ describe("sandbox adapter execution targets", () => {
     });
     try {
       expect(bridge).not.toBeNull();
+<<<<<<< v2026.525.0
       expect(bridge?.env.PAPERCLIP_API_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
       expect(bridge?.env.PAPERCLIP_API_KEY).not.toBe("real-run-jwt");
       expect(bridge?.env.PAPERCLIP_API_BRIDGE_MODE).toBe("queue_v1");
@@ -431,6 +456,15 @@ describe("sandbox adapter execution targets", () => {
       const response = await fetch(`${bridge!.env.PAPERCLIP_API_URL}/api/agents/me`, {
         headers: {
           authorization: `Bearer ${bridge!.env.PAPERCLIP_API_KEY}`,
+=======
+      expect(bridge?.env.NORALOS_API_URL).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(bridge?.env.NORALOS_API_KEY).not.toBe("real-run-jwt");
+      expect(bridge?.env.NORALOS_API_BRIDGE_MODE).toBe("queue_v1");
+
+      const response = await fetch(`${bridge!.env.NORALOS_API_URL}/api/agents/me`, {
+        headers: {
+          authorization: `Bearer ${bridge!.env.NORALOS_API_KEY}`,
+>>>>>>> master
           accept: "application/json",
         },
       });
@@ -449,6 +483,7 @@ describe("sandbox adapter execution targets", () => {
     }
   });
 
+<<<<<<< v2026.525.0
   it("uses the effective adapter timeout when starting the sandbox callback bridge", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-timeout-"));
     cleanupDirs.push(rootDir);
@@ -503,6 +538,8 @@ describe("sandbox adapter execution targets", () => {
     }
   });
 
+=======
+>>>>>>> master
   it("fails oversized host responses with a 502 before returning them to the sandbox client", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-limit-"));
     cleanupDirs.push(rootDir);
@@ -541,11 +578,19 @@ describe("sandbox adapter execution targets", () => {
       environmentId: "env-1",
       leaseId: "lease-1",
       remoteCwd,
+<<<<<<< v2026.525.0
+=======
+      noralosTransport: "bridge",
+>>>>>>> master
       runner: createLocalSandboxRunner(),
       timeoutMs: 30_000,
     };
 
+<<<<<<< v2026.525.0
     const bridge = await startAdapterExecutionTargetPaperclipBridge({
+=======
+    const bridge = await startAdapterExecutionTargetNoralosBridge({
+>>>>>>> master
       runId: "run-bridge-limit",
       target,
       runtimeRootDir,
@@ -555,9 +600,15 @@ describe("sandbox adapter execution targets", () => {
       maxBodyBytes: 32,
     });
     try {
+<<<<<<< v2026.525.0
       const response = await fetch(`${bridge!.env.PAPERCLIP_API_URL}/api/agents/me`, {
         headers: {
           authorization: `Bearer ${bridge!.env.PAPERCLIP_API_KEY}`,
+=======
+      const response = await fetch(`${bridge!.env.NORALOS_API_URL}/api/agents/me`, {
+        headers: {
+          authorization: `Bearer ${bridge!.env.NORALOS_API_KEY}`,
+>>>>>>> master
           accept: "application/json",
         },
       });

@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import type { Db } from "@noralos/db";
 import type { Db } from "@paperclipai/db";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import {
   documents,
   heartbeatRuns,
@@ -8,7 +9,7 @@ import {
   issueDocuments,
   issueThreadInteractions,
   issues,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import type {
   AcceptIssueThreadInteraction,
   AskUserQuestionsAnswer,
@@ -22,7 +23,7 @@ import type {
   RespondIssueThreadInteraction,
   SuggestTasksInteraction,
   SuggestTasksResultCreatedTask,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   acceptIssueThreadInteractionSchema,
   askUserQuestionsPayloadSchema,
@@ -34,7 +35,7 @@ import {
   requestConfirmationResultSchema,
   suggestTasksPayloadSchema,
   suggestTasksResultSchema,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { issueService } from "./issues.js";
 
@@ -625,6 +626,35 @@ export function issueThreadInteractionService(db: Db) {
         .orderBy(asc(issueThreadInteractions.createdAt), asc(issueThreadInteractions.id));
 
       return rows.map((row) => hydrateInteraction(row));
+    },
+
+    listPendingConfirmationsForCompany: async (companyId: string) => {
+      const rows = await db
+        .select({
+          interaction: issueThreadInteractions,
+          issueId: issues.id,
+          issueIdentifier: issues.identifier,
+          issueTitle: issues.title,
+        })
+        .from(issueThreadInteractions)
+        .innerJoin(issues, eq(issueThreadInteractions.issueId, issues.id))
+        .where(
+          and(
+            eq(issueThreadInteractions.companyId, companyId),
+            eq(issueThreadInteractions.kind, "request_confirmation"),
+            eq(issueThreadInteractions.status, "pending"),
+          ),
+        )
+        .orderBy(asc(issueThreadInteractions.createdAt), asc(issueThreadInteractions.id));
+
+      return rows.map((row) => ({
+        interaction: hydrateInteraction(row.interaction) as RequestConfirmationInteraction,
+        issue: {
+          id: row.issueId,
+          identifier: row.issueIdentifier,
+          title: row.issueTitle,
+        },
+      }));
     },
 
     getById: async (interactionId: string) => {

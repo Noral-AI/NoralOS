@@ -20,9 +20,10 @@ import {
 import { StatusIcon } from "./StatusIcon";
 import { PriorityIcon } from "./PriorityIcon";
 import { Identity } from "./Identity";
+import { isSuccessfulRunHandoffRequired } from "../lib/successful-run-handoff";
+import type { Issue } from "@noralos/shared";
 import type { Issue, IssueStatus } from "@paperclipai/shared";
 import { AlertTriangle } from "lucide-react";
-import { isSuccessfulRunHandoffRequired } from "../lib/successful-run-handoff";
 
 export const KANBAN_BOARD_HIGH_VOLUME_THRESHOLD = 100;
 export const KANBAN_COLUMN_PAGE_SIZE_OPTIONS = [10, 25, 50] as const;

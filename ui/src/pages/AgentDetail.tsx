@@ -8,6 +8,7 @@ import {
   type AgentPermissionUpdate,
 } from "../api/agents";
 import { companySkillsApi } from "../api/companySkills";
+import { departmentsApi } from "../api/departments";
 import { budgetsApi } from "../api/budgets";
 import { heartbeatsApi } from "../api/heartbeats";
 import { instanceSettingsApi } from "../api/instanceSettings";
@@ -25,6 +26,7 @@ import { queryKeys } from "../lib/queryKeys";
 import { AgentConfigForm } from "../components/AgentConfigForm";
 import { PageTabBar } from "../components/PageTabBar";
 import { adapterLabels, roleLabels, help } from "../components/agent-config-primitives";
+import { getAdapterLabel } from "@/adapters/adapter-display-registry";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useAdapterCapabilities } from "@/adapters/use-adapter-capabilities";
 import { redactCommandText as redactCommandSecretText } from "@paperclipai/adapter-utils";
@@ -53,6 +55,7 @@ import { buildDuplicateAgentPayload, duplicateAgentName, type DuplicateInstructi
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
+import { PluginSlotMount, usePluginSlots } from "@/plugins/slots";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Popover,
@@ -79,6 +82,7 @@ import {
   ArrowLeft,
   HelpCircle,
   FolderOpen,
+  Building2,
 } from "lucide-react";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -99,8 +103,9 @@ import {
   type AgentRuntimeState,
   type LiveEvent,
   type WorkspaceOperation,
-} from "@paperclipai/shared";
-import { redactHomePathUserSegments, redactHomePathUserSegmentsInValue } from "@paperclipai/adapter-utils";
+  type Department,
+} from "@noralos/shared";
+import { redactHomePathUserSegments, redactHomePathUserSegmentsInValue } from "@noralos/adapter-utils";
 import { agentRouteRef } from "../lib/utils";
 import {
   applyAgentSkillSnapshot,
@@ -270,7 +275,14 @@ function scrollToContainerBottom(container: ScrollContainer, behavior: ScrollBeh
   container.scrollTo({ top: container.scrollHeight, behavior });
 }
 
-type AgentDetailView = "dashboard" | "instructions" | "configuration" | "skills" | "runs" | "budget";
+type AgentDetailView =
+  | "dashboard"
+  | "instructions"
+  | "configuration"
+  | "skills"
+  | "runs"
+  | "budget"
+  | `plugin:${string}`;
 
 function parseAgentDetailView(value: string | null): AgentDetailView {
   if (value === "instructions" || value === "prompts") return "instructions";
@@ -278,6 +290,7 @@ function parseAgentDetailView(value: string | null): AgentDetailView {
   if (value === "skills") return "skills";
   if (value === "budget") return "budget";
   if (value === "runs") return value;
+  if (value && value.startsWith("plugin:")) return value as `plugin:${string}`;
   return "dashboard";
 }
 
@@ -703,6 +716,23 @@ export function AgentDetail() {
   });
   const resolvedCompanyId = agent?.companyId ?? selectedCompanyId;
   const canonicalAgentRef = agent ? agentRouteRef(agent) : routeAgentRef;
+  const { slots: agentPluginDetailSlots } = usePluginSlots({
+    slotTypes: ["detailTab"],
+    entityType: "agent",
+    companyId: resolvedCompanyId,
+    enabled: !!resolvedCompanyId,
+  });
+  const agentPluginTabItems = useMemo(
+    () =>
+      agentPluginDetailSlots.map((slot) => ({
+        value: `plugin:${slot.pluginKey}:${slot.id}` as const,
+        label: slot.displayName,
+        slot,
+      })),
+    [agentPluginDetailSlots],
+  );
+  const activePluginTab =
+    agentPluginTabItems.find((it) => it.value === activeView) ?? null;
   const agentLookupRef = agent?.id ?? routeAgentRef;
   const resolvedAgentId = agent?.id ?? null;
 
@@ -797,7 +827,9 @@ export function AgentDetail() {
               ? "runs"
               : activeView === "budget"
                 ? "budget"
-              : "dashboard";
+                : typeof activeView === "string" && activeView.startsWith("plugin:")
+                  ? activeView
+                  : "dashboard";
     if (routeAgentRef !== canonicalAgentRef || urlTab !== canonicalTab) {
       navigate(`/agents/${canonicalAgentRef}/${canonicalTab}`, { replace: true });
       return;
@@ -921,6 +953,27 @@ export function AgentDetail() {
     },
   });
 
+  // Departments — listed for the assignment selector. Server filters to
+  // the active company; only fetched when we have one resolved.
+  const { data: departments } = useQuery<Department[]>({
+    queryKey: queryKeys.departments.list(resolvedCompanyId ?? ""),
+    queryFn: () => departmentsApi.list(resolvedCompanyId!),
+    enabled: Boolean(resolvedCompanyId),
+  });
+
+  const updateDepartment = useMutation({
+    mutationFn: (departmentId: string | null) =>
+      agentsApi.update(agentLookupRef, { departmentId }, resolvedCompanyId ?? undefined),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(routeAgentRef) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentLookupRef) });
+      if (resolvedCompanyId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(resolvedCompanyId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.departments.list(resolvedCompanyId) });
+      }
+    },
+  });
+
   const resetTaskSession = useMutation({
     mutationFn: (taskKey: string | null) =>
       agentsApi.resetSession(agentLookupRef, taskKey, resolvedCompanyId ?? undefined),
@@ -1020,6 +1073,29 @@ export function AgentDetail() {
               {roleLabels[agent.role] ?? agent.role}
               {agent.title ? ` - ${agent.title}` : ""}
             </p>
+            {/* Department selector — inline so it's visible without
+                drilling into a tab. Native <select> keeps the markup
+                light and avoids dragging in another shadcn primitive. */}
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Building2 className="h-3 w-3 shrink-0" />
+              <span>Department:</span>
+              <select
+                aria-label="Department"
+                value={agent.departmentId ?? ""}
+                disabled={updateDepartment.isPending}
+                onChange={(e) => {
+                  const next = e.target.value || null;
+                  if (next === (agent.departmentId ?? null)) return;
+                  updateDepartment.mutate(next);
+                }}
+                className="bg-transparent border border-border/50 rounded px-1.5 py-0.5 text-xs text-foreground hover:bg-accent/40 focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 cursor-pointer max-w-[180px] truncate"
+              >
+                <option value="">Unassigned</option>
+                {(departments ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -1124,6 +1200,7 @@ export function AgentDetail() {
               { value: "configuration", label: "Configuration" },
               { value: "runs", label: "Runs" },
               { value: "budget", label: "Budget" },
+              ...agentPluginTabItems.map(({ value, label }) => ({ value, label })),
             ]}
             value={activeView}
             onValueChange={(value) => navigate(`/agents/${canonicalAgentRef}/${value}`)}
@@ -1260,6 +1337,19 @@ export function AgentDetail() {
             variant="plain"
           />
         </div>
+      ) : null}
+
+      {activePluginTab && agent && resolvedCompanyId ? (
+        <PluginSlotMount
+          slot={activePluginTab.slot}
+          context={{
+            companyId: resolvedCompanyId,
+            projectId: null,
+            entityId: agent.id,
+            entityType: "agent",
+          }}
+          missingBehavior="placeholder"
+        />
       ) : null}
     </div>
   );
@@ -1704,6 +1794,7 @@ function ConfigurationTab({
   }, [onSavingChange, isConfigSaving]);
 
   const canCreateAgents = Boolean(agent.permissions?.canCreateAgents);
+  const canCreateDepartments = Boolean(agent.permissions?.canCreateDepartments);
   const canAssignTasks = Boolean(agent.access?.canAssignTasks);
   const taskAssignSource = agent.access?.taskAssignSource ?? "none";
   const taskAssignLocked = agent.role === "ceo" || canCreateAgents;
@@ -1750,7 +1841,27 @@ function ConfigurationTab({
               onCheckedChange={() =>
                 updatePermissions.mutate({
                   canCreateAgents: !canCreateAgents,
+                  canCreateDepartments,
                   canAssignTasks: !canCreateAgents ? true : canAssignTasks,
+                })
+              }
+              disabled={updatePermissions.isPending}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <div className="space-y-1">
+              <div>Can create departments</div>
+              <p className="text-xs text-muted-foreground">
+                Lets this agent create, rename, or delete departments and reassign agents.
+              </p>
+            </div>
+            <ToggleSwitch
+              checked={canCreateDepartments}
+              onCheckedChange={() =>
+                updatePermissions.mutate({
+                  canCreateAgents,
+                  canCreateDepartments: !canCreateDepartments,
+                  canAssignTasks,
                 })
               }
               disabled={updatePermissions.isPending}
@@ -1768,6 +1879,7 @@ function ConfigurationTab({
               onCheckedChange={() =>
                 updatePermissions.mutate({
                   canCreateAgents,
+                  canCreateDepartments,
                   canAssignTasks: !canAssignTasks,
                 })
               }
@@ -2150,7 +2262,7 @@ function PromptsTab({
                       <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent side="right" sideOffset={4}>
-                      Managed: Paperclip stores and serves the instructions bundle. External: you provide a path on disk where the instructions live.
+                      Managed: NoralOS stores and serves the instructions bundle. External: you provide a path on disk where the instructions live.
                     </TooltipContent>
                   </Tooltip>
                 </span>
@@ -2205,7 +2317,7 @@ function PromptsTab({
                       <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent side="right" sideOffset={4}>
-                      The absolute directory on disk where the instructions bundle lives. In managed mode this is set by Paperclip automatically.
+                      The absolute directory on disk where the instructions bundle lives. In managed mode this is set by NoralOS automatically.
                     </TooltipContent>
                   </Tooltip>
                 </span>
@@ -2766,10 +2878,10 @@ export function AgentSkillsTab({
       return "Paperclip cannot manage skills for custom ACP commands yet.";
     }
     if (agent.adapterType === "openclaw_gateway") {
-      return "Paperclip cannot manage OpenClaw skills here. Visit your OpenClaw instance to manage this agent's skills.";
+      return "NoralOS cannot manage OpenClaw skills here. Visit your OpenClaw instance to manage this agent's skills.";
     }
-    return "Paperclip cannot manage skills for this adapter yet. Manage them in the adapter directly.";
-  }, [agent.adapterConfig.agent, agent.adapterType, skillSnapshot?.mode]);
+    return "NoralOS cannot manage skills for this adapter yet. Manage them in the adapter directly.";
+  }, [agent.adapterType, skillSnapshot?.mode]);
   const hasUnsavedChanges = !arraysEqual(skillDraft, lastSavedSkills);
   const saveStatusLabel = syncSkills.isPending
     ? "Saving changes..."
@@ -2926,7 +3038,7 @@ export function AgentSkillsTab({
                   <section className="border-y border-border">
                     <div className="border-b border-border bg-muted/40 px-3 py-2">
                       <span className="text-xs font-medium text-muted-foreground">
-                        Required by Paperclip
+                        Required by NoralOS
                       </span>
                     </div>
                     {requiredSkillRows.map(renderSkillRow)}
@@ -2943,7 +3055,7 @@ export function AgentSkillsTab({
                       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setUnmanagedOpen((v) => !v); } }}
                     >
                       <span className="text-xs font-medium text-muted-foreground">
-                        ({unmanagedSkillRows.length}) User-installed skills, not managed by Paperclip
+                        ({unmanagedSkillRows.length}) User-installed skills, not managed by NoralOS
                       </span>
                       {unmanagedOpen ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                     </div>
@@ -3333,7 +3445,7 @@ function RunDetail({ run: initialRun, agentRouteId, adapterType, adapterConfig }
               return (
                 <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1.5 flex-wrap">
                   {adapterType && (
-                    <span className="bg-muted rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">{adapterType.replace(/_/g, " ")}</span>
+                    <span className="bg-muted rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide">{getAdapterLabel(adapterType)}</span>
                   )}
                   {displayProvider && displayModel && (
                     <span>{displayProvider}/{displayModel}</span>
@@ -4266,7 +4378,7 @@ function KeysTab({ agentId, companyId }: { agentId: string; companyId?: string }
           Create API Key
         </h3>
         <p className="text-xs text-muted-foreground">
-          API keys allow this agent to authenticate calls to the Paperclip server.
+          API keys allow this agent to authenticate calls to the NoralOS server.
         </p>
         <div className="flex items-center gap-2">
           <Input

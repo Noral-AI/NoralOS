@@ -8,7 +8,7 @@ import {
   type AgentRuntimeState,
   type CompanySecret,
   type EnvBinding,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { ActiveAgentsPanel } from "@/components/ActiveAgentsPanel";
 import { AgentConfigForm, type CreateConfigValues } from "@/components/AgentConfigForm";
 import { defaultCreateValues } from "@/components/agent-config-defaults";
@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { storybookAgents, storybookIssues } from "../fixtures/paperclipData";
+import { storybookAgents, storybookIssues } from "../fixtures/noralosData";
 
 const COMPANY_ID = "company-storybook";
 const now = new Date("2026-04-20T12:00:00.000Z");
@@ -107,7 +107,7 @@ const agentManagementAgents: Agent[] = [
       extraArgs: ["--full-auto"],
       env: {
         OPENAI_API_KEY: { type: "secret_ref", secretId: "secret-openai", version: "latest" },
-        PAPERCLIP_TRACE: { type: "plain", value: "storybook" },
+        NORALOS_TRACE: { type: "plain", value: "storybook" },
       } satisfies Record<string, EnvBinding>,
       timeoutSec: 7200,
       graceSec: 20,
@@ -171,7 +171,7 @@ const agentManagementAgents: Agent[] = [
     adapterType: "codex_local",
     pauseReason: "manual",
     pausedAt: recent(18),
-    permissions: { canCreateAgents: true },
+    permissions: { canCreateAgents: true, canCreateDepartments: true },
     adapterConfig: {
       command: "codex",
       model: "gpt-5.4",
@@ -460,7 +460,7 @@ function AgentConfigFormStory() {
     extraArgs: "--full-auto, --search",
     envBindings: {
       OPENAI_API_KEY: { type: "secret_ref", secretId: "secret-openai", version: "latest" },
-      PAPERCLIP_TRACE: { type: "plain", value: "storybook" },
+      NORALOS_TRACE: { type: "plain", value: "storybook" },
     },
     runtimeServicesJson: JSON.stringify(
       [
@@ -607,7 +607,7 @@ function ConfigPrimitivesStory() {
     runtimeServices: [
       { name: "api", command: "pnpm dev:once", healthUrl: "http://localhost:3100/api/health" },
     ],
-    env: { PAPERCLIP_BIND: "lan" },
+    env: { NORALOS_BIND: "lan" },
   }, null, 2));
 
   return (
@@ -763,7 +763,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Agent management stories cover detail, configuration, icon, action, live-run, and config primitive states using extended Paperclip fixtures.",
+          "Agent management stories cover detail, configuration, icon, action, live-run, and config primitive states using extended NoralOS fixtures.",
       },
     },
   },

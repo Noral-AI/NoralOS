@@ -1,7 +1,11 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "@/lib/router";
+<<<<<<< v2026.525.0
 import { ArrowUpDown, Check, ChevronDown, ChevronRight, Layers, Plus, Repeat } from "lucide-react";
+=======
+import { ArrowUpDown, Check, ChevronDown, ChevronRight, Layers, MoreHorizontal, Plus, Repeat } from "lucide-react";
+>>>>>>> master
 import { routinesApi } from "../api/routines";
 import { agentsApi } from "../api/agents";
 import { projectsApi } from "../api/projects";
@@ -44,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import type { RoutineListItem, RoutineVariable } from "@paperclipai/shared";
+import type { RoutineListItem, RoutineVariable } from "@noralos/shared";
 
 const concurrencyPolicies = ["coalesce_if_active", "always_enqueue", "skip_if_active"];
 const catchUpPolicies = ["skip_missed", "enqueue_missed_with_cap"];
@@ -111,6 +115,14 @@ function timestampValue(value: Date | string | null | undefined) {
 
 function compareNullableText(left: string | null | undefined, right: string | null | undefined) {
   return (left ?? "").localeCompare(right ?? "", undefined, { sensitivity: "base" });
+<<<<<<< v2026.525.0
+=======
+}
+
+function formatRoutineRunStatus(value: string | null | undefined) {
+  if (!value) return null;
+  return value.replaceAll("_", " ");
+>>>>>>> master
 }
 
 function buildRoutineMutationPayload(input: {
@@ -193,6 +205,13 @@ export function sortRoutines(
     if (result !== 0) return result * direction;
     return compareNullableText(left.title, right.title);
   });
+<<<<<<< v2026.525.0
+=======
+}
+
+function buildRoutinesTabHref(tab: RoutinesTab) {
+  return tab === "runs" ? "/routines?tab=runs" : "/routines";
+>>>>>>> master
 }
 
 function buildRoutinesTabHref(tab: RoutinesTab) {
@@ -344,7 +363,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Failed to update routine",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not update the routine.",
+        body: mutationError instanceof Error ? mutationError.message : "NoralOS could not update the routine.",
         tone: "error",
       });
     },
@@ -379,7 +398,7 @@ export function Routines() {
     onError: (mutationError) => {
       pushToast({
         title: "Routine run failed",
-        body: mutationError instanceof Error ? mutationError.message : "Paperclip could not start the routine run.",
+        body: mutationError instanceof Error ? mutationError.message : "NoralOS could not start the routine run.",
         tone: "error",
       });
     },
@@ -840,7 +859,7 @@ export function Routines() {
 
           <div className="shrink-0 flex flex-col gap-3 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              After creation, Paperclip takes you straight to trigger setup. Draft routines stay paused until you add a default agent.
+              After creation, NoralOS takes you straight to trigger setup. Draft routines stay paused until you add a default agent.
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
               <Button

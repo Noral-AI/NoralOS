@@ -2,7 +2,7 @@
  * JSON-RPC 2.0 message types and protocol helpers for the host ↔ worker IPC
  * channel.
  *
- * The Paperclip plugin runtime uses JSON-RPC 2.0 over stdio to communicate
+ * The NoralOS plugin runtime uses JSON-RPC 2.0 over stdio to communicate
  * between the host process and each plugin worker process. This module defines:
  *
  * - Core JSON-RPC 2.0 envelope types (request, response, notification, error)
@@ -16,7 +16,7 @@
  */
 
 import type {
-  PaperclipPluginManifestV1,
+  NoralosPluginManifestV1,
   PluginLauncherBounds,
   PluginLauncherRenderContextSnapshot,
   PluginLauncherRenderEnvironment,
@@ -38,10 +38,15 @@ import type {
   RoutineRun,
   Agent,
   Goal,
+<<<<<<< v2026.525.0
   PluginLocalFolderDeclaration,
   PrincipalPermissionGrant,
 } from "@paperclipai/shared";
 export type { PluginLauncherRenderContextSnapshot } from "@paperclipai/shared";
+=======
+} from "@noralos/shared";
+export type { PluginLauncherRenderContextSnapshot } from "@noralos/shared";
+>>>>>>> master
 
 import type {
   PluginEvent,
@@ -83,7 +88,7 @@ export const JSONRPC_VERSION = "2.0" as const;
 
 /**
  * A unique request identifier. JSON-RPC 2.0 allows strings or numbers;
- * we use strings (UUIDs or monotonic counters) for all Paperclip messages.
+ * we use strings (UUIDs or monotonic counters) for all NoralOS messages.
  */
 export type JsonRpcId = string | number;
 
@@ -228,7 +233,7 @@ export type JsonRpcErrorCode =
   (typeof JSONRPC_ERROR_CODES)[keyof typeof JSONRPC_ERROR_CODES];
 
 /**
- * Paperclip plugin-specific error codes.
+ * NoralOS plugin-specific error codes.
  *
  * These live in the JSON-RPC "server error" reserved range (-32000 to -32099)
  * as specified by JSON-RPC 2.0 for implementation-defined server errors.
@@ -296,14 +301,14 @@ export interface WorkerHostCallContext {
  */
 export interface InitializeParams {
   /** Full plugin manifest snapshot. */
-  manifest: PaperclipPluginManifestV1;
+  manifest: NoralosPluginManifestV1;
   /** Resolved operator configuration (validated against `instanceConfigSchema`). */
   config: Record<string, unknown>;
   /** Instance-level metadata. */
   instanceInfo: {
-    /** UUID of this Paperclip instance. */
+    /** UUID of this NoralOS instance. */
     instanceId: string;
-    /** Semver version of the running Paperclip host. */
+    /** Semver version of the running NoralOS host. */
     hostVersion: string;
   };
   /** Host API version. */
@@ -802,9 +807,27 @@ export interface WorkerToHostMethods {
   ];
 
   // HTTP
+  //
+  // `body` is always a string on the wire. `bodyEncoding` tells the worker
+  // how to interpret it:
+  //   - "base64" — body is base64-encoded raw bytes. Worker decodes and
+  //     hands a binary Response to the plugin so .arrayBuffer() / .blob()
+  //     preserve the original byte stream (required for non-text payloads
+  //     like audio/image/PDF responses). .text() decodes as UTF-8 the same
+  //     way `fetch` does for any binary body interpreted as text.
+  //   - "utf8" or absent — legacy: body is already a UTF-8 string. Worker
+  //     passes it through to `new Response(...)` unchanged. Kept so a new
+  //     worker can talk to an older host without breaking; new hosts always
+  //     emit "base64" because UTF-8 transcoding corrupts non-ASCII bytes.
   "http.fetch": [
     params: { url: string; init?: Record<string, unknown> },
-    result: { status: number; statusText: string; headers: Record<string, string>; body: string },
+    result: {
+      status: number;
+      statusText: string;
+      headers: Record<string, string>;
+      body: string;
+      bodyEncoding?: "utf8" | "base64";
+    },
   ];
 
   // Secrets
@@ -1152,6 +1175,41 @@ export interface WorkerToHostMethods {
   ];
 
   // Agents (write)
+  "agents.create": [
+    params: {
+      companyId: string;
+      /** Human-readable agent name. Duplicates in the company are
+       *  auto-suffixed by the host (e.g. "Voice Director" → "Voice Director (2)"). */
+      name: string;
+      /** Role string ("ceo", "manager", "worker", or any custom role).
+       *  Drives tier-derivation in plugins that gate by tier. */
+      role: string;
+      /** Short title shown in agent cards / chat avatars. */
+      title?: string;
+      /** Agent id of the manager this agent reports to.
+       *  The host enforces that the target is in the same company. */
+      reportsTo?: string | null;
+      /** Comma-separated capability list — used by some adapters for tool
+       *  allowlisting. Plugins providing their own tool surface should
+       *  include their tools here so the heartbeat sees them. */
+      capabilities?: string;
+      /** Adapter slug (e.g. "claude-local", "noralai_brooklyn"). When
+       *  omitted, the company default adapter is used. */
+      adapterType?: string | null;
+      /** Adapter-specific configuration object (model, base URL, etc.).
+       *  Stored on the agent row; merged at runtime with company defaults. */
+      adapterConfig?: Record<string, unknown>;
+      /** Runtime knobs (systemPrompt, tools array, template provenance, …). */
+      runtimeConfig?: Record<string, unknown>;
+      /** Optional default environment id the agent runs in. */
+      defaultEnvironmentId?: string | null;
+      /** Monthly budget in USD cents. 0 = no limit. */
+      budgetMonthlyCents?: number;
+      /** Free-form metadata bag — provenance, template id, audit info. */
+      metadata?: Record<string, unknown>;
+    },
+    result: Agent,
+  ];
   "agents.pause": [
     params: { agentId: string; companyId: string },
     result: Agent,
@@ -1187,7 +1245,18 @@ export interface WorkerToHostMethods {
     result: Array<{ sessionId: string; agentId: string; companyId: string; status: "active" | "closed"; createdAt: string }>,
   ];
   "agents.sessions.sendMessage": [
-    params: { sessionId: string; companyId: string; prompt: string; reason?: string },
+    params: {
+      sessionId: string;
+      companyId: string;
+      prompt: string;
+      reason?: string;
+      // Optional shallow override applied on top of the agent's stored
+      // adapter_config for THIS run only. Host shallow-merges via
+      // mergeModelProfileAdapterConfig with highest precedence (after
+      // model-profile and issue-assignee overrides). Never persisted to
+      // agents.adapter_config.
+      adapterConfigOverrides?: Record<string, unknown>;
+    },
     result: { runId: string },
   ];
   "agents.sessions.close": [

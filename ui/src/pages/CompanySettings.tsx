@@ -1,14 +1,21 @@
 import { ChangeEvent, useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES,
   MAX_COMPANY_ATTACHMENT_MAX_BYTES,
+<<<<<<< v2026.525.0
 } from "@paperclipai/shared";
+=======
+} from "@noralos/shared";
+>>>>>>> master
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { companiesApi } from "../api/companies";
 import { assetsApi } from "../api/assets";
+<<<<<<< v2026.525.0
 import { instanceSettingsApi } from "../api/instanceSettings";
+=======
+>>>>>>> master
 import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
 import { Settings, CloudUpload, Download, Upload } from "lucide-react";
@@ -16,8 +23,20 @@ import { CompanyPatternIcon } from "../components/CompanyPatternIcon";
 import {
   Field,
   ToggleField,
+<<<<<<< v2026.525.0
 } from "../components/agent-config-primitives";
 
+=======
+  HintIcon,
+} from "../components/agent-config-primitives";
+
+type AgentSnippetInput = {
+  onboardingTextUrl: string;
+  connectionCandidates?: string[] | null;
+  testResolutionUrl?: string | null;
+};
+
+>>>>>>> master
 const BYTES_PER_MIB = 1024 * 1024;
 const DEFAULT_COMPANY_ATTACHMENT_MAX_MIB = DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES / BYTES_PER_MIB;
 const MAX_COMPANY_ATTACHMENT_MAX_MIB = MAX_COMPANY_ATTACHMENT_MAX_BYTES / BYTES_PER_MIB;
@@ -52,12 +71,23 @@ export function CompanySettings() {
     setLogoUrl(selectedCompany.logoUrl ?? "");
   }, [selectedCompany]);
 
+<<<<<<< v2026.525.0
+=======
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSnippet, setInviteSnippet] = useState<string | null>(null);
+  const [snippetCopied, setSnippetCopied] = useState(false);
+  const [snippetCopyDelightId, setSnippetCopyDelightId] = useState(0);
+
+>>>>>>> master
   const attachmentMaxBytes = Number.parseInt(attachmentMaxMiB, 10) * BYTES_PER_MIB;
   const attachmentMaxValid =
     Number.isInteger(attachmentMaxBytes)
     && attachmentMaxBytes >= BYTES_PER_MIB
     && attachmentMaxBytes <= MAX_COMPANY_ATTACHMENT_MAX_BYTES;
+<<<<<<< v2026.525.0
   const cloudSyncEnabled = experimentalSettings?.enableCloudSync === true;
+=======
+>>>>>>> master
 
   const generalDirty =
     !!selectedCompany &&
@@ -124,6 +154,16 @@ export function CompanySettings() {
     clearLogoMutation.mutate();
   }
 
+<<<<<<< v2026.525.0
+=======
+  useEffect(() => {
+    setInviteError(null);
+    setInviteSnippet(null);
+    setSnippetCopied(false);
+    setSnippetCopyDelightId(0);
+  }, [selectedCompanyId]);
+
+>>>>>>> master
   const archiveMutation = useMutation({
     mutationFn: ({
       companyId,
@@ -133,6 +173,37 @@ export function CompanySettings() {
       nextCompanyId: string | null;
     }) => companiesApi.archive(companyId).then(() => ({ nextCompanyId })),
     onSuccess: async ({ nextCompanyId }) => {
+      if (nextCompanyId) {
+        setSelectedCompanyId(nextCompanyId);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.companies.all
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.companies.stats
+      });
+    }
+  });
+
+  // Permanent delete is staged behind a typed-name confirmation
+  // (`deleteConfirmText`) because the underlying DELETE removes every
+  // child row (agents, issues, projects, runs, costs, integrations…) in
+  // a single transaction and is not reversible from the UI.
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const removeMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      nextCompanyId
+    }: {
+      companyId: string;
+      nextCompanyId: string | null;
+    }) => companiesApi.remove(companyId).then(() => ({ nextCompanyId })),
+    onSuccess: async ({ nextCompanyId }) => {
+      setDeleteConfirmText("");
+      // If there's another non-archived company, switch to it. When
+      // there isn't, leave the selection alone — invalidating queries
+      // below will drop the now-stale company from the switcher and
+      // the empty-state branches in dependent pages will take over.
       if (nextCompanyId) {
         setSelectedCompanyId(nextCompanyId);
       }
@@ -451,7 +522,181 @@ export function CompanySettings() {
             )}
           </div>
         </div>
+        <div className="space-y-3 rounded-md border border-destructive/60 bg-destructive/10 px-4 py-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-destructive">
+              Permanently delete this company
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Removes the company and every agent, issue, project, run, cost
+              event, document, integration credential, and approval that
+              belongs to it. This action cannot be undone. Type the company
+              name below to enable the delete button.
+            </p>
+          </div>
+          <input
+            type="text"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder={selectedCompany.name}
+            disabled={removeMutation.isPending}
+            className="w-full max-w-sm rounded-md border border-destructive/40 bg-background px-3 py-2 text-sm font-mono focus:border-destructive focus:outline-none"
+            aria-label="Type the company name to confirm delete"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={
+                removeMutation.isPending ||
+                deleteConfirmText !== selectedCompany.name
+              }
+              onClick={() => {
+                if (!selectedCompanyId) return;
+                if (deleteConfirmText !== selectedCompany.name) return;
+                const nextCompanyId =
+                  companies.find(
+                    (company) =>
+                      company.id !== selectedCompanyId &&
+                      company.status !== "archived"
+                  )?.id ?? null;
+                removeMutation.mutate({
+                  companyId: selectedCompanyId,
+                  nextCompanyId
+                });
+              }}
+            >
+              {removeMutation.isPending
+                ? "Deleting..."
+                : "Delete company permanently"}
+            </Button>
+            {removeMutation.isError && (
+              <span className="text-xs text-destructive">
+                {removeMutation.error instanceof Error
+                  ? removeMutation.error.message
+                  : "Failed to delete company"}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+<<<<<<< v2026.525.0
+=======
+
+function buildAgentSnippet(input: AgentSnippetInput) {
+  const candidateUrls = buildCandidateOnboardingUrls(input);
+  const resolutionTestUrl = buildResolutionTestUrl(input);
+
+  const candidateList =
+    candidateUrls.length > 0
+      ? candidateUrls.map((u) => `- ${u}`).join("\n")
+      : "- (No candidate URLs available yet.)";
+
+  const connectivityBlock =
+    candidateUrls.length === 0
+      ? `No candidate URLs are available. Ask your user to configure a reachable hostname in NoralOS, then retry.
+Suggested steps:
+- choose a hostname that resolves to the NoralOS host from your runtime
+- run: pnpm noralos allowed-hostname <host>
+- restart NoralOS
+- verify with: curl -fsS http://<host>:3100/api/health
+- regenerate this invite snippet`
+      : `If none are reachable, ask your user to add a reachable hostname in NoralOS, restart, and retry.
+Suggested command:
+- pnpm noralos allowed-hostname <host>
+Then verify with: curl -fsS <base-url>/api/health`;
+
+  const resolutionLine = resolutionTestUrl
+    ? `\nYou MUST test NoralOS-to-gateway reachability, call: ${resolutionTestUrl}?url=<urlencoded-gateway-url> (using the hostname that worked above). Do not assume your 172.x is necessarily reachable from NoralOS. Test it. `
+    : "";
+
+  return `You're invited to join a NoralOS organization.
+
+The URLs you should try are:
+${candidateList}
+
+Connectivity guidance:
+If you are running on a different machine than NoralOS, NoralOS must be reachable at one of the hostnames used above.
+Verify the hostname works from your runtime with: GET <base-url>/api/health
+
+${connectivityBlock}
+
+For your "agentName", just use your own agent name (OpenClaw or whatever your name is) and send it directly.
+You also need to send a gateway URL that NoralOS can access. Check your config and include that URL.${resolutionLine}
+
+---
+
+This onboarding flow is for OpenClaw Gateway.
+When you submit the join request, use:
+- \`adapterType: "openclaw_gateway"\`
+- \`agentDefaultsPayload.url\` as your \`ws://\` or \`wss://\` gateway URL
+- \`agentDefaultsPayload.headers["x-openclaw-token"]\` with your gateway token
+- (legacy accepted) \`agentDefaultsPayload.headers["x-openclaw-auth"]\`
+- Keep device auth enabled (recommended). If \`devicePrivateKeyPem\` is omitted, NoralOS will generate and persist one during join so pairing approvals remain stable.
+- Only use \`disableDeviceAuth=true\` for special environments where pairing cannot be completed.
+
+Do NOT use \`/v1/responses\` or \`/hooks/*\` in this join flow.
+
+Before you do anything, please respond to your user that you understand the instructions and you're going to work on them. Then do the step above in another session called "paperclip-onboarding" and then tell your user when you're done. Update your user in intermediate steps along the way so they know what's going on.
+
+Then after you've connected to NoralOS (exchanged keys etc.) you MUST review and follow the onboarding instructions in onboarding.txt they give you.
+
+`;
+}
+
+function buildCandidateOnboardingUrls(input: AgentSnippetInput): string[] {
+  const candidates = (input.connectionCandidates ?? [])
+    .map((candidate) => candidate.trim())
+    .filter(Boolean);
+  const urls = new Set<string>();
+  let onboardingUrl: URL | null = null;
+
+  try {
+    onboardingUrl = new URL(input.onboardingTextUrl);
+    urls.add(onboardingUrl.toString());
+  } catch {
+    const trimmed = input.onboardingTextUrl.trim();
+    if (trimmed) {
+      urls.add(trimmed);
+    }
+  }
+
+  if (!onboardingUrl) {
+    for (const candidate of candidates) {
+      urls.add(candidate);
+    }
+    return Array.from(urls);
+  }
+
+  const onboardingPath = `${onboardingUrl.pathname}${onboardingUrl.search}`;
+  for (const candidate of candidates) {
+    try {
+      const base = new URL(candidate);
+      urls.add(`${base.origin}${onboardingPath}`);
+    } catch {
+      urls.add(candidate);
+    }
+  }
+
+  return Array.from(urls);
+}
+
+function buildResolutionTestUrl(input: AgentSnippetInput): string | null {
+  const explicit = input.testResolutionUrl?.trim();
+  if (explicit) return explicit;
+
+  try {
+    const onboardingUrl = new URL(input.onboardingTextUrl);
+    const testPath = onboardingUrl.pathname.replace(
+      /\/onboarding\.txt$/,
+      "/test-resolution"
+    );
+    return `${onboardingUrl.origin}${testPath}`;
+  } catch {
+    return null;
+  }
+}
+>>>>>>> master

@@ -123,7 +123,7 @@ export const issueExecutionWorkspaceSettingsSchema = z
 export const issueAssigneeAdapterOverridesSchema = z
   .object({
     modelProfile: z.enum(MODEL_PROFILE_KEYS).optional(),
-    adapterConfig: z.record(z.string(), z.unknown()).optional(),
+    adapterConfig: z.record(z.unknown()).optional(),
     useProjectWorkspace: z.boolean().optional(),
   })
   .strict();

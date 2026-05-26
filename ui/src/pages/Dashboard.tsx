@@ -24,7 +24,7 @@ import { Bot, CircleDot, DollarSign, ShieldCheck, LayoutDashboard, PauseCircle }
 import { ActiveAgentsPanel } from "../components/ActiveAgentsPanel";
 import { ChartCard, RunActivityChart, PriorityChart, IssueStatusChart, SuccessRateChart } from "../components/ActivityCharts";
 import { PageSkeleton } from "../components/PageSkeleton";
-import type { Agent, Issue } from "@paperclipai/shared";
+import type { Agent, Issue } from "@noralos/shared";
 import { PluginSlotOutlet } from "@/plugins/slots";
 
 const DASHBOARD_ACTIVITY_LIMIT = 10;
@@ -176,7 +176,7 @@ export function Dashboard() {
       return (
         <EmptyState
           icon={LayoutDashboard}
-          message="Welcome to Paperclip. Set up your first company and agent to get started."
+          message="Welcome to NoralOS. Set up your first company and agent to get started."
           action="Get Started"
           onAction={openOnboarding}
         />
@@ -278,14 +278,20 @@ export function Dashboard() {
             />
             <MetricCard
               icon={ShieldCheck}
-              value={data.pendingApprovals + data.budgets.pendingApprovals}
+              value={
+                data.pendingApprovals +
+                data.budgets.pendingApprovals +
+                data.pendingConfirmations
+              }
               label="Pending Approvals"
               to="/approvals"
               description={
                 <span>
-                  {data.budgets.pendingApprovals > 0
-                    ? `${data.budgets.pendingApprovals} budget overrides awaiting board review`
-                    : "Awaiting board review"}
+                  {data.pendingConfirmations > 0
+                    ? `${data.pendingConfirmations} ${data.pendingConfirmations === 1 ? "confirmation" : "confirmations"} awaiting you`
+                    : data.budgets.pendingApprovals > 0
+                      ? `${data.budgets.pendingApprovals} budget overrides awaiting board review`
+                      : "Awaiting board review"}
                 </span>
               }
             />

@@ -3,10 +3,14 @@ import test from "node:test";
 
 import {
   collectInternalDependencyProblems,
+<<<<<<< v2026.525.0
   createManifestLookupKey,
   fetchRegistryJson,
   isCanaryVersion,
   verifyPackageRegistryProblems,
+=======
+  isCanaryVersion,
+>>>>>>> master
   verifyPackageRegistryState,
 } from "./verify-release-registry-state.mjs";
 
@@ -18,13 +22,21 @@ test("isCanaryVersion matches release canaries", () => {
 test("collectInternalDependencyProblems flags missing internal versions", () => {
   const manifest = {
     dependencies: {
+<<<<<<< v2026.525.0
       "@paperclipai/plugin-sdk": "2026.425.0-canary.5",
+=======
+      "@noralos/plugin-sdk": "2026.425.0-canary.5",
+>>>>>>> master
       e2b: "^2.19.0",
     },
   };
   const packageDocsByName = new Map([
     [
+<<<<<<< v2026.525.0
       "@paperclipai/plugin-sdk",
+=======
+      "@noralos/plugin-sdk",
+>>>>>>> master
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -33,6 +45,7 @@ test("collectInternalDependencyProblems flags missing internal versions", () => 
     ],
   ]);
 
+<<<<<<< v2026.525.0
   assert.deepEqual(
     collectInternalDependencyProblems(manifest, packageDocsByName),
     ["dependencies requires @paperclipai/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version"],
@@ -146,12 +159,21 @@ test("verifyPackageRegistryState tolerates a stale root versions map when dist-t
     }),
     [],
   );
+=======
+  assert.deepEqual(collectInternalDependencyProblems(manifest, packageDocsByName), [
+    "dependencies requires @noralos/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+  ]);
+>>>>>>> master
 });
 
 test("verifyPackageRegistryState fails when canary latest is left in place by default", () => {
   const packageDocsByName = new Map([
     [
+<<<<<<< v2026.525.0
       "@paperclipai/plugin-e2b",
+=======
+      "@noralos/plugin-e2b",
+>>>>>>> master
       {
         "dist-tags": {
           latest: "2026.425.0-canary.5",
@@ -160,19 +182,31 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
         versions: {
           "2026.425.0-canary.5": {
             dependencies: {
+<<<<<<< v2026.525.0
               "@paperclipai/plugin-sdk": "2026.425.0-canary.5",
+=======
+              "@noralos/plugin-sdk": "2026.425.0-canary.5",
+>>>>>>> master
             },
           },
           "2026.427.0-canary.3": {
             dependencies: {
+<<<<<<< v2026.525.0
               "@paperclipai/plugin-sdk": "2026.427.0-canary.3",
+=======
+              "@noralos/plugin-sdk": "2026.427.0-canary.3",
+>>>>>>> master
             },
           },
         },
       },
     ],
     [
+<<<<<<< v2026.525.0
       "@paperclipai/plugin-sdk",
+=======
+      "@noralos/plugin-sdk",
+>>>>>>> master
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -183,8 +217,13 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
 
   assert.deepEqual(
     verifyPackageRegistryState({
+<<<<<<< v2026.525.0
       packageName: "@paperclipai/plugin-e2b",
       packageDoc: packageDocsByName.get("@paperclipai/plugin-e2b"),
+=======
+      packageName: "@noralos/plugin-e2b",
+      packageDoc: packageDocsByName.get("@noralos/plugin-e2b"),
+>>>>>>> master
       packageDocsByName,
       channel: "canary",
       distTag: "canary",
@@ -192,12 +231,18 @@ test("verifyPackageRegistryState fails when canary latest is left in place by de
       allowCanaryLatest: false,
     }),
     [
+<<<<<<< v2026.525.0
       "@paperclipai/plugin-e2b: latest dist-tag still resolves to canary 2026.425.0-canary.5; if that state is intentional, rerun the verification script directly with --allow-canary-latest",
       "@paperclipai/plugin-e2b@2026.425.0-canary.5 via latest: dependencies requires @paperclipai/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+=======
+      "@noralos/plugin-e2b: latest dist-tag still resolves to canary 2026.425.0-canary.5; rerun with --allow-canary-latest only when that state is intentional",
+      "@noralos/plugin-e2b@2026.425.0-canary.5 via latest: dependencies requires @noralos/plugin-sdk@2026.425.0-canary.5, but npm does not expose that version",
+>>>>>>> master
     ],
   );
 });
 
+<<<<<<< v2026.525.0
 test("verifyPackageRegistryProblems marks canary latest drift as non-retriable", () => {
   const packageDocsByName = new Map([
     [
@@ -232,6 +277,12 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
   const packageDocsByName = new Map([
     [
       "paperclipai",
+=======
+test("verifyPackageRegistryState allows intentional canary latest but still checks dependencies", () => {
+  const packageDocsByName = new Map([
+    [
+      "noralos",
+>>>>>>> master
       {
         "dist-tags": {
           latest: "2026.427.0-canary.3",
@@ -240,14 +291,22 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
         versions: {
           "2026.427.0-canary.3": {
             dependencies: {
+<<<<<<< v2026.525.0
               "@paperclipai/server": "2026.427.0-canary.3",
+=======
+              "@noralos/server": "2026.427.0-canary.3",
+>>>>>>> master
             },
           },
         },
       },
     ],
     [
+<<<<<<< v2026.525.0
       "@paperclipai/server",
+=======
+      "@noralos/server",
+>>>>>>> master
       {
         versions: {
           "2026.427.0-canary.3": {},
@@ -258,8 +317,13 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
 
   assert.deepEqual(
     verifyPackageRegistryState({
+<<<<<<< v2026.525.0
       packageName: "paperclipai",
       packageDoc: packageDocsByName.get("paperclipai"),
+=======
+      packageName: "noralos",
+      packageDoc: packageDocsByName.get("noralos"),
+>>>>>>> master
       packageDocsByName,
       channel: "canary",
       distTag: "canary",
@@ -269,6 +333,7 @@ test("verifyPackageRegistryState allows intentional canary latest but still chec
     [],
   );
 });
+<<<<<<< v2026.525.0
 
 test("verifyPackageRegistryState still fails when the dist-tag is stale", () => {
   const packageDocsByName = new Map([
@@ -361,3 +426,5 @@ test("fetchRegistryJson times out hung requests", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+=======
+>>>>>>> master

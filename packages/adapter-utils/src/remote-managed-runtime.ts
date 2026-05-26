@@ -45,6 +45,7 @@ export function buildRemoteExecutionSessionIdentity(spec: SshRemoteExecutionSpec
     port: spec.port,
     username: spec.username,
     remoteCwd: spec.remoteCwd,
+    ...(spec.noralosApiUrl ? { noralosApiUrl: spec.noralosApiUrl } : {}),
   } as const;
 }
 
@@ -58,7 +59,8 @@ export function remoteExecutionSessionMatches(saved: unknown, current: SshRemote
     asString(parsedSaved.host) === currentIdentity.host &&
     asNumber(parsedSaved.port) === currentIdentity.port &&
     asString(parsedSaved.username) === currentIdentity.username &&
-    asString(parsedSaved.remoteCwd) === currentIdentity.remoteCwd
+    asString(parsedSaved.remoteCwd) === currentIdentity.remoteCwd &&
+    asString(parsedSaved.noralosApiUrl) === asString(currentIdentity.noralosApiUrl)
   );
 }
 

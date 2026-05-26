@@ -5,7 +5,7 @@ import type {
   InboxDismissal,
   Issue,
   JoinRequest,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   applyIssueFilters,
   defaultIssueFilterState,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Agent, Project } from "@paperclipai/shared";
+import type { Agent, Project } from "@noralos/shared";
 import {
   buildPortableAgentSlugMap,
   buildPortableProjectSlugMap,
@@ -25,7 +25,7 @@ function makeAgent(id: string, name: string): Agent {
     spentMonthlyCents: 0,
     pauseReason: null,
     pausedAt: null,
-    permissions: { canCreateAgents: false },
+    permissions: { canCreateAgents: false, canCreateDepartments: false },
     lastHeartbeatAt: null,
     metadata: null,
     createdAt: new Date(),

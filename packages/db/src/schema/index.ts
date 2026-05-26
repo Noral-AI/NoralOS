@@ -6,6 +6,7 @@ export { cloudUpstreamConnections, cloudUpstreamRuns } from "./cloud_upstreams.j
 export { instanceUserRoles } from "./instance_user_roles.js";
 export { userSidebarPreferences } from "./user_sidebar_preferences.js";
 export { agents } from "./agents.js";
+export { departments } from "./departments.js";
 export { boardApiKeys } from "./board_api_keys.js";
 export { cliAuthChallenges } from "./cli_auth_challenges.js";
 export { companyMemberships } from "./company_memberships.js";
@@ -64,8 +65,8 @@ export { activityLog } from "./activity_log.js";
 export { companySecretProviderConfigs } from "./company_secret_provider_configs.js";
 export { companySecrets } from "./company_secrets.js";
 export { companySecretVersions } from "./company_secret_versions.js";
-export { companySecretBindings } from "./company_secret_bindings.js";
-export { secretAccessEvents } from "./secret_access_events.js";
+export { integrationCredentials } from "./integration_credentials.js";
+export { integrationCredentialAssignments } from "./integration_credential_assignments.js";
 export { companySkills } from "./company_skills.js";
 export { plugins } from "./plugins.js";
 export { pluginConfig } from "./plugin_config.js";

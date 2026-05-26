@@ -1,6 +1,7 @@
+import { createHash } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { environmentLeases, environments } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
+import { environmentLeases, environments } from "@noralos/db";
 import {
   ENVIRONMENT_DRIVERS,
   ENVIRONMENT_LEASE_CLEANUP_STATUSES,
@@ -14,13 +15,13 @@ import {
   type EnvironmentLeasePolicy,
   type EnvironmentLeaseStatus,
   type UpdateEnvironment,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 
 type EnvironmentRow = typeof environments.$inferSelect;
 type EnvironmentLeaseRow = typeof environmentLeases.$inferSelect;
 const DEFAULT_LOCAL_ENVIRONMENT_NAME = "Local";
 const DEFAULT_LOCAL_ENVIRONMENT_DESCRIPTION =
-  "Default execution environment for Paperclip runs on this machine.";
+  "Default execution environment for NoralOS runs on this machine.";
 
 function cloneRecord(value: unknown, fallback: Record<string, unknown> | null = null): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return fallback;
@@ -122,7 +123,7 @@ export function environmentService(db: Db) {
           status: "active",
           config: {},
           metadata: {
-            managedByPaperclip: true,
+            managedByNoralos: true,
             defaultForCompany: true,
           },
           createdAt: now,
@@ -227,35 +228,53 @@ export function environmentService(db: Db) {
       expiresAt?: Date | null;
       metadata?: Record<string, unknown> | null;
     }): Promise<EnvironmentLease> => {
-      const now = new Date();
-      const row = await db
-        .insert(environmentLeases)
-        .values({
-          companyId: input.companyId,
-          environmentId: input.environmentId,
-          executionWorkspaceId: input.executionWorkspaceId ?? null,
-          issueId: input.issueId ?? null,
-          heartbeatRunId: input.heartbeatRunId ?? null,
-          status: "active",
-          leasePolicy: input.leasePolicy ?? "ephemeral",
-          provider: input.provider ?? null,
-          providerLeaseId: input.providerLeaseId ?? null,
-          acquiredAt: now,
-          lastUsedAt: now,
-          expiresAt: input.expiresAt ?? null,
-          releasedAt: null,
-          failureReason: null,
-          cleanupStatus: null,
-          metadata: input.metadata ?? null,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning()
-        .then((rows) => rows[0] ?? null);
-      if (!row) {
-        throw new Error("Failed to acquire environment lease");
-      }
-      return toEnvironmentLease(row);
+      // Serialize concurrent lease INSERTs for the same environment via a
+      // per-environment advisory transaction lock. The INSERT itself takes
+      // FK row-share locks on environments(id) and heartbeat_runs(id);
+      // when those parent rows are concurrently being updated or deleted by
+      // unrelated paths (e.g. agent / company deletion sweeps), the
+      // intersecting FK lock graph can produce `deadlock detected` from
+      // postgres. Forcing all acquire paths for a given environment to
+      // serialize on a single advisory key removes that contention without
+      // affecting unrelated environments. Released automatically at
+      // transaction commit/rollback. Same pattern as
+      // plugin-database.applyMigrations (server/src/services/plugin-database.ts).
+      const lockKey = Number.parseInt(
+        createHash("sha256").update(input.environmentId).digest("hex").slice(0, 12),
+        16,
+      );
+      return await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(${lockKey})`);
+        const now = new Date();
+        const row = await tx
+          .insert(environmentLeases)
+          .values({
+            companyId: input.companyId,
+            environmentId: input.environmentId,
+            executionWorkspaceId: input.executionWorkspaceId ?? null,
+            issueId: input.issueId ?? null,
+            heartbeatRunId: input.heartbeatRunId ?? null,
+            status: "active",
+            leasePolicy: input.leasePolicy ?? "ephemeral",
+            provider: input.provider ?? null,
+            providerLeaseId: input.providerLeaseId ?? null,
+            acquiredAt: now,
+            lastUsedAt: now,
+            expiresAt: input.expiresAt ?? null,
+            releasedAt: null,
+            failureReason: null,
+            cleanupStatus: null,
+            metadata: input.metadata ?? null,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .returning()
+          .then((rows) => rows[0] ?? null);
+        if (!row) {
+          throw new Error("Failed to acquire environment lease");
+        }
+        return toEnvironmentLease(row);
+      });
     },
 
     releaseLease: async (

@@ -12,6 +12,7 @@ import {
   Repeat,
   GitBranch,
   Settings,
+  Plug,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "@/lib/router";
@@ -44,7 +45,12 @@ export function Sidebar() {
     enabled: !!selectedCompanyId,
     refetchInterval: 10_000,
   });
-  const liveRunCount = liveRuns?.length ?? 0;
+  // The /live-runs endpoint pads with recent non-live runs (any status,
+  // including failed) for ActiveAgentsPanel; the Dashboard nav badge must
+  // count only currently running or queued runs.
+  const liveRunCount = (liveRuns ?? []).filter(
+    (r) => r.status === "running" || r.status === "queued",
+  ).length;
   const showWorkspacesLink = experimentalSettings?.enableIsolatedWorkspaces === true;
 
   const pluginContext = {
@@ -125,6 +131,7 @@ export function Sidebar() {
           <SidebarNavItem to="/costs" label="Costs" icon={DollarSign} />
           <SidebarNavItem to="/activity" label="Activity" icon={History} />
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
+          <SidebarNavItem to="/company/settings/integrations" label="Integrations" icon={Plug} />
         </SidebarSection>
 
         <PluginSlotOutlet

@@ -239,9 +239,15 @@ function tableKey(schemaName: string, tableName: string): string {
 }
 
 function nonSystemSchemaPredicate(identifier: string): string {
+<<<<<<< v2026.525.0
   // PostgreSQL reserves pg_ prefixes for system schemas, including temp/toast variants.
   return `${identifier} <> 'information_schema'
     AND ${identifier} NOT LIKE 'pg\\_%' ESCAPE '\\'`;
+=======
+  return `${identifier} NOT IN ('pg_catalog', 'information_schema')
+    AND ${identifier} NOT LIKE 'pg_toast%'
+    AND ${identifier} NOT LIKE 'pg_temp_%'`;
+>>>>>>> master
 }
 
 function hasBackupTransforms(opts: RunDatabaseBackupOptions): boolean {
@@ -316,7 +322,7 @@ async function runPgDumpBackup(opts: {
   backupFile: string;
   connectTimeout: number;
 }): Promise<void> {
-  const pgDumpBin = process.env.PAPERCLIP_PG_DUMP_PATH || "pg_dump";
+  const pgDumpBin = process.env.NORALOS_PG_DUMP_PATH || "pg_dump";
   const child = spawn(
     pgDumpBin,
     [
@@ -347,7 +353,7 @@ async function runPgDumpBackup(opts: {
 }
 
 async function restoreWithPsql(opts: RunDatabaseRestoreOptions, connectTimeout: number): Promise<void> {
-  const psqlBin = process.env.PAPERCLIP_PSQL_PATH || "psql";
+  const psqlBin = process.env.NORALOS_PSQL_PATH || "psql";
   const child = spawn(
     psqlBin,
     [
@@ -579,7 +585,7 @@ export async function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise
       emit(STATEMENT_BREAKPOINT);
     };
 
-    emit("-- Paperclip database backup");
+    emit("-- NoralOS database backup");
     emit(`-- Created: ${new Date().toISOString()}`);
     emit("");
     emitStatement("BEGIN;");
@@ -830,9 +836,14 @@ export async function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise
       JOIN pg_namespace srcn ON srcn.oid = src.relnamespace
       JOIN pg_class tgt ON tgt.oid = c.confrelid
       JOIN pg_namespace tgtn ON tgtn.oid = tgt.relnamespace
+<<<<<<< v2026.525.0
       JOIN LATERAL unnest(c.conkey, c.confkey) WITH ORDINALITY AS key_columns(source_attnum, target_attnum, ordinal_position) ON true
       JOIN pg_attribute sa ON sa.attrelid = src.oid AND sa.attnum = key_columns.source_attnum
       JOIN pg_attribute ta ON ta.attrelid = tgt.oid AND ta.attnum = key_columns.target_attnum
+=======
+      JOIN pg_attribute sa ON sa.attrelid = src.oid AND sa.attnum = ANY(c.conkey)
+      JOIN pg_attribute ta ON ta.attrelid = tgt.oid AND ta.attnum = ANY(c.confkey)
+>>>>>>> master
       WHERE c.contype = 'f'
         AND ${sql.unsafe(nonSystemSchemaPredicate("srcn.nspname"))}
       GROUP BY c.conname, srcn.nspname, src.relname, tgtn.nspname, tgt.relname, c.confupdtype, c.confdeltype
@@ -855,6 +866,40 @@ export async function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise
       emit("");
     }
 
+<<<<<<< v2026.525.0
+=======
+    // Unique constraints
+    const allUniqueConstraints = await sql<{
+      constraint_name: string;
+      schema_name: string;
+      tablename: string;
+      column_names: string[];
+    }[]>`
+      SELECT c.conname AS constraint_name,
+             n.nspname AS schema_name,
+             t.relname AS tablename,
+             array_agg(a.attname ORDER BY array_position(c.conkey, a.attnum)) AS column_names
+      FROM pg_constraint c
+      JOIN pg_class t ON t.oid = c.conrelid
+      JOIN pg_namespace n ON n.oid = t.relnamespace
+      JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(c.conkey)
+      WHERE c.contype = 'u'
+        AND ${sql.unsafe(nonSystemSchemaPredicate("n.nspname"))}
+      GROUP BY c.conname, n.nspname, t.relname
+      ORDER BY n.nspname, t.relname, c.conname
+    `;
+    const uniques = allUniqueConstraints.filter((entry) => includedTableNames.has(tableKey(entry.schema_name, entry.tablename)));
+
+    if (uniques.length > 0) {
+      emit("-- Unique constraints");
+      for (const u of uniques) {
+        const cols = u.column_names.map((c) => `"${c}"`).join(", ");
+        emitStatement(`ALTER TABLE ${quoteQualifiedName(u.schema_name, u.tablename)} ADD CONSTRAINT "${u.constraint_name}" UNIQUE (${cols});`);
+      }
+      emit("");
+    }
+
+>>>>>>> master
     // Indexes (non-primary, non-unique-constraint)
     const allIndexes = await sql<{ schema_name: string; tablename: string; indexdef: string }[]>`
       SELECT schemaname AS schema_name, tablename, indexdef

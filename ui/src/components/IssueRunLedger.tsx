@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import type { ActivityEvent, Issue, Agent } from "@paperclipai/shared";
+import type { ActivityEvent, Issue, Agent } from "@noralos/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@/lib/router";
 import { accessApi, type CurrentBoardAccess } from "../api/access";
@@ -118,7 +118,7 @@ const PENDING_LIVENESS_COPY: LivenessCopy = {
 const RETRY_PENDING_LIVENESS_COPY: LivenessCopy = {
   label: "Retry pending",
   tone: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
-  description: "Paperclip queued an automatic retry that has not started yet.",
+  description: "NoralOS queued an automatic retry that has not started yet.",
 };
 
 const MISSING_LIVENESS_COPY: LivenessCopy = {
@@ -395,7 +395,7 @@ function watchdogDecisionErrorMessage(error: unknown) {
   }
   return error instanceof Error && error.message.trim().length > 0
     ? error.message
-    : "Paperclip could not record the watchdog decision.";
+    : "NoralOS could not record the watchdog decision.";
 }
 
 export function IssueRunLedger({
@@ -695,7 +695,6 @@ export function IssueRunLedgerContent({
             const continuation = continuationLabel(run);
             const retryState = describeRunRetryState(run);
             const agentName = compactAgentName(run, agentMap);
-            const sourceResolvedFold = readSourceResolvedWatchdogFold(run.resultJson);
             return (
               <article
                 key={`run:${run.runId}`}
@@ -776,7 +775,6 @@ export function IssueRunLedgerContent({
                       </span>
                     );
                   })()}
-                  {sourceResolvedFold ? <SourceResolvedFoldBadge /> : null}
                   <span className="ml-auto shrink-0">{relativeTime(item.timestamp)}</span>
                 </div>
 

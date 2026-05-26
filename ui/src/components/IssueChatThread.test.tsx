@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
 import {
   IssueChatThread,
   VIRTUALIZED_THREAD_ROW_THRESHOLD,
@@ -166,8 +166,8 @@ vi.mock("./IssueLinkQuicklook", () => ({
   ),
 }));
 
-vi.mock("../hooks/usePaperclipIssueRuntime", () => ({
-  usePaperclipIssueRuntime: () => ({}),
+vi.mock("../hooks/useNoralosIssueRuntime", () => ({
+  useNoralosIssueRuntime: () => ({}),
 }));
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -967,9 +967,12 @@ describe("IssueChatThread", () => {
       authorAgentId: "agent-perf-codex",
       authorUserId: null,
       body: "Older loaded comment",
+<<<<<<< v2026.525.0
       authorType: "agent" as const,
       presentation: null,
       metadata: null,
+=======
+>>>>>>> master
       createdAt: new Date("2026-04-06T12:00:00.000Z"),
       updatedAt: new Date("2026-04-06T12:00:00.000Z"),
     };
@@ -1714,7 +1717,7 @@ describe("IssueChatThread", () => {
     });
   });
 
-  it("renders the transcript directly from stable Paperclip messages", () => {
+  it("renders the transcript directly from stable NoralOS messages", () => {
     const root = createRoot(container);
 
     act(() => {

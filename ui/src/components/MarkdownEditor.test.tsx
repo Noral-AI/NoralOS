@@ -3,7 +3,11 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+<<<<<<< v2026.525.0
 import { buildProjectMentionHref, buildRoutineMentionHref, buildSkillMentionHref } from "@paperclipai/shared";
+=======
+import { buildProjectMentionHref, buildSkillMentionHref } from "@noralos/shared";
+>>>>>>> master
 import {
   computeMentionMenuPosition,
   findClosestAutocompleteAnchor,
@@ -540,12 +544,12 @@ describe("MarkdownEditor", () => {
   });
 
   it("keeps mention queries active across spaces", () => {
-    expect(findMentionMatch("Ping @Paperclip App", "Ping @Paperclip App".length)).toEqual({
+    expect(findMentionMatch("Ping @NoralOS App", "Ping @NoralOS App".length)).toEqual({
       trigger: "mention",
       marker: "@",
-      query: "Paperclip App",
+      query: "NoralOS App",
       atPos: 5,
-      endPos: "Ping @Paperclip App".length,
+      endPos: "Ping @NoralOS App".length,
     });
   });
 
@@ -686,6 +690,7 @@ describe("MarkdownEditor", () => {
 
   async function openMentionMenuFor(
     handleChange: ReturnType<typeof vi.fn>,
+<<<<<<< v2026.525.0
     mentions = [
       {
         id: "project:project-123",
@@ -696,14 +701,29 @@ describe("MarkdownEditor", () => {
       },
     ],
   ): Promise<{ option: HTMLButtonElement; root: ReturnType<typeof createRoot>; menu: HTMLElement }> {
+=======
+  ): Promise<{ option: HTMLButtonElement; root: ReturnType<typeof createRoot> }> {
+>>>>>>> master
     const root = createRoot(container);
 
     await act(async () => {
       root.render(
         <MarkdownEditor
-          value="@Pap"
+          value="@Nor"
           onChange={handleChange}
+<<<<<<< v2026.525.0
           mentions={mentions}
+=======
+          mentions={[
+            {
+              id: "project:project-123",
+              kind: "project",
+              name: "NoralOS App",
+              projectId: "project-123",
+              projectColor: "#336699",
+            },
+          ]}
+>>>>>>> master
         />,
       );
     });
@@ -717,7 +737,7 @@ describe("MarkdownEditor", () => {
 
     const selection = window.getSelection();
     const range = document.createRange();
-    range.setStart(textNode!, "@Pap".length);
+    range.setStart(textNode!, "@Nor".length);
     range.collapse(true);
     selection?.removeAllRanges();
     selection?.addRange(range);
@@ -728,11 +748,17 @@ describe("MarkdownEditor", () => {
     await flush();
 
     const option = Array.from(document.body.querySelectorAll('button[type="button"]'))
+<<<<<<< v2026.525.0
       .find((node) => node.textContent?.includes("Paperclip App")) as HTMLButtonElement | undefined;
     expect(option).toBeTruthy();
     const menu = document.body.querySelector('[data-testid="mention-autocomplete-menu"]') as HTMLElement | null;
     expect(menu).toBeTruthy();
     return { option: option!, root, menu: menu! };
+=======
+      .find((node) => node.textContent?.includes("NoralOS App")) as HTMLButtonElement | undefined;
+    expect(option).toBeTruthy();
+    return { option: option!, root };
+>>>>>>> master
   }
 
   it("accepts mention selection from a touch tap", async () => {
@@ -748,7 +774,7 @@ describe("MarkdownEditor", () => {
     });
 
     expect(handleChange).toHaveBeenCalledWith(
-      `[@Paperclip App](${buildProjectMentionHref("project-123", "#336699")}) `,
+      `[@NoralOS App](${buildProjectMentionHref("project-123", "#336699")}) `,
     );
 
     await act(async () => {
@@ -756,6 +782,7 @@ describe("MarkdownEditor", () => {
     });
   });
 
+<<<<<<< v2026.525.0
   it("marks the autocomplete portal as floating UI for modal pointer handling", async () => {
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(handleChange);
@@ -769,6 +796,8 @@ describe("MarkdownEditor", () => {
     });
   });
 
+=======
+>>>>>>> master
   it("does not preventDefault on touchstart so the mention menu can scroll on mobile", async () => {
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(handleChange);
@@ -786,6 +815,7 @@ describe("MarkdownEditor", () => {
     });
   });
 
+<<<<<<< v2026.525.0
   it("renders all mention matches inside a bounded scroll container", async () => {
     const handleChange = vi.fn();
     const mentions = Array.from({ length: 12 }, (_, index) => ({
@@ -879,6 +909,8 @@ describe("MarkdownEditor", () => {
     }
   });
 
+=======
+>>>>>>> master
   it("does not select when the touch moves like a scroll", async () => {
     const handleChange = vi.fn();
     const { option, root } = await openMentionMenuFor(handleChange);

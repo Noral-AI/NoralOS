@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { listAdapterModels, listServerAdapters, refreshAdapterModels } from "../adapters/index.js";
+import { models as codexFallbackModels } from "@noralos/adapter-codex-local";
+import { models as cursorFallbackModels } from "@noralos/adapter-cursor-local";
+import { models as opencodeFallbackModels } from "@noralos/adapter-opencode-local";
+import { resetOpenCodeModelsCacheForTests } from "@noralos/adapter-opencode-local/server";
 import { models as codexFallbackModels } from "@paperclipai/adapter-codex-local";
 import { models as cursorFallbackModels } from "@paperclipai/adapter-cursor-local";
 import { models as opencodeFallbackModels } from "@paperclipai/adapter-opencode-local";
 import { resetOpenCodeModelsCacheForTests } from "@paperclipai/adapter-opencode-local/server";
-import { listAdapterModels, listServerAdapters, refreshAdapterModels } from "../adapters/index.js";
 import { resetCodexModelsCacheForTests } from "../adapters/codex-models.js";
 import { resetCursorModelsCacheForTests, setCursorModelsRunnerForTests } from "../adapters/cursor-models.js";
 
@@ -17,7 +21,7 @@ vi.mock("acpx/runtime", () => ({
 describe("adapter model listing", () => {
   beforeEach(() => {
     delete process.env.OPENAI_API_KEY;
-    delete process.env.PAPERCLIP_OPENCODE_COMMAND;
+    delete process.env.NORALOS_OPENCODE_COMMAND;
     resetCodexModelsCacheForTests();
     resetCursorModelsCacheForTests();
     setCursorModelsRunnerForTests(null);
@@ -116,7 +120,7 @@ describe("adapter model listing", () => {
   });
 
   it("returns opencode fallback models including gpt-5.4", async () => {
-    process.env.PAPERCLIP_OPENCODE_COMMAND = "__paperclip_missing_opencode_command__";
+    process.env.NORALOS_OPENCODE_COMMAND = "__paperclip_missing_opencode_command__";
 
     const models = await listAdapterModels("opencode_local");
 

@@ -2,6 +2,7 @@ import path from "node:path";
 import {
   runAdapterExecutionTargetShellCommand,
   type AdapterExecutionTarget,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-utils/execution-target";
 import { ensurePathInEnv } from "@paperclipai/adapter-utils/server-utils";
 
@@ -14,6 +15,12 @@ const CURSOR_SANDBOX_BIN_DIRS = [
   path.posix.join(".local", "bin"),
   path.posix.join(".cursor", "bin"),
 ];
+=======
+} from "@noralos/adapter-utils/execution-target";
+import { ensurePathInEnv } from "@noralos/adapter-utils/server-utils";
+
+const DEFAULT_CURSOR_COMMAND_BASENAMES = new Set(["agent", "cursor-agent"]);
+>>>>>>> master
 
 function commandBasename(command: string): string {
   return command.trim().split(/[\\/]/).pop()?.toLowerCase() ?? "";
@@ -30,6 +37,7 @@ function prependPosixPathEntry(pathValue: string, entry: string): string {
   return cleaned.length > 0 ? `${entry}:${cleaned}` : entry;
 }
 
+<<<<<<< v2026.525.0
 function prependPosixPathEntries(pathValue: string, entries: string[]): string {
   return entries.reduceRight((value, entry) => prependPosixPathEntry(value, entry), pathValue);
 }
@@ -56,6 +64,8 @@ function candidateSandboxPathEntries(homeDir: string): string[] {
   return CURSOR_SANDBOX_BIN_DIRS.map((relativeDir) => path.posix.join(homeDir, relativeDir));
 }
 
+=======
+>>>>>>> master
 type SandboxCursorRuntimeInfo = {
   remoteSystemHomeDir: string | null;
   preferredCommandPath: string | null;
@@ -74,6 +84,7 @@ async function readSandboxCursorRuntimeInfo(input: {
   command: string;
   cwd: string;
   env: Record<string, string>;
+<<<<<<< v2026.525.0
   remoteSystemHomeDirHint?: string | null;
   timeoutSec: number;
   graceSec: number;
@@ -114,10 +125,20 @@ async function readSandboxCursorRuntimeInfo(input: {
           `resolved="$(command -v ${JSON.stringify(basename)} 2>/dev/null)" && [ -n "$resolved" ] && printf ${JSON.stringify(`${preferredMarker}%s\\n`)} "$resolved"`,
       ),
     ];
+=======
+  timeoutSec: number;
+  graceSec: number;
+}): Promise<SandboxCursorRuntimeInfo> {
+  const shouldCheckPreferredCommand = isDefaultCursorCommand(input.command) && !hasPathSeparator(input.command);
+  const homeMarker = "__PAPERCLIP_CURSOR_HOME__:";
+  const preferredMarker = "__PAPERCLIP_CURSOR_AGENT__:";
+  try {
+>>>>>>> master
     const result = await runAdapterExecutionTargetShellCommand(
       input.runId,
       input.target,
       [
+<<<<<<< v2026.525.0
         hintedRemoteSystemHomeDir
           ? `printf ${JSON.stringify(`${homeMarker}%s\\n`)} ${JSON.stringify(hintedRemoteSystemHomeDir)}`
           : `printf ${JSON.stringify(`${homeMarker}%s\\n`)} "$HOME"`,
@@ -128,6 +149,11 @@ async function readSandboxCursorRuntimeInfo(input: {
               return `${branchKeyword} ${probeBranch}; then :`;
             })
             .join("; ") + "; fi; :"
+=======
+        `printf ${JSON.stringify(`${homeMarker}%s\\n`)} "$HOME"`,
+        shouldCheckPreferredCommand
+          ? `if [ -x "$HOME/.local/bin/cursor-agent" ]; then printf ${JSON.stringify(`${preferredMarker}%s\\n`)} "$HOME/.local/bin/cursor-agent"; fi`
+>>>>>>> master
           : "",
       ].filter(Boolean).join("; "),
       {
@@ -174,7 +200,10 @@ export async function prepareCursorSandboxCommand(input: {
   command: string;
   cwd: string;
   env: Record<string, string>;
+<<<<<<< v2026.525.0
   remoteSystemHomeDirHint?: string | null;
+=======
+>>>>>>> master
   timeoutSec: number;
   graceSec: number;
 }): Promise<PreparedCursorSandboxCommand> {
@@ -194,12 +223,19 @@ export async function prepareCursorSandboxCommand(input: {
     command: input.command,
     cwd: input.cwd,
     env: input.env,
+<<<<<<< v2026.525.0
     remoteSystemHomeDirHint: input.remoteSystemHomeDirHint,
     timeoutSec: input.timeoutSec,
     graceSec: input.graceSec,
   });
   const remoteSystemHomeDir =
     runtimeInfo.remoteSystemHomeDir ?? input.remoteSystemHomeDirHint?.trim() ?? null;
+=======
+    timeoutSec: input.timeoutSec,
+    graceSec: input.graceSec,
+  });
+  const remoteSystemHomeDir = runtimeInfo.remoteSystemHomeDir;
+>>>>>>> master
 
   if (!remoteSystemHomeDir) {
     return {
@@ -211,19 +247,31 @@ export async function prepareCursorSandboxCommand(input: {
     };
   }
 
+<<<<<<< v2026.525.0
   const sandboxPathEntries = candidateSandboxPathEntries(remoteSystemHomeDir);
   const runtimeEnv = ensurePathInEnv(input.env);
   const currentPath = runtimeEnv.PATH ?? runtimeEnv.Path ?? "";
   const nextPath = prependPosixPathEntries(currentPath, sandboxPathEntries);
   const env = nextPath === currentPath ? input.env : { ...input.env, PATH: nextPath };
   const addedPathEntry = nextPath === currentPath ? null : sandboxPathEntries[0];
+=======
+  const remoteLocalBinDir = path.posix.join(remoteSystemHomeDir, ".local", "bin");
+  const runtimeEnv = ensurePathInEnv(input.env);
+  const currentPath = runtimeEnv.PATH ?? runtimeEnv.Path ?? "";
+  const nextPath = prependPosixPathEntry(currentPath, remoteLocalBinDir);
+  const env = nextPath === currentPath ? input.env : { ...input.env, PATH: nextPath };
+>>>>>>> master
 
   if (!runtimeInfo.preferredCommandPath) {
     return {
       command: input.command,
       env,
       remoteSystemHomeDir,
+<<<<<<< v2026.525.0
       addedPathEntry,
+=======
+      addedPathEntry: nextPath === currentPath ? null : remoteLocalBinDir,
+>>>>>>> master
       preferredCommandPath: null,
     };
   }
@@ -232,7 +280,11 @@ export async function prepareCursorSandboxCommand(input: {
     command: runtimeInfo.preferredCommandPath,
     env,
     remoteSystemHomeDir,
+<<<<<<< v2026.525.0
     addedPathEntry,
+=======
+    addedPathEntry: nextPath === currentPath ? null : remoteLocalBinDir,
+>>>>>>> master
     preferredCommandPath: runtimeInfo.preferredCommandPath,
   };
 }

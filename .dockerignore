@@ -1,6 +1,6 @@
 .git
 .github
-.paperclip
+.noralos
 .pnpm-store
 node_modules
 **/node_modules

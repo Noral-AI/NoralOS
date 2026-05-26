@@ -4,9 +4,9 @@ import type {
   PluginDetailTabProps,
   PluginCommentAnnotationProps,
   PluginCommentContextMenuItemProps,
-} from "@paperclipai/plugin-sdk/ui";
-import { FileTree, usePluginAction, usePluginData } from "@paperclipai/plugin-sdk/ui";
-import { useCallback, useMemo, useState, useEffect, useRef, type MouseEvent, type RefObject } from "react";
+} from "@noralos/plugin-sdk/ui";
+import { usePluginAction, usePluginData } from "@noralos/plugin-sdk/ui";
+import { useMemo, useState, useEffect, useRef, type MouseEvent, type RefObject } from "react";
 import { EditorView } from "@codemirror/view";
 import { basicSetup } from "codemirror";
 import { javascript } from "@codemirror/lang-javascript";

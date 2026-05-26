@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { agents, companies, createDb, environmentLeases, environments, heartbeatRuns } from "@paperclipai/db";
+import { agents, companies, createDb, environmentLeases, environments, heartbeatRuns } from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -140,6 +140,50 @@ describeEmbeddedPostgres("environmentService leases", () => {
 
     const stillActive = await svc.listLeases(environmentId, { status: "active" });
     expect(stillActive.map((lease) => lease.id)).toEqual([otherLease.id]);
+  });
+
+  it("serializes concurrent acquireLease for the same environment without deadlocking", async () => {
+    // Regression test for the e2e-visible
+    //   "EnvironmentRunError: Failed to acquire lease for environment
+    //    \"Local\" (local): deadlock detected"
+    // surfaced after PR #31 unblocked embedded-postgres CI auth. acquireLease
+    // takes a per-environment pg_advisory_xact_lock to serialize concurrent
+    // INSERTs and avoid FK-share-lock contention with concurrent updates /
+    // deletes on the parent environments / heartbeat_runs rows.
+    const { companyId, agentId, environmentId } = await seedEnvironment();
+
+    const concurrency = 8;
+    const runIds: string[] = [];
+    for (let i = 0; i < concurrency; i += 1) {
+      const runId = randomUUID();
+      runIds.push(runId);
+      await db.insert(heartbeatRuns).values({
+        id: runId,
+        companyId,
+        agentId,
+        invocationSource: "manual",
+        status: "running",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    const leases = await Promise.all(
+      runIds.map((runId) =>
+        svc.acquireLease({
+          companyId,
+          environmentId,
+          heartbeatRunId: runId,
+        }),
+      ),
+    );
+
+    expect(leases).toHaveLength(concurrency);
+    expect(new Set(leases.map((lease) => lease.id)).size).toBe(concurrency);
+    for (const lease of leases) {
+      expect(lease.status).toBe("active");
+      expect(lease.environmentId).toBe(environmentId);
+    }
   });
 
   it("creates and then reuses the default local environment for a company", async () => {

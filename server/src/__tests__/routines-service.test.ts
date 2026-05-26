@@ -20,8 +20,7 @@ import {
   routineRuns,
   routines,
   routineTriggers,
-  secretAccessEvents,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -114,7 +113,7 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix,
       requireBoardApprovalForNewAgents: false,
     });

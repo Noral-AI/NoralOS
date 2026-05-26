@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   agents,
   agentConfigRevisions,
@@ -15,8 +15,8 @@ import {
   issueExecutionDecisions,
   issues,
   issueComments,
-} from "@paperclipai/db";
-import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
+} from "@noralos/db";
+import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, isUuidLike, normalizeAgentUrlKey } from "@noralos/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { normalizeAgentPermissions } from "./agent-permissions.js";
 import { REDACTED_EVENT_VALUE, sanitizeRecord } from "../redaction.js";
@@ -211,6 +211,18 @@ export function deduplicateAgentName(
   return `${candidateName} ${Date.now()}`;
 }
 
+
+// Service accounts (e.g., "Voice Cascade Service", "Conference Room Service")
+// are tagged with metadata.systemManaged === true. They exist only to issue
+// API keys for plugin↔plugin auth and should not appear in normal agent UI
+// (sidebar, lists, org chart). Callers that genuinely need them — admin
+// service-account management, audit, plugin bootstrap — pass
+// `{ includeSystemManaged: true }` to opt back in.
+function isSystemManagedAgent(row: typeof agents.$inferSelect): boolean {
+  const m = row.metadata as Record<string, unknown> | null;
+  return Boolean(m && m["systemManaged"] === true);
+}
+
 export function agentService(db: Db) {
   function currentUtcMonthWindow(now = new Date()) {
     const year = now.getUTCFullYear();
@@ -398,13 +410,19 @@ export function agentService(db: Db) {
   }
 
   return {
-    list: async (companyId: string, options?: { includeTerminated?: boolean }) => {
+    list: async (
+      companyId: string,
+      options?: { includeTerminated?: boolean; includeSystemManaged?: boolean },
+    ) => {
       const conditions = [eq(agents.companyId, companyId)];
       if (!options?.includeTerminated) {
         conditions.push(ne(agents.status, "terminated"));
       }
       const rows = await db.select().from(agents).where(and(...conditions));
-      const hydrated = await hydrateAgentSpend(rows);
+      const filtered = options?.includeSystemManaged
+        ? rows
+        : rows.filter((row) => !isSystemManagedAgent(row));
+      const hydrated = await hydrateAgentSpend(filtered);
       return hydrated.map(normalizeAgentRow);
     },
 
@@ -504,9 +522,24 @@ export function agentService(db: Db) {
 
       return db.transaction(async (tx) => {
         await tx.update(agents).set({ reportsTo: null }).where(eq(agents.reportsTo, id));
+        // Clear assignment AND run-lock state on issues this agent owned.
+        // Without clearing checkoutRunId/executionRunId, post-delete issues
+        // retain orphan run id references (the heartbeat_runs rows are
+        // deleted below) and the next checkout attempt fails with
+        // "Issue checkout conflict" — adoptStaleCheckoutRun can't recover
+        // because it requires assigneeAgentId === actor, which we just
+        // nulled. assigneeUserId is intentionally untouched.
         await tx
           .update(issues)
-          .set({ assigneeAgentId: null, createdByAgentId: null })
+          .set({
+            assigneeAgentId: null,
+            createdByAgentId: null,
+            checkoutRunId: null,
+            executionRunId: null,
+            executionAgentNameKey: null,
+            executionLockedAt: null,
+            updatedAt: new Date(),
+          })
           .where(or(eq(issues.assigneeAgentId, id), eq(issues.createdByAgentId, id)));
         await tx.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.agentId, id));
         await tx.delete(agentTaskSessions).where(eq(agentTaskSessions.agentId, id));
@@ -547,7 +580,10 @@ export function agentService(db: Db) {
       return existing ? { agent: existing, activated: false } : null;
     },
 
-    updatePermissions: async (id: string, permissions: { canCreateAgents: boolean }) => {
+    updatePermissions: async (
+      id: string,
+      permissions: { canCreateAgents: boolean; canCreateDepartments: boolean },
+    ) => {
       const existing = await getById(id);
       if (!existing) return null;
 
@@ -669,12 +705,18 @@ export function agentService(db: Db) {
       return rows[0] ?? null;
     },
 
-    orgForCompany: async (companyId: string) => {
-      const rows = await db
+    orgForCompany: async (
+      companyId: string,
+      options?: { includeSystemManaged?: boolean },
+    ) => {
+      const rawRows = await db
         .select()
         .from(agents)
         .where(and(eq(agents.companyId, companyId), ne(agents.status, "terminated")));
-      const normalizedRows = rows.map(normalizeAgentRow);
+      const filteredRows = options?.includeSystemManaged
+        ? rawRows
+        : rawRows.filter((row) => !isSystemManagedAgent(row));
+      const normalizedRows = filteredRows.map(normalizeAgentRow);
       const byManager = new Map<string | null, typeof normalizedRows>();
       for (const row of normalizedRows) {
         const key = row.reportsTo ?? null;

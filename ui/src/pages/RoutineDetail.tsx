@@ -66,6 +66,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+<<<<<<< v2026.525.0
 import type {
   EnvBinding,
   RoutineDetail as RoutineDetailType,
@@ -73,6 +74,9 @@ import type {
   RoutineTrigger,
   RoutineVariable,
 } from "@paperclipai/shared";
+=======
+import type { RoutineTrigger, RoutineVariable } from "@noralos/shared";
+>>>>>>> master
 
 const concurrencyPolicies = ["coalesce_if_active", "always_enqueue", "skip_if_active"];
 const catchUpPolicies = ["skip_missed", "enqueue_missed_with_cap"];
@@ -521,7 +525,7 @@ export function RoutineDetail() {
       }
       pushToast({
         title: "Failed to save routine",
-        body: error instanceof Error ? error.message : "Paperclip could not save the routine.",
+        body: error instanceof Error ? error.message : "NoralOS could not save the routine.",
         tone: "error",
       });
     },
@@ -555,7 +559,7 @@ export function RoutineDetail() {
     onError: (error) => {
       pushToast({
         title: "Routine run failed",
-        body: error instanceof Error ? error.message : "Paperclip could not start the routine run.",
+        body: error instanceof Error ? error.message : "NoralOS could not start the routine run.",
         tone: "error",
       });
     },
@@ -577,7 +581,7 @@ export function RoutineDetail() {
     onError: (error) => {
       pushToast({
         title: "Failed to update routine",
-        body: error instanceof Error ? error.message : "Paperclip could not update the routine.",
+        body: error instanceof Error ? error.message : "NoralOS could not update the routine.",
         tone: "error",
       });
     },
@@ -626,7 +630,7 @@ export function RoutineDetail() {
     onError: (error) => {
       pushToast({
         title: "Failed to add trigger",
-        body: error instanceof Error ? error.message : "Paperclip could not create the trigger.",
+        body: error instanceof Error ? error.message : "NoralOS could not create the trigger.",
         tone: "error",
       });
     },
@@ -649,7 +653,7 @@ export function RoutineDetail() {
     onError: (error) => {
       pushToast({
         title: "Failed to update trigger",
-        body: error instanceof Error ? error.message : "Paperclip could not update the trigger.",
+        body: error instanceof Error ? error.message : "NoralOS could not update the trigger.",
         tone: "error",
       });
     },
@@ -671,7 +675,7 @@ export function RoutineDetail() {
     onError: (error) => {
       pushToast({
         title: "Failed to delete trigger",
-        body: error instanceof Error ? error.message : "Paperclip could not delete the trigger.",
+        body: error instanceof Error ? error.message : "NoralOS could not delete the trigger.",
         tone: "error",
       });
     },
@@ -695,7 +699,7 @@ export function RoutineDetail() {
     onError: (error) => {
       pushToast({
         title: "Failed to rotate webhook secret",
-        body: error instanceof Error ? error.message : "Paperclip could not rotate the webhook secret.",
+        body: error instanceof Error ? error.message : "NoralOS could not rotate the webhook secret.",
         tone: "error",
       });
     },
@@ -851,7 +855,7 @@ export function RoutineDetail() {
         <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 space-y-3 text-sm">
           <div>
             <p className="font-medium">{secretMessage.title}</p>
-            <p className="text-xs text-muted-foreground">Save this now. Paperclip will not show the secret value again.</p>
+            <p className="text-xs text-muted-foreground">Save this now. NoralOS will not show the secret value again.</p>
           </div>
           <div className="space-y-3">
             {secretMessage.entries.map((entry, index) => (

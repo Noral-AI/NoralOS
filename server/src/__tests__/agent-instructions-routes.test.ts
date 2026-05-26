@@ -65,6 +65,7 @@ vi.mock("../services/environments.js", () => ({
 vi.mock("../adapters/index.js", () => ({
   findServerAdapter: mockFindServerAdapter,
   listAdapterModels: vi.fn(),
+  listAdapterModelProfiles: vi.fn(async () => []),
 }));
 
 function registerModuleMocks() {

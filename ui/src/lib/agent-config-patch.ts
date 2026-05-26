@@ -1,4 +1,14 @@
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
+
+export interface AgentModelProfileOverlay {
+  enabled?: boolean;
+  adapterConfig?: Record<string, unknown>;
+  /**
+   * Mark the cheap profile for clearing. When true, the patch removes
+   * `runtimeConfig.modelProfiles.cheap` instead of merging into it.
+   */
+  cleared?: boolean;
+}
 
 export interface AgentModelProfileOverlay {
   enabled?: boolean;

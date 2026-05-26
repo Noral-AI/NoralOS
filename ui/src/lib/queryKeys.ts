@@ -12,6 +12,9 @@ export const queryKeys = {
     file: (companyId: string, skillId: string, relativePath: string) =>
       ["company-skills", companyId, skillId, "file", relativePath] as const,
   },
+  departments: {
+    list: (companyId: string) => ["departments", companyId] as const,
+  },
   agents: {
     list: (companyId: string) => ["agents", companyId] as const,
     detail: (id: string) => ["agents", "detail", id] as const,
@@ -23,8 +26,13 @@ export const queryKeys = {
       ["agents", "instructions-bundle", id, "file", relativePath] as const,
     keys: (agentId: string) => ["agents", "keys", agentId] as const,
     configRevisions: (agentId: string) => ["agents", "config-revisions", agentId] as const,
+<<<<<<< v2026.525.0
     adapterModels: (companyId: string, adapterType: string, environmentId?: string | null) =>
       ["agents", companyId, "adapter-models", adapterType, environmentId ?? null] as const,
+=======
+    adapterModels: (companyId: string, adapterType: string) =>
+      ["agents", companyId, "adapter-models", adapterType] as const,
+>>>>>>> master
     adapterModelProfiles: (companyId: string, adapterType: string) =>
       ["agents", companyId, "adapter-model-profiles", adapterType] as const,
     detectModel: (companyId: string, adapterType: string) =>
@@ -55,10 +63,14 @@ export const queryKeys = {
     comments: (issueId: string) => ["issues", "comments", issueId] as const,
     interactions: (issueId: string) => ["issues", "interactions", issueId] as const,
     feedbackVotes: (issueId: string) => ["issues", "feedback-votes", issueId] as const,
+<<<<<<< v2026.525.0
     costSummary: (issueId: string, options: { excludeRoot?: boolean } = {}) =>
       options.excludeRoot
         ? (["issues", "cost-summary", issueId, "exclude-root"] as const)
         : (["issues", "cost-summary", issueId] as const),
+=======
+    costSummary: (issueId: string) => ["issues", "cost-summary", issueId] as const,
+>>>>>>> master
     attachments: (issueId: string) => ["issues", "attachments", issueId] as const,
     documents: (issueId: string) => ["issues", "documents", issueId] as const,
     document: (issueId: string, key: string) => ["issues", "document", issueId, key] as const,
@@ -107,6 +119,8 @@ export const queryKeys = {
     detail: (approvalId: string) => ["approvals", "detail", approvalId] as const,
     comments: (approvalId: string) => ["approvals", "comments", approvalId] as const,
     issues: (approvalId: string) => ["approvals", "issues", approvalId] as const,
+    pendingConfirmations: (companyId: string) =>
+      ["approvals", "pending-confirmations", companyId] as const,
   },
   access: {
     invites: (companyId: string, state: string = "all", limit: number = 20) =>

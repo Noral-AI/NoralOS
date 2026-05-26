@@ -189,11 +189,11 @@ describe("E2B sandbox provider plugin", () => {
       providerLeaseId: "sandbox-123",
       metadata: {
         provider: "e2b",
-        remoteCwd: "/home/user/paperclip-workspace",
+        remoteCwd: "/home/user/noralos-workspace",
       },
     });
     expect(sandbox.commands.run).toHaveBeenNthCalledWith(1, "pwd");
-    expect(sandbox.commands.run).toHaveBeenNthCalledWith(2, "mkdir -p '/home/user/paperclip-workspace'");
+    expect(sandbox.commands.run).toHaveBeenNthCalledWith(2, "mkdir -p '/home/user/noralos-workspace'");
   });
 
   it("kills the sandbox if acquire setup fails after creation", async () => {
@@ -302,6 +302,7 @@ describe("E2B sandbox provider plugin", () => {
     });
 
     expect(mockConnect).toHaveBeenCalledWith("sandbox-123", expect.objectContaining({ apiKey: "resolved-key" }));
+<<<<<<< v2026.525.0
     expect(sandbox.files.write).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/paperclip-stdin-/), "input");
     const stdinCall = sandbox.commands.run.mock.calls.find(([cmd]: [string]) => cmd.includes("'printf'"));
     expect(stdinCall).toBeDefined();
@@ -315,6 +316,24 @@ describe("E2B sandbox provider plugin", () => {
     expect(sandbox.commands.closeStdin).not.toHaveBeenCalled();
     expect(sandbox.handle.wait).not.toHaveBeenCalled();
     expect(sandbox.files.remove).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/paperclip-stdin-/));
+=======
+    expect(sandbox.files.write).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/noralos-stdin-/), "input");
+    expect(sandbox.commands.run).toHaveBeenCalledWith(expect.stringMatching(
+      /^exec 'printf' 'hello' < '\/tmp\/noralos-stdin-/,
+    ), expect.objectContaining({
+      cwd: "/workspace",
+      envs: { FOO: "bar" },
+      timeoutMs: 1000,
+    }));
+    expect(sandbox.commands.run).not.toHaveBeenCalledWith(
+      "exec 'printf' 'hello'",
+      expect.objectContaining({ background: true }),
+    );
+    expect(sandbox.commands.sendStdin).not.toHaveBeenCalled();
+    expect(sandbox.commands.closeStdin).not.toHaveBeenCalled();
+    expect(sandbox.handle.wait).not.toHaveBeenCalled();
+    expect(sandbox.files.remove).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/noralos-stdin-/));
+>>>>>>> master
     expect(result).toEqual({
       exitCode: 0,
       timedOut: false,
@@ -360,6 +379,7 @@ describe("E2B sandbox provider plugin", () => {
       timeoutMs: 1000,
     });
 
+<<<<<<< v2026.525.0
     const fgCall = sandbox.commands.run.mock.calls.find(([cmd]: [string]) => cmd.includes("'printf'"));
     expect(fgCall).toBeDefined();
     if (!fgCall) throw new Error("fgCall not found");
@@ -368,6 +388,17 @@ describe("E2B sandbox provider plugin", () => {
     expect(fgCall[1]).toEqual(expect.objectContaining({ cwd: "/workspace", timeoutMs: 1000 }));
     expect(fgCall[1]).not.toHaveProperty("envs");
     expect(fgCall[1]).not.toHaveProperty("background");
+=======
+    expect(sandbox.commands.run).toHaveBeenCalledWith("exec 'printf' 'hello'", expect.objectContaining({
+      cwd: "/workspace",
+      envs: { FOO: "bar" },
+      timeoutMs: 1000,
+    }));
+    expect(sandbox.commands.run).not.toHaveBeenCalledWith(
+      "exec 'printf' 'hello'",
+      expect.objectContaining({ background: true }),
+    );
+>>>>>>> master
     expect(sandbox.commands.sendStdin).not.toHaveBeenCalled();
     expect(sandbox.commands.closeStdin).not.toHaveBeenCalled();
     expect(sandbox.handle.wait).not.toHaveBeenCalled();
@@ -379,6 +410,7 @@ describe("E2B sandbox provider plugin", () => {
     });
   });
 
+<<<<<<< v2026.525.0
   it("refreshes the sandbox lifetime on every execute so long runs don't die mid-command", async () => {
     const sandbox = createMockSandbox();
     mockConnect.mockResolvedValue(sandbox);
@@ -432,6 +464,8 @@ describe("E2B sandbox provider plugin", () => {
     expect(result?.exitCode).toBe(0);
   });
 
+=======
+>>>>>>> master
   it("cleans up staged stdin even when writing it fails", async () => {
     const sandbox = createMockSandbox();
     const failure = new Error("write failed");
@@ -457,7 +491,11 @@ describe("E2B sandbox provider plugin", () => {
       timeoutMs: 1000,
     })).rejects.toThrow("write failed");
 
+<<<<<<< v2026.525.0
     expect(sandbox.files.remove).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/paperclip-stdin-/));
+=======
+    expect(sandbox.files.remove).toHaveBeenCalledWith(expect.stringMatching(/^\/tmp\/noralos-stdin-/));
+>>>>>>> master
     expect(sandbox.commands.sendStdin).not.toHaveBeenCalled();
     expect(sandbox.handle.wait).not.toHaveBeenCalled();
   });
@@ -627,21 +665,21 @@ describe("E2B sandbox provider plugin", () => {
       },
       lease: {
         providerLeaseId: "sandbox-realize",
-        metadata: { remoteCwd: "/home/user/paperclip-workspace" },
+        metadata: { remoteCwd: "/home/user/noralos-workspace" },
       },
       workspace: {
-        localPath: "/tmp/paperclip-workspace",
+        localPath: "/tmp/noralos-workspace",
       },
     })).resolves.toEqual({
-      cwd: "/home/user/paperclip-workspace",
+      cwd: "/home/user/noralos-workspace",
       metadata: {
         provider: "e2b",
-        remoteCwd: "/home/user/paperclip-workspace",
+        remoteCwd: "/home/user/noralos-workspace",
       },
     });
 
     expect(mockConnect).toHaveBeenCalledWith("sandbox-realize", expect.objectContaining({ apiKey: "resolved-key" }));
-    expect(sandbox.commands.run).toHaveBeenCalledWith("mkdir -p '/home/user/paperclip-workspace'");
+    expect(sandbox.commands.run).toHaveBeenCalledWith("mkdir -p '/home/user/noralos-workspace'");
   });
 
   it("swallows destroy kill errors after logging them", async () => {

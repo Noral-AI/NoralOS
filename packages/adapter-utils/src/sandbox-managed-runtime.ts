@@ -14,6 +14,7 @@ export interface SandboxRemoteExecutionSpec {
   remoteCwd: string;
   timeoutMs: number;
   apiKey: string | null;
+  noralosApiUrl?: string | null;
 }
 
 export interface SandboxManagedRuntimeAsset {
@@ -85,6 +86,7 @@ export function parseSandboxRemoteExecutionSpec(value: unknown): SandboxRemoteEx
     remoteCwd,
     timeoutMs,
     apiKey: asString(parsed.apiKey).trim() || null,
+    noralosApiUrl: asString(parsed.noralosApiUrl).trim() || null,
   };
 }
 
@@ -95,6 +97,7 @@ export function buildSandboxExecutionSessionIdentity(spec: SandboxRemoteExecutio
     provider: spec.provider,
     sandboxId: spec.sandboxId,
     remoteCwd: spec.remoteCwd,
+    ...(spec.noralosApiUrl ? { noralosApiUrl: spec.noralosApiUrl } : {}),
   } as const;
 }
 
@@ -106,7 +109,8 @@ export function sandboxExecutionSessionMatches(saved: unknown, current: SandboxR
     asString(parsedSaved.transport) === currentIdentity.transport &&
     asString(parsedSaved.provider) === currentIdentity.provider &&
     asString(parsedSaved.sandboxId) === currentIdentity.sandboxId &&
-    asString(parsedSaved.remoteCwd) === currentIdentity.remoteCwd
+    asString(parsedSaved.remoteCwd) === currentIdentity.remoteCwd &&
+    asString(parsedSaved.noralosApiUrl) === asString(currentIdentity.noralosApiUrl)
   );
 }
 

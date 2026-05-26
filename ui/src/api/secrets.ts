@@ -1,3 +1,4 @@
+<<<<<<< v2026.525.0
 import type {
   CompanySecret,
   CompanySecretUsageBinding,
@@ -13,6 +14,9 @@ import type {
   SecretProviderDescriptor,
   SecretStatus,
 } from "@paperclipai/shared";
+=======
+import type { CompanySecret, SecretProviderDescriptor, SecretProvider } from "@noralos/shared";
+>>>>>>> master
 import { api } from "./client";
 
 export interface SecretUsageResponse {

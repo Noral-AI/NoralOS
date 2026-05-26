@@ -1,6 +1,10 @@
 import { isValidElement, useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+<<<<<<< v2026.525.0
 import { Check, Copy, ExternalLink, Github, WrapText } from "lucide-react";
+=======
+import { Check, Copy, ExternalLink, Github } from "lucide-react";
+>>>>>>> master
 import Markdown, { defaultUrlTransform, type Components, type Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/utils";
@@ -397,7 +401,10 @@ function CodeBlock({
 }) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
+<<<<<<< v2026.525.0
   const [wrapLines, setWrapLines] = useState(false);
+=======
+>>>>>>> master
   const preRef = useRef<HTMLPreElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -435,6 +442,7 @@ function CodeBlock({
     }, 1500);
   }, [children]);
 
+<<<<<<< v2026.525.0
   const copyLabel = failed ? "Copy failed" : copied ? "Copied!" : "Copy";
   const wrapLabel = wrapLines ? "Unwrap lines" : "Wrap lines";
 
@@ -498,6 +506,35 @@ function CodeBlock({
           <span className="paperclip-markdown-codeblock-action-label">{copyLabel}</span>
         </button>
       </div>
+=======
+  const label = failed ? "Copy failed" : copied ? "Copied!" : "Copy";
+
+  return (
+    <div className="paperclip-markdown-codeblock">
+      <pre
+        {...preProps}
+        ref={preRef}
+        style={mergeScrollableBlockStyle(preProps.style as React.CSSProperties | undefined)}
+      >
+        {children}
+      </pre>
+      <button
+        type="button"
+        onClick={handleCopy}
+        aria-label="Copy code"
+        title={label}
+        className="paperclip-markdown-codeblock-copy"
+        data-copied={copied || undefined}
+        data-failed={failed || undefined}
+      >
+        {copied && !failed ? (
+          <Check aria-hidden="true" className="h-3.5 w-3.5" />
+        ) : (
+          <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+        )}
+        <span className="paperclip-markdown-codeblock-copy-label">{label}</span>
+      </button>
+>>>>>>> master
     </div>
   );
 }

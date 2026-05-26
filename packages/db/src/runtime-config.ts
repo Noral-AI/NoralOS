@@ -37,6 +37,42 @@ export type ResolvedDatabaseTarget =
       envPath: string;
     };
 
+<<<<<<< v2026.525.0
+=======
+function expandHomePrefix(value: string): string {
+  if (value === "~") return os.homedir();
+  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
+  return value;
+}
+
+function resolveNoralosHomeDir(): string {
+  const envHome = process.env.NORALOS_HOME?.trim();
+  if (envHome) return path.resolve(expandHomePrefix(envHome));
+  return path.resolve(os.homedir(), ".paperclip");
+}
+
+function resolveNoralosInstanceId(): string {
+  const raw = process.env.NORALOS_INSTANCE_ID?.trim() || DEFAULT_INSTANCE_ID;
+  if (!INSTANCE_ID_RE.test(raw)) {
+    throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
+  }
+  return raw;
+}
+
+function resolveDefaultConfigPath(): string {
+  return path.resolve(
+    resolveNoralosHomeDir(),
+    "instances",
+    resolveNoralosInstanceId(),
+    CONFIG_BASENAME,
+  );
+}
+
+function resolveDefaultEmbeddedPostgresDir(): string {
+  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "db");
+}
+
+>>>>>>> master
 function resolveHomeAwarePath(value: string): string {
   return path.resolve(expandHomePrefix(value));
 }
@@ -54,15 +90,20 @@ function findConfigFileFromAncestors(startDir: string): string | null {
   }
 }
 
-function resolvePaperclipConfigPath(): string {
-  if (process.env.PAPERCLIP_CONFIG?.trim()) {
-    return path.resolve(process.env.PAPERCLIP_CONFIG.trim());
+function resolveNoralosConfigPath(): string {
+  if (process.env.NORALOS_CONFIG?.trim()) {
+    return path.resolve(process.env.NORALOS_CONFIG.trim());
   }
   return findConfigFileFromAncestors(process.cwd()) ?? resolvePaperclipConfigPathForInstance();
 }
 
+<<<<<<< v2026.525.0
 function resolvePaperclipEnvPath(configPath: string): string {
   return resolvePaperclipEnvPathForConfig(configPath);
+=======
+function resolveNoralosEnvPath(configPath: string): string {
+  return path.resolve(path.dirname(configPath), ENV_BASENAME);
+>>>>>>> master
 }
 
 function parseEnvFile(contents: string): Record<string, string> {
@@ -182,8 +223,8 @@ function readConfig(configPath: string): PartialConfig | null {
 }
 
 export function resolveDatabaseTarget(): ResolvedDatabaseTarget {
-  const configPath = resolvePaperclipConfigPath();
-  const envPath = resolvePaperclipEnvPath(configPath);
+  const configPath = resolveNoralosConfigPath();
+  const envPath = resolveNoralosEnvPath(configPath);
   const envEntries = readEnvEntries(envPath);
 
   const envUrl = process.env.DATABASE_URL?.trim();

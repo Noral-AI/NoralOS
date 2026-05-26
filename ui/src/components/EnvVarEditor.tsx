@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { CompanySecret, EnvBinding, SecretVersionSelector } from "@paperclipai/shared";
-import { AlertCircle, X } from "lucide-react";
+import type { CompanySecret, EnvBinding } from "@noralos/shared";
+import { X } from "lucide-react";
 import { cn } from "../lib/utils";
 
 const inputClass =
@@ -315,8 +315,7 @@ export function EnvVarEditor({
         );
       })()}
       <p className="text-[11px] text-muted-foreground/60">
-        Set KEY to the env var name the process expects, for example GH_TOKEN. Choose Secret to resolve a stored
-        value at run start. PAPERCLIP_* variables are injected automatically.
+        NORALOS_* variables are injected automatically at runtime.
       </p>
     </div>
   );

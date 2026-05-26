@@ -26,6 +26,7 @@ export interface SshCommandResult {
 
 export interface SshRemoteExecutionSpec extends SshConnectionConfig {
   remoteCwd: string;
+<<<<<<< v2026.525.0
 }
 
 export function createSshCommandManagedRuntimeRunner(input: {
@@ -105,6 +106,9 @@ export function createSshCommandManagedRuntimeRunner(input: {
       }
     },
   };
+=======
+  noralosApiUrl?: string | null;
+>>>>>>> master
 }
 
 export interface SshEnvLabSupport {
@@ -166,6 +170,13 @@ export function parseSshRemoteExecutionSpec(value: unknown): SshRemoteExecutionS
     port: portValue,
     username,
     remoteCwd,
+<<<<<<< v2026.525.0
+=======
+    noralosApiUrl:
+      typeof parsed.noralosApiUrl === "string" && parsed.noralosApiUrl.trim().length > 0
+        ? parsed.noralosApiUrl.trim()
+        : null,
+>>>>>>> master
     remoteWorkspacePath:
       typeof parsed.remoteWorkspacePath === "string" && parsed.remoteWorkspacePath.trim().length > 0
         ? parsed.remoteWorkspacePath.trim()
@@ -177,6 +188,53 @@ export function parseSshRemoteExecutionSpec(value: unknown): SshRemoteExecutionS
   };
 }
 
+<<<<<<< v2026.525.0
+=======
+function normalizeHttpUrlCandidate(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return null;
+    }
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+export async function findReachableNoralosApiUrlOverSsh(input: {
+  config: SshConnectionConfig;
+  candidates: string[];
+  timeoutMs?: number;
+}): Promise<string | null> {
+  const uniqueCandidates = Array.from(
+    new Set(
+      input.candidates
+        .map((candidate) => normalizeHttpUrlCandidate(candidate))
+        .filter((candidate): candidate is string => candidate !== null),
+    ),
+  );
+
+  for (const candidate of uniqueCandidates) {
+    const healthUrl = new URL("/api/health", candidate).toString();
+    try {
+      await runSshCommand(
+        input.config,
+        `sh -lc ${shellQuote(`curl -fsS -m ${Math.max(1, Math.ceil((input.timeoutMs ?? 5_000) / 1000))} ${shellQuote(healthUrl)} >/dev/null`)}`,
+        { timeoutMs: input.timeoutMs ?? 5_000 },
+      );
+      return candidate;
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+>>>>>>> master
 async function execFileText(
   file: string,
   args: string[],
@@ -597,9 +655,13 @@ async function importGitWorkspaceToSsh(input: {
 }): Promise<void> {
   const bundleDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-ssh-bundle-"));
   const bundlePath = path.join(bundleDir, "workspace.bundle");
+<<<<<<< v2026.525.0
   // Per-import unique ref so concurrent imports against the same local repo
   // can't race on `update-ref` between this run's update and bundle create.
   const tempRef = `refs/paperclip/ssh-sync/import/${randomUUID()}`;
+=======
+  const tempRef = "refs/noralos/ssh-sync/import";
+>>>>>>> master
 
   try {
     await runLocalGit(input.localDir, ["update-ref", tempRef, input.snapshot.headCommit], {
@@ -651,17 +713,21 @@ async function exportGitWorkspaceFromSsh(input: {
 }): Promise<string> {
   const bundleDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-ssh-bundle-"));
   const bundlePath = path.join(bundleDir, "workspace.bundle");
+<<<<<<< v2026.525.0
   const importedRef = input.importedRef ?? `refs/paperclip/ssh-sync/imported/${randomUUID()}`;
+=======
+  const importedRef = "refs/noralos/ssh-sync/imported";
+>>>>>>> master
 
   try {
     const exportScript = [
       "set -e",
-      `git -C ${shellQuote(input.remoteDir)} update-ref refs/paperclip/ssh-sync/export HEAD`,
+      `git -C ${shellQuote(input.remoteDir)} update-ref refs/noralos/ssh-sync/export HEAD`,
       `mkdir -p ${shellQuote(path.posix.join(input.remoteDir, ".paperclip-runtime"))}`,
       `tmp_bundle=$(mktemp ${shellQuote(path.posix.join(input.remoteDir, ".paperclip-runtime", "export-XXXXXX.bundle"))})`,
-      'cleanup() { rm -f "$tmp_bundle"; git -C ' + shellQuote(input.remoteDir) + ' update-ref -d refs/paperclip/ssh-sync/export >/dev/null 2>&1 || true; }',
+      'cleanup() { rm -f "$tmp_bundle"; git -C ' + shellQuote(input.remoteDir) + ' update-ref -d refs/noralos/ssh-sync/export >/dev/null 2>&1 || true; }',
       'trap cleanup EXIT',
-      `git -C ${shellQuote(input.remoteDir)} bundle create "$tmp_bundle" refs/paperclip/ssh-sync/export >/dev/null`,
+      `git -C ${shellQuote(input.remoteDir)} bundle create "$tmp_bundle" refs/noralos/ssh-sync/export >/dev/null`,
       'cat "$tmp_bundle"',
     ].join("\n");
 
@@ -671,7 +737,7 @@ async function exportGitWorkspaceFromSsh(input: {
       localFile: bundlePath,
     });
 
-    await runLocalGit(input.localDir, ["fetch", "--force", bundlePath, `refs/paperclip/ssh-sync/export:${importedRef}`], {
+    await runLocalGit(input.localDir, ["fetch", "--force", bundlePath, `refs/noralos/ssh-sync/export:${importedRef}`], {
       timeout: 60_000,
       maxBuffer: 1024 * 1024,
     });

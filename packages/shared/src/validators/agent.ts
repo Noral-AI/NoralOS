@@ -10,6 +10,7 @@ import { envConfigSchema } from "./secret.js";
 
 export const agentPermissionsSchema = z.object({
   canCreateAgents: z.boolean().optional().default(false),
+  canCreateDepartments: z.boolean().optional().default(false),
 });
 
 export const agentInstructionsBundleModeSchema = z.enum(["managed", "external"]);
@@ -76,6 +77,7 @@ export const createAgentSchema = z.object({
   instructionsBundle: createAgentInstructionsBundleSchema.optional(),
   runtimeConfig: agentRuntimeConfigSchema.optional().default({}),
   defaultEnvironmentId: z.string().uuid().optional().nullable(),
+  departmentId: z.string().uuid().optional().nullable(),
   budgetMonthlyCents: z.number().int().nonnegative().optional().default(0),
   permissions: agentPermissionsSchema.optional(),
   metadata: z.record(z.string(), z.unknown()).optional().nullable(),
@@ -146,7 +148,7 @@ export const testAdapterEnvironmentSchema = z.object({
   adapterConfig: adapterConfigSchema.optional().default({}),
   /**
    * Optional environment to run the adapter test inside. When omitted, the
-   * test runs against the local Paperclip host. When provided and the
+   * test runs against the local NoralOS host. When provided and the
    * environment is non-local (SSH/sandbox), the test probes are executed
    * inside that environment so the result reflects real agent execution.
    */
@@ -157,6 +159,7 @@ export type TestAdapterEnvironment = z.infer<typeof testAdapterEnvironmentSchema
 
 export const updateAgentPermissionsSchema = z.object({
   canCreateAgents: z.boolean(),
+  canCreateDepartments: z.boolean(),
   canAssignTasks: z.boolean(),
 });
 

@@ -2,12 +2,15 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+// Brand: noral.ai cards use 14–16px radius (system/diff cards). Default
+// to rounded-md (14px from brand --radius scale). Surfaces that need
+// the larger 20–28px radius can override with rounded-lg/rounded-xl.
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 border py-6 shadow-sm",
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-md border py-6 shadow-sm",
         className
       )}
       {...props}

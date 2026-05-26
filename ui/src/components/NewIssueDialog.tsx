@@ -1,4 +1,9 @@
+<<<<<<< v2026.525.0
 import { memo, useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent, type CSSProperties, type DragEvent, type RefObject } from "react";
+=======
+import { memo, useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent, type DragEvent, type RefObject } from "react";
+import { MicDictationButton } from "./MicDictationButton";
+>>>>>>> master
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { IssueWorkMode } from "@paperclipai/shared";
 import { pickTextColorForSolidBg } from "@/lib/color-contrast";
@@ -136,6 +141,7 @@ const ISSUE_THINKING_EFFORT_OPTIONS = {
   ],
 } as const;
 
+<<<<<<< v2026.525.0
 function isIssueWorkMode(value: unknown): value is IssueWorkMode {
   return value === "standard" || value === "planning";
 }
@@ -149,6 +155,8 @@ const ISSUE_WORK_MODE_OPTIONS: ReadonlyArray<{
   { value: "planning", label: "Planning", icon: ClipboardList },
 ];
 
+=======
+>>>>>>> master
 function loadDraft(): IssueDraft | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
@@ -771,12 +779,18 @@ export function NewIssueDialog() {
       setAssigneeModelOverride("");
       setAssigneeThinkingEffort("");
       setAssigneeChrome(false);
+<<<<<<< v2026.525.0
       setExecutionWorkspaceMode(defaultExecutionWorkspaceModeForIssueDefaults(newIssueDefaults, defaultProject));
       setWorkMode(nextWorkMode);
       setSelectedExecutionWorkspaceId(newIssueDefaults.executionWorkspaceId ?? "");
       executionWorkspaceDefaultProjectId.current = hasExplicitProjectWorkspaceId || newIssueDefaults.executionWorkspaceId || defaultProject
         ? defaultProjectId || null
         : null;
+=======
+      setExecutionWorkspaceMode(defaultExecutionWorkspaceModeForProject(defaultProject));
+      setSelectedExecutionWorkspaceId("");
+      executionWorkspaceDefaultProjectId.current = defaultProject ? defaultProjectId || null : null;
+>>>>>>> master
     } else if (draft && draft.title.trim()) {
       const nextWorkMode = isIssueWorkMode(draft.workMode) ? draft.workMode : "standard";
       const restoredProjectId = newIssueDefaults.projectId ?? draft.projectId;
@@ -797,11 +811,15 @@ export function NewIssueDialog() {
       setShowReviewerRow(!!(draft.reviewerValue));
       setShowApproverRow(!!(draft.approverValue));
       setProjectId(restoredProjectId);
+<<<<<<< v2026.525.0
       setProjectWorkspaceId(
         hasExplicitProjectWorkspaceId
           ? (newIssueDefaults.projectWorkspaceId ?? "")
           : (draft.projectWorkspaceId ?? defaultProjectWorkspaceIdForProject(restoredProject)),
       );
+=======
+      setProjectWorkspaceId(draft.projectWorkspaceId ?? defaultProjectWorkspaceIdForProject(restoredProject));
+>>>>>>> master
       setAssigneeModelLane(draft.assigneeModelLane ?? "primary");
       setAssigneeModelOverride(draft.assigneeModelOverride ?? "");
       setAssigneeThinkingEffort(draft.assigneeThinkingEffort ?? "");
@@ -814,6 +832,7 @@ export function NewIssueDialog() {
               ?? (draft.useIsolatedExecutionWorkspace ? "isolated_workspace" : defaultExecutionWorkspaceModeForProject(restoredProject))
             ),
       );
+<<<<<<< v2026.525.0
       setWorkMode(nextWorkMode);
       setSelectedExecutionWorkspaceId(
         hasExplicitExecutionWorkspaceId
@@ -821,6 +840,10 @@ export function NewIssueDialog() {
           : (draft.selectedExecutionWorkspaceId ?? ""),
       );
       executionWorkspaceDefaultProjectId.current = hasExplicitProjectWorkspaceId || hasExplicitExecutionWorkspaceId || draft.projectWorkspaceId || restoredProject
+=======
+      setSelectedExecutionWorkspaceId(draft.selectedExecutionWorkspaceId ?? "");
+      executionWorkspaceDefaultProjectId.current = draft.projectWorkspaceId || restoredProject
+>>>>>>> master
         ? restoredProjectId || null
         : null;
     } else {
@@ -841,11 +864,17 @@ export function NewIssueDialog() {
       setAssigneeModelOverride("");
       setAssigneeThinkingEffort("");
       setAssigneeChrome(false);
+<<<<<<< v2026.525.0
       setExecutionWorkspaceMode(defaultExecutionWorkspaceModeForIssueDefaults(newIssueDefaults, defaultProject));
       setSelectedExecutionWorkspaceId(newIssueDefaults.executionWorkspaceId ?? "");
       executionWorkspaceDefaultProjectId.current = hasExplicitProjectWorkspaceId || newIssueDefaults.executionWorkspaceId || defaultProject
         ? defaultProjectId || null
         : null;
+=======
+      setExecutionWorkspaceMode(defaultExecutionWorkspaceModeForProject(defaultProject));
+      setSelectedExecutionWorkspaceId("");
+      executionWorkspaceDefaultProjectId.current = defaultProject ? defaultProjectId || null : null;
+>>>>>>> master
     }
   }, [newIssueOpen, newIssueDefaults, orderedProjects, selectedCompanyId, setIssueText]);
 
@@ -1197,7 +1226,15 @@ export function NewIssueDialog() {
     <Dialog
       open={newIssueOpen}
       onOpenChange={(open) => {
-        if (!open && !createIssue.isPending) closeNewIssue();
+        if (!open && !createIssue.isPending) {
+          // Clear the persisted draft on any deliberate close (X, Escape,
+          // click-outside). Without this, an abandoned half-typed draft
+          // survives in localStorage and surprises the user the next time
+          // they open New Issue. Browser refresh / page nav don't pass
+          // through here, so crash-recovery still works.
+          clearDraft();
+          closeNewIssue();
+        }
       }}
     >
       <DialogContent
@@ -2042,6 +2079,21 @@ export function NewIssueDialog() {
             Discard Draft
           </Button>
           <div className="flex items-center gap-3">
+            <MicDictationButton
+              testId="new-issue-dictate-mic"
+              label="Dictate description"
+              disabled={createIssue.isPending}
+              onTranscript={(text) => {
+                // Append to description with a leading space when non-empty
+                // so dictated chunks don't run together. The title stays
+                // keyboard-only by design — it's usually short and people
+                // tend to write it deliberately.
+                const next = description
+                  ? `${description.replace(/\s*$/, "")} ${text}`
+                  : text;
+                handleDescriptionChange(next);
+              }}
+            />
             <div className="min-h-5 text-right">
               {createIssue.isPending ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">

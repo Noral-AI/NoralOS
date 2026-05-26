@@ -1,8 +1,13 @@
+<<<<<<< v2026.525.0
 import type { AdapterModelProfileDefinition } from "@paperclipai/adapter-utils";
+=======
+import type { AdapterModelProfileDefinition } from "@noralos/adapter-utils";
+>>>>>>> master
 
 export const type = "cursor";
 export const label = "Cursor CLI (local)";
 
+<<<<<<< v2026.525.0
 // Cursor CLI is not distributed as an npm package — the official install
 // path is the upstream installer script at cursor.com/install. Other adapters
 // in this repo prefer `npm install -g <pkg>` which is content-addressed by the
@@ -12,6 +17,8 @@ export const label = "Cursor CLI (local)";
 // equivalent.
 export const SANDBOX_INSTALL_COMMAND = "curl https://cursor.com/install -fsS | bash";
 
+=======
+>>>>>>> master
 export const DEFAULT_CURSOR_LOCAL_MODEL = "auto";
 
 const CURSOR_FALLBACK_MODEL_IDS = [
@@ -75,7 +82,7 @@ export const agentConfigurationDoc = `# cursor agent configuration
 Adapter: cursor
 
 Use when:
-- You want Paperclip to run Cursor Agent CLI locally as the agent runtime
+- You want NoralOS to run Cursor Agent CLI locally as the agent runtime
 - You want Cursor chat session resume across heartbeats via --resume
 - You want structured stream output in run logs via --output-format stream-json
 
@@ -102,7 +109,13 @@ Notes:
 - Runs are executed with: agent -p --output-format stream-json ...
 - Prompts are piped to Cursor via stdin.
 - Sessions are resumed with --resume when stored session cwd matches current cwd.
+<<<<<<< v2026.525.0
 - Paperclip auto-injects local skills into "~/.cursor/skills" when missing, so Cursor can discover "$paperclip" and related skills on local runs.
 - Paperclip auto-adds --yolo unless one of --trust/--yolo/-f is already present in extraArgs.
 - Remote sandbox runs prepend "~/.cursor/bin" and "~/.local/bin" to PATH and prefer the installed absolute entrypoint from one of those directories when the default Cursor command is requested, so installer-managed sandbox leases do not need hardcoded command paths.
+=======
+- NoralOS auto-injects local skills into "~/.cursor/skills" when missing, so Cursor can discover "$paperclip" and related skills on local runs.
+- NoralOS auto-adds --yolo unless one of --trust/--yolo/-f is already present in extraArgs.
+- Remote sandbox runs prepend "~/.local/bin" to PATH and prefer "~/.local/bin/cursor-agent" when the default Cursor entrypoint is requested, so standard E2B-style installs do not need hardcoded absolute command paths.
+>>>>>>> master
 `;

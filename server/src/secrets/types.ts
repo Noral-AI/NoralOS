@@ -1,9 +1,13 @@
+<<<<<<< v2026.525.0
 import type {
   SecretProvider,
   SecretProviderConfigDiscoveryPreviewResult,
   SecretProviderDescriptor,
 } from "@paperclipai/shared";
 import type { DeploymentMode } from "@paperclipai/shared";
+=======
+import type { SecretProvider, SecretProviderDescriptor } from "@noralos/shared";
+>>>>>>> master
 
 export interface StoredSecretVersionMaterial {
   [key: string]: unknown;

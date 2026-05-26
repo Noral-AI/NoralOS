@@ -40,9 +40,9 @@ const {
   })),
 }));
 
-vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/server-utils")>(
-    "@paperclipai/adapter-utils/server-utils",
+vi.mock("@noralos/adapter-utils/server-utils", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/server-utils")>(
+    "@noralos/adapter-utils/server-utils",
   );
   return {
     ...actual,
@@ -52,9 +52,9 @@ vi.mock("@paperclipai/adapter-utils/server-utils", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/ssh", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/ssh")>(
-    "@paperclipai/adapter-utils/ssh",
+vi.mock("@noralos/adapter-utils/ssh", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/ssh")>(
+    "@noralos/adapter-utils/ssh",
   );
   return {
     ...actual,
@@ -124,7 +124,7 @@ describe("claude remote execution", () => {
         },
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
           strategy: "git_worktree",
@@ -159,6 +159,10 @@ describe("claude remote execution", () => {
           privateKey: "PRIVATE KEY",
           knownHosts: "[127.0.0.1]:2222 ssh-ed25519 AAAA",
           strictHostKeyChecking: true,
+<<<<<<< v2026.525.0
+=======
+          noralosApiUrl: "http://198.51.100.10:3102",
+>>>>>>> master
         },
       },
       onLog: async () => {},
@@ -183,6 +187,7 @@ describe("claude remote execution", () => {
       `${managedRemoteWorkspace}/.paperclip-runtime/claude/skills/agent-instructions.md`,
     );
     expect(call?.[2]).toContain("--add-dir");
+<<<<<<< v2026.525.0
     expect(call?.[2]).toContain(`${managedRemoteWorkspace}/.paperclip-runtime/claude/skills`);
     expect(call?.[3].env.PAPERCLIP_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
     expect(call?.[3].env.PAPERCLIP_WORKSPACE_WORKTREE_PATH).toBeUndefined();
@@ -206,6 +211,11 @@ describe("claude remote execution", () => {
     expect(call?.[3].env.OTHER_ENV).toBe(workspaceDir);
     expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
     expect(startAdapterExecutionTargetPaperclipBridge).toHaveBeenCalledTimes(1);
+=======
+    expect(call?.[2]).toContain("/remote/workspace/.paperclip-runtime/claude/skills");
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://198.51.100.10:3102");
+    expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
+>>>>>>> master
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledWith(expect.objectContaining({
       localDir: workspaceDir,
@@ -241,7 +251,7 @@ describe("claude remote execution", () => {
         command: "claude",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },
@@ -302,7 +312,7 @@ describe("claude remote execution", () => {
         command: "claude",
       },
       context: {
-        paperclipWorkspace: {
+        noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
         },

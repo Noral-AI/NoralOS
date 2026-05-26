@@ -3,6 +3,7 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { randomUUID } from "node:crypto";
+<<<<<<< v2026.525.0
 import {
   createDb,
   companies,
@@ -14,6 +15,9 @@ import {
   issues,
   projects,
 } from "@paperclipai/db";
+=======
+import { createDb, companies, agents, costEvents, financeEvents, issues, projects } from "@noralos/db";
+>>>>>>> master
 import { costService } from "../services/costs.ts";
 import { financeService } from "../services/finance.ts";
 import {
@@ -79,8 +83,11 @@ const mockCostService = vi.hoisted(() => ({
     inputTokens: 0,
     cachedInputTokens: 0,
     outputTokens: 0,
+<<<<<<< v2026.525.0
     runCount: 0,
     runtimeMs: 0,
+=======
+>>>>>>> master
   }),
   windowSpend: vi.fn().mockResolvedValue([]),
   byProject: vi.fn().mockResolvedValue([]),
@@ -169,7 +176,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockCompanyService.update.mockResolvedValue({
     id: "company-1",
-    name: "Paperclip",
+    name: "NoralOS",
     budgetMonthlyCents: 100,
     spentMonthlyCents: 0,
   });
@@ -190,12 +197,20 @@ beforeEach(() => {
   mockIssueService.getById.mockResolvedValue({
     id: "issue-1",
     companyId: "company-1",
+<<<<<<< v2026.525.0
     identifier: "PC1A2-1",
+=======
+    identifier: "PAP-1",
+>>>>>>> master
   });
   mockIssueService.getByIdentifier.mockResolvedValue({
     id: "issue-1",
     companyId: "company-1",
+<<<<<<< v2026.525.0
     identifier: "PC1A2-1",
+=======
+    identifier: "PAP-1",
+>>>>>>> master
   });
   mockBudgetService.upsertPolicy.mockResolvedValue(undefined);
 });
@@ -239,6 +254,7 @@ describe("cost routes", () => {
 
   it("returns issue subtree cost summaries for issue refs", async () => {
     const app = await createApp();
+<<<<<<< v2026.525.0
     const res = await request(app).get("/api/issues/pc1a2-1/cost-summary");
 
     expect(res.status).toBe(200);
@@ -246,6 +262,13 @@ describe("cost routes", () => {
     expect(mockCostService.issueTreeSummary).toHaveBeenCalledWith("company-1", "issue-1", {
       excludeRoot: false,
     });
+=======
+    const res = await request(app).get("/api/issues/PAP-1/cost-summary");
+
+    expect(res.status).toBe(200);
+    expect(mockIssueService.getByIdentifier).toHaveBeenCalledWith("PAP-1");
+    expect(mockCostService.issueTreeSummary).toHaveBeenCalledWith("company-1", "issue-1");
+>>>>>>> master
     expect(res.body).toEqual({
       issueId: "issue-1",
       issueCount: 1,
@@ -254,8 +277,11 @@ describe("cost routes", () => {
       inputTokens: 0,
       cachedInputTokens: 0,
       outputTokens: 0,
+<<<<<<< v2026.525.0
       runCount: 0,
       runtimeMs: 0,
+=======
+>>>>>>> master
     });
   });
 
@@ -409,8 +435,11 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
   afterEach(async () => {
     await db.delete(financeEvents);
     await db.delete(costEvents);
+<<<<<<< v2026.525.0
     await db.delete(activityLog);
     await db.delete(heartbeatRuns);
+=======
+>>>>>>> master
     await db.delete(issues);
     await db.delete(projects);
     await db.delete(agents);
@@ -428,7 +457,7 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -506,7 +535,11 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
 
     await db.insert(companies).values({
       id: companyId,
+<<<<<<< v2026.525.0
       name: "Paperclip",
+=======
+      name: "NoralOS",
+>>>>>>> master
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });
@@ -630,6 +663,7 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
       inputTokens: 60,
       cachedInputTokens: 6,
       outputTokens: 12,
+<<<<<<< v2026.525.0
       runCount: 0,
       runtimeMs: 0,
     });
@@ -797,12 +831,17 @@ describeEmbeddedPostgres("cost and finance aggregate overflow handling", () => {
     expect(descendantsOnly.runtimeMs).toBeLessThan(150_000 + 60_000);
   });
 
+=======
+    });
+  });
+
+>>>>>>> master
   it("aggregates finance event sums above int32 without raising Postgres integer overflow", async () => {
     const companyId = randomUUID();
 
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: `T${companyId.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
       requireBoardApprovalForNewAgents: false,
     });

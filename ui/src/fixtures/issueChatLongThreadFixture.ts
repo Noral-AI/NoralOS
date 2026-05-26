@@ -1,4 +1,4 @@
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
 import type { LiveRunForIssue } from "../api/heartbeats";
 import type {
   IssueChatComment,
@@ -42,7 +42,7 @@ function createAgent(id: string, name: string, icon: string, urlKey: string): Ag
     updatedAt: now,
     pauseReason: null,
     pausedAt: null,
-    permissions: { canCreateAgents: false },
+    permissions: { canCreateAgents: false, canCreateDepartments: false },
   };
 }
 
@@ -62,7 +62,7 @@ function markdownBody(index: number) {
     "",
     "- Parsed checklist item one with inline `code`",
     "- Parsed checklist item two with **bold** and _italic_ text",
-    "- Parsed checklist item three with a link to [Paperclip](/PAP/dashboard)",
+    "- Parsed checklist item three with a link to [NoralOS](/PAP/dashboard)",
     "",
     "| Metric | Value |",
     "| --- | ---: |",
@@ -194,7 +194,7 @@ export const issueChatLongThreadFixtureContext = {
     title: "Long-thread rendering baseline fixture",
     status: "in_progress",
     priority: "medium",
-    projectName: "Paperclip App",
+    projectName: "NoralOS App",
   },
   documents: [
     "Implementation Plan",

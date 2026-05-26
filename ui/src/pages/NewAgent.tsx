@@ -6,7 +6,11 @@ import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
 import { companySkillsApi } from "../api/companySkills";
 import { queryKeys } from "../lib/queryKeys";
+<<<<<<< v2026.525.0
 import { AGENT_ROLES, type AdapterEnvironmentTestResult } from "@paperclipai/shared";
+=======
+import { AGENT_ROLES, type AdapterEnvironmentTestResult } from "@noralos/shared";
+>>>>>>> master
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -31,10 +35,16 @@ import { buildNewAgentHirePayload } from "../lib/new-agent-hire-payload";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
+<<<<<<< v2026.525.0
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
 import { DEFAULT_OPENCODE_LOCAL_MODEL, isValidOpenCodeModelId } from "@paperclipai/adapter-opencode-local";
+=======
+} from "@noralos/adapter-codex-local";
+import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
+>>>>>>> master
 
 function createValuesForAdapterType(
   adapterType: CreateConfigValues["adapterType"],
@@ -160,7 +170,7 @@ export function NewAgent() {
     );
   }
 
-  const availableSkills = (companySkills ?? []).filter((skill) => !skill.key.startsWith("paperclipai/paperclip/"));
+  const availableSkills = (companySkills ?? []).filter((skill) => !skill.key.startsWith("noralos/noralos/"));
 
   function toggleSkill(key: string, checked: boolean) {
     setSelectedSkillKeys((prev) => {
@@ -261,6 +271,10 @@ export function NewAgent() {
           mode="create"
           values={configValues}
           onChange={(patch) => setConfigValues((prev) => ({ ...prev, ...patch }))}
+<<<<<<< v2026.525.0
+=======
+          adapterModels={adapterModels}
+>>>>>>> master
           onTestActionChange={handleTestAgentActionChange}
           onTestActionStateChange={handleTestAgentStateChange}
           onTestFeedbackChange={handleTestAgentFeedbackChange}
@@ -271,7 +285,7 @@ export function NewAgent() {
             <div>
               <h2 className="text-sm font-medium">Company skills</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Optional skills from the company library. Built-in Paperclip runtime skills are added automatically.
+                Optional skills from the company library. Built-in NoralOS runtime skills are added automatically.
               </p>
             </div>
             {availableSkills.length === 0 ? (

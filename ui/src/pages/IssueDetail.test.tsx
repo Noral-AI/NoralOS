@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+<<<<<<< v2026.525.0
 import type { Agent, Issue, IssueTreeControlPreview, IssueTreeHold } from "@paperclipai/shared";
 import { act, type AnchorHTMLAttributes, type ButtonHTMLAttributes, type ReactNode } from "react";
+=======
+import type { Agent, Issue, IssueTreeControlPreview, IssueTreeHold } from "@noralos/shared";
+import { act, type ButtonHTMLAttributes, type ReactNode } from "react";
+>>>>>>> master
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { canBoardResolveRecoveryAction, IssueDetail } from "./IssueDetail";
@@ -136,9 +141,9 @@ vi.mock("@/lib/router", () => ({
 
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({
-    companies: [{ id: "company-1", name: "Paperclip", issuePrefix: "PAP", status: "active" }],
+    companies: [{ id: "company-1", name: "NoralOS", issuePrefix: "PAP", status: "active" }],
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP", status: "active" },
+    selectedCompany: { id: "company-1", name: "NoralOS", issuePrefix: "PAP", status: "active" },
     selectionSource: "manual",
     loading: false,
     error: null,
@@ -209,12 +214,18 @@ vi.mock("../components/InlineEditor", () => ({
 
 vi.mock("../components/IssueChatThread", () => ({
   IssueChatThread: (props: {
+<<<<<<< v2026.525.0
     onWorkModeChange?: (workMode: string) => void;
     issueWorkMode?: string;
     onStopRun?: (runId: string) => Promise<void>;
     stopRunLabel?: string;
     stoppingRunLabel?: string;
     footer?: ReactNode;
+=======
+    onStopRun?: (runId: string) => Promise<void>;
+    stopRunLabel?: string;
+    stoppingRunLabel?: string;
+>>>>>>> master
   }) => {
     mockIssueChatThreadRender(props);
     return (
@@ -225,7 +236,10 @@ vi.mock("../components/IssueChatThread", () => ({
             {props.stopRunLabel ?? "Stop run"}
           </button>
         ) : null}
+<<<<<<< v2026.525.0
         {props.footer}
+=======
+>>>>>>> master
       </div>
     );
   },
@@ -430,7 +444,7 @@ function createAgent(overrides: Partial<Agent> = {}): Agent {
     spentMonthlyCents: 0,
     pauseReason: null,
     pausedAt: null,
-    permissions: { canCreateAgents: false },
+    permissions: { canCreateAgents: false, canCreateDepartments: false },
     lastHeartbeatAt: null,
     metadata: null,
     createdAt: new Date("2026-04-21T00:00:00.000Z"),
@@ -1230,7 +1244,10 @@ describe("IssueDetail", () => {
     expect(mockIssueChatThreadRender.mock.calls.at(-1)?.[0]).toMatchObject({
       stopRunLabel: "Pause work",
       stoppingRunLabel: "Pausing...",
+<<<<<<< v2026.525.0
       issueWorkMode: "standard",
+=======
+>>>>>>> master
     });
 
     const chatPauseButton = Array.from(container.querySelectorAll("button"))
@@ -1261,6 +1278,7 @@ describe("IssueDetail", () => {
     expect(pauseMenuButton).toBeTruthy();
   });
 
+<<<<<<< v2026.525.0
   it("passes planning work mode to the issue chat thread", async () => {
     mockIssuesApi.get.mockResolvedValue(createIssue({ workMode: "planning" }));
     await act(async () => {
@@ -1322,6 +1340,8 @@ describe("IssueDetail", () => {
     localStorage.removeItem("paperclip:issue-comment-draft:issue-1");
   });
 
+=======
+>>>>>>> master
   it("renders Paused by board distinctly and defaults leaf resume to wake the assignee", async () => {
     const activeHold = createPauseHold();
     const releasedHold = createPauseHold({

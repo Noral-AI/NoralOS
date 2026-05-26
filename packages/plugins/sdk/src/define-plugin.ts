@@ -1,5 +1,5 @@
 /**
- * `definePlugin` — the top-level helper for authoring a Paperclip plugin.
+ * `definePlugin` — the top-level helper for authoring a NoralOS plugin.
  *
  * Plugin authors call `definePlugin()` and export the result as the default
  * export from their worker entrypoint. The host imports the worker module,
@@ -11,7 +11,7 @@
  * @example
  * ```ts
  * // dist/worker.ts
- * import { definePlugin } from "@paperclipai/plugin-sdk";
+ * import { definePlugin } from "@noralos/plugin-sdk";
  *
  * export default definePlugin({
  *   async setup(ctx) {
@@ -114,6 +114,14 @@ export interface PluginWebhookInput {
   endpointKey: string;
   /** Inbound request headers. */
   headers: Record<string, string | string[]>;
+  /**
+   * Inbound request query string parameters. Plugins commonly need
+   * tenancy hints (e.g. `?company=<uuid>`) on the receiver URL because
+   * external providers post one URL per registration but receivers
+   * have to map back to the originating company. Mirrors the shape of
+   * `PluginApiRequestInput.query`.
+   */
+  query: Record<string, string | string[]>;
   /** Raw request body as a UTF-8 string. */
   rawBody: string;
   /** Parsed JSON body (if applicable and parseable). */
@@ -145,6 +153,49 @@ export interface PluginApiResponse {
   headers?: Record<string, string>;
   body?: unknown;
 }
+
+// ---------------------------------------------------------------------------
+// Reverse-tool handler input/result
+// ---------------------------------------------------------------------------
+
+/**
+ * Input received by the plugin worker's `onReverseTool` handler when an
+ * external system (e.g. NoralVoice's `noralos://<pluginId>/<toolName>`
+ * tool URL scheme) dispatches a reverse-RPC call.
+ *
+ * The host performs HMAC verification (or the plugin's inbound webhook
+ * does it; see plugin docs for the chosen verification path) and
+ * resolves the originating company from the envelope's
+ * `organizationId` before invoking this hook.
+ */
+export interface PluginReverseToolInput {
+  /** Manifest tool name (matches `PluginReverseToolDeclaration.toolName`). */
+  toolName: string;
+  /** Arguments supplied by the calling external system. */
+  args: Record<string, unknown>;
+  /** Originating run id, if the caller provided one (e.g. NoralVoice run id). */
+  runId?: string | number | null;
+  /** Originating workflow uuid, if the caller provided one. */
+  workflowUuid?: string | null;
+  /** Originating organization id on the caller side. Plugin docs map this to companyId. */
+  organizationId?: number | null;
+  /** Resolved company id on the NoralOS side. */
+  companyId: string;
+  /** Unique request identifier for idempotency / log correlation. */
+  requestId: string;
+}
+
+/**
+ * Result returned by the plugin worker's `onReverseTool` handler.
+ *
+ * Convention mirrors the typed-RPC pattern used elsewhere in the
+ * platform: ``ok: true`` carries a ``result`` payload; ``ok: false``
+ * carries an ``error`` message + an optional short ``code`` the caller
+ * can branch on.
+ */
+export type PluginReverseToolResult =
+  | { ok: true; result: unknown }
+  | { ok: false; error: string; code?: string };
 
 // ---------------------------------------------------------------------------
 // Plugin definition
@@ -243,6 +294,31 @@ export interface PluginDefinition {
    * access, capabilities, and checkout policy.
    */
   onApiRequest?(input: PluginApiRequestInput): Promise<PluginApiResponse>;
+
+  /**
+   * Called when an external system dispatches a manifest-declared
+   * reverse-tool to the plugin. The plugin is responsible for routing
+   * by ``input.toolName`` and returning a typed result.
+   *
+   * Verification of the inbound request (HMAC signature, company
+   * resolution, etc.) happens BEFORE this hook is invoked — by the
+   * host for routes that support per-route HMAC auth, or by the
+   * plugin's own inbound webhook handler in plugins that route
+   * reverse-RPC through a manifest-declared webhook endpoint.
+   *
+   * Implementations should:
+   *   - return `{ ok: true, result }` on success;
+   *   - return `{ ok: false, error, code? }` on failure (NOT throw);
+   *   - never block longer than the calling side's deadline (caller
+   *     timeouts cancel the wire-side request but not this promise).
+   *
+   * If not implemented but `reverseTools` are declared in the
+   * manifest, the host/router should respond `{ ok: false, error:
+   * "UNKNOWN_REVERSE_TOOL" }` to inbound calls.
+   *
+   * @see PluginReverseToolDeclaration in @noralos/shared
+   */
+  onReverseTool?(input: PluginReverseToolInput): Promise<PluginReverseToolResult>;
   /**
    * Called to validate provider-specific configuration for a plugin-hosted
    * environment driver.
@@ -288,7 +364,7 @@ export interface PluginDefinition {
 }
 
 // ---------------------------------------------------------------------------
-// PaperclipPlugin — the sealed object returned by definePlugin()
+// NoralosPlugin — the sealed object returned by definePlugin()
 // ---------------------------------------------------------------------------
 
 /**
@@ -299,7 +375,7 @@ export interface PluginDefinition {
  *
  * @see PLUGIN_SPEC.md §14 — SDK Surface
  */
-export interface PaperclipPlugin {
+export interface NoralosPlugin {
   /** The original plugin definition passed to `definePlugin()`. */
   readonly definition: PluginDefinition;
 }
@@ -309,18 +385,18 @@ export interface PaperclipPlugin {
 // ---------------------------------------------------------------------------
 
 /**
- * Define a Paperclip plugin.
+ * Define a NoralOS plugin.
  *
  * Call this function in your worker entrypoint and export the result as the
  * default export. The host will import the module and call lifecycle methods
  * on the returned object.
  *
  * @param definition - Plugin lifecycle handlers
- * @returns A sealed `PaperclipPlugin` object for the host to consume
+ * @returns A sealed `NoralosPlugin` object for the host to consume
  *
  * @example
  * ```ts
- * import { definePlugin } from "@paperclipai/plugin-sdk";
+ * import { definePlugin } from "@noralos/plugin-sdk";
  *
  * export default definePlugin({
  *   async setup(ctx) {
@@ -338,6 +414,6 @@ export interface PaperclipPlugin {
  *
  * @see PLUGIN_SPEC.md §14.1 — Example SDK Shape
  */
-export function definePlugin(definition: PluginDefinition): PaperclipPlugin {
+export function definePlugin(definition: PluginDefinition): NoralosPlugin {
   return Object.freeze({ definition });
 }

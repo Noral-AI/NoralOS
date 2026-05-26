@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   createCostEventSchema,
   createFinanceEventSchema,
@@ -7,7 +7,7 @@ import {
   resolveBudgetIncidentSchema,
   updateBudgetSchema,
   upsertBudgetPolicySchema,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { validate } from "../middleware/validate.js";
 import {
   budgetService,
@@ -63,9 +63,14 @@ export function costRoutes(
   const issues = issueService(db);
 
   async function resolveIssueByRef(rawId: string) {
+<<<<<<< v2026.525.0
     const identifier = normalizeIssueIdentifier(rawId);
     if (identifier) {
       return issues.getByIdentifier(identifier);
+=======
+    if (/^[A-Z]+-\d+$/i.test(rawId)) {
+      return issues.getByIdentifier(rawId);
+>>>>>>> master
     }
     return issues.getById(rawId);
   }
@@ -145,8 +150,12 @@ export function costRoutes(
       return;
     }
     assertCompanyAccess(req, issue.companyId);
+<<<<<<< v2026.525.0
     const excludeRoot = req.query.excludeRoot === "true" || req.query.excludeRoot === "1";
     const summary = await costs.issueTreeSummary(issue.companyId, issue.id, { excludeRoot });
+=======
+    const summary = await costs.issueTreeSummary(issue.companyId, issue.id);
+>>>>>>> master
     res.json(summary);
   });
 

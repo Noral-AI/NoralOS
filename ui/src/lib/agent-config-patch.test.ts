@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
 import { buildAgentUpdatePatch, type AgentConfigOverlay } from "./agent-config-patch";
 
 function makeAgent(): Agent {
@@ -42,6 +42,7 @@ function makeAgent(): Agent {
     urlKey: "agent",
     permissions: {
       canCreateAgents: false,
+      canCreateDepartments: false,
     },
     metadata: null,
   };
@@ -108,6 +109,7 @@ describe("buildAgentUpdatePatch", () => {
     expect(patch.adapterConfig).toBeUndefined();
   });
 
+<<<<<<< v2026.525.0
   it("writes max-turn continuation policy under runtimeConfig.heartbeat", () => {
     const patch = buildAgentUpdatePatch(
       makeAgent(),
@@ -137,6 +139,8 @@ describe("buildAgentUpdatePatch", () => {
     });
   });
 
+=======
+>>>>>>> master
   it("merges cheap profile changes onto existing runtimeConfig.modelProfiles state", () => {
     const agent = makeAgent();
     agent.runtimeConfig = {

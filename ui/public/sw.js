@@ -1,4 +1,4 @@
-const CACHE_NAME = "paperclip-v2";
+const CACHE_NAME = "noralos-v6-issue-draft-clear";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

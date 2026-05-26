@@ -1,4 +1,4 @@
-import type { PaperclipPluginManifestV1 } from "@paperclipai/plugin-sdk";
+import type { NoralosPluginManifestV1 } from "@noralos/plugin-sdk";
 
 /**
  * Stable plugin ID used by host registration and namespacing.
@@ -11,13 +11,13 @@ const DASHBOARD_WIDGET_EXPORT_NAME = "HelloWorldDashboardWidget";
 /**
  * Minimal manifest demonstrating a UI-only plugin with one dashboard widget slot.
  */
-const manifest: PaperclipPluginManifestV1 = {
+const manifest: NoralosPluginManifestV1 = {
   id: PLUGIN_ID,
   apiVersion: 1,
   version: PLUGIN_VERSION,
   displayName: "Hello World Widget (Example)",
-  description: "Reference UI plugin that adds a simple Hello World widget to the Paperclip dashboard.",
-  author: "Paperclip",
+  description: "Reference UI plugin that adds a simple Hello World widget to the NoralOS dashboard.",
+  author: "NoralOS",
   categories: ["ui"],
   capabilities: ["ui.dashboardWidget.register"],
   entrypoints: {

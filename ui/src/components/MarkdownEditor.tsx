@@ -31,6 +31,7 @@ import {
   thematicBreakPlugin,
   type RealmPlugin,
 } from "@mdxeditor/editor";
+<<<<<<< v2026.525.0
 import {
   buildAgentMentionHref,
   buildProjectMentionHref,
@@ -38,6 +39,10 @@ import {
   buildUserMentionHref,
 } from "@paperclipai/shared";
 import { Boxes, CalendarClock, User } from "lucide-react";
+=======
+import { buildAgentMentionHref, buildProjectMentionHref, buildUserMentionHref } from "@noralos/shared";
+import { Boxes, User } from "lucide-react";
+>>>>>>> master
 import { AgentIcon } from "./AgentIconPicker";
 import { applyMentionChipDecoration, clearMentionChipDecoration, parseMentionChipHref } from "../lib/mention-chips";
 import { MentionAwareLinkNode, mentionAwareLinkNodeReplacement } from "../lib/mention-aware-link-node";
@@ -212,7 +217,10 @@ const MENTION_MENU_HEIGHT = 208;
 const MENTION_MENU_PADDING = 8;
 const MENTION_MENU_ROW_HEIGHT = 34;
 const MENTION_MENU_CHROME_HEIGHT = 8;
+<<<<<<< v2026.525.0
 const MAX_AUTOCOMPLETE_OPTIONS = 50;
+=======
+>>>>>>> master
 /** Roughly one space-width of breathing room between the caret and the menu. */
 const MENTION_MENU_CARET_GAP = 10;
 
@@ -1257,9 +1265,13 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
       {mentionActive && filteredMentions.length > 0 && mentionMenuPosition &&
         createPortal(
           <div
+<<<<<<< v2026.525.0
             data-paperclip-floating-ui=""
             data-testid="mention-autocomplete-menu"
             className="pointer-events-auto fixed z-[9999] min-w-[180px] max-w-[calc(100vw-16px)] max-h-[208px] overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+=======
+            className="fixed z-[9999] min-w-[180px] max-w-[calc(100vw-16px)] max-h-[208px] overflow-y-auto rounded-md border border-border bg-popover shadow-md"
+>>>>>>> master
             style={{
               top: mentionMenuPosition.top,
               left: mentionMenuPosition.left,
@@ -1272,9 +1284,12 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
                 key={option.id}
                 type="button"
                 tabIndex={-1}
+<<<<<<< v2026.525.0
                 ref={(node) => {
                   autocompleteOptionRefs.current[i] = node;
                 }}
+=======
+>>>>>>> master
                 className={cn(
                   "flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-accent/50 transition-colors",
                   i === mentionIndex && "bg-accent",

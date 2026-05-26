@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Db } from "@noralos/db";
 import type { Db } from "@paperclipai/db";
 import { normalizeIssueIdentifier } from "@paperclipai/shared";
 import { validate } from "../middleware/validate.js";

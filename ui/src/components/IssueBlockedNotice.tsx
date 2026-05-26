@@ -1,3 +1,4 @@
+<<<<<<< v2026.525.0
 import type {
   IssueBlockerAttention,
   IssueRecoveryAction,
@@ -8,6 +9,10 @@ import type {
 import { AlertTriangle, CheckCircle2, Flag, Loader2, RotateCcw } from "lucide-react";
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
+=======
+import type { IssueBlockerAttention, IssueRelationIssueSummary } from "@noralos/shared";
+import { AlertTriangle } from "lucide-react";
+>>>>>>> master
 import { createIssueDetailPath } from "../lib/issueDetailBreadcrumb";
 import { formatMonitorOffset } from "../lib/issue-monitor";
 import { useRetryNowMutation } from "../hooks/useRetryNowMutation";

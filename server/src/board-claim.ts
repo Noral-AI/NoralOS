@@ -1,9 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-import { companies, companyMemberships, instanceUserRoles } from "@paperclipai/db";
-import type { DeploymentMode } from "@paperclipai/shared";
 import { ensureHumanRoleDefaultGrants } from "./services/principal-access-compatibility.js";
+import { companies, companyMemberships, instanceUserRoles } from "@noralos/db";
+import type { Db } from "@noralos/db";
+import type { DeploymentMode } from "@noralos/shared";
+import { companies, companyMemberships, instanceUserRoles } from "@paperclipai/db";
+import type { Db } from "@paperclipai/db";
+import type { DeploymentMode } from "@paperclipai/shared";
 
 const LOCAL_BOARD_USER_ID = "local-board";
 const CLAIM_TTL_MS = 1000 * 60 * 60 * 24;

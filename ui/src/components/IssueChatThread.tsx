@@ -38,13 +38,19 @@ import type {
   IssueBlockerAttention,
   IssueRecoveryAction,
   IssueRelationIssueSummary,
+<<<<<<< v2026.525.0
   IssueScheduledRetry,
   SuccessfulRunHandoffState,
   IssueWorkMode,
 } from "@paperclipai/shared";
+=======
+} from "@noralos/shared";
+>>>>>>> master
 import type { ActiveRunForIssue, LiveRunForIssue } from "../api/heartbeats";
 import { useLiveRunTranscripts } from "./transcript/useLiveRunTranscripts";
-import { usePaperclipIssueRuntime, type PaperclipIssueRuntimeReassignment } from "../hooks/usePaperclipIssueRuntime";
+import { useNoralosIssueRuntime, type NoralosIssueRuntimeReassignment } from "../hooks/useNoralosIssueRuntime";
+import { useChatVoiceAutoplay } from "../hooks/useChatVoiceAutoplay";
+import { MicDictationButton } from "./MicDictationButton";
 import {
   buildIssueChatMessages,
   formatDurationWords,
@@ -133,7 +139,11 @@ import { cn, formatDateTime, formatShortDate } from "../lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+<<<<<<< v2026.525.0
 import { AlertTriangle, ArrowRight, Brain, Check, ChevronDown, ClipboardList, Copy, Hammer, Loader2, MoreHorizontal, Paperclip, PauseCircle, Search, Square, ThumbsDown, ThumbsUp } from "lucide-react";
+=======
+import { AlertTriangle, ArrowRight, Brain, Check, ChevronDown, Copy, Hammer, Loader2, MoreHorizontal, Paperclip, PauseCircle, Search, Square, ThumbsDown, ThumbsUp, Volume2, VolumeX } from "lucide-react";
+>>>>>>> master
 import { IssueBlockedNotice } from "./IssueBlockedNotice";
 import { IssueAssignedBacklogNotice } from "./IssueAssignedBacklogNotice";
 import { IssueRecoveryActionCard, type RecoveryResolveOutcome } from "./IssueRecoveryActionCard";
@@ -172,8 +182,11 @@ interface IssueChatMessageContext {
   onCancelInteraction?: (
     interaction: AskUserQuestionsInteraction,
   ) => Promise<void> | void;
+<<<<<<< v2026.525.0
   issueStatus?: string;
   successfulRunHandoff?: SuccessfulRunHandoffState | null;
+=======
+>>>>>>> master
 }
 
 const IssueChatCtx = createContext<IssueChatMessageContext>({
@@ -546,6 +559,10 @@ const DRAFT_DEBOUNCE_MS = 800;
 const COMPOSER_FOCUS_SCROLL_PADDING_PX = 96;
 const SUBMIT_SCROLL_RESERVE_VH = 0.4;
 
+// Per-browser preference key for chat-voice autoplay. Reads/writes are
+// best-effort (private browsing / quota errors are swallowed).
+const CHAT_VOICE_AUTOPLAY_LS_KEY = "noralos.chat-voice-autoplay-enabled";
+
 type ComposerAttachmentItem = {
   id: string;
   name: string;
@@ -600,7 +617,7 @@ function clearDraft(draftKey: string) {
   }
 }
 
-function parseReassignment(target: string): PaperclipIssueRuntimeReassignment | null {
+function parseReassignment(target: string): NoralosIssueRuntimeReassignment | null {
   if (!target || target === "__none__") {
     return { assigneeAgentId: null, assigneeUserId: null };
   }
@@ -1830,7 +1847,7 @@ function IssueChatFeedbackButtons({
           <DialogHeader>
             <DialogTitle>Save your feedback sharing preference</DialogTitle>
             <DialogDescription>
-              Choose whether voted AI outputs can be shared with Paperclip Labs. This
+              Choose whether voted AI outputs can be shared with Noral Labs. This
               answer becomes the default for future thumbs up and thumbs down votes.
             </DialogDescription>
           </DialogHeader>
@@ -3602,6 +3619,18 @@ const IssueChatComposer = forwardRef<IssueChatComposerHandle, IssueChatComposerP
           />
         ) : null}
 
+        <MicDictationButton
+          testId="issue-chat-composer-mic"
+          disabled={submitting}
+          onTranscript={(text) => {
+            // Append the recognized chunk to the existing body so the user
+            // can speak in passes, edit between chunks, or alternate typing
+            // and dictating. A leading space when the body is non-empty
+            // keeps phrases from running together.
+            setBody((prev) => (prev ? `${prev.replace(/\s*$/, "")} ${text}` : text));
+          }}
+        />
+
         <Button size="sm" disabled={!canSubmit} onClick={() => void handleSubmit()}>
           {submitting ? "Posting..." : "Send"}
         </Button>
@@ -3680,6 +3709,46 @@ export function IssueChatThread({
   resumeFromBacklogPending = false,
 }: IssueChatThreadProps) {
   const location = useLocation();
+  // Voice autoplay is OPT-IN per browser. We persist the preference in
+  // localStorage so it survives reloads but is per-device, never per-account
+  // (no server round-trip on first render = no flicker, and a shared
+  // workstation can have different audio preferences per person).
+  //
+  // Default off: agents reading messages aloud unprompted is surprising
+  // behavior for new users and there's no way to stop it once started. Users
+  // explicitly opt in via the speaker toggle in the thread header.
+  const [chatVoiceEnabled, setChatVoiceEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(CHAT_VOICE_AUTOPLAY_LS_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+  const toggleChatVoice = useCallback(() => {
+    setChatVoiceEnabled((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(
+          CHAT_VOICE_AUTOPLAY_LS_KEY,
+          next ? "true" : "false",
+        );
+      } catch {
+        /* ignore — private browsing / quota */
+      }
+      return next;
+    });
+  }, []);
+  // Autoplay TTS for new agent-authored comments. The hook owns its own
+  // dedup baseline (existing history isn't replayed), audio element, and
+  // autoplay-rejection state. We feed it the raw `comments` prop directly
+  // so it sees server-truthful ids; the markdown-stripping happens inside
+  // the hook so we don't accidentally reshape the data for other consumers.
+  const voiceAutoplay = useChatVoiceAutoplay(
+    companyId,
+    comments,
+    { enabled: chatVoiceEnabled, surface: "dashboard" },
+  );
   const lastScrolledHashRef = useRef<string | null>(null);
   const virtualizedThreadRef = useRef<VirtualizedIssueChatThreadListHandle | null>(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
@@ -3859,7 +3928,7 @@ export function IssueChatThread({
     return true;
   }
 
-  const runtime = usePaperclipIssueRuntime({
+  const runtime = useNoralosIssueRuntime({
     messages,
     isRunning,
     onSend: ({ body, reopen, reassignment }) => {
@@ -4155,8 +4224,11 @@ export function IssueChatThread({
       onRejectInteraction: stableOnRejectInteraction,
       onSubmitInteractionAnswers: stableOnSubmitInteractionAnswers,
       onCancelInteraction: stableOnCancelInteraction,
+<<<<<<< v2026.525.0
       issueStatus,
       successfulRunHandoff,
+=======
+>>>>>>> master
     }),
     [
       feedbackDataSharingPreference,
@@ -4177,8 +4249,11 @@ export function IssueChatThread({
       stableOnRejectInteraction,
       stableOnSubmitInteractionAnswers,
       stableOnCancelInteraction,
+<<<<<<< v2026.525.0
       issueStatus,
       successfulRunHandoff,
+=======
+>>>>>>> master
     ],
   );
 
@@ -4199,6 +4274,70 @@ export function IssueChatThread({
     <AssistantRuntimeProvider runtime={runtime}>
       <IssueChatCtx.Provider value={chatCtx}>
       <div className={cn(variant === "embedded" ? "space-y-3" : "space-y-4")}>
+        {/*
+          Voice controls row. Always renders the autoplay toggle so users
+          can opt in/out at any time. The Stop pill only renders while a
+          clip is actually playing. The amber "Enable audio" pill renders
+          when the browser autoplay policy rejected the first attempt and a
+          fresh user gesture is required to resume.
+        */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={toggleChatVoice}
+            data-testid="issue-chat-voice-toggle"
+            aria-pressed={chatVoiceEnabled}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors",
+              chatVoiceEnabled
+                ? "border-sky-500/60 bg-sky-500/15 text-sky-700 hover:bg-sky-500/25 dark:text-sky-300"
+                : "border-muted-foreground/30 bg-muted/30 text-muted-foreground hover:bg-muted/50",
+            )}
+            title={
+              chatVoiceEnabled
+                ? "Voice on: agent replies are spoken aloud on this device. Click to mute."
+                : "Voice off: agent replies stay silent. Click to have new replies spoken aloud."
+            }
+          >
+            {chatVoiceEnabled ? (
+              <Volume2 className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <VolumeX className="h-3 w-3" aria-hidden="true" />
+            )}
+            {chatVoiceEnabled ? "Voice on" : "Voice off"}
+          </button>
+
+          {voiceAutoplay.isPlaying ? (
+            <button
+              type="button"
+              onClick={voiceAutoplay.stopAudio}
+              data-testid="issue-chat-voice-stop"
+              className="flex items-center gap-1.5 rounded-full border border-rose-500/60 bg-rose-500/15 px-3 py-1 text-[11px] font-semibold text-rose-700 transition-colors hover:bg-rose-500/25 dark:text-rose-300"
+              title="Stop the agent's current spoken reply. Future replies will keep playing while voice is on."
+            >
+              <Square className="h-3 w-3" aria-hidden="true" />
+              Stop
+            </button>
+          ) : null}
+
+          {voiceAutoplay.audioBlocked ? (
+            <button
+              type="button"
+              onClick={voiceAutoplay.resumeAudio}
+              data-testid="issue-chat-voice-resume"
+              className="flex items-center gap-1.5 rounded-full border border-amber-500/60 bg-amber-500/15 px-3 py-1 text-[11px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-300"
+              title="Browser blocked autoplay. Tap to play the agent's reply and re-enable audio for this session."
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+              Enable audio
+            </button>
+          ) : null}
+        </div>
+
         {resolvedShowJumpToLatest ? (
           <div className="flex justify-end">
             <button

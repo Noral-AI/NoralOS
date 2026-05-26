@@ -27,7 +27,7 @@ vi.mock("@/api/access", () => ({
 vi.mock("@/context/CompanyContext", () => ({
   useCompany: () => ({
     selectedCompanyId: "company-1",
-    selectedCompany: { id: "company-1", name: "Paperclip", issuePrefix: "PAP" },
+    selectedCompany: { id: "company-1", name: "NoralOS", issuePrefix: "PAP" },
   }),
 }));
 
@@ -67,7 +67,7 @@ describe("CompanyInvites", () => {
       acceptedAt: isActive ? null : "2026-04-11T00:00:00.000Z",
       createdAt: `2026-04-${String(inviteNumber).padStart(2, "0")}T00:00:00.000Z`,
       updatedAt: `2026-04-${String(inviteNumber).padStart(2, "0")}T00:00:00.000Z`,
-      companyName: "Paperclip",
+      companyName: "NoralOS",
       humanRole: isActive ? "operator" : "viewer",
       inviteMessage: null,
       state: isActive ? "active" : "accepted",
@@ -93,6 +93,7 @@ describe("CompanyInvites", () => {
       return Promise.resolve({ invites, nextOffset });
     });
 
+<<<<<<< v2026.525.0
     createCompanyInviteMock.mockImplementation(() => {
       return Promise.resolve({
         token: "new-token",
@@ -102,6 +103,14 @@ describe("CompanyInvites", () => {
         humanRole: "viewer",
         allowedJoinTypes: "human",
       });
+=======
+    createCompanyInviteMock.mockResolvedValue({
+      inviteUrl: "https://noralos.local/invite/new-token",
+      onboardingTextUrl: null,
+      onboardingTextPath: null,
+      humanRole: "viewer",
+      allowedJoinTypes: "human",
+>>>>>>> master
     });
 
     revokeInviteMock.mockResolvedValue(undefined);
@@ -200,14 +209,19 @@ describe("CompanyInvites", () => {
       humanRole: "viewer",
       agentMessage: null,
     });
-    expect(clipboardWriteTextMock).toHaveBeenCalledWith("https://paperclip.local/invite/new-token");
+    expect(clipboardWriteTextMock).toHaveBeenCalledWith("https://noralos.local/invite/new-token");
     expect(container.textContent).toContain("Latest invite link");
+<<<<<<< v2026.525.0
     expect(container.textContent).toContain("This URL includes the current Paperclip domain returned by the server.");
     expect(container.querySelector('input[aria-label="Latest invite URL"]')).toHaveProperty(
       "value",
       "https://paperclip.local/invite/new-token",
     );
     expect(container.textContent).toContain("Copy link");
+=======
+    expect(container.textContent).toContain("This URL includes the current NoralOS domain returned by the server.");
+    expect(container.textContent).toContain("https://noralos.local/invite/new-token");
+>>>>>>> master
     expect(container.textContent).toContain("Open invite");
     expect(pushToastMock).toHaveBeenCalledWith({
       title: "Invite created",
@@ -215,8 +229,13 @@ describe("CompanyInvites", () => {
       tone: "success",
     });
 
+<<<<<<< v2026.525.0
     const copyLinkButton = Array.from(container.querySelectorAll("button")).find(
       (button) => button.textContent === "Copy link",
+=======
+    const inviteFieldButton = Array.from(container.querySelectorAll("button")).find(
+      (button) => button.textContent?.includes("https://noralos.local/invite/new-token"),
+>>>>>>> master
     );
 
     await act(async () => {

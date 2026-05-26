@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import type { Issue } from "@paperclipai/shared";
+import type { Issue } from "@noralos/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { IssuesList } from "@/components/IssuesList";
 import { queryKeys } from "@/lib/queryKeys";
@@ -11,7 +11,7 @@ import {
   storybookCompanies,
   storybookIssueLabels,
   storybookProjects,
-} from "../fixtures/paperclipData";
+} from "../fixtures/noralosData";
 
 const companyId = "company-storybook";
 const parentId = "issue-pap-1953";

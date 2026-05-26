@@ -4,7 +4,7 @@ import { act } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { Agent } from "@paperclipai/shared";
+import type { Agent } from "@noralos/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Agents } from "./Agents";
 
@@ -78,7 +78,7 @@ function makeAgent(overrides: Partial<Agent>): Agent {
     spentMonthlyCents: 0,
     pauseReason: null,
     pausedAt: null,
-    permissions: { canCreateAgents: false },
+    permissions: { canCreateAgents: false, canCreateDepartments: false },
     lastHeartbeatAt: null,
     metadata: null,
     createdAt: new Date("2026-01-01T00:00:00Z"),

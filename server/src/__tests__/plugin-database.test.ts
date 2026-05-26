@@ -12,8 +12,8 @@ import {
   pluginDatabaseNamespaces,
   pluginMigrations,
   plugins,
-} from "@paperclipai/db";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
+} from "@noralos/db";
+import type { NoralosPluginManifestV1 } from "@noralos/shared";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,
@@ -190,7 +190,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   let packageRoots: string[] = [];
 
   beforeAll(async () => {
-    tempDb = await startEmbeddedPostgresTestDatabase("paperclip-plugin-db-");
+    tempDb = await startEmbeddedPostgresTestDatabase("noralos-plugin-db-");
     db = createDb(tempDb.connectionString);
   }, 20_000);
 
@@ -214,8 +214,8 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     await tempDb?.cleanup();
   });
 
-  async function createPluginPackage(manifest: PaperclipPluginManifestV1, migrationSql: string) {
-    const packageRoot = await mkdtemp(path.join(os.tmpdir(), "paperclip-plugin-package-"));
+  async function createPluginPackage(manifest: NoralosPluginManifestV1, migrationSql: string) {
+    const packageRoot = await mkdtemp(path.join(os.tmpdir(), "noralos-plugin-package-"));
     packageRoots.push(packageRoot);
     const migrationsDir = path.join(packageRoot, manifest.database!.migrationsDir);
     await mkdir(migrationsDir, { recursive: true });
@@ -223,6 +223,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return packageRoot;
   }
 
+<<<<<<< v2026.525.0
   function llmWikiManifest(): PaperclipPluginManifestV1 {
     return {
       id: llmWikiPluginKey,
@@ -272,6 +273,9 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
   }
 
   async function installPluginRecord(manifest: PaperclipPluginManifestV1) {
+=======
+  async function installPluginRecord(manifest: NoralosPluginManifestV1) {
+>>>>>>> master
     const pluginId = randomUUID();
     await db.insert(plugins).values({
       id: pluginId,
@@ -287,14 +291,14 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     return pluginId;
   }
 
-  function manifest(pluginKey = "paperclip.dbtest"): PaperclipPluginManifestV1 {
+  function manifest(pluginKey = "paperclip.dbtest"): NoralosPluginManifestV1 {
     return {
       id: pluginKey,
       apiVersion: 1,
       version: "1.0.0",
       displayName: "DB Test",
       description: "Exercises restricted plugin database access.",
-      author: "Paperclip",
+      author: "NoralOS",
       categories: ["automation"],
       capabilities: [
         "database.namespace.migrate",
@@ -407,7 +411,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
     const issueId = randomUUID();
     await db.insert(companies).values({
       id: companyId,
-      name: "Paperclip",
+      name: "NoralOS",
       issuePrefix: "TST",
       requireBoardApprovalForNewAgents: false,
     });

@@ -1,6 +1,6 @@
 # Plugin Authoring Guide
 
-This guide describes the current, implemented way to create a Paperclip plugin in this repo.
+This guide describes the current, implemented way to create a NoralOS plugin in this repo.
 
 It is intentionally narrower than [PLUGIN_SPEC.md](./PLUGIN_SPEC.md). The spec includes future ideas; this guide only covers the alpha surface that exists now.
 
@@ -9,7 +9,7 @@ It is intentionally narrower than [PLUGIN_SPEC.md](./PLUGIN_SPEC.md). The spec i
 ## Current reality
 
 - Treat plugin workers and plugin UI as trusted code.
-- Plugin UI runs as same-origin JavaScript inside the main Paperclip app.
+- Plugin UI runs as same-origin JavaScript inside the main NoralOS app.
 - Worker-side host APIs are capability-gated.
 - Plugin UI is not sandboxed by manifest capabilities.
 - Plugin database migrations are restricted to a host-derived plugin namespace.
@@ -27,10 +27,27 @@ It is intentionally narrower than [PLUGIN_SPEC.md](./PLUGIN_SPEC.md). The spec i
 Use the CLI scaffold command:
 
 ```bash
+<<<<<<< v2026.525.0
 paperclipai plugin init @yourscope/plugin-name --output /absolute/path/to/plugin-repos
 ```
 
 That creates `<output>/plugin-name/` with:
+=======
+pnpm --filter @noralos/create-noralos-plugin build
+node packages/plugins/create-noralos-plugin/dist/index.js @yourscope/plugin-name --output ./packages/plugins/examples
+```
+
+For a plugin that lives outside the NoralOS repo:
+
+```bash
+pnpm --filter @noralos/create-noralos-plugin build
+node packages/plugins/create-noralos-plugin/dist/index.js @yourscope/plugin-name \
+  --output /absolute/path/to/plugin-repos \
+  --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
+```
+
+That creates a package with:
+>>>>>>> master
 
 - `src/manifest.ts`
 - `src/worker.ts`
@@ -39,9 +56,13 @@ That creates `<output>/plugin-name/` with:
 - `esbuild.config.mjs`
 - `rollup.config.mjs`
 
-Inside this monorepo, the scaffold uses `workspace:*` for `@paperclipai/plugin-sdk`.
+Inside this monorepo, the scaffold uses `workspace:*` for `@noralos/plugin-sdk`.
 
+<<<<<<< v2026.525.0
 Outside this monorepo, the scaffold snapshots `@paperclipai/plugin-sdk` from the local Paperclip checkout into a `.paperclip-sdk/` tarball so you can build and test a plugin without publishing anything to npm first. Pass `--sdk-path /absolute/path/to/paperclip/packages/plugins/sdk` if you have more than one Paperclip checkout.
+=======
+Outside this monorepo, the scaffold snapshots `@noralos/plugin-sdk` from the local Paperclip checkout into a `.paperclip-sdk/` tarball so you can build and test a plugin without publishing anything to npm first.
+>>>>>>> master
 
 ## Local development workflow
 
@@ -56,6 +77,19 @@ pnpm test
 pnpm build
 ```
 
+<<<<<<< v2026.525.0
+=======
+For local development, install it into NoralOS from an absolute local path through the plugin manager or API. The server supports local filesystem installs and watches local-path plugins for file changes so worker restarts happen automatically after rebuilds.
+
+Example:
+
+```bash
+curl -X POST http://127.0.0.1:3100/api/plugins/install \
+  -H "Content-Type: application/json" \
+  -d '{"packageName":"/absolute/path/to/your-plugin","isLocalPath":true}'
+```
+
+>>>>>>> master
 ## Supported alpha surface
 
 Worker:
@@ -317,7 +351,7 @@ UI:
 - `usePluginStream`
 - `usePluginToast`
 - `useHostContext`
-- typed slot props from `@paperclipai/plugin-sdk/ui`
+- typed slot props from `@noralos/plugin-sdk/ui`
 
 Mount surfaces currently wired in the host include:
 

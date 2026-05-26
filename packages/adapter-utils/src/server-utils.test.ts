@@ -4,10 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  applyPaperclipWorkspaceEnv,
+  applyNoralosWorkspaceEnv,
   appendWithByteCap,
   buildInvocationEnvForLogs,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
+<<<<<<< v2026.525.0
   materializePaperclipSkillCopy,
   refreshPaperclipWorkspaceEnvForExecution,
   renderPaperclipWakePrompt,
@@ -17,6 +18,12 @@ import {
   shapePaperclipWorkspaceEnvForExecution,
   rewriteWorkspaceCwdEnvVarsForExecution,
   stringifyPaperclipWakePayload,
+=======
+  renderNoralosWakePrompt,
+  runningProcesses,
+  runChildProcess,
+  stringifyNoralosWakePayload,
+>>>>>>> master
 } from "./server-utils.js";
 
 function isPidAlive(pid: number) {
@@ -417,7 +424,7 @@ describe("runChildProcess", () => {
   });
 });
 
-describe("renderPaperclipWakePrompt", () => {
+describe("renderNoralosWakePrompt", () => {
   it("keeps the default local-agent prompt action-oriented", () => {
     expect(DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE).toContain("Start actionable work in this heartbeat");
     expect(DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE).toContain("do not stop at a plan");
@@ -438,7 +445,7 @@ describe("renderPaperclipWakePrompt", () => {
   });
 
   it("adds the execution contract to scoped wake prompts", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_assigned",
       issue: {
         id: "issue-1",
@@ -455,7 +462,7 @@ describe("renderPaperclipWakePrompt", () => {
       fallbackFetchNeeded: false,
     });
 
-    expect(prompt).toContain("## Paperclip Wake Payload");
+    expect(prompt).toContain("## NoralOS Wake Payload");
     expect(prompt).toContain("Execution contract: take concrete action in this heartbeat");
     expect(prompt).toContain("clear final disposition");
     expect(prompt).toContain("evidence, not valid liveness paths by themselves");
@@ -616,7 +623,7 @@ describe("renderPaperclipWakePrompt", () => {
   });
 
   it("renders dependency-blocked interaction guidance", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -652,7 +659,7 @@ describe("renderPaperclipWakePrompt", () => {
   });
 
   it("renders loose review request instructions for execution handoffs", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "execution_review_requested",
       issue: {
         id: "issue-1",
@@ -715,7 +722,7 @@ describe("renderPaperclipWakePrompt", () => {
       ],
     };
 
-    expect(JSON.parse(stringifyPaperclipWakePayload(payload) ?? "{}")).toMatchObject({
+    expect(JSON.parse(stringifyNoralosWakePayload(payload) ?? "{}")).toMatchObject({
       continuationSummary: {
         body: expect.stringContaining("Continuation Summary"),
       },
@@ -734,7 +741,7 @@ describe("renderPaperclipWakePrompt", () => {
       ],
     });
 
-    const prompt = renderPaperclipWakePrompt(payload);
+    const prompt = renderNoralosWakePrompt(payload);
     expect(prompt).toContain("Issue continuation summary:");
     expect(prompt).toContain("Integrate child outputs.");
     expect(prompt).toContain("Run liveness continuation:");
@@ -749,9 +756,9 @@ describe("renderPaperclipWakePrompt", () => {
   });
 });
 
-describe("applyPaperclipWorkspaceEnv", () => {
+describe("applyNoralosWorkspaceEnv", () => {
   it("adds shared workspace env vars including AGENT_HOME", () => {
-    const env = applyPaperclipWorkspaceEnv(
+    const env = applyNoralosWorkspaceEnv(
       {},
       {
         workspaceCwd: "/tmp/workspace",
@@ -767,20 +774,20 @@ describe("applyPaperclipWorkspaceEnv", () => {
     );
 
     expect(env).toEqual({
-      PAPERCLIP_WORKSPACE_CWD: "/tmp/workspace",
-      PAPERCLIP_WORKSPACE_SOURCE: "project_primary",
-      PAPERCLIP_WORKSPACE_STRATEGY: "git_worktree",
-      PAPERCLIP_WORKSPACE_ID: "workspace-1",
-      PAPERCLIP_WORKSPACE_REPO_URL: "https://github.com/paperclipai/paperclip.git",
-      PAPERCLIP_WORKSPACE_REPO_REF: "main",
-      PAPERCLIP_WORKSPACE_BRANCH: "feature/test",
-      PAPERCLIP_WORKSPACE_WORKTREE_PATH: "/tmp/worktree",
+      NORALOS_WORKSPACE_CWD: "/tmp/workspace",
+      NORALOS_WORKSPACE_SOURCE: "project_primary",
+      NORALOS_WORKSPACE_STRATEGY: "git_worktree",
+      NORALOS_WORKSPACE_ID: "workspace-1",
+      NORALOS_WORKSPACE_REPO_URL: "https://github.com/paperclipai/paperclip.git",
+      NORALOS_WORKSPACE_REPO_REF: "main",
+      NORALOS_WORKSPACE_BRANCH: "feature/test",
+      NORALOS_WORKSPACE_WORKTREE_PATH: "/tmp/worktree",
       AGENT_HOME: "/tmp/agent-home",
     });
   });
 
   it("skips empty workspace env values", () => {
-    const env = applyPaperclipWorkspaceEnv(
+    const env = applyNoralosWorkspaceEnv(
       {},
       {
         workspaceCwd: "",

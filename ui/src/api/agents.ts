@@ -12,12 +12,12 @@ import type {
   HeartbeatRun,
   Approval,
   AgentConfigRevision,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import type {
   AdapterModelProfileDefinition,
   AdapterModelProfileKey,
-} from "@paperclipai/adapter-utils";
-import { isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
+} from "@noralos/adapter-utils";
+import { isUuidLike, normalizeAgentUrlKey } from "@noralos/shared";
 import { ApiError, api } from "./client";
 
 export interface AgentKey {
@@ -66,6 +66,7 @@ export interface AgentHireResponse {
 
 export interface AgentPermissionUpdate {
   canCreateAgents: boolean;
+  canCreateDepartments: boolean;
   canAssignTasks: boolean;
 }
 
@@ -229,5 +230,5 @@ export const agentsApi = {
 export interface AvailableSkill {
   name: string;
   description: string;
-  isPaperclipManaged: boolean;
+  isNoralosManaged: boolean;
 }

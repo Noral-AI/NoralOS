@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
+<<<<<<< v2026.525.0
 import { and, desc, eq, inArray, notInArray } from "drizzle-orm";
 import type { Db } from "@paperclipai/db";
 import {
@@ -13,11 +14,18 @@ import {
   issues as issueRows,
   projectWorkspaces,
 } from "@paperclipai/db";
+=======
+import type { Db } from "@noralos/db";
+import { issueExecutionDecisions } from "@noralos/db";
+>>>>>>> master
 import {
   addIssueCommentSchema,
   acceptIssueThreadInteractionSchema,
   cancelIssueThreadInteractionSchema,
+<<<<<<< v2026.525.0
   companySearchQuerySchema,
+=======
+>>>>>>> master
   createIssueAttachmentMetadataSchema,
   createIssueThreadInteractionSchema,
   createIssueWorkProductSchema,
@@ -46,10 +54,15 @@ import {
   type CompanySearchQuery,
   type CompanySearchResponse,
   type ExecutionWorkspace,
+<<<<<<< v2026.525.0
   type IssueRelationIssueSummary,
   type SuccessfulRunHandoffState,
 } from "@paperclipai/shared";
 import { trackAgentTaskCompleted } from "@paperclipai/shared/telemetry";
+=======
+} from "@noralos/shared";
+import { trackAgentTaskCompleted } from "@noralos/shared/telemetry";
+>>>>>>> master
 import { getTelemetryClient } from "../telemetry.js";
 import type { StorageService } from "../storage/types.js";
 import { validate } from "../middleware/validate.js";
@@ -77,8 +90,13 @@ import {
   workProductService,
 } from "../services/index.js";
 import { logger } from "../middleware/logger.js";
+<<<<<<< v2026.525.0
 import { conflict, forbidden, HttpError, notFound, unauthorized, unprocessable } from "../errors.js";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+=======
+import { conflict, forbidden, HttpError, notFound, unauthorized } from "../errors.js";
+import { actorCanViewAllCompanyIssues, assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+>>>>>>> master
 import {
   assertNoAgentHostWorkspaceCommandMutation,
   collectIssueWorkspaceCommandPaths,
@@ -1850,13 +1868,42 @@ export function issueRoutes(
     }
     const offset = parsedOffset ?? 0;
 
+    // Visibility gate: only owner/admin (and instance admins, agents in the
+    // same company, local_implicit) can browse every company issue. Non-
+    // leadership board users (operator/viewer) are constrained to issues
+    // they personally touched. They can still narrow further with
+    // assigneeUserId=me / touchedByUserId=me, but cannot peek at other users.
+    const canViewAll = actorCanViewAllCompanyIssues(req, companyId);
+    let effectiveTouchedByUserId = touchedByUserId;
+    if (!canViewAll) {
+      if (req.actor.type !== "board" || !req.actor.userId) {
+        res.status(403).json({ error: "Listing company issues requires board authentication" });
+        return;
+      }
+      const selfUserId = req.actor.userId;
+      const peeksAtOtherUser =
+        (assigneeUserId && assigneeUserId !== selfUserId) ||
+        (touchedByUserId && touchedByUserId !== selfUserId) ||
+        (inboxArchivedByUserId && inboxArchivedByUserId !== selfUserId) ||
+        (unreadForUserId && unreadForUserId !== selfUserId);
+      if (peeksAtOtherUser) {
+        res.status(403).json({ error: "Cannot browse another user's issues without leadership access" });
+        return;
+      }
+      // Default the personal-scope filter so the response only contains
+      // issues this user touched, even when no explicit user filter was sent.
+      if (!touchedByUserId && !assigneeUserId) {
+        effectiveTouchedByUserId = selfUserId;
+      }
+    }
+
     const result = await svc.list(companyId, {
       attention: attention === "blocked" ? "blocked" : undefined,
       status: req.query.status as string | undefined,
       assigneeAgentId: req.query.assigneeAgentId as string | undefined,
       participantAgentId: req.query.participantAgentId as string | undefined,
       assigneeUserId,
-      touchedByUserId,
+      touchedByUserId: effectiveTouchedByUserId,
       inboxArchivedByUserId,
       unreadForUserId,
       projectId: req.query.projectId as string | undefined,

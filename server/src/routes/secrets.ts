@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   createSecretProviderConfigSchema,
   createSecretSchema,
@@ -9,7 +9,7 @@ import {
   secretProviderConfigDiscoveryPreviewSchema,
   updateSecretProviderConfigSchema,
   updateSecretSchema,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { validate } from "../middleware/validate.js";
 import { assertBoard, assertCompanyAccess } from "./authz.js";
 import { logActivity, secretService } from "../services/index.js";
@@ -18,7 +18,16 @@ import { getConfiguredSecretProvider } from "../secrets/configured-provider.js";
 export function secretRoutes(db: Db) {
   const router = Router();
   const svc = secretService(db);
+<<<<<<< v2026.525.0
   const defaultProvider = getConfiguredSecretProvider();
+=======
+  const configuredDefaultProvider = process.env.NORALOS_SECRETS_PROVIDER;
+  const defaultProvider = (
+    configuredDefaultProvider && SECRET_PROVIDERS.includes(configuredDefaultProvider as SecretProvider)
+      ? configuredDefaultProvider
+      : "local_encrypted"
+  ) as SecretProvider;
+>>>>>>> master
 
   router.get("/companies/:companyId/secret-providers", (req, res) => {
     assertBoard(req);

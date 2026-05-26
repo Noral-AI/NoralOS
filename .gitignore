@@ -11,7 +11,7 @@ drizzle/meta/
 coverage/
 .DS_Store
 data/
-.paperclip/
+.noralos/
 .pnpm-store/
 tmp-*
 cli/tmp/
@@ -42,12 +42,30 @@ diagnostics/
 *.tmp
 .vscode/
 .claude/settings.local.json
-.paperclip-local/
+.noralos-local/
 /.idea/
 /.agents/
 
 # Doc maintenance cursor
 .doc-review-cursor
+
+# Production deploy — never commit secrets
+.env.production
+.env.local
+.env.*.local
+*.pem
+*.key
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.p12
+*.pfx
+*.crt
+secrets/
+config/secrets.*
+docker-config.json
+.docker/config.json
 
 # Playwright
 tests/e2e/test-results/
@@ -57,4 +75,8 @@ tests/release-smoke/playwright-report/
 .superset/
 .superpowers/
 .claude/worktrees/
+<<<<<<< v2026.525.0
 .herenow
+=======
+.paperclip/
+>>>>>>> master

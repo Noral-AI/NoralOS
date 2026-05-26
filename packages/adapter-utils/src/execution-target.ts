@@ -18,7 +18,11 @@ import {
   startSandboxCallbackBridgeServer,
   startSandboxCallbackBridgeWorker,
 } from "./sandbox-callback-bridge.js";
+<<<<<<< v2026.525.0
 import { createSshCommandManagedRuntimeRunner, parseSshRemoteExecutionSpec, runSshCommand, shellQuote } from "./ssh.js";
+=======
+import { parseSshRemoteExecutionSpec, runSshCommand, shellQuote } from "./ssh.js";
+>>>>>>> master
 import {
   ensureCommandResolvable,
   resolveCommandForLogs,
@@ -41,6 +45,10 @@ export interface AdapterSshExecutionTarget {
   environmentId?: string | null;
   leaseId?: string | null;
   remoteCwd: string;
+<<<<<<< v2026.525.0
+=======
+  noralosApiUrl?: string | null;
+>>>>>>> master
   spec: SshRemoteExecutionSpec;
 }
 
@@ -52,6 +60,11 @@ export interface AdapterSandboxExecutionTarget {
   environmentId?: string | null;
   leaseId?: string | null;
   remoteCwd: string;
+<<<<<<< v2026.525.0
+=======
+  noralosApiUrl?: string | null;
+  noralosTransport?: "direct" | "bridge";
+>>>>>>> master
   timeoutMs?: number | null;
   runner?: CommandManagedRuntimeRunner;
 }
@@ -92,15 +105,22 @@ export interface AdapterExecutionTargetShellOptions {
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
 }
 
+<<<<<<< v2026.525.0
 export interface AdapterExecutionTargetPaperclipBridgeHandle {
+=======
+export interface AdapterExecutionTargetNoralosBridgeHandle {
+>>>>>>> master
   env: Record<string, string>;
   stop(): Promise<void>;
 }
 
+<<<<<<< v2026.525.0
 export { sanitizeRemoteExecutionEnv } from "./remote-execution-env.js";
 
 export const DEFAULT_REMOTE_SANDBOX_ADAPTER_TIMEOUT_SEC = 1_800;
 
+=======
+>>>>>>> master
 function parseObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -122,6 +142,7 @@ function resolveHostForUrl(rawHost: string): string {
   return host;
 }
 
+<<<<<<< v2026.525.0
 function resolveDefaultPaperclipApiUrl(): string {
   const runtimeHost = resolveHostForUrl(
     process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
@@ -134,6 +155,24 @@ function resolveDefaultPaperclipApiUrl(): string {
 function isBridgeDebugEnabled(env: NodeJS.ProcessEnv): boolean {
   const value = env.PAPERCLIP_BRIDGE_DEBUG?.trim().toLowerCase();
   return value === "1" || value === "true" || value === "yes";
+=======
+function resolveDefaultNoralosApiUrl(): string {
+  const runtimeHost = resolveHostForUrl(
+    process.env.NORALOS_LISTEN_HOST ?? process.env.HOST ?? "localhost",
+  );
+  // 3100 matches the default NoralOS dev server port when the runtime does not provide one.
+  const runtimePort = process.env.NORALOS_LISTEN_PORT ?? process.env.PORT ?? "3100";
+  return `http://${runtimeHost}:${runtimePort}`;
+}
+
+function resolveSandboxNoralosTransport(
+  target: Pick<AdapterSandboxExecutionTarget, "noralosTransport" | "noralosApiUrl">,
+): "direct" | "bridge" {
+  if (target.noralosTransport === "direct" || target.noralosTransport === "bridge") {
+    return target.noralosTransport;
+  }
+  return target.noralosApiUrl ? "direct" : "bridge";
+>>>>>>> master
 }
 
 function isAdapterExecutionTargetInstance(value: unknown): value is AdapterExecutionTarget {
@@ -170,6 +209,7 @@ export function adapterExecutionTargetRemoteCwd(
   return target?.kind === "remote" ? target.remoteCwd : localCwd;
 }
 
+<<<<<<< v2026.525.0
 export function overrideAdapterExecutionTargetRemoteCwd(
   target: AdapterExecutionTarget | null | undefined,
   remoteCwd: string | null | undefined,
@@ -212,6 +252,34 @@ export function adapterExecutionTargetUsesPaperclipBridge(
   target: AdapterExecutionTarget | null | undefined,
 ): boolean {
   return target?.kind === "remote";
+=======
+export function resolveAdapterExecutionTargetCwd(
+  target: AdapterExecutionTarget | null | undefined,
+  configuredCwd: string | null | undefined,
+  localFallbackCwd: string,
+): string {
+  if (typeof configuredCwd === "string" && configuredCwd.trim().length > 0) {
+    return configuredCwd;
+  }
+  return adapterExecutionTargetRemoteCwd(target, localFallbackCwd);
+}
+
+export function adapterExecutionTargetNoralosApiUrl(
+  target: AdapterExecutionTarget | null | undefined,
+): string | null {
+  if (target?.kind !== "remote") return null;
+  if (target.transport === "ssh") return target.noralosApiUrl ?? target.spec.noralosApiUrl ?? null;
+  if (resolveSandboxNoralosTransport(target) === "bridge") return null;
+  return target.noralosApiUrl ?? null;
+}
+
+export function adapterExecutionTargetUsesNoralosBridge(
+  target: AdapterExecutionTarget | null | undefined,
+): boolean {
+  return target?.kind === "remote" &&
+    target.transport === "sandbox" &&
+    resolveSandboxNoralosTransport(target) === "bridge";
+>>>>>>> master
 }
 
 export function describeAdapterExecutionTarget(
@@ -757,7 +825,11 @@ export async function ensureAdapterExecutionTargetFile(
  * For local targets this delegates to the local `ensureAbsoluteDirectory` helper
  * (Node fs). For remote (SSH/sandbox) targets it shells out and runs
  * `mkdir -p` (when allowed) followed by a `[ -d ]` check so the result reflects
+<<<<<<< v2026.525.0
  * the directory state inside the environment, not on the Paperclip host.
+=======
+ * the directory state inside the environment, not on the NoralOS host.
+>>>>>>> master
  *
  * Throws an Error with a human-readable message on failure.
  */
@@ -814,12 +886,18 @@ export function adapterExecutionTargetSessionIdentity(
 ): Record<string, unknown> | null {
   if (!target || target.kind === "local") return null;
   if (target.transport === "ssh") return buildRemoteExecutionSessionIdentity(target.spec);
+  const noralosTransport = resolveSandboxNoralosTransport(target);
   return {
     transport: "sandbox",
     providerKey: target.providerKey ?? null,
     environmentId: target.environmentId ?? null,
     leaseId: target.leaseId ?? null,
     remoteCwd: target.remoteCwd,
+<<<<<<< v2026.525.0
+=======
+    noralosTransport,
+    ...(noralosTransport === "direct" && target.noralosApiUrl ? { noralosApiUrl: target.noralosApiUrl } : {}),
+>>>>>>> master
   };
 }
 
@@ -838,7 +916,13 @@ export function adapterExecutionTargetSessionMatches(
     readStringMeta(parsedSaved, "providerKey") === current?.providerKey &&
     readStringMeta(parsedSaved, "environmentId") === current?.environmentId &&
     readStringMeta(parsedSaved, "leaseId") === current?.leaseId &&
+<<<<<<< v2026.525.0
     readStringMeta(parsedSaved, "remoteCwd") === current?.remoteCwd
+=======
+    readStringMeta(parsedSaved, "remoteCwd") === current?.remoteCwd &&
+    readStringMeta(parsedSaved, "noralosTransport") === (current?.noralosTransport ?? null) &&
+    readStringMeta(parsedSaved, "noralosApiUrl") === (current?.noralosApiUrl ?? null)
+>>>>>>> master
   );
 }
 
@@ -863,12 +947,17 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       environmentId: readStringMeta(parsed, "environmentId"),
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd: spec.remoteCwd,
+<<<<<<< v2026.525.0
+=======
+      noralosApiUrl: readStringMeta(parsed, "noralosApiUrl") ?? spec.noralosApiUrl ?? null,
+>>>>>>> master
       spec,
     };
   }
 
   if (kind === "remote" && readStringMeta(parsed, "transport") === "sandbox") {
     const remoteCwd = readStringMeta(parsed, "remoteCwd");
+    const noralosTransport = readStringMeta(parsed, "noralosTransport");
     if (!remoteCwd) return null;
     return {
       kind: "remote",
@@ -877,6 +966,14 @@ export function parseAdapterExecutionTarget(value: unknown): AdapterExecutionTar
       environmentId: readStringMeta(parsed, "environmentId"),
       leaseId: readStringMeta(parsed, "leaseId"),
       remoteCwd,
+<<<<<<< v2026.525.0
+=======
+      noralosApiUrl: readStringMeta(parsed, "noralosApiUrl"),
+      noralosTransport:
+        noralosTransport === "direct" || noralosTransport === "bridge"
+          ? noralosTransport
+          : undefined,
+>>>>>>> master
       timeoutMs: typeof parsed.timeoutMs === "number" ? parsed.timeoutMs : null,
     };
   }
@@ -897,6 +994,10 @@ export function adapterExecutionTargetFromRemoteExecution(
       environmentId: metadata.environmentId ?? null,
       leaseId: metadata.leaseId ?? null,
       remoteCwd: ssh.remoteCwd,
+<<<<<<< v2026.525.0
+=======
+      noralosApiUrl: ssh.noralosApiUrl ?? null,
+>>>>>>> master
       spec: ssh,
     };
   }
@@ -967,10 +1068,15 @@ export async function prepareAdapterExecutionTargetRuntime(input: {
       shellCommand: target.shellCommand,
       leaseId: target.leaseId,
       remoteCwd: target.remoteCwd,
+<<<<<<< v2026.525.0
       timeoutMs:
         input.timeoutSec && input.timeoutSec > 0
           ? input.timeoutSec * 1000
           : target.timeoutMs,
+=======
+      timeoutMs: target.timeoutMs,
+      noralosApiUrl: target.noralosApiUrl,
+>>>>>>> master
     },
     adapterKey: input.adapterKey,
     workspaceLocalDir: input.workspaceLocalDir,
@@ -1048,21 +1154,36 @@ async function readBridgeForwardResponseBody(response: Response, maxBodyBytes: n
   return Buffer.concat(chunks, totalBytes).toString("utf8");
 }
 
+<<<<<<< v2026.525.0
 export async function startAdapterExecutionTargetPaperclipBridge(input: {
+=======
+export async function startAdapterExecutionTargetNoralosBridge(input: {
+>>>>>>> master
   runId: string;
   target: AdapterExecutionTarget | null | undefined;
   runtimeRootDir: string | null | undefined;
   adapterKey: string;
+<<<<<<< v2026.525.0
   timeoutSec?: number | null;
+=======
+>>>>>>> master
   hostApiToken: string | null | undefined;
   hostApiUrl?: string | null;
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
   maxBodyBytes?: number | null;
+<<<<<<< v2026.525.0
 }): Promise<AdapterExecutionTargetPaperclipBridgeHandle | null> {
   if (!adapterExecutionTargetUsesPaperclipBridge(input.target)) {
     return null;
   }
   if (!input.target || input.target.kind !== "remote") {
+=======
+}): Promise<AdapterExecutionTargetNoralosBridgeHandle | null> {
+  if (!adapterExecutionTargetUsesNoralosBridge(input.target)) {
+    return null;
+  }
+  if (!input.target || input.target.kind !== "remote" || input.target.transport !== "sandbox") {
+>>>>>>> master
     return null;
   }
 
@@ -1070,7 +1191,11 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
   const onLog = input.onLog ?? (async () => {});
   const hostApiToken = input.hostApiToken?.trim() ?? "";
   if (hostApiToken.length === 0) {
+<<<<<<< v2026.525.0
     throw new Error("Sandbox bridge mode requires a host-side Paperclip API token.");
+=======
+    throw new Error("Sandbox bridge mode requires a host-side NoralOS API token.");
+>>>>>>> master
   }
 
   const runtimeRootDir =
@@ -1087,6 +1212,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
       : DEFAULT_SANDBOX_CALLBACK_BRIDGE_MAX_BODY_BYTES;
   const hostApiUrl =
     input.hostApiUrl?.trim() ||
+<<<<<<< v2026.525.0
     process.env.PAPERCLIP_RUNTIME_API_URL?.trim() ||
     process.env.PAPERCLIP_API_URL?.trim() ||
     resolveDefaultPaperclipApiUrl();
@@ -1096,6 +1222,11 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
     typeof input.timeoutSec === "number" && Number.isFinite(input.timeoutSec) && input.timeoutSec > 0
       ? Math.trunc(input.timeoutSec * 1000)
       : adapterExecutionTargetTimeoutMs(target);
+=======
+    process.env.NORALOS_RUNTIME_API_URL?.trim() ||
+    process.env.NORALOS_API_URL?.trim() ||
+    resolveDefaultNoralosApiUrl();
+>>>>>>> master
 
   await onLog(
     "stdout",
@@ -1107,6 +1238,7 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
   let worker: Awaited<ReturnType<typeof startSandboxCallbackBridgeWorker>> | null = null;
   try {
     const client = createCommandManagedSandboxCallbackBridgeQueueClient({
+<<<<<<< v2026.525.0
       runner,
       remoteCwd: target.remoteCwd,
       timeoutMs: bridgeTimeoutMs,
@@ -1119,11 +1251,18 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
     // this flag is enabled. Only intended for active debugging in trusted
     // environments.
     const bridgeDebugEnabled = isBridgeDebugEnabled(process.env);
+=======
+      runner: requireSandboxRunner(target),
+      remoteCwd: target.remoteCwd,
+      timeoutMs: target.timeoutMs,
+    });
+>>>>>>> master
     worker = await startSandboxCallbackBridgeWorker({
       client,
       queueDir,
       maxBodyBytes,
       handleRequest: async (request) => {
+<<<<<<< v2026.525.0
         const method = request.method.trim().toUpperCase() || "GET";
         if (bridgeDebugEnabled) {
           await onLog(
@@ -1131,6 +1270,8 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
             `[paperclip] Bridge proxy ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
           );
         }
+=======
+>>>>>>> master
         const headers = new Headers();
         for (const [key, value] of Object.entries(request.headers)) {
           if (value.trim().length === 0) continue;
@@ -1138,18 +1279,25 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
         }
         headers.set("authorization", `Bearer ${hostApiToken}`);
         headers.set("x-paperclip-run-id", input.runId);
+<<<<<<< v2026.525.0
+=======
+        const method = request.method.trim().toUpperCase() || "GET";
+>>>>>>> master
         const response = await fetch(buildBridgeForwardUrl(hostApiUrl, request), {
           method,
           headers,
           ...(method === "GET" || method === "HEAD" ? {} : { body: request.body }),
           signal: AbortSignal.timeout(30_000),
         });
+<<<<<<< v2026.525.0
         if (bridgeDebugEnabled) {
           await onLog(
             "stdout",
             `[paperclip] Bridge proxy response ${response.status} for ${method} ${request.path}${request.query ? `?${request.query}` : ""}\n`,
           );
         }
+=======
+>>>>>>> master
         return {
           status: response.status,
           headers: buildBridgeResponseHeaders(response),
@@ -1158,15 +1306,24 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
       },
     });
     server = await startSandboxCallbackBridgeServer({
+<<<<<<< v2026.525.0
       runner,
+=======
+      runner: requireSandboxRunner(target),
+>>>>>>> master
       remoteCwd: target.remoteCwd,
       assetRemoteDir,
       queueDir,
       bridgeToken,
       bridgeAsset,
+<<<<<<< v2026.525.0
       timeoutMs: bridgeTimeoutMs,
       maxBodyBytes,
       shellCommand,
+=======
+      timeoutMs: target.timeoutMs,
+      maxBodyBytes,
+>>>>>>> master
     });
   } catch (error) {
     await Promise.allSettled([
@@ -1179,9 +1336,15 @@ export async function startAdapterExecutionTargetPaperclipBridge(input: {
 
   return {
     env: {
+<<<<<<< v2026.525.0
       PAPERCLIP_API_URL: server.baseUrl,
       PAPERCLIP_API_KEY: bridgeToken,
       PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
+=======
+      NORALOS_API_URL: server.baseUrl,
+      NORALOS_API_KEY: bridgeToken,
+      NORALOS_API_BRIDGE_MODE: "queue_v1",
+>>>>>>> master
     },
     stop: async () => {
       await Promise.allSettled([
