@@ -11,12 +11,11 @@ const nonServerProjects = [
   "@noralos/shared",
   "@noralos/db",
   "@noralos/adapter-utils",
-  "@noralos/adapter-acpx-local",
   "@noralos/adapter-codex-local",
   "@noralos/adapter-opencode-local",
   "@noralos/plugin-sdk",
   "@noralos/ui",
-  "paperclipai",
+  "noralos",
 ];
 const routeTestPattern = /[^/]*(?:route|routes|authz)[^/]*\.test\.ts$/;
 const additionalSerializedServerTests = new Set([

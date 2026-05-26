@@ -24,7 +24,12 @@ const VOLATILE_ENV_KEY_PREFIXES = ["PAPERCLIP_", "npm_", "NPM_"] as const;
 const VOLATILE_ENV_KEY_EXACT = new Set(["PWD", "OLDPWD", "SHLVL", "_", "TERM_SESSION_ID", "HOME"]);
 
 function isValidOpenCodeModelId(model: string): boolean {
-  return model.length > 0 && model.includes("/");
+  if (!model) return false;
+  const slashIdx = model.indexOf("/");
+  if (slashIdx < 1) return false;
+  const provider = model.slice(0, slashIdx).trim();
+  const modelName = model.slice(slashIdx + 1).trim();
+  return provider.length > 0 && modelName.length > 0;
 }
 
 export function requireOpenCodeModelId(input: unknown): string {

@@ -126,19 +126,19 @@ describe("resolveExecutionRunAdapterConfig", () => {
       agentId: "agent-1",
       executionRunConfig: {
         env: {
-          PAPERCLIP_API_KEY: { type: "secret_ref", secretId: "secret-api-key", version: "latest" },
+          NORALOS_API_KEY: { type: "secret_ref", secretId: "secret-api-key", version: "latest" },
           PAPERCLIP_AGENT_ID: "spoofed-agent",
           AGENT_ONLY: "agent-only",
         },
       },
       projectEnv: {
-        PAPERCLIP_API_KEY: "project-api-key",
+        NORALOS_API_KEY: "project-api-key",
         PAPERCLIP_COMPANY_ID: "spoofed-company",
         PROJECT_ONLY: "project-only",
       },
       routineEnv: {
-        PAPERCLIP_API_KEY: "routine-api-key",
-        PAPERCLIP_RUN_ID: "spoofed-run",
+        NORALOS_API_KEY: "routine-api-key",
+        NORALOS_RUN_ID: "spoofed-run",
         ROUTINE_ONLY: "routine-only",
       },
       routineId: "routine-1",

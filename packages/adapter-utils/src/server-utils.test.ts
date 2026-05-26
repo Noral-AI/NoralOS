@@ -54,13 +54,13 @@ describe("buildInvocationEnvForLogs", () => {
       { SAFE_VALUE: "visible" },
       {
         resolvedCommand:
-          "env OPENAI_API_KEY=sk-live-example PAPERCLIP_API_KEY='paperclip-quoted-secret' custom-acp --paperclip-api-key=paperclip-flag-secret --token ghp_example_secret",
+          "env OPENAI_API_KEY=sk-live-example NORALOS_API_KEY='paperclip-quoted-secret' custom-acp --paperclip-api-key=paperclip-flag-secret --token ghp_example_secret",
       },
     );
 
     expect(loggedEnv.SAFE_VALUE).toBe("visible");
-    expect(loggedEnv.PAPERCLIP_RESOLVED_COMMAND).toBe(
-      "env OPENAI_API_KEY=***REDACTED*** PAPERCLIP_API_KEY='***REDACTED***' custom-acp --paperclip-api-key=***REDACTED*** --token ***REDACTED***",
+    expect(loggedEnv.NORALOS_RESOLVED_COMMAND).toBe(
+      "env OPENAI_API_KEY=***REDACTED*** NORALOS_API_KEY='***REDACTED***' custom-acp --paperclip-api-key=***REDACTED*** --token ***REDACTED***",
     );
   });
 });
@@ -918,9 +918,9 @@ describe("rewriteWorkspaceCwdEnvVarsForExecution", () => {
 describe("refreshNoralosWorkspaceEnvForExecution", () => {
   it("rewrites Paperclip workspace env to the prepared remote runtime cwd", () => {
     const env: Record<string, string> = {
-      PAPERCLIP_WORKSPACE_CWD: "/remote/workspace",
-      PAPERCLIP_WORKSPACE_WORKTREE_PATH: "/host/worktree",
-      PAPERCLIP_WORKSPACES_JSON: JSON.stringify([
+      NORALOS_WORKSPACE_CWD: "/remote/workspace",
+      NORALOS_WORKSPACE_WORKTREE_PATH: "/host/worktree",
+      NORALOS_WORKSPACES_JSON: JSON.stringify([
         { workspaceId: "workspace-1", cwd: "/remote/workspace" },
         { workspaceId: "workspace-2", cwd: "/tmp/other" },
       ]),
@@ -955,10 +955,10 @@ describe("refreshNoralosWorkspaceEnvForExecution", () => {
         },
       ],
     });
-    expect(env.PAPERCLIP_WORKSPACE_CWD).toBe("/remote/workspace/.paperclip-runtime/runs/run-1/workspace");
-    expect(env.PAPERCLIP_WORKSPACE_WORKTREE_PATH).toBeUndefined();
+    expect(env.NORALOS_WORKSPACE_CWD).toBe("/remote/workspace/.paperclip-runtime/runs/run-1/workspace");
+    expect(env.NORALOS_WORKSPACE_WORKTREE_PATH).toBeUndefined();
     expect(env.QA_PROJECT_WORKSPACE_CWD).toBe("/remote/workspace/.paperclip-runtime/runs/run-1/workspace");
-    expect(JSON.parse(env.PAPERCLIP_WORKSPACES_JSON ?? "[]")).toEqual([
+    expect(JSON.parse(env.NORALOS_WORKSPACES_JSON ?? "[]")).toEqual([
       {
         workspaceId: "workspace-1",
         cwd: "/remote/workspace/.paperclip-runtime/runs/run-1/workspace",

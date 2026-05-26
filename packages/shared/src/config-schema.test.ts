@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { noralosConfigSchema } from "./config-schema.js";
 
-describe("paperclip config schema", () => {
+describe("noralos config schema", () => {
   it("defaults omitted runtime paths to legacy instance-root locations", () => {
     const parsed = noralosConfigSchema.parse({
       $meta: {
@@ -18,10 +18,10 @@ describe("paperclip config schema", () => {
       server: {},
     });
 
-    expect(parsed.database.embeddedPostgresDataDir).toBe("~/.paperclip/instances/default/db");
-    expect(parsed.database.backup.dir).toBe("~/.paperclip/instances/default/data/backups");
-    expect(parsed.logging.logDir).toBe("~/.paperclip/instances/default/logs");
-    expect(parsed.storage.localDisk.baseDir).toBe("~/.paperclip/instances/default/data/storage");
-    expect(parsed.secrets.localEncrypted.keyFilePath).toBe("~/.paperclip/instances/default/secrets/master.key");
+    expect(parsed.database.embeddedPostgresDataDir).toBe("~/.noralos/instances/default/db");
+    expect(parsed.database.backup.dir).toBe("~/.noralos/instances/default/data/backups");
+    expect(parsed.logging.logDir).toBe("~/.noralos/instances/default/logs");
+    expect(parsed.storage.localDisk.baseDir).toBe("~/.noralos/instances/default/data/storage");
+    expect(parsed.secrets.localEncrypted.keyFilePath).toBe("~/.noralos/instances/default/secrets/master.key");
   });
 });

@@ -439,7 +439,7 @@ describe("sandbox callback bridge", () => {
           makeDir: async () => {},
           listJsonFiles: async () => {
             throw new Error(
-              "list /remote/.noralos-runtime/gemini/noralos-bridge/queue/requests failed with exit code 255: kex_exchange_identification: read: Connection reset by peer",
+              "list /remote/.paperclip-runtime/gemini/paperclip-bridge/queue/requests failed with exit code 255: kex_exchange_identification: read: Connection reset by peer",
             );
           },
           readTextFile: async () => {
@@ -493,7 +493,7 @@ describe("sandbox callback bridge", () => {
       assets: [{ key: "bridge", localDir: bridgeAsset.localDir }],
     });
 
-    const queueDir = path.posix.join(prepared.runtimeRootDir, "noralos-bridge");
+    const queueDir = path.posix.join(prepared.runtimeRootDir, "paperclip-bridge");
     const directories = sandboxCallbackBridgeDirectories(queueDir);
     const bridgeToken = createSandboxCallbackBridgeToken();
     const seenRequestIds: string[] = [];
@@ -763,9 +763,9 @@ describe("sandbox callback bridge", () => {
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
     const remoteAssetDir = path.posix.join(
       remoteWorkspaceDir,
-      ".noralos-runtime",
+      ".paperclip-runtime",
       "codex",
-      "noralos-bridge",
+      "paperclip-bridge",
       "server",
     );
     await mkdir(remoteWorkspaceDir, { recursive: true });
@@ -795,14 +795,14 @@ describe("sandbox callback bridge", () => {
 
     expect(first.uploaded).toBe(true);
     expect(second.uploaded).toBe(false);
-    await expect(readFile(path.posix.join(remoteAssetDir, "noralos-bridge-server.mjs"), "utf8")).resolves.toBe(expandedSource);
+    await expect(readFile(path.posix.join(remoteAssetDir, "paperclip-bridge-server.mjs"), "utf8")).resolves.toBe(expandedSource);
     await expect(
       readdir(remoteAssetDir).then((entries) =>
         entries.filter(
           (entry) =>
             entry.endsWith(".noralos-upload.b64") ||
             entry.endsWith(".partial") ||
-            entry === ".noralos-bridge-upload.lock",
+            entry === ".paperclip-bridge-upload.lock",
         ),
       ),
     ).resolves.toEqual([]);
@@ -815,9 +815,9 @@ describe("sandbox callback bridge", () => {
     const remoteWorkspaceDir = path.join(rootDir, "remote-workspace");
     const remoteAssetDir = path.posix.join(
       remoteWorkspaceDir,
-      ".noralos-runtime",
+      ".paperclip-runtime",
       "codex",
-      "noralos-bridge",
+      "paperclip-bridge",
       "server",
     );
     await mkdir(remoteWorkspaceDir, { recursive: true });
@@ -849,14 +849,14 @@ describe("sandbox callback bridge", () => {
       }),
     ).rejects.toThrow(/sha mismatch/i);
 
-    await expect(readFile(path.posix.join(remoteAssetDir, "noralos-bridge-server.mjs"), "utf8")).rejects.toThrow();
+    await expect(readFile(path.posix.join(remoteAssetDir, "paperclip-bridge-server.mjs"), "utf8")).rejects.toThrow();
     await expect(
       readdir(remoteAssetDir).then((entries) =>
         entries.filter(
           (entry) =>
             entry.endsWith(".noralos-upload.b64") ||
             entry.endsWith(".partial") ||
-            entry === ".noralos-bridge-upload.lock",
+            entry === ".paperclip-bridge-upload.lock",
         ),
       ),
     ).resolves.toEqual([]);
@@ -972,7 +972,7 @@ describe("sandbox callback bridge", () => {
       timeoutMs: 30_000,
     });
 
-    await client.makeDir("/workspace/.noralos-runtime/codex/noralos-bridge/queue");
+    await client.makeDir("/workspace/.paperclip-runtime/codex/noralos-bridge/queue");
 
     expect(runner.execute).toHaveBeenCalledWith(expect.objectContaining({
       env: {

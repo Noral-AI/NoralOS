@@ -39,7 +39,7 @@ const {
   startAdapterExecutionTargetNoralosBridge: vi.fn(async () => ({
     env: {
       NORALOS_API_URL: "http://127.0.0.1:4310",
-      PAPERCLIP_API_KEY: "bridge-token",
+      NORALOS_API_KEY: "bridge-token",
       NORALOS_API_BRIDGE_MODE: "queue_v1",
     },
     stop: async () => {},
@@ -127,7 +127,7 @@ describe("cursor remote execution", () => {
           cwd: workspaceDir,
           source: "project_primary",
         },
-        paperclipWorkspaces: [
+        noralosWorkspaces: [
           {
             workspaceId: "workspace-1",
             cwd: workspaceDir,
