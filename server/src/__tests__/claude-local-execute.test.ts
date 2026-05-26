@@ -2,13 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-<<<<<<< v2026.525.0
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
-import { claudeSessionCwdMatchesExecutionTarget, execute } from "@paperclipai/adapter-claude-local/server";
-=======
 import { runChildProcess } from "@noralos/adapter-utils/server-utils";
-import { execute } from "@noralos/adapter-claude-local/server";
->>>>>>> master
+import { claudeSessionCwdMatchesExecutionTarget, execute } from "@noralos/adapter-claude-local/server";
 
 async function writeFailingClaudeCommand(
   commandPath: string,
@@ -585,11 +580,7 @@ describe("claude execute", () => {
     const remoteWorkspace = path.join(root, "sandbox-$HOME");
     const binDir = path.join(root, "bin");
     const commandPath = path.join(binDir, "claude");
-<<<<<<< v2026.525.0
     const capturePath1 = path.join(remoteWorkspace, "capture-1.json");
-=======
-    const capturePath = path.join(remoteWorkspace, "capture.json");
->>>>>>> master
     const claudeRoot = path.join(root, ".claude");
     const previousHome = process.env.HOME;
     const previousPath = process.env.PATH;
@@ -624,11 +615,7 @@ describe("claude execute", () => {
           command: commandPath,
           cwd: localWorkspace,
           env: {
-<<<<<<< v2026.525.0
-            PAPERCLIP_TEST_CAPTURE_PATH: capturePath1,
-=======
-            NORALOS_TEST_CAPTURE_PATH: capturePath,
->>>>>>> master
+            NORALOS_TEST_CAPTURE_PATH: capturePath1,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -648,7 +635,6 @@ describe("claude execute", () => {
       });
 
       expect(result.exitCode).toBe(0);
-<<<<<<< v2026.525.0
       expect(result.sessionParams).toMatchObject({
         cwd: localWorkspace,
         remoteExecution: {
@@ -667,17 +653,9 @@ describe("claude execute", () => {
       expect(capture.argv).not.toContain("--dangerously-skip-permissions");
       expect(capture.claudeConfigDir).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "claude", "config"));
       expect(capture.claudeConfigEntries).toContain("settings.json");
-      expect(capture.paperclipApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+      expect(capture.noralosApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
       expect(capture.paperclipApiKey).not.toBe("run-jwt-token");
       expect(capture.paperclipApiBridgeMode).toBe("queue_v1");
-=======
-      const capture = JSON.parse(await fs.readFile(capturePath, "utf8")) as CapturePayload;
-      expect(capture.claudeConfigDir).toBe(path.join(remoteWorkspace, ".paperclip-runtime", "claude", "config"));
-      expect(capture.claudeConfigEntries).toContain("settings.json");
-      expect(capture.noralosApiUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-      expect(capture.noralosApiKey).not.toBe("run-jwt-token");
-      expect(capture.noralosApiBridgeMode).toBe("queue_v1");
->>>>>>> master
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -685,7 +663,6 @@ describe("claude execute", () => {
       else process.env.PATH = previousPath;
       await fs.rm(root, { recursive: true, force: true });
     }
-<<<<<<< v2026.525.0
   }, 10_000);
 
   it("allows remote session resumes when saved cwd is the host workspace", () => {
@@ -702,11 +679,6 @@ describe("claude execute", () => {
   });
 
   it("reuses a stable Paperclip-managed Claude prompt bundle across equivalent runs", async () => {
-=======
-  });
-
-  it("reuses a stable NoralOS-managed Claude prompt bundle across equivalent runs", async () => {
->>>>>>> master
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-claude-execute-bundle-"));
     const workspace = path.join(root, "workspace");
     const commandPath = path.join(root, "claude");

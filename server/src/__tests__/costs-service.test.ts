@@ -3,7 +3,6 @@ import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { randomUUID } from "node:crypto";
-<<<<<<< v2026.525.0
 import {
   createDb,
   companies,
@@ -14,10 +13,7 @@ import {
   heartbeatRuns,
   issues,
   projects,
-} from "@paperclipai/db";
-=======
-import { createDb, companies, agents, costEvents, financeEvents, issues, projects } from "@noralos/db";
->>>>>>> master
+} from "@noralos/db";
 import { costService } from "../services/costs.ts";
 import { financeService } from "../services/finance.ts";
 import {
@@ -194,20 +190,12 @@ beforeEach(() => {
   mockIssueService.getById.mockResolvedValue({
     id: "issue-1",
     companyId: "company-1",
-<<<<<<< v2026.525.0
     identifier: "PC1A2-1",
-=======
-    identifier: "PAP-1",
->>>>>>> master
   });
   mockIssueService.getByIdentifier.mockResolvedValue({
     id: "issue-1",
     companyId: "company-1",
-<<<<<<< v2026.525.0
     identifier: "PC1A2-1",
-=======
-    identifier: "PAP-1",
->>>>>>> master
   });
   mockBudgetService.upsertPolicy.mockResolvedValue(undefined);
 });
@@ -251,7 +239,6 @@ describe("cost routes", () => {
 
   it("returns issue subtree cost summaries for issue refs", async () => {
     const app = await createApp();
-<<<<<<< v2026.525.0
     const res = await request(app).get("/api/issues/pc1a2-1/cost-summary");
 
     expect(res.status).toBe(200);
@@ -259,13 +246,6 @@ describe("cost routes", () => {
     expect(mockCostService.issueTreeSummary).toHaveBeenCalledWith("company-1", "issue-1", {
       excludeRoot: false,
     });
-=======
-    const res = await request(app).get("/api/issues/PAP-1/cost-summary");
-
-    expect(res.status).toBe(200);
-    expect(mockIssueService.getByIdentifier).toHaveBeenCalledWith("PAP-1");
-    expect(mockCostService.issueTreeSummary).toHaveBeenCalledWith("company-1", "issue-1");
->>>>>>> master
     expect(res.body).toEqual({
       issueId: "issue-1",
       issueCount: 1,

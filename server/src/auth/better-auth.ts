@@ -167,7 +167,6 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
       "For local development, set BETTER_AUTH_SECRET=noralos-dev-secret in your .env file.",
     );
   }
-<<<<<<< v2026.525.0
   const disableSecureCookies = shouldDisableSecureAuthCookies({
     deploymentMode: config.deploymentMode,
     deploymentExposure: config.deploymentExposure,
@@ -175,10 +174,6 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
     authPublicBaseUrl: config.authPublicBaseUrl,
     publicUrl,
   });
-=======
-  const publicUrl = process.env.NORALOS_PUBLIC_URL ?? baseUrl;
-  const isHttpOnly = publicUrl ? publicUrl.startsWith("http://") : false;
->>>>>>> master
 
   const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
@@ -202,14 +197,7 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
       requireEmailVerification: false,
       disableSignUp: config.authDisableSignUp,
     },
-<<<<<<< v2026.525.0
     advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies }),
-=======
-    advanced: buildBetterAuthAdvancedOptions({
-      disableSecureCookies: isHttpOnly,
-      crossSubDomainCookieDomain: resolveCrossSubDomainCookieDomain(),
-    }),
->>>>>>> master
   };
 
   if (googleEnabled) {

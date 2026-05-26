@@ -57,17 +57,12 @@ import {
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import { environmentService } from "../services/environments.js";
 import { resolveEnvironmentExecutionTarget } from "../services/environment-execution-target.js";
-<<<<<<< v2026.525.0
 import { environmentRuntimeService } from "../services/environment-runtime.js";
-import type { AdapterExecutionTarget } from "@paperclipai/adapter-utils/execution-target";
+import type { AdapterExecutionTarget } from "@noralos/adapter-utils/execution-target";
 import type {
   AdapterEnvironmentCheck,
   AdapterEnvironmentTestResult,
-} from "@paperclipai/adapter-utils";
-=======
-import type { AdapterExecutionTarget } from "@noralos/adapter-utils/execution-target";
-import type { AdapterEnvironmentCheck } from "@noralos/adapter-utils";
->>>>>>> master
+} from "@noralos/adapter-utils";
 import { secretService } from "../services/secrets.js";
 import {
   detectAdapterModel,
@@ -92,18 +87,11 @@ import {
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-codex-local";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
-import { requireOpenCodeModelId } from "@paperclipai/adapter-opencode-local/server";
-=======
 } from "@noralos/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
-import { ensureOpenCodeModelConfiguredAndAvailable } from "@noralos/adapter-opencode-local/server";
->>>>>>> master
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@noralos/adapter-opencode-local";
+import { requireOpenCodeModelId } from "@noralos/adapter-opencode-local/server";
 import {
   loadDefaultAgentInstructionsBundle,
   resolveDefaultAgentInstructionsBundleRole,
@@ -207,7 +195,6 @@ export function agentRoutes(
    * Resolve the execution target the adapter should run its test probes against.
    *
    * - No environmentId / local environment → returns a local target so the
-<<<<<<< v2026.525.0
    *   adapter probes the Paperclip host (legacy behavior).
    * - SSH environment → builds an SSH execution target from the environment
    *   config so the adapter probes the remote box. No lease is required:
@@ -219,15 +206,6 @@ export function agentRoutes(
    *   route is done.
    *
    * The caller MUST always invoke `release()` (typically in a `finally` block).
-=======
-   *   adapter probes the NoralOS host (legacy behavior).
-   * - SSH environment → builds an SSH execution target from the environment
-   *   config so the adapter probes the remote box. No lease is required:
-   *   the SSH spec is fully derived from the saved environment config.
-   * - Sandbox / plugin environments → currently fall back to local probing
-   *   with a warning check, since lifting a temporary sandbox lease for an
-   *   ad-hoc test invocation is out of scope for this iteration.
->>>>>>> master
    */
   async function resolveAdapterTestExecutionContext(input: {
     companyId: string;
@@ -237,7 +215,6 @@ export function agentRoutes(
     executionTarget: AdapterExecutionTarget | null;
     environmentName: string | null;
     fallbackChecks: AdapterEnvironmentCheck[];
-<<<<<<< v2026.525.0
     release: (status?: "released" | "failed") => Promise<void>;
   }> {
     const noopRelease = async () => {};
@@ -249,11 +226,6 @@ export function agentRoutes(
         fallbackChecks: [],
         release: noopRelease,
       };
-=======
-  }> {
-    if (!input.environmentId) {
-      return { executionTarget: null, environmentName: null, fallbackChecks: [] };
->>>>>>> master
     }
 
     const environment = await environmentsSvc.getById(input.environmentId);
@@ -265,30 +237,20 @@ export function agentRoutes(
           {
             code: "environment_not_found",
             level: "warn",
-<<<<<<< v2026.525.0
             message: "Selected environment was not found. The test did not run.",
           },
         ],
         release: noopRelease,
-=======
-            message: "Selected environment was not found. Falling back to a local probe.",
-          },
-        ],
->>>>>>> master
       };
     }
 
     if (environment.driver === "local") {
-<<<<<<< v2026.525.0
       return {
         executionTarget: null,
         environmentName: environment.name,
         fallbackChecks: [],
         release: noopRelease,
       };
-=======
-      return { executionTarget: null, environmentName: environment.name, fallbackChecks: [] };
->>>>>>> master
     }
 
     if (environment.driver === "ssh") {
@@ -305,16 +267,12 @@ export function agentRoutes(
           leaseMetadata: null,
         });
         if (target) {
-<<<<<<< v2026.525.0
           return {
             executionTarget: target,
             environmentName: environment.name,
             fallbackChecks: [],
             release: noopRelease,
           };
-=======
-          return { executionTarget: target, environmentName: environment.name, fallbackChecks: [] };
->>>>>>> master
         }
         return {
           executionTarget: null,
@@ -324,16 +282,10 @@ export function agentRoutes(
               code: "environment_target_unavailable",
               level: "warn",
               message:
-<<<<<<< v2026.525.0
                 `Could not resolve an execution target for environment "${environment.name}". The test did not run.`,
             },
           ],
           release: noopRelease,
-=======
-                `Could not resolve an execution target for environment "${environment.name}". Falling back to a local probe.`,
-            },
-          ],
->>>>>>> master
         };
       } catch (err) {
         return {
@@ -344,23 +296,15 @@ export function agentRoutes(
               code: "environment_target_failed",
               level: "warn",
               message:
-<<<<<<< v2026.525.0
                 `Could not connect to environment "${environment.name}" to run the test.`,
               detail: err instanceof Error ? err.message : String(err),
             },
           ],
           release: noopRelease,
-=======
-                `Could not connect to environment "${environment.name}" to run the test. Falling back to a local probe.`,
-              detail: err instanceof Error ? err.message : String(err),
-            },
-          ],
->>>>>>> master
         };
       }
     }
 
-<<<<<<< v2026.525.0
     // sandbox / plugin / other remote drivers: spin up an ad-hoc lease, realize
     // the workspace inside the box, and run the same probe SSH uses against
     // a sandbox execution target wired to the environment runtime.
@@ -509,21 +453,6 @@ export function agentRoutes(
       environmentName: environment.name,
       fallbackChecks: [],
       release: releaseLease,
-=======
-    // sandbox / plugin / other drivers: not yet supported for ad-hoc adapter tests.
-    return {
-      executionTarget: null,
-      environmentName: environment.name,
-      fallbackChecks: [
-        {
-          code: "environment_driver_not_supported_for_test",
-          level: "warn",
-          message:
-            `Adapter testing inside ${environment.driver} environments is not yet supported. Falling back to a local probe; results may not reflect runs in "${environment.name}".`,
-          hint: "Run a real heartbeat in the environment to verify end-to-end behavior.",
-        },
-      ],
->>>>>>> master
     };
   }
 
@@ -1480,17 +1409,12 @@ export function agentRoutes(
         normalizedAdapterConfig,
       );
 
-<<<<<<< v2026.525.0
       const { executionTarget, environmentName, fallbackChecks, release } =
-=======
-      const { executionTarget, environmentName, fallbackChecks } =
->>>>>>> master
         await resolveAdapterTestExecutionContext({
           companyId,
           adapterType: type,
           environmentId: requestedEnvironmentId,
         });
-<<<<<<< v2026.525.0
 
       let releaseStatus: "released" | "failed" = "released";
       try {
@@ -1530,29 +1454,6 @@ export function agentRoutes(
       } finally {
         await release(releaseStatus);
       }
-=======
-
-      const result = await adapter.testEnvironment({
-        companyId,
-        adapterType: type,
-        config: runtimeAdapterConfig,
-        executionTarget,
-        environmentName,
-      });
-
-      if (fallbackChecks.length > 0) {
-        const checks = [...fallbackChecks, ...result.checks];
-        const status: typeof result.status = checks.some((c) => c.level === "error")
-          ? "fail"
-          : checks.some((c) => c.level === "warn")
-            ? "warn"
-            : result.status;
-        res.json({ ...result, checks, status });
-        return;
-      }
-
-      res.json(result);
->>>>>>> master
     },
   );
 
@@ -3197,16 +3098,12 @@ export function agentRoutes(
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
 
-<<<<<<< v2026.525.0
     // `minCount` is a padding floor for callers that want a minimum number of
     // recent runs to render (e.g. dashboard cards). It must default to 0 so
     // callers asking for "live runs" get only actually-live runs — otherwise
     // every caller with no minCount param gets up to 50 historical runs
     // padded in and renders bogus "live" counts.
     const minCount = readLiveRunsQueryInt(req.query.minCount, 50, 0);
-=======
-    const minCount = readLiveRunsQueryInt(req.query.minCount, 50, 50);
->>>>>>> master
     const limit = readLiveRunsQueryInt(req.query.limit, 50, 50);
 
     const columns = {

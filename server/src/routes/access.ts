@@ -1554,11 +1554,7 @@ function buildInviteOnboardingManifest(
     ),
     onboarding: {
       instructions:
-<<<<<<< v2026.525.0
         "Join as an external Paperclip agent, save your one-time claim secret, wait for board approval, then claim your API key. Use requestType='agent', include your agentName and capabilities, and set adapterType plus agentDefaultsPayload for your runtime when applicable. OpenClaw Gateway agents must use adapterType='openclaw_gateway', set agentDefaultsPayload.url to a ws:// or wss:// gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token.",
-=======
-        "Join as an OpenClaw Gateway agent, save your one-time claim secret, wait for board approval, then claim your API key. Save the claim response token to ~/.openclaw/workspace/noralos-claimed-api-key.json and load NORALOS_API_KEY from that file before starting heartbeat loops. You MUST submit adapterType='openclaw_gateway', set agentDefaultsPayload.url to your ws:// or wss:// OpenClaw gateway endpoint, and include agentDefaultsPayload.headers.x-openclaw-token (or legacy x-openclaw-auth).",
->>>>>>> master
       inviteMessage: extractInviteMessage(invite),
       recommendedAdapterType: null,
       requiredFields: {
@@ -1568,11 +1564,7 @@ function buildInviteOnboardingManifest(
           "Adapter type for this runtime. Use 'openclaw_gateway' only for OpenClaw Gateway agents.",
         capabilities: "Optional capability summary",
         agentDefaultsPayload:
-<<<<<<< v2026.525.0
           "Runtime-specific adapter config. OpenClaw Gateway agents must include url (ws:// or wss://) and headers.x-openclaw-token. Other runtimes should include the config their adapter expects."
-=======
-          "Adapter config for OpenClaw gateway. MUST include url (ws:// or wss://) and headers.x-openclaw-token (or legacy x-openclaw-auth). Optional fields: noralosApiUrl, waitTimeoutMs, sessionKeyStrategy, sessionKey, role, scopes, disableDeviceAuth, devicePrivateKeyPem."
->>>>>>> master
       },
       registrationEndpoint: {
         method: "POST",
@@ -1609,11 +1601,7 @@ function buildInviteOnboardingManifest(
         name: "paperclip",
         path: skillPath,
         url: skillUrl,
-<<<<<<< v2026.525.0
         installPath: "runtime-specific Paperclip skill location"
-=======
-        installPath: "~/.openclaw/skills/noralos/SKILL.md"
->>>>>>> master
       }
     }
   };
@@ -1664,11 +1652,7 @@ export function buildInviteOnboardingTextDocument(
   };
 
   appendBlock(`
-<<<<<<< v2026.525.0
     # Paperclip Agent Onboarding
-=======
-    # NoralOS OpenClaw Gateway Onboarding
->>>>>>> master
 
     This document is meant to be readable by both humans and agents.
 
@@ -1694,42 +1678,7 @@ export function buildInviteOnboardingTextDocument(
 
     Decide which Paperclip adapter type matches your runtime.
 
-<<<<<<< v2026.525.0
     Use adapterType only when there is a matching Paperclip adapter. Put runtime-specific settings in agentDefaultsPayload.
-=======
-    ~/.openclaw/openclaw.json -> gateway.auth.token
-    Extract:
-
-    TOKEN="$(node -p 'require(process.env.HOME+\"/.openclaw/openclaw.json\").gateway.auth.token')"
-    test -n "$TOKEN" || (echo "Missing TOKEN" && exit 1)
-    test "\${#TOKEN}" -ge 16 || (echo "Gateway token unexpectedly short (\${#TOKEN})" && exit 1)
-
-    3) IMPORTANT: Don't accidentally drop the token when generating JSON
-    If you build JSON with Node, pass the token explicitly (argv), don't rely on an un-exported env var.
-
-    Safe payload build looks sort of like this (substitute where necessary):
-
-    BODY="$(node -e '
-      const token = process.argv[1];
-      if (!token) process.exit(2);
-      const body = {
-        requestType: "agent",
-        agentName: "OpenClaw",
-        adapterType: "openclaw_gateway",
-        capabilities: "OpenClaw agent adapter",
-        agentDefaultsPayload: {
-          url: "ws://127.0.0.1:18789",
-          noralosApiUrl: "http://host.docker.internal:3100",
-          headers: { "x-openclaw-token": token },
-          waitTimeoutMs: 120000,
-          sessionKeyStrategy: "issue",
-          role: "operator",
-          scopes: ["operator.admin"]
-        }
-      };
-      process.stdout.write(JSON.stringify(body));
-    ' "$TOKEN")"
->>>>>>> master
 
     ## Step 1: Submit agent join request
     ${onboarding.registrationEndpoint.method} ${
@@ -1791,47 +1740,18 @@ export function buildInviteOnboardingTextDocument(
       "claimSecret": "<one-time-claim-secret>"
     }
 
-<<<<<<< v2026.525.0
-    On successful claim, save the full JSON response somewhere private for your runtime and set PAPERCLIP_API_KEY and PAPERCLIP_API_URL for future Paperclip API calls.
-=======
-    On successful claim, save the full JSON response to:
-
-    - ~/.openclaw/workspace/noralos-claimed-api-key.json
-    chmod 600 ~/.openclaw/workspace/noralos-claimed-api-key.json
-
-    And set the NORALOS_API_KEY and NORALOS_API_URL in your environment variables as specified here:
-    https://docs.openclaw.ai/help/environment
-
-    e.g. 
-
-    {
-      env: {
-        NORALOS_API_KEY: "...",
-        NORALOS_API_URL: "...",
-      },
-    }
-
-    Then set NORALOS_API_KEY and NORALOS_API_URL from the saved token field for every heartbeat run.
->>>>>>> master
+    On successful claim, save the full JSON response somewhere private for your runtime and set NORALOS_API_KEY and NORALOS_API_URL for future Paperclip API calls.
 
     Important:
     - claim secrets expire
     - claim secrets are single-use
     - claim fails before board approval
 
-<<<<<<< v2026.525.0
     ## Step 4: Install Paperclip skill
     GET ${onboarding.skill.url}
     Install path: ${onboarding.skill.installPath}
 
     Use your runtime's normal skill or instruction installation path.
-=======
-    ## Step 4: Install NoralOS skill in OpenClaw
-    GET ${onboarding.skill.url}
-    Install path: ${onboarding.skill.installPath}
-
-    Be sure to prepend your NORALOS_API_URL to the top of your skill and note the path to your NORALOS_API_URL
->>>>>>> master
 
     ## Text onboarding URL
     ${onboarding.textInstructions.url}

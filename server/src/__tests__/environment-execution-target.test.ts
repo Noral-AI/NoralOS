@@ -59,13 +59,7 @@ describe("resolveEnvironmentExecutionTarget", () => {
     });
   });
 
-<<<<<<< v2026.525.0
   it("keeps sandbox targets on bridge mode even when lease metadata includes a Paperclip API URL", async () => {
-=======
-  it("prefers an explicit NoralOS API URL from lease metadata for sandbox targets", async () => {
-    process.env.NORALOS_API_URL = "https://noralos.example.test";
-    process.env.NORALOS_RUNTIME_API_URL = "http://noralos.example.test:3200";
->>>>>>> master
     mockResolveEnvironmentDriverConfigForRuntime.mockResolvedValue({
       driver: "sandbox",
       config: {
@@ -97,11 +91,10 @@ describe("resolveEnvironmentExecutionTarget", () => {
     expect(target).toMatchObject({
       kind: "remote",
       transport: "sandbox",
-<<<<<<< v2026.525.0
       providerKey: "fake-plugin",
       remoteCwd: DEFAULT_SANDBOX_REMOTE_CWD,
     });
-    expect(target).not.toHaveProperty("paperclipApiUrl");
+    expect(target).not.toHaveProperty("noralosApiUrl");
     expect(target).not.toHaveProperty("paperclipTransport");
   });
 
@@ -184,12 +177,6 @@ describe("resolveEnvironmentExecutionTarget", () => {
         remoteCwd: "/srv/paperclip",
       },
     });
-    expect(target).not.toHaveProperty("paperclipApiUrl");
+    expect(target).not.toHaveProperty("noralosApiUrl");
   });
-=======
-      noralosApiUrl: "https://noralos.example.test",
-      noralosTransport: "direct",
-    });
-  });
->>>>>>> master
 });

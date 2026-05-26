@@ -3,13 +3,8 @@ import path from "node:path";
 import { execFile as execFileCallback } from "node:child_process";
 import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
-<<<<<<< v2026.525.0
 import { and, asc, desc, eq, getTableColumns, gt, inArray, isNull, lt, lte, notInArray, or, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
-=======
-import { and, asc, desc, eq, getTableColumns, gt, inArray, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 import type { Db } from "@noralos/db";
->>>>>>> master
 import {
   AGENT_DEFAULT_MAX_CONCURRENT_RUNS,
   ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY,
@@ -165,17 +160,10 @@ import {
   type SessionCompactionPolicy,
 } from "@noralos/adapter-utils";
 import {
-<<<<<<< v2026.525.0
   readPaperclipSkillSyncPreference,
   writePaperclipSkillSyncPreference,
-} from "@paperclipai/adapter-utils/server-utils";
-import { extractSkillMentionIds, isUuidLike } from "@paperclipai/shared";
-=======
-  readNoralosSkillSyncPreference,
-  writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
-import { extractSkillMentionIds } from "@noralos/shared";
->>>>>>> master
+import { extractSkillMentionIds, isUuidLike } from "@noralos/shared";
 import { environmentService } from "./environments.js";
 import { environmentRuntimeService } from "./environment-runtime.js";
 import { environmentRunOrchestrator } from "./environment-run-orchestrator.js";
@@ -1922,22 +1910,7 @@ function enrichWakeContextSnapshot(input: {
     contextSnapshot.wakeTriggerDetail = triggerDetail;
   }
   normalizeModelProfileWakeContext({ contextSnapshot, payload });
-<<<<<<< v2026.525.0
   normalizeInteractionContinuationWakeContext(contextSnapshot, payload);
-=======
-
-  // Promote a free-text user prompt from the wake payload (used by the
-  // Conference Room bridge and any other surface that calls
-  // agents.sessions.sendMessage with { prompt }) onto the context snapshot.
-  // executeRun renders it into a dedicated "latest user message" markdown
-  // block so the adapter actually feeds it to the model.
-  if (!readNonEmptyString(contextSnapshot["userPrompt"])) {
-    const promptFromPayload = readNonEmptyString(payload?.["prompt"]);
-    if (promptFromPayload) {
-      contextSnapshot.userPrompt = promptFromPayload;
-    }
-  }
->>>>>>> master
 
   return {
     contextSnapshot,

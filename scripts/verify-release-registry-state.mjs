@@ -65,16 +65,11 @@ function parseArgs(argv) {
         usage();
         process.exit(0);
       default:
-<<<<<<< v2026.525.0
         throw createExitError(`unexpected argument: ${arg}`, EXIT_NON_RETRIABLE_FAILURE);
-=======
-        throw new Error(`unexpected argument: ${arg}`);
->>>>>>> master
     }
   }
 
   if (options.channel !== "canary" && options.channel !== "stable") {
-<<<<<<< v2026.525.0
     throw createExitError("--channel must be canary or stable", EXIT_NON_RETRIABLE_FAILURE);
   }
 
@@ -92,31 +87,11 @@ function parseArgs(argv) {
 
   if (options.allowCanaryLatest && options.channel !== "canary") {
     throw createExitError("--allow-canary-latest only applies to canary releases", EXIT_NON_RETRIABLE_FAILURE);
-=======
-    throw new Error("--channel must be canary or stable");
-  }
-
-  if (!options.distTag) {
-    throw new Error("--dist-tag is required");
-  }
-
-  if (!options.targetVersion) {
-    throw new Error("--target-version is required");
-  }
-
-  if (options.packages.length === 0 || options.packages.some((name) => !name)) {
-    throw new Error("at least one non-empty --package value is required");
-  }
-
-  if (options.allowCanaryLatest && options.channel !== "canary") {
-    throw new Error("--allow-canary-latest only applies to canary releases");
->>>>>>> master
   }
 
   return options;
 }
 
-<<<<<<< v2026.525.0
 function createRegistryUrl(packageName, version = "") {
   const registry = process.env.npm_config_registry ?? process.env.NPM_CONFIG_REGISTRY ?? "https://registry.npmjs.org/";
   const baseUrl = registry.endsWith("/") ? registry : `${registry}/`;
@@ -149,37 +124,18 @@ export async function fetchRegistryJson(url, { allowMissing = false, timeoutMs =
   } finally {
     clearTimeout(timeout);
   }
-=======
-function createRegistryUrl(packageName) {
-  const registry = process.env.npm_config_registry ?? process.env.NPM_CONFIG_REGISTRY ?? "https://registry.npmjs.org/";
-  return new URL(encodeURIComponent(packageName), registry.endsWith("/") ? registry : `${registry}/`);
-}
-
-async function fetchPackageDocument(packageName, { allowMissing = false } = {}) {
-  const url = createRegistryUrl(packageName);
-  const response = await fetch(url, {
-    headers: {
-      accept: "application/vnd.npm.install-v1+json, application/json;q=0.9",
-    },
-  });
->>>>>>> master
 
   if (response.status === 404 && allowMissing) {
     return null;
   }
 
   if (!response.ok) {
-<<<<<<< v2026.525.0
     throw new Error(`npm registry request failed for ${url}: ${response.status} ${response.statusText}`);
-=======
-    throw new Error(`npm registry request failed for ${packageName}: ${response.status} ${response.statusText}`);
->>>>>>> master
   }
 
   return response.json();
 }
 
-<<<<<<< v2026.525.0
 async function fetchPackageDocument(packageName, { allowMissing = false } = {}) {
   return fetchRegistryJson(createRegistryUrl(packageName), { allowMissing });
 }
@@ -214,9 +170,6 @@ function collectInternalDependencyProblemEntries(
   packageDocsByName,
   packageManifestsByKey = new Map(),
 ) {
-=======
-export function collectInternalDependencyProblems(manifest, packageDocsByName) {
->>>>>>> master
   const problems = [];
   const sections = [
     ["dependencies", manifest.dependencies ?? {}],
@@ -239,7 +192,6 @@ export function collectInternalDependencyProblems(manifest, packageDocsByName) {
         continue;
       }
 
-<<<<<<< v2026.525.0
       // Peer dependency ranges express compatibility, not a manifest that can be fetched directly.
       if (sectionName === "peerDependencies" && isRangeVersionSpecifier(dependencyVersion)) {
         continue;
@@ -268,17 +220,6 @@ export function collectInternalDependencyProblems(manifest, packageDocsByName) {
           createProblem(
             `${sectionName} requires ${dependencyName}@${dependencyVersion}, but npm does not expose that version`,
           ),
-=======
-      const dependencyDoc = packageDocsByName.get(dependencyName);
-      if (!dependencyDoc) {
-        problems.push(`${sectionName} requires ${dependencyName}@${dependencyVersion}, but that package is not published`);
-        continue;
-      }
-
-      if (!(dependencyVersion in (dependencyDoc.versions ?? {}))) {
-        problems.push(
-          `${sectionName} requires ${dependencyName}@${dependencyVersion}, but npm does not expose that version`,
->>>>>>> master
         );
       }
     }
@@ -287,7 +228,6 @@ export function collectInternalDependencyProblems(manifest, packageDocsByName) {
   return problems;
 }
 
-<<<<<<< v2026.525.0
 export function collectInternalDependencyProblems(
   manifest,
   packageDocsByName,
@@ -305,31 +245,17 @@ function requireManifest(packageName, version, packageDoc, packageManifestsByKey
   if (!manifest) {
     if (problems) {
       problems.push(createProblem(`${packageName}: npm registry is missing manifest data for ${version}`));
-=======
-function requireManifest(packageName, version, packageDoc, problems) {
-  const manifest = packageDoc.versions?.[version];
-  if (!manifest) {
-    if (problems) {
-      problems.push(`${packageName}: npm registry is missing manifest data for ${version}`);
->>>>>>> master
     }
     return null;
   }
   return manifest;
 }
 
-<<<<<<< v2026.525.0
 export function verifyPackageRegistryProblems({
   packageName,
   packageDoc,
   packageDocsByName,
   packageManifestsByKey = new Map(),
-=======
-export function verifyPackageRegistryState({
-  packageName,
-  packageDoc,
-  packageDocsByName,
->>>>>>> master
   channel,
   distTag,
   targetVersion,
@@ -341,7 +267,6 @@ export function verifyPackageRegistryState({
 
   if (taggedVersion !== targetVersion) {
     problems.push(
-<<<<<<< v2026.525.0
       createProblem(
         `${packageName}: dist-tag ${distTag} resolves to ${taggedVersion ?? "<missing>"}, expected ${targetVersion}`,
       ),
@@ -356,16 +281,6 @@ export function verifyPackageRegistryState({
       packageManifestsByKey,
     )) {
       problems.push(createProblem(`${packageName}@${targetVersion}: ${problem.message}`, problem));
-=======
-      `${packageName}: dist-tag ${distTag} resolves to ${taggedVersion ?? "<missing>"}, expected ${targetVersion}`,
-    );
-  }
-
-  const targetManifest = requireManifest(packageName, targetVersion, packageDoc, problems);
-  if (targetManifest) {
-    for (const problem of collectInternalDependencyProblems(targetManifest, packageDocsByName)) {
-      problems.push(`${packageName}@${targetVersion}: ${problem}`);
->>>>>>> master
     }
   }
 
@@ -374,19 +289,14 @@ export function verifyPackageRegistryState({
 
     if (latestVersion && isCanaryVersion(latestVersion) && !allowCanaryLatest) {
       problems.push(
-<<<<<<< v2026.525.0
         createProblem(
           `${packageName}: latest dist-tag still resolves to canary ${latestVersion}; if that state is intentional, rerun the verification script directly with --allow-canary-latest`,
           { retriable: false },
         ),
-=======
-        `${packageName}: latest dist-tag still resolves to canary ${latestVersion}; rerun with --allow-canary-latest only when that state is intentional`,
->>>>>>> master
       );
     }
 
     if (latestVersion && isCanaryVersion(latestVersion)) {
-<<<<<<< v2026.525.0
       const latestManifest = requireManifest(
         packageName,
         latestVersion,
@@ -401,12 +311,6 @@ export function verifyPackageRegistryState({
           packageManifestsByKey,
         )) {
           problems.push(createProblem(`${packageName}@${latestVersion} via latest: ${problem.message}`, problem));
-=======
-      const latestManifest = requireManifest(packageName, latestVersion, packageDoc, problems);
-      if (latestManifest) {
-        for (const problem of collectInternalDependencyProblems(latestManifest, packageDocsByName)) {
-          problems.push(`${packageName}@${latestVersion} via latest: ${problem}`);
->>>>>>> master
         }
       }
     }
@@ -462,7 +366,6 @@ async function main() {
     }),
   );
 
-<<<<<<< v2026.525.0
   const versionsToFetchByPackage = new Map();
   for (const packageName of packageNames) {
     const packageDoc = packageDocsByName.get(packageName);
@@ -494,45 +397,19 @@ async function main() {
         packageDocsByName.get(packageName),
         packageManifestsByKey,
       );
-=======
-  const additionalInternalDeps = new Set();
-  for (const packageDoc of packageDocsByName.values()) {
-    const versionsToCheck = new Set([options.targetVersion]);
-    const latestVersion = packageDoc["dist-tags"]?.latest;
-    if (latestVersion && isCanaryVersion(latestVersion)) {
-      versionsToCheck.add(latestVersion);
-    }
-
-    for (const version of versionsToCheck) {
-      const manifest = packageDoc.versions?.[version];
->>>>>>> master
       if (!manifest) {
         continue;
       }
 
-<<<<<<< v2026.525.0
       for (const dependencyVersion of collectInternalDependencyVersions(manifest)) {
         dependencyVersionsByKey.set(
           createManifestLookupKey(dependencyVersion.packageName, dependencyVersion.version),
           dependencyVersion,
         );
-=======
-      for (const deps of [
-        manifest.dependencies ?? {},
-        manifest.optionalDependencies ?? {},
-        manifest.peerDependencies ?? {},
-      ]) {
-        for (const dependencyName of Object.keys(deps)) {
-          if (dependencyName.startsWith("@noralos/")) {
-            additionalInternalDeps.add(dependencyName);
-          }
-        }
->>>>>>> master
       }
     }
   }
 
-<<<<<<< v2026.525.0
   await Promise.all(
     [...dependencyVersionsByKey.values()].map(async ({ packageName, version }) => {
       const lookupKey = createManifestLookupKey(packageName, version);
@@ -543,14 +420,6 @@ async function main() {
       packageManifestsByKey.set(
         lookupKey,
         await fetchPackageManifest(packageName, version, { allowMissing: true }),
-=======
-  const missingDeps = [...additionalInternalDeps].filter((dep) => !packageDocsByName.has(dep));
-  await Promise.all(
-    missingDeps.map(async (dependencyName) => {
-      packageDocsByName.set(
-        dependencyName,
-        await fetchPackageDocument(dependencyName, { allowMissing: true }),
->>>>>>> master
       );
     }),
   );
@@ -559,18 +428,11 @@ async function main() {
 
   for (const packageName of packageNames) {
     process.stdout.write(`  Verifying ${packageName} on dist-tag ${options.distTag}\n`);
-<<<<<<< v2026.525.0
     const packageProblems = verifyPackageRegistryProblems({
       packageName,
       packageDoc: packageDocsByName.get(packageName),
       packageDocsByName,
       packageManifestsByKey,
-=======
-    const packageProblems = verifyPackageRegistryState({
-      packageName,
-      packageDoc: packageDocsByName.get(packageName),
-      packageDocsByName,
->>>>>>> master
       channel: options.channel,
       distTag: options.distTag,
       targetVersion: options.targetVersion,
@@ -583,24 +445,16 @@ async function main() {
     }
 
     for (const problem of packageProblems) {
-<<<<<<< v2026.525.0
       process.stderr.write(`    ✗ ${problem.message}\n`);
-=======
-      process.stderr.write(`    ✗ ${problem}\n`);
->>>>>>> master
       problems.push(problem);
     }
   }
 
   if (problems.length > 0) {
-<<<<<<< v2026.525.0
     const exitCode = problems.some((problem) => !problem.retriable)
       ? EXIT_NON_RETRIABLE_FAILURE
       : EXIT_RETRIABLE_FAILURE;
     throw createExitError(`npm registry verification failed for ${problems.length} problem(s)`, exitCode);
-=======
-    throw new Error(`npm registry verification failed for ${problems.length} problem(s)`);
->>>>>>> master
   }
 }
 
@@ -609,10 +463,6 @@ const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process
 if (isDirectRun) {
   main().catch((error) => {
     process.stderr.write(`Error: ${error.message}\n`);
-<<<<<<< v2026.525.0
     process.exit(error.exitCode ?? EXIT_RETRIABLE_FAILURE);
-=======
-    process.exit(1);
->>>>>>> master
   });
 }

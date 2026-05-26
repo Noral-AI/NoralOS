@@ -3,11 +3,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-<<<<<<< v2026.525.0
-import { buildProjectMentionHref, buildRoutineMentionHref, buildSkillMentionHref } from "@paperclipai/shared";
-=======
-import { buildProjectMentionHref, buildSkillMentionHref } from "@noralos/shared";
->>>>>>> master
+import { buildProjectMentionHref, buildRoutineMentionHref, buildSkillMentionHref } from "@noralos/shared";
 import {
   computeMentionMenuPosition,
   findClosestAutocompleteAnchor,
@@ -690,7 +686,6 @@ describe("MarkdownEditor", () => {
 
   async function openMentionMenuFor(
     handleChange: ReturnType<typeof vi.fn>,
-<<<<<<< v2026.525.0
     mentions = [
       {
         id: "project:project-123",
@@ -701,9 +696,6 @@ describe("MarkdownEditor", () => {
       },
     ],
   ): Promise<{ option: HTMLButtonElement; root: ReturnType<typeof createRoot>; menu: HTMLElement }> {
-=======
-  ): Promise<{ option: HTMLButtonElement; root: ReturnType<typeof createRoot> }> {
->>>>>>> master
     const root = createRoot(container);
 
     await act(async () => {
@@ -711,19 +703,7 @@ describe("MarkdownEditor", () => {
         <MarkdownEditor
           value="@Nor"
           onChange={handleChange}
-<<<<<<< v2026.525.0
           mentions={mentions}
-=======
-          mentions={[
-            {
-              id: "project:project-123",
-              kind: "project",
-              name: "NoralOS App",
-              projectId: "project-123",
-              projectColor: "#336699",
-            },
-          ]}
->>>>>>> master
         />,
       );
     });
@@ -748,17 +728,11 @@ describe("MarkdownEditor", () => {
     await flush();
 
     const option = Array.from(document.body.querySelectorAll('button[type="button"]'))
-<<<<<<< v2026.525.0
       .find((node) => node.textContent?.includes("Paperclip App")) as HTMLButtonElement | undefined;
     expect(option).toBeTruthy();
     const menu = document.body.querySelector('[data-testid="mention-autocomplete-menu"]') as HTMLElement | null;
     expect(menu).toBeTruthy();
     return { option: option!, root, menu: menu! };
-=======
-      .find((node) => node.textContent?.includes("NoralOS App")) as HTMLButtonElement | undefined;
-    expect(option).toBeTruthy();
-    return { option: option!, root };
->>>>>>> master
   }
 
   it("accepts mention selection from a touch tap", async () => {

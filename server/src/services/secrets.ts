@@ -1,6 +1,5 @@
-<<<<<<< v2026.525.0
 import { and, desc, eq, inArray, like, ne, notInArray, sql } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   agents,
   companySecretBindings,
@@ -13,7 +12,7 @@ import {
   projects,
   routines,
   secretAccessEvents,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import type {
   AgentEnvConfig,
   CompanySecretBindingTarget,
@@ -28,7 +27,7 @@ import type {
   SecretProviderConfigHealthStatus,
   SecretProviderConfigStatus,
   SecretVersionSelector,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   createSecretProviderConfigSchema,
   deriveProjectUrlKey,
@@ -38,7 +37,7 @@ import {
   secretProviderConfigPayloadSchema,
   secretProviderConfigDiscoveryPreviewSchema,
   updateSecretProviderConfigSchema,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { conflict, HttpError, notFound, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
 import {
@@ -55,15 +54,6 @@ import type {
   SecretProviderWriteContext,
 } from "../secrets/types.js";
 import { isSecretProviderClientError } from "../secrets/types.js";
-=======
-import { and, desc, eq } from "drizzle-orm";
-import type { Db } from "@noralos/db";
-import { companySecrets, companySecretVersions } from "@noralos/db";
-import type { AgentEnvConfig, EnvBinding, SecretProvider } from "@noralos/shared";
-import { envBindingSchema } from "@noralos/shared";
-import { conflict, notFound, unprocessable } from "../errors.js";
-import { getSecretProvider, listSecretProviders } from "../secrets/provider-registry.js";
->>>>>>> master
 
 const ENV_KEY_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const SENSITIVE_ENV_KEY_RE =
