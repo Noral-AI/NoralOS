@@ -1,0 +1,138 @@
+{
+  "nodes": [
+    {
+      "id": "global-tone",
+      "type": "globalNode",
+      "position": { "x": 0, "y": 0 },
+      "data": {
+        "name": "Brand voice",
+        "prompt": "Speak warmly, in second person. Never make claims about specific product features unless asked. Always offer to escalate when unsure.",
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "start-1",
+      "type": "startCall",
+      "position": { "x": 200, "y": 0 },
+      "data": {
+        "name": "Greeting",
+        "prompt": "You are ACME Support's front-line voice agent. Greet the caller and find out whether they need help with a technical issue, billing, or something else.",
+        "is_start": true,
+        "greeting": "Thanks for calling ACME support. How can I help you today?",
+        "greeting_type": "text",
+        "wait_for_user_response": true,
+        "wait_for_user_response_timeout": 8.0,
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-triage",
+      "type": "agentNode",
+      "position": { "x": 200, "y": 200 },
+      "data": {
+        "name": "Triage",
+        "prompt": "Classify the caller's request into one of: technical, billing, account, other. If unclear, ask one clarifying question.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Determine the caller's category.",
+        "extraction_variables": [
+          { "name": "category", "type": "string", "prompt": "One of: technical, billing, account, other." },
+          { "name": "summary", "type": "string", "prompt": "One-sentence summary of the issue." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-self-serve",
+      "type": "agentNode",
+      "position": { "x": 0, "y": 400 },
+      "data": {
+        "name": "Self-serve attempt",
+        "prompt": "For straightforward technical questions (password reset, app crash, can't log in), walk the caller through the standard troubleshooting steps. If after one round they say it didn't work, offer to transfer them to a human agent.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Determine whether the issue was resolved or needs escalation.",
+        "extraction_variables": [
+          { "name": "resolved", "type": "boolean", "prompt": "True if the issue was resolved during this call." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-escalate",
+      "type": "agentNode",
+      "position": { "x": 400, "y": 400 },
+      "data": {
+        "name": "Escalation handoff",
+        "prompt": "Tell the caller you're going to connect them with a {category} specialist now. Let them know the team has the summary you captured ('{summary}') so they don't need to repeat themselves. Stay on the line briefly until the transfer connects.",
+        "allow_interrupt": false,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "end-resolved",
+      "type": "endCall",
+      "position": { "x": 0, "y": 600 },
+      "data": {
+        "name": "Resolved farewell",
+        "prompt": "Confirm the issue is resolved, ask if there's anything else, and wish them a good day.",
+        "is_end": true,
+        "allow_interrupt": false
+      }
+    },
+    {
+      "id": "end-transferred",
+      "type": "endCall",
+      "position": { "x": 400, "y": 600 },
+      "data": {
+        "name": "Transferred farewell",
+        "prompt": "Thank the caller for their patience and confirm a specialist is now joining.",
+        "is_end": true,
+        "allow_interrupt": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-start-triage",
+      "source": "start-1",
+      "target": "agent-triage",
+      "data": { "label": "After greeting", "condition": "always" }
+    },
+    {
+      "id": "e-triage-self-serve",
+      "source": "agent-triage",
+      "target": "agent-self-serve",
+      "data": { "label": "Simple technical", "condition": "category is 'technical' and the issue sounds straightforward" }
+    },
+    {
+      "id": "e-triage-escalate",
+      "source": "agent-triage",
+      "target": "agent-escalate",
+      "data": {
+        "label": "Needs a human",
+        "condition": "category is 'billing' or 'account' or the technical issue sounds complex",
+        "transition_speech": "Let me get you the right person for that."
+      }
+    },
+    {
+      "id": "e-self-serve-end",
+      "source": "agent-self-serve",
+      "target": "end-resolved",
+      "data": { "label": "Resolved", "condition": "resolved is true" }
+    },
+    {
+      "id": "e-self-serve-escalate",
+      "source": "agent-self-serve",
+      "target": "agent-escalate",
+      "data": { "label": "Still not working", "condition": "resolved is false" }
+    },
+    {
+      "id": "e-escalate-end",
+      "source": "agent-escalate",
+      "target": "end-transferred",
+      "data": { "label": "Transfer initiated", "condition": "always" }
+    }
+  ]
+}
