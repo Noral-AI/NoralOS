@@ -43,6 +43,17 @@ import {
 } from "@noralos/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@noralos/adapter-opencode-local";
+import { requireOpenCodeModelId } from "@noralos/adapter-opencode-local/server";
+
+function isValidOpenCodeModelId(model: string): boolean {
+  try {
+    requireOpenCodeModelId(model);
+    return true;
+  } catch {
+    return false;
+  }
+}
 import { resolveRouteOnboardingOptions } from "../lib/onboarding-route";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
 import {

@@ -261,7 +261,6 @@ export function NewAgent() {
           mode="create"
           values={configValues}
           onChange={(patch) => setConfigValues((prev) => ({ ...prev, ...patch }))}
-          adapterModels={adapterModels}
           onTestActionChange={handleTestAgentActionChange}
           onTestActionStateChange={handleTestAgentStateChange}
           onTestFeedbackChange={handleTestAgentFeedbackChange}

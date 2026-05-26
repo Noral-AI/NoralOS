@@ -5,7 +5,7 @@ import {
   type Agent,
   type PermissionKey,
 } from "@noralos/shared";
-import { ShieldCheck, Trash2, Users } from "lucide-react";
+import { Shield, ShieldCheck, Trash2, Users } from "lucide-react";
 import { accessApi, type CompanyMember } from "@/api/access";
 import { agentsApi } from "@/api/agents";
 import { ApiError } from "@/api/client";

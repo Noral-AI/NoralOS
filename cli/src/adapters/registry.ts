@@ -6,28 +6,12 @@ import { printOpenClawGatewayStreamEvent } from "@noralos/adapter-openclaw-gatew
 import { printOpenCodeStreamEvent } from "@noralos/adapter-opencode-local/cli";
 import { printPiStreamEvent } from "@noralos/adapter-pi-local/cli";
 import type { CLIAdapterModule } from "@noralos/adapter-utils";
-import { printAcpxStreamEvent } from "@noralos/adapter-acpx-local/cli";
-import { printClaudeStreamEvent } from "@noralos/adapter-claude-local/cli";
-import { printCodexStreamEvent } from "@noralos/adapter-codex-local/cli";
-import { printCursorCloudEvent } from "@noralos/adapter-cursor-cloud/cli";
-import { printCursorStreamEvent } from "@noralos/adapter-cursor-local/cli";
-import { printGeminiStreamEvent } from "@noralos/adapter-gemini-local/cli";
-import { printGrokStreamEvent } from "@noralos/adapter-grok-local/cli";
-import { printOpenClawGatewayStreamEvent } from "@noralos/adapter-openclaw-gateway/cli";
-import { printOpenCodeStreamEvent } from "@noralos/adapter-opencode-local/cli";
-import { printPiStreamEvent } from "@noralos/adapter-pi-local/cli";
-import type { CLIAdapterModule } from "@noralos/adapter-utils";
 import { processCLIAdapter } from "./process/index.js";
 import { httpCLIAdapter } from "./http/index.js";
 
 const claudeLocalCLIAdapter: CLIAdapterModule = {
   type: "claude_local",
   formatStdoutEvent: printClaudeStreamEvent,
-};
-
-const acpxLocalCLIAdapter: CLIAdapterModule = {
-  type: "acpx_local",
-  formatStdoutEvent: printAcpxStreamEvent,
 };
 
 const codexLocalCLIAdapter: CLIAdapterModule = {
@@ -50,19 +34,9 @@ const cursorLocalCLIAdapter: CLIAdapterModule = {
   formatStdoutEvent: printCursorStreamEvent,
 };
 
-const cursorCloudCLIAdapter: CLIAdapterModule = {
-  type: "cursor_cloud",
-  formatStdoutEvent: printCursorCloudEvent,
-};
-
 const geminiLocalCLIAdapter: CLIAdapterModule = {
   type: "gemini_local",
   formatStdoutEvent: printGeminiStreamEvent,
-};
-
-const grokLocalCLIAdapter: CLIAdapterModule = {
-  type: "grok_local",
-  formatStdoutEvent: printGrokStreamEvent,
 };
 
 const openclawGatewayCLIAdapter: CLIAdapterModule = {
@@ -72,15 +46,12 @@ const openclawGatewayCLIAdapter: CLIAdapterModule = {
 
 const adaptersByType = new Map<string, CLIAdapterModule>(
   [
-    acpxLocalCLIAdapter,
     claudeLocalCLIAdapter,
     codexLocalCLIAdapter,
     openCodeLocalCLIAdapter,
     piLocalCLIAdapter,
     cursorLocalCLIAdapter,
-    cursorCloudCLIAdapter,
     geminiLocalCLIAdapter,
-    grokLocalCLIAdapter,
     openclawGatewayCLIAdapter,
     processCLIAdapter,
     httpCLIAdapter,

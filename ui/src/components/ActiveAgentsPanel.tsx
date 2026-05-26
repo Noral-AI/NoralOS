@@ -1,6 +1,5 @@
 import { memo, useMemo } from "react";
 import { Link } from "@/lib/router";
-import type { Issue } from "@noralos/shared";
 import type { Issue, IssueRecoveryAction } from "@noralos/shared";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { heartbeatsApi, type LiveRunForIssue } from "../api/heartbeats";

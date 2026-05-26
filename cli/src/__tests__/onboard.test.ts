@@ -145,7 +145,7 @@ describe("onboard", () => {
 
     const instanceRoot = path.join(home, "instances", "default");
     const configPath = path.join(instanceRoot, "config.json");
-    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as PaperclipConfig;
+    const raw = JSON.parse(fs.readFileSync(configPath, "utf8")) as NoralosConfig;
 
     expect(raw.database.embeddedPostgresDataDir).toBe(path.join(instanceRoot, "db"));
     expect(raw.database.backup.dir).toBe(path.join(instanceRoot, "data", "backups"));

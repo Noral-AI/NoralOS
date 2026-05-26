@@ -20,6 +20,7 @@ describe("home path resolution", () => {
     delete process.env.NORALOS_HOME;
     delete process.env.NORALOS_INSTANCE_ID;
 
+    const home = path.resolve(os.homedir(), ".noralos");
     const paths = describeLocalInstancePaths();
     expect(paths.homeDir).toBe(home);
     expect(paths.instanceId).toBe("default");

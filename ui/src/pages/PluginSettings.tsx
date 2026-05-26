@@ -144,6 +144,8 @@ export function PluginSettings() {
         : "secondary";
   const pluginDescription = plugin.manifestJson.description || "No description provided.";
   const pluginCapabilities = plugin.manifestJson.capabilities ?? [];
+  const localFolderDeclarations = plugin.manifestJson.localFolders ?? [];
+  const hasLocalFolders = localFolderDeclarations.length > 0 && Boolean(selectedCompanyId);
   const environmentDrivers = plugin.manifestJson.environmentDrivers ?? [];
   const environmentDriverNames = environmentDrivers
     .map((driver) => driver.displayName?.trim() || driver.driverKey)

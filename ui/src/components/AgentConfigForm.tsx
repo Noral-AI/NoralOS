@@ -442,12 +442,6 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     return typeof value === "string" ? value : "";
   }, [adapterCheapDefault]);
 
-  // Create mode helpers
-  const val = isCreate ? props.values : null;
-  const set = isCreate
-    ? (patch: Partial<CreateConfigValues>) => props.onChange(patch)
-    : null;
-
   function buildAdapterConfigForTest(): Record<string, unknown> {
     if (isCreate) {
       return uiAdapter.buildAdapterConfig(val!);

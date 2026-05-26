@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { Agent, CompanySecret } from "@noralos/shared";
-import type { PaperclipConfig } from "../config/schema.js";
+import type { NoralosConfig } from "../config/schema.js";
 import { secretsCheck } from "../checks/secrets-check.js";
 import {
   buildInlineMigrationSecretName,
@@ -31,6 +31,7 @@ function agent(partial: Partial<Agent>): Agent {
     pausedAt: null,
     permissions: {
       canCreateAgents: false,
+      canCreateDepartments: false,
     },
     lastHeartbeatAt: null,
     metadata: null,
@@ -65,7 +66,7 @@ function secret(partial: Partial<CompanySecret>): CompanySecret {
   };
 }
 
-function configWithSecretsProvider(provider: PaperclipConfig["secrets"]["provider"]): PaperclipConfig {
+function configWithSecretsProvider(provider: NoralosConfig["secrets"]["provider"]): NoralosConfig {
   return {
     $meta: {
       version: 1,

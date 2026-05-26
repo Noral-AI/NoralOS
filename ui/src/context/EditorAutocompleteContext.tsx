@@ -1,7 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { buildSkillMentionHref } from "@noralos/shared";
-import { buildRoutineMentionHref, buildSkillMentionHref } from "@noralos/shared";
+import { buildSkillMentionHref, buildRoutineMentionHref } from "@noralos/shared";
 import { companySkillsApi } from "../api/companySkills";
 import { routinesApi } from "../api/routines";
 import { useCompany } from "./CompanyContext";

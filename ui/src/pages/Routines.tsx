@@ -204,10 +204,6 @@ function buildRoutinesTabHref(tab: RoutinesTab) {
   return tab === "runs" ? "/routines?tab=runs" : "/routines";
 }
 
-function buildRoutinesTabHref(tab: RoutinesTab) {
-  return tab === "runs" ? "/routines?tab=runs" : "/routines";
-}
-
 export function Routines() {
   const { selectedCompanyId } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();

@@ -453,7 +453,7 @@ function buildEntitiesFromPortableExport(
         kind: "paperclip_company_portability_manifest",
         manifest: exported.manifest,
         rootPath: exported.rootPath,
-        paperclipExtensionPath: exported.paperclipExtensionPath,
+        noralosExtensionPath: exported.noralosExtensionPath,
         fileCount: Object.keys(exported.files).length,
       },
       conflictKeys: [`company:${companyKey.sourceNaturalKey ?? localCompanyId}`],
