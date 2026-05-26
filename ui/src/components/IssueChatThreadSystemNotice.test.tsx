@@ -12,6 +12,9 @@ import type { Agent, SuccessfulRunHandoffState } from "@noralos/shared";
 vi.mock("@assistant-ui/react", () => ({
   AssistantRuntimeProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useAui: () => ({ thread: () => ({ append: async () => undefined }) }),
+  useExternalStoreRuntime: () => ({
+    thread: { append: async () => undefined },
+  }),
 }));
 
 vi.mock("./transcript/useLiveRunTranscripts", () => ({
