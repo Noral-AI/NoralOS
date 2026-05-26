@@ -1,13 +1,9 @@
-<<<<<<< v2026.525.0
 import type {
   SecretProvider,
   SecretProviderConfigDiscoveryPreviewResult,
   SecretProviderDescriptor,
+  DeploymentMode,
 } from "@noralos/shared";
-import type { DeploymentMode } from "@noralos/shared";
-=======
-import type { SecretProvider, SecretProviderDescriptor } from "@noralos/shared";
->>>>>>> master
 
 export interface StoredSecretVersionMaterial {
   [key: string]: unknown;

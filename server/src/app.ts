@@ -506,10 +506,7 @@ export async function createApp(
     viteHtmlRenderer?.dispose();
     hostServiceCleanup.disposeAll();
     hostServiceCleanup.teardown();
-  };
-  app.locals.paperclipShutdown = shutdownAppServices;
-
-  process.once("exit", shutdownAppServices);
+  });
   process.once("beforeExit", () => {
     void flushPluginLogBuffer();
   });

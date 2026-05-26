@@ -266,7 +266,7 @@ export function PluginSettings() {
                 <p className="text-sm text-muted-foreground">
                   This plugin does not require any settings.
                 </p>
-              ) : null}
+              )}
             </section>
           </div>
         </TabsContent>
