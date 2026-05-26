@@ -14,13 +14,8 @@ import type {
   PluginEnvironmentExecuteResult,
   PluginEnvironmentLease,
   PluginEnvironmentRealizeWorkspaceResult,
-<<<<<<< v2026.525.0
-} from "@paperclipai/plugin-sdk";
-import { ensureSshWorkspaceReady } from "@paperclipai/adapter-utils/ssh";
-=======
 } from "@noralos/plugin-sdk";
 import { ensureSshWorkspaceReady, findReachableNoralosApiUrlOverSsh } from "@noralos/adapter-utils/ssh";
->>>>>>> master
 import { environmentService } from "./environments.js";
 import {
   parseEnvironmentDriverConfig,

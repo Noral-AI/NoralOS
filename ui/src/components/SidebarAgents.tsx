@@ -732,45 +732,6 @@ export function SidebarAgents() {
   }
 
   return (
-<<<<<<< v2026.525.0
-    <SidebarSection
-      label="Agents"
-      collapsible={{ open, onOpenChange: setOpen }}
-      headerAction={{
-        ariaLabel: "New agent",
-        icon: Plus,
-        onClick: openNewAgent,
-      }}
-      menu={{
-        ariaLabel: "Agents section actions",
-        actions: [
-          { type: "item", label: "Browse agents", icon: Users, href: "/agents/all" },
-          { type: "separator" },
-        ],
-        radioLabel: "Agent sort",
-        radioChoices: AGENT_SORT_CHOICES,
-        radioValue: sortMode,
-        onRadioValueChange: persistSortMode,
-      }}
-    >
-      {sortedAgents.map((agent: Agent) => {
-        const runCount = liveCountByAgent.get(agent.id) ?? 0;
-        return (
-          <SidebarAgentItem
-            key={agent.id}
-            activeAgentId={activeAgentId}
-            activeTab={activeTab}
-            agent={agent}
-            disabled={pendingAgentIds.has(agent.id)}
-            isMobile={isMobile}
-            onPauseResume={(targetAgent, action) => pauseResumeAgent.mutate({ agent: targetAgent, action })}
-            runCount={runCount}
-            setSidebarOpen={setSidebarOpen}
-          />
-        );
-      })}
-    </SidebarSection>
-=======
     <Collapsible open={open} onOpenChange={setOpen}>
       <div className="group">
         <div className="flex items-center px-3 py-1.5">
@@ -871,6 +832,5 @@ export function SidebarAgents() {
         </DndContext>
       </CollapsibleContent>
     </Collapsible>
->>>>>>> master
   );
 }

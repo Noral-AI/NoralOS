@@ -483,13 +483,6 @@ export function ProjectWorkspaceDetail() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.9fr)]">
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-5">
-<<<<<<< v2026.525.0
-            <p className="max-w-2xl text-sm text-muted-foreground">
-              Configure the concrete workspace Paperclip attaches to this project. These values drive per-workspace
-              checkout behavior, default runtime services for child execution workspaces, and let you override setup
-              or cleanup commands when one workspace needs special handling.
-            </p>
-=======
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <div className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
@@ -521,7 +514,6 @@ export function ProjectWorkspaceDetail() {
                 </div>
               )}
             </div>
->>>>>>> master
 
             <Separator className="my-5" />
 

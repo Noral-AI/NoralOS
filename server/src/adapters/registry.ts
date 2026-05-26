@@ -1,30 +1,5 @@
-<<<<<<< v2026.525.0
-import type {
-  AdapterModel,
-  AdapterModelProfileDefinition,
-  AdapterRuntimeCommandSpec,
-  ServerAdapterModule,
-} from "./types.js";
-import {
-  buildSandboxNpmInstallCommand,
-  getAdapterSessionManagement,
-} from "@paperclipai/adapter-utils";
-import {
-  execute as acpxExecute,
-  testEnvironment as acpxTestEnvironment,
-  sessionCodec as acpxSessionCodec,
-  getConfigSchema as getAcpxConfigSchema,
-  listAcpxSkills,
-  syncAcpxSkills,
-} from "@paperclipai/adapter-acpx-local/server";
-import {
-  agentConfigurationDoc as acpxAgentConfigurationDoc,
-  models as acpxModels,
-} from "@paperclipai/adapter-acpx-local";
-=======
 import type { AdapterModelProfileDefinition, ServerAdapterModule } from "./types.js";
 import { getAdapterSessionManagement } from "@noralos/adapter-utils";
->>>>>>> master
 import {
   execute as claudeExecute,
   listClaudeSkills,

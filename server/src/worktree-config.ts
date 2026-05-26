@@ -123,20 +123,6 @@ function resolveWorktreeRuntimeContext(
   const stablePersistedEnv = persistedConfigLooksStale ? {} : persistedEnv;
   const worktreeRoot = path.resolve(path.dirname(configPath), "..");
   const worktreeName =
-<<<<<<< v2026.525.0
-    nonEmpty(stablePersistedEnv.PAPERCLIP_WORKTREE_NAME) ??
-    nonEmpty(env.PAPERCLIP_WORKTREE_NAME) ??
-    path.basename(worktreeRoot);
-  const instanceId =
-    nonEmpty(stablePersistedEnv.PAPERCLIP_INSTANCE_ID) ??
-    nonEmpty(env.PAPERCLIP_INSTANCE_ID) ??
-    sanitizeWorktreeInstanceId(worktreeName);
-  const homeDir = resolveHomeAwarePath(
-    nonEmpty(stablePersistedEnv.PAPERCLIP_HOME) ??
-      nonEmpty(env.PAPERCLIP_HOME) ??
-      nonEmpty(env.PAPERCLIP_WORKTREES_DIR) ??
-      "~/.paperclip-worktrees",
-=======
     nonEmpty(persistedEnv.NORALOS_WORKTREE_NAME) ??
     nonEmpty(env.NORALOS_WORKTREE_NAME) ??
     path.basename(worktreeRoot);
@@ -149,7 +135,6 @@ function resolveWorktreeRuntimeContext(
       nonEmpty(env.NORALOS_HOME) ??
       nonEmpty(env.NORALOS_WORKTREES_DIR) ??
       "~/.noralos-worktrees",
->>>>>>> master
   );
   const instanceRoot = path.resolve(homeDir, "instances", instanceId);
 

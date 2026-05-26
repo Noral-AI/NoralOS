@@ -15,38 +15,6 @@ import {
   resolvePaperclipInstanceRoot,
 } from "@paperclipai/shared/home-paths";
 
-<<<<<<< v2026.525.0
-export {
-  expandHomePrefix,
-  resolveHomeAwarePath,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
-  resolvePaperclipInstanceRoot,
-};
-
-export function resolveDefaultConfigPath(): string {
-  return resolvePaperclipConfigPathForInstance();
-}
-
-export function resolveDefaultEmbeddedPostgresDir(): string {
-  return resolveSharedDefaultEmbeddedPostgresDir();
-}
-
-export function resolveDefaultLogsDir(): string {
-  return resolveSharedDefaultLogsDir();
-}
-
-export function resolveDefaultSecretsKeyFilePath(): string {
-  return resolveSharedDefaultSecretsKeyFilePath();
-}
-
-export function resolveDefaultStorageDir(): string {
-  return resolveSharedDefaultStorageDir();
-}
-
-export function resolveDefaultBackupDir(): string {
-  return resolveSharedDefaultBackupDir();
-=======
 function expandHomePrefix(value: string): string {
   if (value === "~") return os.homedir();
   if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
@@ -56,7 +24,7 @@ function expandHomePrefix(value: string): string {
 export function resolveNoralosHomeDir(): string {
   const envHome = process.env.NORALOS_HOME?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
-  return path.resolve(os.homedir(), ".paperclip");
+  return path.resolve(os.homedir(), ".noralos");
 }
 
 export function resolveNoralosInstanceId(): string {
@@ -93,7 +61,6 @@ export function resolveDefaultStorageDir(): string {
 
 export function resolveDefaultBackupDir(): string {
   return path.resolve(resolveNoralosInstanceRoot(), "data", "backups");
->>>>>>> master
 }
 
 export function resolveDefaultAgentWorkspaceDir(agentId: string): string {

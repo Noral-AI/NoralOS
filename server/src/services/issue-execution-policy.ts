@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-<<<<<<< v2026.525.0
 import type {
   IssueExecutionDecision,
   IssueExecutionMonitorClearReason,
@@ -10,12 +9,8 @@ import type {
   IssueExecutionStagePrincipal,
   IssueExecutionState,
   IssueMonitorScheduledBy,
-} from "@paperclipai/shared";
-import { issueExecutionPolicySchema, issueExecutionStateSchema } from "@paperclipai/shared";
-=======
-import type { IssueExecutionDecision, IssueExecutionPolicy, IssueExecutionStage, IssueExecutionStagePrincipal, IssueExecutionState } from "@noralos/shared";
+} from "@noralos/shared";
 import { issueExecutionPolicySchema, issueExecutionStateSchema } from "@noralos/shared";
->>>>>>> master
 import { unprocessable } from "../errors.js";
 
 type AssigneeLike = {

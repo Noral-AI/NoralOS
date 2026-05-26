@@ -59,15 +59,13 @@ export async function resolveEnvironmentExecutionTarget(input: {
         ? input.leaseMetadata.remoteCwd.trim()
         : DEFAULT_SANDBOX_REMOTE_CWD;
     const timeoutMs = "timeoutMs" in parsed.config ? parsed.config.timeoutMs : null;
-<<<<<<< v2026.525.0
     const shellCommand =
       input.leaseMetadata?.shellCommand === "bash" || input.leaseMetadata?.shellCommand === "sh"
         ? input.leaseMetadata.shellCommand
-=======
+        : null;
     const noralosApiUrl =
       typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
         ? input.leaseMetadata.noralosApiUrl.trim()
->>>>>>> master
         : null;
 
     return {

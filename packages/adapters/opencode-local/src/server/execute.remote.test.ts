@@ -55,9 +55,9 @@ const {
   syncDirectoryToSsh: vi.fn(async () => undefined),
   startAdapterExecutionTargetPaperclipBridge: vi.fn(async () => ({
     env: {
-      PAPERCLIP_API_URL: "http://127.0.0.1:4310",
+      NORALOS_API_URL: "http://127.0.0.1:4310",
       PAPERCLIP_API_KEY: "bridge-token",
-      PAPERCLIP_API_BRIDGE_MODE: "queue_v1",
+      NORALOS_API_BRIDGE_MODE: "queue_v1",
     },
     stop: async () => {},
   })),
@@ -88,9 +88,9 @@ vi.mock("@noralos/adapter-utils/ssh", async () => {
   };
 });
 
-vi.mock("@paperclipai/adapter-utils/execution-target", async () => {
-  const actual = await vi.importActual<typeof import("@paperclipai/adapter-utils/execution-target")>(
-    "@paperclipai/adapter-utils/execution-target",
+vi.mock("@noralos/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/execution-target")>(
+    "@noralos/adapter-utils/execution-target",
   );
   return {
     ...actual,
@@ -184,12 +184,7 @@ describe("opencode remote execution", () => {
         host: "127.0.0.1",
         port: 2222,
         username: "fixture",
-<<<<<<< v2026.525.0
         remoteCwd: managedRemoteWorkspace,
-=======
-        remoteCwd: "/remote/workspace",
-        noralosApiUrl: "http://198.51.100.10:3102",
->>>>>>> master
       },
     });
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledTimes(1);
@@ -209,7 +204,6 @@ describe("opencode remote execution", () => {
     const runCall = runChildProcess.mock.calls.find((entry) => Array.isArray(entry[2]) && entry[2].includes("run")) as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
-<<<<<<< v2026.525.0
     const modelProbeCall = runChildProcess.mock.calls.find((entry) => Array.isArray(entry[2]) && entry[2].includes("models")) as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
@@ -225,8 +219,8 @@ describe("opencode remote execution", () => {
     const call = runCall as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
-    expect(call?.[3].env.PAPERCLIP_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
-    expect(JSON.parse(call?.[3].env.PAPERCLIP_WORKSPACES_JSON ?? "[]")).toEqual([
+    expect(call?.[3].env.NORALOS_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
+    expect(JSON.parse(call?.[3].env.NORALOS_WORKSPACES_JSON ?? "[]")).toEqual([
       {
         workspaceId: "workspace-1",
         cwd: managedRemoteWorkspace,
@@ -239,16 +233,11 @@ describe("opencode remote execution", () => {
         repoRef: "feature/other",
       },
     ]);
-    expect(call?.[3].env.PAPERCLIP_API_URL).toBe("http://127.0.0.1:4310");
-    expect(call?.[3].env.PAPERCLIP_API_BRIDGE_MODE).toBe("queue_v1");
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://127.0.0.1:4310");
+    expect(call?.[3].env.NORALOS_API_BRIDGE_MODE).toBe("queue_v1");
     expect(call?.[3].env.XDG_CONFIG_HOME).toBe(`${managedRemoteWorkspace}/.paperclip-runtime/opencode/xdgConfig`);
     expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
     expect(startAdapterExecutionTargetPaperclipBridge).toHaveBeenCalledTimes(1);
-=======
-    expect(call?.[3].env.NORALOS_API_URL).toBe("http://198.51.100.10:3102");
-    expect(call?.[3].env.XDG_CONFIG_HOME).toBe("/remote/workspace/.paperclip-runtime/opencode/xdgConfig");
-    expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
->>>>>>> master
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
   });
 

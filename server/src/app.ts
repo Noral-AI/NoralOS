@@ -472,27 +472,6 @@ export async function createApp(
   void toolDispatcher.initialize().catch((err) => {
     logger.error({ err }, "Failed to initialize plugin tool dispatcher");
   });
-<<<<<<< v2026.525.0
-  const devWatcher = createPluginDevWatcher(
-    lifecycle,
-    async (pluginId) => (await pluginRegistry.getById(pluginId))?.packagePath ?? null,
-  );
-  void loader.loadAll().then((result) => {
-    if (!result) return;
-    for (const loaded of result.results) {
-      if (devWatcher && loaded.success && loaded.plugin.packagePath) {
-        devWatcher.watch(loaded.plugin.id, loaded.plugin.packagePath);
-      }
-    }
-  }).catch((err) => {
-    logger.error({ err }, "Failed to load ready plugins on startup");
-  });
-  let appServicesShutdown = false;
-  const shutdownAppServices = () => {
-    if (appServicesShutdown) return;
-    appServicesShutdown = true;
-    disableFeedbackExportFlushes();
-=======
   const devWatcher = opts.uiMode === "vite-dev"
     ? createPluginDevWatcher(
       lifecycle,
@@ -523,7 +502,6 @@ export async function createApp(
     });
   process.once("exit", () => {
     if (feedbackExportTimer) clearInterval(feedbackExportTimer);
->>>>>>> master
     devWatcher?.close();
     viteHtmlRenderer?.dispose();
     hostServiceCleanup.disposeAll();
