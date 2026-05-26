@@ -1,11 +1,7 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "@/lib/router";
-<<<<<<< v2026.525.0
-import { ArrowUpDown, Check, ChevronDown, ChevronRight, Layers, Plus, Repeat } from "lucide-react";
-=======
 import { ArrowUpDown, Check, ChevronDown, ChevronRight, Layers, MoreHorizontal, Plus, Repeat } from "lucide-react";
->>>>>>> master
 import { routinesApi } from "../api/routines";
 import { agentsApi } from "../api/agents";
 import { projectsApi } from "../api/projects";

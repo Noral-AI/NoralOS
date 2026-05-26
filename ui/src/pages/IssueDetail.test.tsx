@@ -1,13 +1,8 @@
 // @vitest-environment jsdom
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-<<<<<<< v2026.525.0
-import type { Agent, Issue, IssueTreeControlPreview, IssueTreeHold } from "@paperclipai/shared";
-import { act, type AnchorHTMLAttributes, type ButtonHTMLAttributes, type ReactNode } from "react";
-=======
 import type { Agent, Issue, IssueTreeControlPreview, IssueTreeHold } from "@noralos/shared";
 import { act, type ButtonHTMLAttributes, type ReactNode } from "react";
->>>>>>> master
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { canBoardResolveRecoveryAction, IssueDetail } from "./IssueDetail";

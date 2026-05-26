@@ -275,14 +275,6 @@ export function companyService(db: Db) {
 
     remove: (id: string) =>
       db.transaction(async (tx) => {
-<<<<<<< v2026.525.0
-        // Delete from child tables in dependency order
-        const companyRunIds = await tx
-          .select({ id: heartbeatRuns.id })
-          .from(heartbeatRuns)
-          .where(eq(heartbeatRuns.companyId, id));
-
-=======
         // Delete from child tables in dependency order.
         //
         // For tables whose FK to `companies.id` is declared with
@@ -299,7 +291,11 @@ export function companyService(db: Db) {
         // `companyId` FK AND no parent-cascade chain to a table we
         // already delete. Missing any of them produces an FK-constraint
         // error on the final `delete(companies)`.
->>>>>>> master
+        const companyRunIds = await tx
+          .select({ id: heartbeatRuns.id })
+          .from(heartbeatRuns)
+          .where(eq(heartbeatRuns.companyId, id));
+
         await tx.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.companyId, id));
         if (companyRunIds.length > 0) {
           await tx

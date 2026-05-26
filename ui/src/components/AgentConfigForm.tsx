@@ -478,14 +478,10 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         : eff("identity", "defaultEnvironmentId", props.agent.defaultEnvironmentId ?? null);
       return agentsApi.testEnvironment(selectedCompanyId, adapterType, {
         adapterConfig: buildAdapterConfigForTest(),
-<<<<<<< v2026.525.0
-        environmentId: currentDefaultEnvironmentId || null,
-=======
         environmentId:
           typeof selectedEnvironmentId === "string" && selectedEnvironmentId.length > 0
             ? selectedEnvironmentId
             : null,
->>>>>>> master
       });
     },
   });

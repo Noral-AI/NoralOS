@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
-<<<<<<< v2026.525.0
 import {
   listAdapterModelProfiles,
   type AdapterModelProfileDefinition,
 } from "../adapters/index.js";
-=======
-import type { AdapterModelProfileDefinition } from "../adapters/index.js";
->>>>>>> master
 import {
   mergeModelProfileAdapterConfig,
   normalizeModelProfileWakeContext,

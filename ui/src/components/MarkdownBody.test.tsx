@@ -98,11 +98,7 @@ describe("MarkdownBody", () => {
       <QueryClientProvider client={new QueryClient()}>
         <ThemeProvider>
           <MarkdownBody>
-<<<<<<< v2026.525.0
-            {`[@Taylor](${buildUserMentionHref("user-123")}) [@CodexCoder](${buildAgentMentionHref("agent-123", "code")}) [@Paperclip App](${buildProjectMentionHref("project-456", "#336699")}) [/release-changelog](${buildSkillMentionHref("skill-789", "release-changelog")}) [/routine:Weekly review](${buildRoutineMentionHref("routine-123")})`}
-=======
-            {`[@Taylor](${buildUserMentionHref("user-123")}) [@CodexCoder](${buildAgentMentionHref("agent-123", "code")}) [@NoralOS App](${buildProjectMentionHref("project-456", "#336699")}) [/release-changelog](${buildSkillMentionHref("skill-789", "release-changelog")})`}
->>>>>>> master
+            {`[@Taylor](${buildUserMentionHref("user-123")}) [@CodexCoder](${buildAgentMentionHref("agent-123", "code")}) [@NoralOS App](${buildProjectMentionHref("project-456", "#336699")}) [/release-changelog](${buildSkillMentionHref("skill-789", "release-changelog")}) [/routine:Weekly review](${buildRoutineMentionHref("routine-123")})`}
           </MarkdownBody>
         </ThemeProvider>
       </QueryClientProvider>,

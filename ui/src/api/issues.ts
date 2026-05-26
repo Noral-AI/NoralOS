@@ -222,14 +222,10 @@ export const issuesApi = {
   getComment: (id: string, commentId: string) =>
     api.get<IssueComment>(`/issues/${id}/comments/${commentId}`),
   listFeedbackVotes: (id: string) => api.get<FeedbackVote[]>(`/issues/${id}/feedback-votes`),
-<<<<<<< v2026.525.0
   getCostSummary: (id: string, options: { excludeRoot?: boolean } = {}) => {
     const qs = options.excludeRoot ? "?excludeRoot=true" : "";
     return api.get<IssueCostSummary>(`/issues/${id}/cost-summary${qs}`);
   },
-=======
-  getCostSummary: (id: string) => api.get<IssueCostSummary>(`/issues/${id}/cost-summary`),
->>>>>>> master
   listFeedbackTraces: (id: string, filters?: Record<string, string | boolean | undefined>) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters ?? {})) {

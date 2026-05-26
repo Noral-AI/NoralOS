@@ -558,11 +558,7 @@ describeEmbeddedPostgres("environmentRuntimeService", () => {
     expect(released).toHaveLength(1);
     expect(released[0]?.lease.status).toBe("released");
     expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentExecute", expect.anything(), 31000);
-<<<<<<< v2026.525.0
     expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentReleaseLease", expect.anything(), 31234);
-=======
-    expect(workerManager.call).toHaveBeenCalledWith(pluginId, "environmentReleaseLease", expect.anything());
->>>>>>> master
   });
 
   it("uses resolved secret-ref config for plugin-backed sandbox execute and release", async () => {

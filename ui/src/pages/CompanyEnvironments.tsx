@@ -451,11 +451,7 @@ export function CompanyEnvironments() {
                 <th className="px-3 py-2 font-medium">Local</th>
                 <th className="px-3 py-2 font-medium">SSH</th>
                 {sandboxSupportVisible ? (
-<<<<<<< v2026.525.0
-                  <th className="px-3 py-2 font-medium">Sandbox via plugin</th>
-=======
                   <th className="px-3 py-2 font-medium">Sandbox</th>
->>>>>>> master
                 ) : null}
               </tr>
             </thead>

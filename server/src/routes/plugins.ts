@@ -57,13 +57,8 @@ import type { PluginJobStore } from "../services/plugin-job-store.js";
 import type { PluginWorkerManager } from "../services/plugin-worker-manager.js";
 import type { PluginStreamBus } from "../services/plugin-stream-bus.js";
 import type { PluginToolDispatcher } from "../services/plugin-tool-dispatcher.js";
-<<<<<<< v2026.525.0
-import type { PluginPerformActionActorContext, ToolRunContext } from "@paperclipai/plugin-sdk";
-import { JsonRpcCallError, PLUGIN_RPC_ERROR_CODES } from "@paperclipai/plugin-sdk";
-=======
-import type { ToolRunContext } from "@noralos/plugin-sdk";
+import type { PluginPerformActionActorContext, ToolRunContext } from "@noralos/plugin-sdk";
 import { JsonRpcCallError, PLUGIN_RPC_ERROR_CODES } from "@noralos/plugin-sdk";
->>>>>>> master
 import {
   assertAuthenticated,
   assertBoard,

@@ -1,6 +1,5 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-<<<<<<< v2026.525.0
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   projects,
   projectGoals,
@@ -9,11 +8,7 @@ import {
   plugins,
   projectWorkspaces,
   workspaceRuntimeServices,
-} from "@paperclipai/db";
-=======
-import type { Db } from "@noralos/db";
-import { projects, projectGoals, goals, projectWorkspaces, workspaceRuntimeServices } from "@noralos/db";
->>>>>>> master
+} from "@noralos/db";
 import {
   PROJECT_COLORS,
   deriveProjectUrlKey,

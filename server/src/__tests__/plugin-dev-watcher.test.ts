@@ -41,7 +41,7 @@ function writePluginPackage(pluginDir: string): void {
     path.join(pluginDir, "package.json"),
     JSON.stringify({
       name: "@acme/example",
-      paperclipPlugin: {
+      noralosPlugin: {
         manifest: "./dist/manifest.js",
         worker: "./dist/worker.js",
         ui: "./dist/ui",
@@ -77,26 +77,7 @@ function installMockFsWatcher() {
 describe("resolvePluginWatchTargets", () => {
   it("watches package metadata plus concrete declared runtime files", () => {
     const pluginDir = makeTempPluginDir();
-<<<<<<< v2026.525.0
     writePluginPackage(pluginDir);
-=======
-    mkdirSync(path.join(pluginDir, "dist", "ui"), { recursive: true });
-    writeFileSync(
-      path.join(pluginDir, "package.json"),
-      JSON.stringify({
-        name: "@acme/example",
-        noralosPlugin: {
-          manifest: "./dist/manifest.js",
-          worker: "./dist/worker.js",
-          ui: "./dist/ui",
-        },
-      }),
-    );
-    writeFileSync(path.join(pluginDir, "dist", "manifest.js"), "export default {};\n");
-    writeFileSync(path.join(pluginDir, "dist", "worker.js"), "export default {};\n");
-    writeFileSync(path.join(pluginDir, "dist", "ui", "index.js"), "export default {};\n");
-    writeFileSync(path.join(pluginDir, "dist", "ui", "index.css"), "body {}\n");
->>>>>>> master
 
     const targets = resolvePluginWatchTargets(pluginDir);
 

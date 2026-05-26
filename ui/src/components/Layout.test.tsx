@@ -161,17 +161,10 @@ vi.mock("../context/PanelContext", () => ({
 
 vi.mock("../context/CompanyContext", () => ({
   useCompany: () => ({
-<<<<<<< v2026.525.0
     companies: mockCompanyState.companies,
     loading: false,
     selectedCompany: mockCompanyState.selectedCompany,
     selectedCompanyId: mockCompanyState.selectedCompanyId,
-=======
-    companies: [{ id: "company-1", issuePrefix: "PAP", name: "NoralOS" }],
-    loading: false,
-    selectedCompany: { id: "company-1", issuePrefix: "PAP", name: "NoralOS" },
-    selectedCompanyId: "company-1",
->>>>>>> master
     selectionSource: "manual",
     setSelectedCompanyId: mockSetSelectedCompanyId,
   }),

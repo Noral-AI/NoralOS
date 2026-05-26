@@ -498,7 +498,6 @@ describe("company portability", () => {
     expect(asTextFile(exported.files[".paperclip.yaml"])).toContain("requireBoardApprovalForNewAgents: true");
   });
 
-<<<<<<< v2026.525.0
   it("exports legacy inline sensitive env values as declarations without values", async () => {
     const portability = companyPortabilityService({} as any);
     agentSvc.list.mockResolvedValue([
@@ -563,10 +562,8 @@ describe("company portability", () => {
     });
   });
 
-  it("exports default sidebar order into the Paperclip extension and manifest", async () => {
-=======
   it("exports default sidebar order into the NoralOS extension and manifest", async () => {
->>>>>>> master
+  it("exports default sidebar order into the NoralOS extension and manifest", async () => {
     const portability = companyPortabilityService({} as any);
 
     projectSvc.list.mockResolvedValue([

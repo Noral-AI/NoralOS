@@ -18,16 +18,7 @@ import { getConfiguredSecretProvider } from "../secrets/configured-provider.js";
 export function secretRoutes(db: Db) {
   const router = Router();
   const svc = secretService(db);
-<<<<<<< v2026.525.0
   const defaultProvider = getConfiguredSecretProvider();
-=======
-  const configuredDefaultProvider = process.env.NORALOS_SECRETS_PROVIDER;
-  const defaultProvider = (
-    configuredDefaultProvider && SECRET_PROVIDERS.includes(configuredDefaultProvider as SecretProvider)
-      ? configuredDefaultProvider
-      : "local_encrypted"
-  ) as SecretProvider;
->>>>>>> master
 
   router.get("/companies/:companyId/secret-providers", (req, res) => {
     assertBoard(req);
