@@ -210,6 +210,22 @@ export interface ToolRunContext {
   companyId: string;
   /** UUID of the project the run belongs to. */
   projectId: string;
+  /**
+   * Better Auth user ID of the human who triggered this run, when known.
+   * Present for user-initiated runs (chat, wakeup with actorType="user");
+   * null for system-triggered or agent-chained runs.
+   *
+   * Plugins that call external systems on behalf of the triggering user
+   * (e.g. noralai.noralvoice creating workflows owned by the user) can
+   * forward this as a delegated-identity assertion.
+   */
+  triggeredByUserId?: string | null;
+  /**
+   * Email of the triggering user, when known. Used by external systems
+   * for JIT-provisioning on first sight of a NoralOS user. Sent alongside
+   * `triggeredByUserId` only.
+   */
+  triggeredByUserEmail?: string | null;
 }
 
 /**

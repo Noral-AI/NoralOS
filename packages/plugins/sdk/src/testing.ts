@@ -1315,6 +1315,8 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
         runId: runCtx.runId ?? randomUUID(),
         companyId: runCtx.companyId ?? "company-test",
         projectId: runCtx.projectId ?? "project-test",
+        triggeredByUserId: runCtx.triggeredByUserId ?? null,
+        triggeredByUserEmail: runCtx.triggeredByUserEmail ?? null,
       };
       return await handler(params, ctxToPass) as T;
     },
