@@ -9,25 +9,8 @@ import type { RunProcessResult } from "./server-utils.js";
 import type { DirectorySnapshot } from "./workspace-restore-merge.js";
 import { mergeDirectoryWithBaseline } from "./workspace-restore-merge.js";
 
-export interface SshConnectionConfig {
-  host: string;
-  port: number;
-  username: string;
-  remoteWorkspacePath: string;
-  privateKey: string | null;
-  knownHosts: string | null;
-  strictHostKeyChecking: boolean;
-}
-
-export interface SshCommandResult {
-  stdout: string;
-  stderr: string;
-}
-
-export interface SshRemoteExecutionSpec extends SshConnectionConfig {
-  remoteCwd: string;
-  noralosApiUrl?: string | null;
-}
+export type { SshConnectionConfig, SshCommandResult, SshRemoteExecutionSpec } from "./ssh-types.js";
+import type { SshConnectionConfig, SshCommandResult, SshRemoteExecutionSpec } from "./ssh-types.js";
 
 export function createSshCommandManagedRuntimeRunner(input: {
   spec: SshRemoteExecutionSpec;

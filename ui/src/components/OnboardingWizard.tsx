@@ -44,15 +44,17 @@ import {
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@noralos/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@noralos/adapter-gemini-local";
 import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@noralos/adapter-opencode-local";
-import { requireOpenCodeModelId } from "@noralos/adapter-opencode-local/server";
 
+// Browser-safe duplicate of the validator at packages/adapters/opencode-local/src/server/models.ts.
+// We can't import the server module here because it pulls in node:crypto + node:fs.
 function isValidOpenCodeModelId(model: string): boolean {
-  try {
-    requireOpenCodeModelId(model);
-    return true;
-  } catch {
-    return false;
-  }
+  const trimmed = (model ?? "").trim();
+  if (!trimmed) return false;
+  const slashIdx = trimmed.indexOf("/");
+  if (slashIdx < 1) return false;
+  const provider = trimmed.slice(0, slashIdx).trim();
+  const modelName = trimmed.slice(slashIdx + 1).trim();
+  return provider.length > 0 && modelName.length > 0;
 }
 import { resolveRouteOnboardingOptions } from "../lib/onboarding-route";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
