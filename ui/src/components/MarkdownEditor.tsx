@@ -31,18 +31,13 @@ import {
   thematicBreakPlugin,
   type RealmPlugin,
 } from "@mdxeditor/editor";
-<<<<<<< v2026.525.0
 import {
   buildAgentMentionHref,
   buildProjectMentionHref,
   buildRoutineMentionHref,
   buildUserMentionHref,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { Boxes, CalendarClock, User } from "lucide-react";
-=======
-import { buildAgentMentionHref, buildProjectMentionHref, buildUserMentionHref } from "@noralos/shared";
-import { Boxes, User } from "lucide-react";
->>>>>>> master
 import { AgentIcon } from "./AgentIconPicker";
 import { applyMentionChipDecoration, clearMentionChipDecoration, parseMentionChipHref } from "../lib/mention-chips";
 import { MentionAwareLinkNode, mentionAwareLinkNodeReplacement } from "../lib/mention-aware-link-node";
@@ -1262,13 +1257,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
       {mentionActive && filteredMentions.length > 0 && mentionMenuPosition &&
         createPortal(
           <div
-<<<<<<< v2026.525.0
             data-paperclip-floating-ui=""
             data-testid="mention-autocomplete-menu"
             className="pointer-events-auto fixed z-[9999] min-w-[180px] max-w-[calc(100vw-16px)] max-h-[208px] overflow-y-auto rounded-md border border-border bg-popover shadow-md"
-=======
-            className="fixed z-[9999] min-w-[180px] max-w-[calc(100vw-16px)] max-h-[208px] overflow-y-auto rounded-md border border-border bg-popover shadow-md"
->>>>>>> master
             style={{
               top: mentionMenuPosition.top,
               left: mentionMenuPosition.left,

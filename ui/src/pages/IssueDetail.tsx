@@ -1124,7 +1124,6 @@ function IssueDetailActivityTab({
                       : ` (in ${formatTokens(issueCostSummary.input)}, out ${formatTokens(issueCostSummary.output)})`}
                   </span>
                 ) : null}
-<<<<<<< v2026.525.0
                 {issueCostSummary.hasRuntime ? (
                   <span>
                     Runtime {formatDurationMs(issueCostSummary.runtimeMs)}
@@ -1132,9 +1131,6 @@ function IssueDetailActivityTab({
                   </span>
                 ) : null}
                 {!issueCostSummary.hasCost && !issueCostSummary.hasTokens && !issueCostSummary.hasRuntime ? (
-=======
-                {!issueCostSummary.hasCost && !issueCostSummary.hasTokens ? (
->>>>>>> master
                   <span>No direct cost data.</span>
                 ) : null}
               </div>
@@ -1176,7 +1172,6 @@ function IssueDetailActivityTab({
           agentMap={agentMap}
           hasLiveRuns={hasLiveRuns}
           activityEvents={activity ?? []}
-<<<<<<< v2026.525.0
           renderActivityEvent={(evt) => {
             const tone = successfulRunHandoffActivityTone(evt.action);
             const isHandoffWarning =
@@ -1196,18 +1191,6 @@ function IssueDetailActivityTab({
               </div>
             );
           }}
-=======
-          renderActivityEvent={(evt) => (
-            <div className="space-y-1.5 rounded-lg border border-border/60 px-3 py-2 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <ActorIdentity evt={evt} agentMap={agentMap} userProfileMap={userProfileMap} />
-                <span>{formatIssueActivityAction(evt.action, evt.details, { agentMap, userProfileMap, currentUserId })}</span>
-                <span className="ml-auto shrink-0">{relativeTime(evt.createdAt)}</span>
-              </div>
-              <IssueReferenceActivitySummary event={evt} />
-            </div>
-          )}
->>>>>>> master
         />
       </div>
       {linkedApprovals && linkedApprovals.length > 0 && (

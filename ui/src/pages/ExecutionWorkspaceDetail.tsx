@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-<<<<<<< v2026.525.0
-import type { ExecutionWorkspace, Issue, Project, ProjectWorkspace, RoutineListItem } from "@paperclipai/shared";
-import { Copy, ExternalLink, Loader2, Play, Repeat } from "lucide-react";
-=======
-import type { ExecutionWorkspace, Issue, Project, ProjectWorkspace } from "@noralos/shared";
-import { ArrowLeft, Copy, ExternalLink, Loader2 } from "lucide-react";
->>>>>>> master
+import type { ExecutionWorkspace, Issue, Project, ProjectWorkspace, RoutineListItem } from "@noralos/shared";
+import { ArrowLeft, Copy, ExternalLink, Loader2, Play, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -796,20 +791,17 @@ export function ExecutionWorkspaceDetail() {
             </div>
             <h1 className="truncate text-xl font-semibold sm:text-2xl">{workspace.name}</h1>
           </div>
-<<<<<<< v2026.525.0
+          <h1 className="truncate text-xl font-semibold sm:text-2xl">{workspace.name}</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Configure the concrete runtime workspace that NoralOS reuses for this issue flow.
+            <span className="hidden sm:inline"> These settings stay attached to the execution workspace so future runs can keep local paths, repo refs, provisioning, teardown, and runtime-service behavior in sync with the actual workspace being reused.</span>
+          </p>
           <WorkspaceRuntimeQuickControls
             sections={runtimeControlSections}
             isPending={controlRuntimeServices.isPending}
             pendingRequest={pendingRuntimeAction}
             onAction={(request) => controlRuntimeServices.mutate(request)}
           />
-=======
-          <h1 className="truncate text-xl font-semibold sm:text-2xl">{workspace.name}</h1>
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Configure the concrete runtime workspace that NoralOS reuses for this issue flow.
-            <span className="hidden sm:inline"> These settings stay attached to the execution workspace so future runs can keep local paths, repo refs, provisioning, teardown, and runtime-service behavior in sync with the actual workspace being reused.</span>
-          </p>
->>>>>>> master
         </div>
         {runtimeActionErrorMessage ? <p className="text-sm text-destructive">{runtimeActionErrorMessage}</p> : null}
         {!runtimeActionErrorMessage && runtimeActionMessage ? <p className="text-sm text-muted-foreground">{runtimeActionMessage}</p> : null}
