@@ -2,15 +2,9 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-<<<<<<< v2026.525.0
-import type { AdapterExecutionContext } from "@paperclipai/adapter-utils";
-import { resolvePaperclipInstanceRootForAdapter } from "@paperclipai/adapter-utils/server-utils";
-
-=======
 import type { AdapterExecutionContext } from "@noralos/adapter-utils";
+import { resolvePaperclipInstanceRootForAdapter } from "@noralos/adapter-utils/server-utils";
 
-const DEFAULT_NORALOS_INSTANCE_ID = "default";
->>>>>>> master
 const SEEDED_SHARED_FILES = [
   ".credentials.json",
   "credentials.json",
@@ -98,22 +92,14 @@ export function resolveManagedClaudeConfigSeedDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-<<<<<<< v2026.525.0
   const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-    homeDir: nonEmpty(env.PAPERCLIP_HOME) ?? undefined,
-    instanceId: nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+    homeDir: nonEmpty(env.NORALOS_HOME) ?? undefined,
+    instanceId: nonEmpty(env.NORALOS_INSTANCE_ID) ?? undefined,
     env,
   });
   return companyId
     ? path.resolve(instanceRoot, "companies", companyId, "claude-config-seed")
     : path.resolve(instanceRoot, "claude-config-seed");
-=======
-  const noralosHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_NORALOS_INSTANCE_ID;
-  return companyId
-    ? path.resolve(noralosHome, "instances", instanceId, "companies", companyId, "claude-config-seed")
-    : path.resolve(noralosHome, "instances", instanceId, "claude-config-seed");
->>>>>>> master
 }
 
 export async function prepareClaudeConfigSeed(

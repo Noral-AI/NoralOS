@@ -26,7 +26,6 @@ export interface SshCommandResult {
 
 export interface SshRemoteExecutionSpec extends SshConnectionConfig {
   remoteCwd: string;
-<<<<<<< v2026.525.0
 }
 
 export function createSshCommandManagedRuntimeRunner(input: {
@@ -106,9 +105,6 @@ export function createSshCommandManagedRuntimeRunner(input: {
       }
     },
   };
-=======
-  noralosApiUrl?: string | null;
->>>>>>> master
 }
 
 export interface SshEnvLabSupport {
@@ -649,13 +645,9 @@ async function importGitWorkspaceToSsh(input: {
 }): Promise<void> {
   const bundleDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-ssh-bundle-"));
   const bundlePath = path.join(bundleDir, "workspace.bundle");
-<<<<<<< v2026.525.0
   // Per-import unique ref so concurrent imports against the same local repo
   // can't race on `update-ref` between this run's update and bundle create.
   const tempRef = `refs/paperclip/ssh-sync/import/${randomUUID()}`;
-=======
-  const tempRef = "refs/noralos/ssh-sync/import";
->>>>>>> master
 
   try {
     await runLocalGit(input.localDir, ["update-ref", tempRef, input.snapshot.headCommit], {
@@ -707,11 +699,7 @@ async function exportGitWorkspaceFromSsh(input: {
 }): Promise<string> {
   const bundleDir = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-ssh-bundle-"));
   const bundlePath = path.join(bundleDir, "workspace.bundle");
-<<<<<<< v2026.525.0
   const importedRef = input.importedRef ?? `refs/paperclip/ssh-sync/imported/${randomUUID()}`;
-=======
-  const importedRef = "refs/noralos/ssh-sync/imported";
->>>>>>> master
 
   try {
     const exportScript = [

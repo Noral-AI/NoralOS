@@ -48,13 +48,8 @@ import {
   stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   runChildProcess,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
-import { DEFAULT_GEMINI_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
-=======
 } from "@noralos/adapter-utils/server-utils";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
->>>>>>> master
+import { DEFAULT_GEMINI_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
 import {
   describeGeminiFailure,
   detectGeminiAuthRequired,
@@ -246,31 +241,19 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-<<<<<<< v2026.525.0
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (issueWorkMode) env.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  if (wakePayloadJson) env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  refreshPaperclipWorkspaceEnvForExecution({
-    env,
-    envConfig,
-=======
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
   if (wakeTaskId) env.NORALOS_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.NORALOS_ISSUE_WORK_MODE = issueWorkMode;
   if (wakeReason) env.NORALOS_WAKE_REASON = wakeReason;
   if (wakeCommentId) env.NORALOS_WAKE_COMMENT_ID = wakeCommentId;
   if (approvalId) env.NORALOS_APPROVAL_ID = approvalId;
   if (approvalStatus) env.NORALOS_APPROVAL_STATUS = approvalStatus;
   if (linkedIssueIds.length > 0) env.NORALOS_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
   if (wakePayloadJson) env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  applyNoralosWorkspaceEnv(env, {
->>>>>>> master
+  refreshNoralosWorkspaceEnvForExecution({
+    env,
+    envConfig,
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceId,
@@ -281,17 +264,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionTargetIsRemote,
     executionCwd: effectiveExecutionCwd,
   });
-<<<<<<< v2026.525.0
   if (executionTargetIsRemote && typeof env.GEMINI_CLI_TRUST_WORKSPACE !== "string") {
     env.GEMINI_CLI_TRUST_WORKSPACE = "true";
-=======
-  if (workspaceHints.length > 0) env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
-  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
-  if (targetNoralosApiUrl) env.NORALOS_API_URL = targetNoralosApiUrl;
-
-  for (const [key, value] of Object.entries(envConfig)) {
-    if (typeof value === "string") env[key] = value;
->>>>>>> master
   }
   if (!hasExplicitApiKey && authToken) {
     env.NORALOS_API_KEY = authToken;
@@ -412,7 +386,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       throw error;
     }
   }
-<<<<<<< v2026.525.0
   const runtimeExecutionTarget = overrideAdapterExecutionTargetRemoteCwd(executionTarget, effectiveExecutionCwd);
   if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(executionTarget)) {
     paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
@@ -421,24 +394,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       runtimeRootDir: remoteRuntimeRootDir,
       adapterKey: "gemini",
       timeoutSec,
-      hostApiToken: env.PAPERCLIP_API_KEY,
+      hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
     if (paperclipBridge) {
       Object.assign(env, paperclipBridge.env);
-=======
-  if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
-    noralosBridge = await startAdapterExecutionTargetNoralosBridge({
-      runId,
-      target: executionTarget,
-      runtimeRootDir: remoteRuntimeRootDir,
-      adapterKey: "gemini",
-      hostApiToken: env.NORALOS_API_KEY,
-      onLog,
-    });
-    if (noralosBridge) {
-      Object.assign(env, noralosBridge.env);
->>>>>>> master
       loggedEnv = buildInvocationEnvForLogs(env, {
         runtimeEnv: ensurePathInEnv({ ...process.env, ...env }),
         includeRuntimeKeys: ["HOME"],

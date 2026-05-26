@@ -42,26 +42,17 @@ import {
   stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   runChildProcess,
-<<<<<<< v2026.525.0
-  readPaperclipRuntimeSkillEntries,
-  readPaperclipIssueWorkModeFromContext,
-  resolvePaperclipDesiredSkillNames,
-} from "@paperclipai/adapter-utils/server-utils";
+  readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
+  resolveNoralosDesiredSkillNames,
+} from "@noralos/adapter-utils/server-utils";
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
 import {
   ensureOpenCodeModelConfiguredAndAvailable,
   parseOpenCodeModelsOutput,
   requireOpenCodeModelId,
 } from "./models.js";
-import { removeMaintainerOnlySkillSymlinks } from "@paperclipai/adapter-utils/server-utils";
-=======
-  readNoralosRuntimeSkillEntries,
-  resolveNoralosDesiredSkillNames,
-} from "@noralos/adapter-utils/server-utils";
-import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
-import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { removeMaintainerOnlySkillSymlinks } from "@noralos/adapter-utils/server-utils";
->>>>>>> master
 import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 import { SANDBOX_INSTALL_COMMAND } from "../index.js";
 
@@ -277,31 +268,19 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const linkedIssueIds = Array.isArray(context.issueIds)
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
-<<<<<<< v2026.525.0
-  const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
-  const issueWorkMode = readPaperclipIssueWorkModeFromContext(context);
-  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
-  if (issueWorkMode) env.PAPERCLIP_ISSUE_WORK_MODE = issueWorkMode;
-  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  if (wakePayloadJson) env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  refreshPaperclipWorkspaceEnvForExecution({
-    env,
-    envConfig,
-=======
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
   if (wakeTaskId) env.NORALOS_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.NORALOS_ISSUE_WORK_MODE = issueWorkMode;
   if (wakeReason) env.NORALOS_WAKE_REASON = wakeReason;
   if (wakeCommentId) env.NORALOS_WAKE_COMMENT_ID = wakeCommentId;
   if (approvalId) env.NORALOS_APPROVAL_ID = approvalId;
   if (approvalStatus) env.NORALOS_APPROVAL_STATUS = approvalStatus;
   if (linkedIssueIds.length > 0) env.NORALOS_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
   if (wakePayloadJson) env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  applyNoralosWorkspaceEnv(env, {
->>>>>>> master
+  refreshNoralosWorkspaceEnvForExecution({
+    env,
+    envConfig,
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceId,

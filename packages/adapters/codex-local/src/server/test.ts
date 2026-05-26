@@ -294,7 +294,6 @@ export async function testEnvironment(
         });
       }
 
-<<<<<<< v2026.525.0
       // Codex CLI (>= 0.122) ignores the OPENAI_API_KEY env var and only reads
       // credentials from $CODEX_HOME/auth.json. When we have a key available,
       // wrap the probe with a shell that materializes a per-run auth.json so
@@ -311,11 +310,6 @@ export async function testEnvironment(
         target,
         targetIsRemote,
         cwd,
-=======
-      const probe = await runAdapterExecutionTargetProcess(
-        runId,
-        target,
->>>>>>> master
         command,
         args,
         env,

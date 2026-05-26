@@ -194,11 +194,7 @@ export async function testEnvironment(
       });
       if (installCheck) checks.push(installCheck);
       try {
-<<<<<<< v2026.525.0
         await ensureAdapterExecutionTargetCommandResolvable(command, runtimeTarget, runtimeCwd, runtimeEnv);
-=======
-        await ensureAdapterExecutionTargetCommandResolvable(command, target, cwd, runtimeEnv);
->>>>>>> master
         checks.push({
           code: "opencode_command_resolvable",
           level: "info",
@@ -351,11 +347,7 @@ export async function testEnvironment(
       try {
         const probe = await runAdapterExecutionTargetProcess(
           runId,
-<<<<<<< v2026.525.0
           runtimeTarget,
-=======
-          target,
->>>>>>> master
           command,
           args,
           {

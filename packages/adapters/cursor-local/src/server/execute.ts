@@ -45,13 +45,8 @@ import {
   stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   joinPromptSections,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/server-utils";
-import { DEFAULT_CURSOR_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
-=======
 } from "@noralos/adapter-utils/server-utils";
-import { DEFAULT_CURSOR_LOCAL_MODEL } from "../index.js";
->>>>>>> master
+import { DEFAULT_CURSOR_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
 import { parseCursorJsonl, isCursorUnknownSessionError } from "./parse.js";
 import { prepareCursorSandboxCommand } from "./remote-command.js";
 import { normalizeCursorStreamLine } from "../shared/stream.js";
@@ -296,13 +291,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (wakePayloadJson) {
     env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
   }
-<<<<<<< v2026.525.0
-  refreshPaperclipWorkspaceEnvForExecution({
+  refreshNoralosWorkspaceEnvForExecution({
     env,
     envConfig,
-=======
-  applyNoralosWorkspaceEnv(env, {
->>>>>>> master
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceId,
@@ -326,7 +317,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (!hasExplicitApiKey && authToken) {
     env.NORALOS_API_KEY = authToken;
   }
-<<<<<<< v2026.525.0
   const timeoutSec = resolveAdapterExecutionTargetTimeoutSec(
     executionTarget,
     asNumber(config.timeoutSec, 0),
@@ -359,38 +349,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const sandboxSystemHomeDir = initialSandboxCommand.remoteSystemHomeDir;
   command = initialSandboxCommand.command;
   env = initialSandboxCommand.env;
-=======
-  const timeoutSec = asNumber(config.timeoutSec, 0);
-  const graceSec = asNumber(config.graceSec, 20);
-  // Probe the sandbox before the managed-home override so we discover
-  // cursor-agent from the real system HOME (e.g. ~/.local/bin/cursor-agent).
-  // The managed HOME set later is for runtime isolation, not for finding the CLI.
-  const sandboxCommand = await prepareCursorSandboxCommand({
-    runId,
-    target: executionTarget,
-    command,
-    cwd,
-    env,
-    timeoutSec,
-    graceSec,
-  });
-  command = sandboxCommand.command;
-  env = sandboxCommand.env;
-  const effectiveEnv = Object.fromEntries(
-    Object.entries({ ...process.env, ...env }).filter(
-      (entry): entry is [string, string] => typeof entry[1] === "string",
-    ),
-  );
-  const billingType = resolveCursorBillingType(effectiveEnv);
-  const runtimeEnv = ensurePathInEnv(effectiveEnv);
-  await ensureAdapterExecutionTargetCommandResolvable(command, executionTarget, cwd, runtimeEnv);
-  const resolvedCommand = await resolveAdapterExecutionTargetCommandForLogs(command, executionTarget, cwd, runtimeEnv);
-  let loggedEnv = buildInvocationEnvForLogs(env, {
-    runtimeEnv,
-    includeRuntimeKeys: ["HOME"],
-    resolvedCommand,
-  });
->>>>>>> master
 
   const extraArgs = (() => {
     const fromExtraArgs = asStringArray(config.extraArgs);
@@ -470,7 +428,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       throw error;
     }
   }
-<<<<<<< v2026.525.0
   const finalSandboxCommand = executionTarget?.kind === "remote" && executionTarget.transport === "sandbox"
     ? await prepareCursorSandboxCommand({
       runId,
@@ -512,24 +469,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       runtimeRootDir: remoteRuntimeRootDir,
       adapterKey: "cursor",
       timeoutSec,
-      hostApiToken: env.PAPERCLIP_API_KEY,
+      hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
     if (paperclipBridge) {
       Object.assign(env, paperclipBridge.env);
-=======
-  if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
-    noralosBridge = await startAdapterExecutionTargetNoralosBridge({
-      runId,
-      target: executionTarget,
-      runtimeRootDir: remoteRuntimeRootDir,
-      adapterKey: "cursor",
-      hostApiToken: env.NORALOS_API_KEY,
-      onLog,
-    });
-    if (noralosBridge) {
-      Object.assign(env, noralosBridge.env);
->>>>>>> master
       loggedEnv = buildInvocationEnvForLogs(env, {
         runtimeEnv: ensurePathInEnv({ ...process.env, ...env }),
         includeRuntimeKeys: ["HOME"],
@@ -585,7 +529,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       notes.push("Auto-added --yolo to bypass interactive prompts.");
     }
     notes.push("Prompt is piped to Cursor via stdin.");
-<<<<<<< v2026.525.0
     const sandboxCommand = finalSandboxCommand ?? initialSandboxCommand;
     if (sandboxCommand?.addedPathEntry) {
       notes.push(`Remote sandbox runs prepend ${sandboxCommand.addedPathEntry} to PATH.`);
@@ -594,13 +537,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       notes.push(
         `Remote sandbox runs prefer ${sandboxCommand.preferredCommandPath} when using the default Cursor entrypoint.`,
       );
-=======
-    if (sandboxCommand.addedPathEntry) {
-      notes.push(`Remote sandbox runs prepend ${sandboxCommand.addedPathEntry} to PATH.`);
-    }
-    if (sandboxCommand.preferredCommandPath) {
-      notes.push(`Remote sandbox runs prefer ${sandboxCommand.preferredCommandPath} when using the default Cursor entrypoint.`);
->>>>>>> master
     }
     if (!instructionsFilePath) return notes;
     if (instructionsPrefix.length > 0) {

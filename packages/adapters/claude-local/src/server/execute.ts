@@ -40,21 +40,13 @@ import {
   ensurePathInEnv,
   refreshPaperclipWorkspaceEnvForExecution,
   renderTemplate,
-<<<<<<< v2026.525.0
-  renderPaperclipWakePrompt,
-  rewriteWorkspaceCwdEnvVarsForExecution,
-  shapePaperclipWorkspaceEnvForExecution,
-  stringifyPaperclipWakePayload,
-  DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-} from "@paperclipai/adapter-utils/server-utils";
-import { shellQuote } from "@paperclipai/adapter-utils/ssh";
-=======
   renderNoralosWakePrompt,
+  rewriteWorkspaceCwdEnvVarsForExecution,
+  shapeNoralosWorkspaceEnvForExecution,
   stringifyNoralosWakePayload,
-  DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
+  DEFAULT_NORALOS_AGENT_PROMPT_TEMPLATE,
 } from "@noralos/adapter-utils/server-utils";
 import { shellQuote } from "@noralos/adapter-utils/ssh";
->>>>>>> master
 import {
   parseClaudeStreamJson,
   describeClaudeFailure,
@@ -241,13 +233,8 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   if (wakePayloadJson) {
     env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
   }
-<<<<<<< v2026.525.0
-  applyPaperclipWorkspaceEnv(env, {
-    workspaceCwd: shapedWorkspaceEnv.workspaceCwd,
-=======
   applyNoralosWorkspaceEnv(env, {
-    workspaceCwd: effectiveWorkspaceCwd,
->>>>>>> master
+    workspaceCwd: shapedWorkspaceEnv.workspaceCwd,
     workspaceSource,
     workspaceStrategy,
     workspaceId,
@@ -257,13 +244,8 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
     workspaceWorktreePath: shapedWorkspaceEnv.workspaceWorktreePath,
     agentHome,
   });
-<<<<<<< v2026.525.0
   if (shapedWorkspaceEnv.workspaceHints.length > 0) {
-    env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(shapedWorkspaceEnv.workspaceHints);
-=======
-  if (workspaceHints.length > 0) {
-    env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
->>>>>>> master
+    env.NORALOS_WORKSPACES_JSON = JSON.stringify(shapedWorkspaceEnv.workspaceHints);
   }
   if (runtimeServiceIntents.length > 0) {
     env.NORALOS_RUNTIME_SERVICE_INTENTS_JSON = JSON.stringify(runtimeServiceIntents);
@@ -274,7 +256,6 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   if (runtimePrimaryUrl) {
     env.NORALOS_RUNTIME_PRIMARY_URL = runtimePrimaryUrl;
   }
-<<<<<<< v2026.525.0
   const shapedEnvConfig = rewriteWorkspaceCwdEnvVarsForExecution({
     env: envConfig,
     workspaceCwd: effectiveWorkspaceCwd,
@@ -282,14 +263,6 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
     executionTargetIsRemote,
   });
   for (const [key, value] of Object.entries(shapedEnvConfig)) {
-=======
-  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
-  if (targetNoralosApiUrl) {
-    env.NORALOS_API_URL = targetNoralosApiUrl;
-  }
-
-  for (const [key, value] of Object.entries(envConfig)) {
->>>>>>> master
     if (typeof value === "string") env[key] = value;
   }
 
@@ -449,11 +422,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     extraArgs,
   } = runtimeConfig;
   let loggedEnv = initialLoggedEnv;
-<<<<<<< v2026.525.0
   let effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
-=======
-  const effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
->>>>>>> master
   const terminalResultCleanupGraceMs = Math.max(
     0,
     asNumber(config.terminalResultCleanupGraceMs, 5_000),
@@ -597,7 +566,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       },
     );
   }
-<<<<<<< v2026.525.0
   let paperclipBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetPaperclipBridge>> = null;
   if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(runtimeExecutionTarget)) {
     paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
@@ -606,25 +574,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       runtimeRootDir: preparedExecutionTargetRuntime?.runtimeRootDir,
       adapterKey: "claude",
       timeoutSec,
-      hostApiToken: env.PAPERCLIP_API_KEY,
+      hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
     if (paperclipBridge) {
       Object.assign(env, paperclipBridge.env);
-=======
-  let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
-  if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
-    noralosBridge = await startAdapterExecutionTargetNoralosBridge({
-      runId,
-      target: executionTarget,
-      runtimeRootDir: preparedExecutionTargetRuntime?.runtimeRootDir,
-      adapterKey: "claude",
-      hostApiToken: env.NORALOS_API_KEY,
-      onLog,
-    });
-    if (noralosBridge) {
-      Object.assign(env, noralosBridge.env);
->>>>>>> master
       const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });
       loggedEnv = buildInvocationEnvForLogs(env, {
         runtimeEnv,

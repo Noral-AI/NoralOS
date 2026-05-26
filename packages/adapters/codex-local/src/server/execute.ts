@@ -458,13 +458,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (wakePayloadJson) {
     env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
   }
-<<<<<<< v2026.525.0
-  refreshPaperclipWorkspaceEnvForExecution({
+  refreshNoralosWorkspaceEnvForExecution({
     env,
     envConfig,
-=======
-  applyNoralosWorkspaceEnv(env, {
->>>>>>> master
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceStrategy,
