@@ -312,18 +312,14 @@ else
     --dist-tag "$DIST_TAG"
     --target-version "$TARGET_PUBLISH_VERSION"
   )
-<<<<<<< v2026.525.0
-=======
   if [ "$allow_canary_latest" = true ]; then
     verify_args+=(--allow-canary-latest)
   fi
->>>>>>> master
   while IFS=$'\t' read -r _pkg_dir pkg_name _pkg_version; do
     [ -z "$pkg_name" ] && continue
     verify_args+=(--package "$pkg_name")
   done <<< "$VERSIONED_PACKAGE_INFO"
 
-<<<<<<< v2026.525.0
   release_info "  Waiting for npm dist-tags and package metadata to converge..."
   if wait_for_release_registry_state \
     "$REGISTRY_STATE_VERIFY_ATTEMPTS" \
@@ -338,9 +334,6 @@ else
 
     release_fail "publish completed, but npm dist-tags or registry metadata never converged for ${TARGET_PUBLISH_VERSION}"
   fi
-=======
-  node "$REPO_ROOT/scripts/verify-release-registry-state.mjs" "${verify_args[@]}"
->>>>>>> master
 fi
 
 release_info ""
