@@ -5,13 +5,12 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-  adapterExecutionTargetNoralosApiUrl,
   adapterExecutionTargetRemoteCwd,
   overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-  adapterExecutionTargetUsesNoralosBridge,
+  adapterExecutionTargetUsesPaperclipBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetRuntimeCommandInstalled,
@@ -36,7 +35,7 @@ import {
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   ensurePathInEnv,
-  refreshPaperclipWorkspaceEnvForExecution,
+  refreshNoralosWorkspaceEnvForExecution,
   renderTemplate,
   renderNoralosWakePrompt,
   stringifyNoralosWakePayload,
@@ -292,7 +291,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     executionCwd: effectiveExecutionCwd,
   });
   if (workspaceHints.length > 0) env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
-  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
+  const targetNoralosApiUrl = executionTarget && executionTarget.kind === "remote" && executionTarget.transport === "sandbox" ? executionTarget.noralosApiUrl ?? null : null;
   if (targetNoralosApiUrl) env.NORALOS_API_URL = targetNoralosApiUrl;
 
   for (const [key, value] of Object.entries(envConfig)) {
@@ -442,7 +441,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     }
     const runtimeExecutionTarget = overrideAdapterExecutionTargetRemoteCwd(executionTarget, effectiveExecutionCwd);
     if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(runtimeExecutionTarget)) {
-      paperclipBridge = await startAdapterExecutionTargetPaperclipBridge({
+      noralosBridge = await startAdapterExecutionTargetNoralosBridge({
         runId,
         target: runtimeExecutionTarget,
         runtimeRootDir: remoteRuntimeRootDir,
@@ -451,8 +450,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         hostApiToken: preparedRuntimeConfig.env.PAPERCLIP_API_KEY,
         onLog,
       });
-      if (paperclipBridge) {
-        Object.assign(preparedRuntimeConfig.env, paperclipBridge.env);
+      if (noralosBridge) {
+        Object.assign(preparedRuntimeConfig.env, noralosBridge.env);
         loggedEnv = buildInvocationEnvForLogs(preparedRuntimeConfig.env, {
           runtimeEnv: Object.fromEntries(
             Object.entries(ensurePathInEnv({ ...process.env, ...preparedRuntimeConfig.env })).filter(
@@ -464,7 +463,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         });
       }
     }
-    if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
+    if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(executionTarget)) {
       noralosBridge = await startAdapterExecutionTargetNoralosBridge({
         runId,
         target: executionTarget,

@@ -38,7 +38,7 @@ import { pluginRegistryService } from "./plugin-registry.js";
 import { companySecretVersions, companySecrets, pluginConfig } from "@noralos/db";
 import type { Db } from "@noralos/db";
 import type { SecretProvider } from "@noralos/shared";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import { and, desc, eq } from "drizzle-orm";
 import {
   collectSecretRefPaths,

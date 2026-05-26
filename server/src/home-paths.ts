@@ -13,7 +13,7 @@ import {
   resolvePaperclipHomeDir,
   resolvePaperclipInstanceId,
   resolvePaperclipInstanceRoot,
-} from "@paperclipai/shared/home-paths";
+} from "@noralos/shared/home-paths";
 
 function expandHomePrefix(value: string): string {
   if (value === "~") return os.homedir();

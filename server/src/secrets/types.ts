@@ -3,8 +3,8 @@ import type {
   SecretProvider,
   SecretProviderConfigDiscoveryPreviewResult,
   SecretProviderDescriptor,
-} from "@paperclipai/shared";
-import type { DeploymentMode } from "@paperclipai/shared";
+} from "@noralos/shared";
+import type { DeploymentMode } from "@noralos/shared";
 =======
 import type { SecretProvider, SecretProviderDescriptor } from "@noralos/shared";
 >>>>>>> master

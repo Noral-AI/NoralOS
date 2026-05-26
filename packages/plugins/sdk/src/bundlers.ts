@@ -94,7 +94,7 @@ export function createPluginBundlerPresets(input: PluginBundlerPresetInput = {})
     platform: "node",
     target: "node20",
     sourcemap,
-    external: ["@paperclipai/plugin-sdk"],
+    external: ["@noralos/plugin-sdk"],
   };
 
   const esbuildUi = uiEntry

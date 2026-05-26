@@ -817,7 +817,7 @@ export function adapterExecutionTargetSessionIdentity(
 ): Record<string, unknown> | null {
   if (!target || target.kind === "local") return null;
   if (target.transport === "ssh") return buildRemoteExecutionSessionIdentity(target.spec);
-  const noralosTransport = resolveSandboxNoralosTransport(target);
+  const noralosTransport: "direct" | "bridge" = target.noralosApiUrl ? "direct" : "bridge";
   return {
     transport: "sandbox",
     providerKey: target.providerKey ?? null,
@@ -1072,7 +1072,7 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
   hostApiUrl?: string | null;
   onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
   maxBodyBytes?: number | null;
-}): Promise<AdapterExecutionTargetPaperclipBridgeHandle | null> {
+}): Promise<AdapterExecutionTargetNoralosBridgeHandle | null> {
   if (!adapterExecutionTargetUsesPaperclipBridge(input.target)) {
     return null;
   }
@@ -1103,7 +1103,7 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
     input.hostApiUrl?.trim() ||
     process.env.NORALOS_RUNTIME_API_URL?.trim() ||
     process.env.NORALOS_API_URL?.trim() ||
-    resolveDefaultNoralosApiUrl();
+    resolveDefaultPaperclipApiUrl();
   const shellCommand = adapterExecutionTargetShellCommand(target);
   const runner = adapterExecutionTargetCommandRunner(target);
   const bridgeTimeoutMs =
@@ -1152,7 +1152,6 @@ export async function startAdapterExecutionTargetNoralosBridge(input: {
         }
         headers.set("authorization", `Bearer ${hostApiToken}`);
         headers.set("x-paperclip-run-id", input.runId);
-        const method = request.method.trim().toUpperCase() || "GET";
         const response = await fetch(buildBridgeForwardUrl(hostApiUrl, request), {
           method,
           headers,

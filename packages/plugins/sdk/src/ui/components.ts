@@ -563,7 +563,7 @@ export const ErrorBoundary = createSdkUiComponent<ErrorBoundaryProps>("ErrorBoun
  *
  * @example
  * ```tsx
- * import { FileTree, type FileTreeNode } from "@paperclipai/plugin-sdk/ui";
+ * import { FileTree, type FileTreeNode } from "@noralos/plugin-sdk/ui";
  *
  * const nodes: FileTreeNode[] = [
  *   { name: "README.md", path: "README.md", kind: "file", children: [] },

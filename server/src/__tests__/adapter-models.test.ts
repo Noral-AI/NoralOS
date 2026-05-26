@@ -4,10 +4,10 @@ import { models as codexFallbackModels } from "@noralos/adapter-codex-local";
 import { models as cursorFallbackModels } from "@noralos/adapter-cursor-local";
 import { models as opencodeFallbackModels } from "@noralos/adapter-opencode-local";
 import { resetOpenCodeModelsCacheForTests } from "@noralos/adapter-opencode-local/server";
-import { models as codexFallbackModels } from "@paperclipai/adapter-codex-local";
-import { models as cursorFallbackModels } from "@paperclipai/adapter-cursor-local";
-import { models as opencodeFallbackModels } from "@paperclipai/adapter-opencode-local";
-import { resetOpenCodeModelsCacheForTests } from "@paperclipai/adapter-opencode-local/server";
+import { models as codexFallbackModels } from "@noralos/adapter-codex-local";
+import { models as cursorFallbackModels } from "@noralos/adapter-cursor-local";
+import { models as opencodeFallbackModels } from "@noralos/adapter-opencode-local";
+import { resetOpenCodeModelsCacheForTests } from "@noralos/adapter-opencode-local/server";
 import { resetCodexModelsCacheForTests } from "../adapters/codex-models.js";
 import { resetCursorModelsCacheForTests, setCursorModelsRunnerForTests } from "../adapters/cursor-models.js";
 

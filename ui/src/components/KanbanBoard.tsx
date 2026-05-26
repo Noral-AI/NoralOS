@@ -22,7 +22,7 @@ import { PriorityIcon } from "./PriorityIcon";
 import { Identity } from "./Identity";
 import { isSuccessfulRunHandoffRequired } from "../lib/successful-run-handoff";
 import type { Issue } from "@noralos/shared";
-import type { Issue, IssueStatus } from "@paperclipai/shared";
+import type { Issue, IssueStatus } from "@noralos/shared";
 import { AlertTriangle } from "lucide-react";
 
 export const KANBAN_BOARD_HIGH_VOLUME_THRESHOLD = 100;

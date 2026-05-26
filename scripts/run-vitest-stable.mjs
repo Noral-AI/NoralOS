@@ -52,7 +52,7 @@ const allModeName = "all";
 const generalServerGroupName = "general-server";
 const generalWorkspacesAGroupName = "general-workspaces-a";
 const generalWorkspacesBGroupName = "general-workspaces-b";
-const generalWorkspacesAProjects = ["@paperclipai/ui", "paperclipai"];
+const generalWorkspacesAProjects = ["@noralos/ui", "paperclipai"];
 const generalWorkspacesBProjects = nonServerProjects.filter((project) => !generalWorkspacesAProjects.includes(project));
 const generalGroupNames = [generalServerGroupName, generalWorkspacesAGroupName, generalWorkspacesBGroupName];
 
@@ -277,7 +277,7 @@ function runGeneralGroup(routeTests, groupName) {
   if (groupName === generalServerGroupName) {
     const excludeRouteArgs = routeTests.flatMap((file) => ["--exclude", file.serverPath]);
     runVitest(
-      ["--project", "@paperclipai/server", ...excludeRouteArgs],
+      ["--project", "@noralos/server", ...excludeRouteArgs],
       `${groupName} server suites excluding ${routeTests.length} serialized suites`,
     );
     return;
@@ -306,7 +306,7 @@ function runSerializedSuites(routeTests, shardIndex, shardCount) {
     runVitest(
       [
         "--project",
-        "@paperclipai/server",
+        "@noralos/server",
         routeTest.repoPath,
         "--pool=forks",
         "--poolOptions.forks.isolate=true",

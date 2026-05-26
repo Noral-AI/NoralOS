@@ -17,8 +17,7 @@ import { issues } from "./issues.js";
 import { projects } from "./projects.js";
 import { goals } from "./goals.js";
 import { heartbeatRuns } from "./heartbeat_runs.js";
-import type { RoutineVariable } from "@noralos/shared";
-import type { RoutineEnvConfig, RoutineRevisionSnapshotV1, RoutineVariable } from "@paperclipai/shared";
+import type { RoutineEnvConfig, RoutineRevisionSnapshotV1, RoutineVariable } from "@noralos/shared";
 
 export const routines = pgTable(
   "routines",

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Issue } from "@noralos/shared";
-import type { Issue, IssueRecoveryAction } from "@paperclipai/shared";
+import type { Issue, IssueRecoveryAction } from "@noralos/shared";
 import { Link } from "@/lib/router";
 import { Eye, Flag, X } from "lucide-react";
 import {

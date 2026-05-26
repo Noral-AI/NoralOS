@@ -121,7 +121,7 @@ import {
 import type {
   IssueCommentMetadata,
   IssueCommentPresentation,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import {
   describeToolInput,
   displayToolName,

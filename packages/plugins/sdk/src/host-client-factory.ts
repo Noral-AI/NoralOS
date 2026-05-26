@@ -50,7 +50,6 @@
 
 import type { WorkerHostCallContext, WorkerToHostMethodName, WorkerToHostMethods } from "./protocol.js";
 import type { PluginCapability } from "@noralos/shared";
-import type { PluginCapability } from "@paperclipai/shared";
 import { PLUGIN_RPC_ERROR_CODES } from "./protocol.js";
 
 // ---------------------------------------------------------------------------

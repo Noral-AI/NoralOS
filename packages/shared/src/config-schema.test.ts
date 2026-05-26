@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { paperclipConfigSchema } from "./config-schema.js";
+import { noralosConfigSchema } from "./config-schema.js";
 
 describe("paperclip config schema", () => {
   it("defaults omitted runtime paths to legacy instance-root locations", () => {
-    const parsed = paperclipConfigSchema.parse({
+    const parsed = noralosConfigSchema.parse({
       $meta: {
         version: 1,
         updatedAt: "2026-05-10T00:00:00.000Z",

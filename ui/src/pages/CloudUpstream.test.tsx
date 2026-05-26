@@ -2,7 +2,7 @@
 
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { CloudUpstreamRun, CloudUpstreamsState } from "@paperclipai/shared";
+import type { CloudUpstreamRun, CloudUpstreamsState } from "@noralos/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CloudUpstream, buildActivationRows } from "./CloudUpstream";
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { PaperclipPluginManifestV1 } from "@paperclipai/shared";
-import { createTestHarness } from "@paperclipai/plugin-sdk/testing";
+import type { NoralosPluginManifestV1 } from "@noralos/shared";
+import { createTestHarness } from "@noralos/plugin-sdk/testing";
 
 describe("plugin SDK test harness", () => {
   it("returns scoped execution workspace metadata with the read capability", async () => {
-    const manifest: PaperclipPluginManifestV1 = {
+    const manifest: NoralosPluginManifestV1 = {
       id: "paperclip.test-execution-workspace-metadata",
       apiVersion: 1,
       version: "0.1.0",
@@ -42,7 +42,7 @@ describe("plugin SDK test harness", () => {
   });
 
   it("requires execution.workspaces.read before returning workspace metadata", async () => {
-    const manifest: PaperclipPluginManifestV1 = {
+    const manifest: NoralosPluginManifestV1 = {
       id: "paperclip.test-missing-execution-workspace-read",
       apiVersion: 1,
       version: "0.1.0",
@@ -61,7 +61,7 @@ describe("plugin SDK test harness", () => {
   });
 
   it("requires skills.managed capability before resetting a missing declaration", async () => {
-    const manifest: PaperclipPluginManifestV1 = {
+    const manifest: NoralosPluginManifestV1 = {
       id: "paperclip.test-missing-managed-skill-capability",
       apiVersion: 1,
       version: "0.1.0",
@@ -84,7 +84,7 @@ describe("plugin SDK test harness", () => {
   });
 
   it("requires access and authorization capabilities for permission SDK calls", async () => {
-    const manifest: PaperclipPluginManifestV1 = {
+    const manifest: NoralosPluginManifestV1 = {
       id: "paperclip.test-missing-access-authz-capability",
       apiVersion: 1,
       version: "0.1.0",

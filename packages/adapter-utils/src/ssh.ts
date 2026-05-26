@@ -26,6 +26,7 @@ export interface SshCommandResult {
 
 export interface SshRemoteExecutionSpec extends SshConnectionConfig {
   remoteCwd: string;
+  noralosApiUrl?: string | null;
 }
 
 export function createSshCommandManagedRuntimeRunner(input: {

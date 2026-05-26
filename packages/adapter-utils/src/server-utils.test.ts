@@ -8,7 +8,7 @@ import {
   appendWithByteCap,
   buildInvocationEnvForLogs,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
-  materializeNoralosSkillCopy,
+  materializePaperclipSkillCopy,
   refreshNoralosWorkspaceEnvForExecution,
   renderNoralosWakePrompt,
   runningProcesses,
@@ -493,7 +493,7 @@ describe("renderNoralosWakePrompt", () => {
       fallbackFetchNeeded: false,
     };
 
-    const serialized = stringifyPaperclipWakePayload(payload);
+    const serialized = stringifyNoralosWakePayload(payload);
     expect(serialized).toContain(title);
     expect(serialized).toContain("日本語");
     expect(serialized).toContain("हिन्दी");
@@ -502,13 +502,13 @@ describe("renderNoralosWakePrompt", () => {
       comments: [{ body: commentBody }],
     });
 
-    const prompt = renderPaperclipWakePrompt(payload);
+    const prompt = renderNoralosWakePrompt(payload);
     expect(prompt).toContain(`- issue: PAP-9452 ${title}`);
     expect(prompt).toContain(commentBody);
   });
 
   it("renders planning-mode directives for assignment and comment wakes", () => {
-    const assignmentPrompt = renderPaperclipWakePrompt({
+    const assignmentPrompt = renderNoralosWakePrompt({
       reason: "issue_assigned",
       issue: {
         id: "issue-1",
@@ -525,7 +525,7 @@ describe("renderNoralosWakePrompt", () => {
     expect(assignmentPrompt).toContain("- issue work mode: planning");
     expect(assignmentPrompt).toContain("Make the plan only. Do not write code or perform implementation work.");
 
-    const commentPrompt = renderPaperclipWakePrompt({
+    const commentPrompt = renderNoralosWakePrompt({
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -545,7 +545,7 @@ describe("renderNoralosWakePrompt", () => {
   });
 
   it("does not render stale accepted-plan continuation guidance for later planning comment wakes", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -569,7 +569,7 @@ describe("renderNoralosWakePrompt", () => {
   });
 
   it("renders accepted-plan continuation guidance for planning issues", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -592,7 +592,7 @@ describe("renderNoralosWakePrompt", () => {
   });
 
   it("keeps accepted-plan guidance when stale comment ids have no loaded comments", () => {
-    const prompt = renderPaperclipWakePrompt({
+    const prompt = renderNoralosWakePrompt({
       reason: "issue_commented",
       issue: {
         id: "issue-1",
@@ -793,9 +793,9 @@ describe("applyNoralosWorkspaceEnv", () => {
   });
 });
 
-describe("shapePaperclipWorkspaceEnvForExecution", () => {
+describe("shapeNoralosWorkspaceEnvForExecution", () => {
   it("rewrites workspace env paths for remote execution", () => {
-    const shaped = shapePaperclipWorkspaceEnvForExecution({
+    const shaped = shapeNoralosWorkspaceEnvForExecution({
       workspaceCwd: "/tmp/workspace",
       workspaceWorktreePath: "/tmp/worktree",
       workspaceHints: [
@@ -841,7 +841,7 @@ describe("shapePaperclipWorkspaceEnvForExecution", () => {
 
   it("leaves local execution workspace paths unchanged", () => {
     const workspaceHints = [{ workspaceId: "workspace-1", cwd: "/tmp/workspace" }];
-    const shaped = shapePaperclipWorkspaceEnvForExecution({
+    const shaped = shapeNoralosWorkspaceEnvForExecution({
       workspaceCwd: "/tmp/workspace",
       workspaceWorktreePath: "/tmp/worktree",
       workspaceHints,
@@ -915,7 +915,7 @@ describe("rewriteWorkspaceCwdEnvVarsForExecution", () => {
   });
 });
 
-describe("refreshPaperclipWorkspaceEnvForExecution", () => {
+describe("refreshNoralosWorkspaceEnvForExecution", () => {
   it("rewrites Paperclip workspace env to the prepared remote runtime cwd", () => {
     const env: Record<string, string> = {
       PAPERCLIP_WORKSPACE_CWD: "/remote/workspace",
@@ -927,7 +927,7 @@ describe("refreshPaperclipWorkspaceEnvForExecution", () => {
       QA_PROJECT_WORKSPACE_CWD: "/remote/workspace",
     };
 
-    const shaped = refreshPaperclipWorkspaceEnvForExecution({
+    const shaped = refreshNoralosWorkspaceEnvForExecution({
       env,
       envConfig: {
         QA_PROJECT_WORKSPACE_CWD: "/host/workspace",

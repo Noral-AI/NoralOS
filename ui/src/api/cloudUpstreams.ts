@@ -5,7 +5,7 @@ import type {
   CloudUpstreamPreview,
   CloudUpstreamRun,
   CloudUpstreamsState,
-} from "@paperclipai/shared";
+} from "@noralos/shared";
 import { api } from "./client";
 
 export const cloudUpstreamsApi = {

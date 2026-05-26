@@ -23,6 +23,10 @@ const discoveryCache = new Map<string, { expiresAt: number; models: AdapterModel
 const VOLATILE_ENV_KEY_PREFIXES = ["PAPERCLIP_", "npm_", "NPM_"] as const;
 const VOLATILE_ENV_KEY_EXACT = new Set(["PWD", "OLDPWD", "SHLVL", "_", "TERM_SESSION_ID", "HOME"]);
 
+function isValidOpenCodeModelId(model: string): boolean {
+  return model.length > 0 && model.includes("/");
+}
+
 export function requireOpenCodeModelId(input: unknown): string {
   const model = asString(input, "").trim();
   if (!isValidOpenCodeModelId(model)) {

@@ -15,8 +15,8 @@ import type {
   CloudUpstreamWarning,
   CompanyPortabilityExportResult,
   CompanyPortabilityFileEntry,
-} from "@paperclipai/shared";
-import type { Db } from "@paperclipai/db";
+} from "@noralos/shared";
+import type { Db } from "@noralos/db";
 import {
   agents,
   cloudUpstreamConnections,
@@ -27,7 +27,7 @@ import {
   issues,
   projects,
   routines,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import { badRequest, conflict, HttpError, notFound } from "../errors.js";
 import { companyPortabilityService } from "./company-portability.js";
 import { localEncryptedProvider } from "../secrets/local-encrypted-provider.js";

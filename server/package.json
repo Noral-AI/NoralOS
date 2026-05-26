@@ -44,13 +44,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.888.0",
-    "@noralos/adapter-acpx-local": "workspace:*",
     "@noralos/adapter-claude-local": "workspace:*",
     "@noralos/adapter-codex-local": "workspace:*",
-    "@noralos/adapter-cursor-cloud": "workspace:*",
     "@noralos/adapter-cursor-local": "workspace:*",
     "@noralos/adapter-gemini-local": "workspace:*",
-    "@noralos/adapter-grok-local": "workspace:*",
     "@noralos/adapter-openclaw-gateway": "workspace:*",
     "@noralos/adapter-opencode-local": "workspace:*",
     "@noralos/adapter-pi-local": "workspace:*",

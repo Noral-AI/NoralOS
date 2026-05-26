@@ -160,8 +160,8 @@ import {
   type SessionCompactionPolicy,
 } from "@noralos/adapter-utils";
 import {
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
+  readNoralosSkillSyncPreference,
+  writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
 import { extractSkillMentionIds, isUuidLike } from "@noralos/shared";
 import { environmentService } from "./environments.js";

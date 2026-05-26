@@ -5,7 +5,7 @@ import {
   resolveDefaultEmbeddedPostgresDir,
   resolvePaperclipConfigPathForInstance,
   resolvePaperclipEnvPathForConfig,
-} from "@paperclipai/shared/home-paths";
+} from "@noralos/shared/home-paths";
 
 const CONFIG_BASENAME = "config.json";
 
@@ -36,39 +36,6 @@ export type ResolvedDatabaseTarget =
       configPath: string;
       envPath: string;
     };
-
-function expandHomePrefix(value: string): string {
-  if (value === "~") return os.homedir();
-  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
-  return value;
-}
-
-function resolveNoralosHomeDir(): string {
-  const envHome = process.env.NORALOS_HOME?.trim();
-  if (envHome) return path.resolve(expandHomePrefix(envHome));
-  return path.resolve(os.homedir(), ".paperclip");
-}
-
-function resolveNoralosInstanceId(): string {
-  const raw = process.env.NORALOS_INSTANCE_ID?.trim() || DEFAULT_INSTANCE_ID;
-  if (!INSTANCE_ID_RE.test(raw)) {
-    throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
-  }
-  return raw;
-}
-
-function resolveDefaultConfigPath(): string {
-  return path.resolve(
-    resolveNoralosHomeDir(),
-    "instances",
-    resolveNoralosInstanceId(),
-    CONFIG_BASENAME,
-  );
-}
-
-function resolveDefaultEmbeddedPostgresDir(): string {
-  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "db");
-}
 
 function resolveHomeAwarePath(value: string): string {
   return path.resolve(expandHomePrefix(value));

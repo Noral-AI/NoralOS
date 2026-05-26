@@ -4,8 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { execute } from "@noralos/adapter-cursor-local/server";
 import { runChildProcess } from "@noralos/adapter-utils/server-utils";
-import { execute } from "@paperclipai/adapter-cursor-local/server";
-import { runChildProcess } from "@paperclipai/adapter-utils/server-utils";
+import { execute } from "@noralos/adapter-cursor-local/server";
+import { runChildProcess } from "@noralos/adapter-utils/server-utils";
 
 async function writeFakeCursorCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node

@@ -1,7 +1,7 @@
 import express from "express";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@paperclipai/adapter-opencode-local";
+import { DEFAULT_OPENCODE_LOCAL_MODEL } from "@noralos/adapter-opencode-local";
 
 vi.mock("acpx/runtime", () => ({
   createAcpRuntime: vi.fn(),

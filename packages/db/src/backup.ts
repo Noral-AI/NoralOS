@@ -5,7 +5,7 @@ import {
   expandHomePrefix,
   resolveDefaultBackupDir,
   resolvePaperclipConfigPathForInstance,
-} from "@paperclipai/shared/home-paths";
+} from "@noralos/shared/home-paths";
 
 type PartialConfig = {
   database?: {
@@ -18,30 +18,6 @@ type PartialConfig = {
     };
   };
 };
-
-function expandHomePrefix(value: string): string {
-  if (value === "~") return os.homedir();
-  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
-  return value;
-}
-
-function resolveNoralosHomeDir(): string {
-  const envHome = process.env.NORALOS_HOME?.trim();
-  if (envHome) return path.resolve(expandHomePrefix(envHome));
-  return path.resolve(os.homedir(), ".paperclip");
-}
-
-function resolveNoralosInstanceId(): string {
-  const raw = process.env.NORALOS_INSTANCE_ID?.trim() || "default";
-  if (!/^[a-zA-Z0-9_-]+$/.test(raw)) {
-    throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
-  }
-  return raw;
-}
-
-function resolveDefaultConfigPath(): string {
-  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "config.json");
-}
 
 function readConfig(configPath: string): PartialConfig | null {
   if (!existsSync(configPath)) return null;
@@ -74,10 +50,6 @@ function resolveConnectionString(config: PartialConfig | null): string {
 
   const port = resolveEmbeddedPort(config);
   return `postgres://noralos:paperclip@127.0.0.1:${port}/noralos`;
-}
-
-function resolveDefaultBackupDir(): string {
-  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "data", "backups");
 }
 
 function resolveBackupDir(config: PartialConfig | null): string {

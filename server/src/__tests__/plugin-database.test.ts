@@ -518,7 +518,7 @@ describeEmbeddedPostgres("plugin database namespaces", () => {
 
   it("refreshes persisted manifests from disk before activation", async () => {
     const staleManifest = manifest("paperclip.refresh");
-    const refreshedManifest: PaperclipPluginManifestV1 = {
+    const refreshedManifest: NoralosPluginManifestV1 = {
       ...staleManifest,
       database: {
         ...staleManifest.database!,

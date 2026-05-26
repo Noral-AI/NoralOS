@@ -4,8 +4,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { executionWorkspaces, issues, projectWorkspaces, projects, workspaceRuntimeServices } from "@noralos/db";
 import type { Db } from "@noralos/db";
-import { executionWorkspaces, issues, projectWorkspaces, projects, workspaceRuntimeServices } from "@paperclipai/db";
-import type { Db } from "@paperclipai/db";
+import { executionWorkspaces, issues, projectWorkspaces, projects, workspaceRuntimeServices } from "@noralos/db";
+import type { Db } from "@noralos/db";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import type {
   ExecutionWorkspace,

@@ -8,7 +8,7 @@ import {
   instanceUserRoles,
   principalPermissionGrants,
   projects,
-} from "@paperclipai/db";
+} from "@noralos/db";
 import {
   getEmbeddedPostgresTestSupport,
   startEmbeddedPostgresTestDatabase,

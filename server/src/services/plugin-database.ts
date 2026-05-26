@@ -393,7 +393,7 @@ export function pluginDatabaseService(db: PluginDatabaseRootClient) {
     return rows[0] ?? null;
   }
 
-  async function ensureNamespace(pluginId: string, manifest: PaperclipPluginManifestV1) {
+  async function ensureNamespace(pluginId: string, manifest: NoralosPluginManifestV1) {
     return ensureNamespaceWithClient(db, pluginId, manifest);
   }
 
