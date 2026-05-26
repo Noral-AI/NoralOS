@@ -23,6 +23,23 @@ const discoveryCache = new Map<string, { expiresAt: number; models: AdapterModel
 const VOLATILE_ENV_KEY_PREFIXES = ["PAPERCLIP_", "npm_", "NPM_"] as const;
 const VOLATILE_ENV_KEY_EXACT = new Set(["PWD", "OLDPWD", "SHLVL", "_", "TERM_SESSION_ID", "HOME"]);
 
+function isValidOpenCodeModelId(model: string): boolean {
+  if (!model) return false;
+  const slashIdx = model.indexOf("/");
+  if (slashIdx < 1) return false;
+  const provider = model.slice(0, slashIdx).trim();
+  const modelName = model.slice(slashIdx + 1).trim();
+  return provider.length > 0 && modelName.length > 0;
+}
+
+export function requireOpenCodeModelId(input: unknown): string {
+  const model = asString(input, "").trim();
+  if (!isValidOpenCodeModelId(model)) {
+    throw new Error("OpenCode requires `adapterConfig.model` in provider/model format.");
+  }
+  return model;
+}
+
 function dedupeModels(models: AdapterModel[]): AdapterModel[] {
   const seen = new Set<string>();
   const deduped: AdapterModel[] = [];
@@ -50,7 +67,7 @@ function firstNonEmptyLine(text: string): string {
   );
 }
 
-function parseModelsOutput(stdout: string): AdapterModel[] {
+export function parseOpenCodeModelsOutput(stdout: string): AdapterModel[] {
   const parsed: AdapterModel[] = [];
   for (const raw of stdout.split(/\r?\n/)) {
     const line = raw.trim();
@@ -144,7 +161,7 @@ export async function discoverOpenCodeModels(input: {
     throw new Error(detail ? `\`opencode models\` failed: ${detail}` : "`opencode models` failed.");
   }
 
-  return sortModels(parseModelsOutput(result.stdout));
+  return sortModels(parseOpenCodeModelsOutput(result.stdout));
 }
 
 export async function discoverOpenCodeModelsCached(input: {
@@ -172,10 +189,7 @@ export async function ensureOpenCodeModelConfiguredAndAvailable(input: {
   cwd?: unknown;
   env?: unknown;
 }): Promise<AdapterModel[]> {
-  const model = asString(input.model, "").trim();
-  if (!model) {
-    throw new Error("OpenCode requires `adapterConfig.model` in provider/model format.");
-  }
+  const model = requireOpenCodeModelId(input.model);
 
   const models = await discoverOpenCodeModelsCached({
     command: input.command,

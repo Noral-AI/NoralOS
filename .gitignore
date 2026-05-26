@@ -73,5 +73,10 @@ tests/e2e/playwright-report/
 tests/release-smoke/test-results/
 tests/release-smoke/playwright-report/
 .superset/
+.superpowers/
 .claude/worktrees/
+<<<<<<< v2026.525.0
+.herenow
+=======
 .paperclip/
+>>>>>>> master

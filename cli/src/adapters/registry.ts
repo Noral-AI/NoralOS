@@ -1,11 +1,11 @@
-import type { CLIAdapterModule } from "@noralos/adapter-utils";
 import { printClaudeStreamEvent } from "@noralos/adapter-claude-local/cli";
 import { printCodexStreamEvent } from "@noralos/adapter-codex-local/cli";
 import { printCursorStreamEvent } from "@noralos/adapter-cursor-local/cli";
 import { printGeminiStreamEvent } from "@noralos/adapter-gemini-local/cli";
+import { printOpenClawGatewayStreamEvent } from "@noralos/adapter-openclaw-gateway/cli";
 import { printOpenCodeStreamEvent } from "@noralos/adapter-opencode-local/cli";
 import { printPiStreamEvent } from "@noralos/adapter-pi-local/cli";
-import { printOpenClawGatewayStreamEvent } from "@noralos/adapter-openclaw-gateway/cli";
+import type { CLIAdapterModule } from "@noralos/adapter-utils";
 import { processCLIAdapter } from "./process/index.js";
 import { httpCLIAdapter } from "./http/index.js";
 

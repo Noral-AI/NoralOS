@@ -143,6 +143,32 @@ pnpm noralos agent local-cli codexcoder --company-id <company-id>
 pnpm noralos agent local-cli claudecoder --company-id <company-id>
 ```
 
+## Secrets Commands
+
+```sh
+pnpm paperclipai secrets list --company-id <company-id>
+pnpm paperclipai secrets declarations --company-id <company-id> [--include agents,projects] [--kind secret]
+pnpm paperclipai secrets create --company-id <company-id> --name anthropic-api-key --value-env ANTHROPIC_API_KEY
+pnpm paperclipai secrets link --company-id <company-id> --name prod-stripe-key --provider aws_secrets_manager --external-ref <provider-ref>
+pnpm paperclipai secrets doctor --company-id <company-id>
+pnpm paperclipai secrets migrate-inline-env --company-id <company-id> [--apply]
+```
+
+Secret listing and declarations never print secret values. `create` accepts
+`--value-env` so shell history does not capture the value. `link` records
+provider-owned references without copying the secret value into Paperclip.
+For AWS-backed secrets, `secrets doctor` reports missing non-secret provider
+env and the expected AWS SDK runtime credential source; do not store AWS
+bootstrap credentials in Paperclip secrets.
+
+Per-company provider vaults (multiple vault instances per provider, default
+vault selection, coming-soon GCP/Vault) are configured from the board UI under
+`Company Settings → Secrets → Provider vaults` or through
+`/api/companies/{companyId}/secret-provider-configs`. There is no CLI surface
+for vault management today. See the
+[secrets deploy guide](../docs/deploy/secrets.md#provider-vaults) and
+[API reference](../docs/api/secrets.md#provider-vaults) for the contract.
+
 ## Approval Commands
 
 ```sh
@@ -178,7 +204,28 @@ pnpm noralos heartbeat run --agent-id <agent-id> [--api-base http://localhost:31
 
 ## Local Storage Defaults
 
-Default local instance root is `~/.noralos/instances/default`:
+Local NoralOS data lives under the selected instance root. `NORALOS_HOME` chooses the home directory and `NORALOS_INSTANCE_ID` chooses the instance.
+
+```text
+~/.noralos/                                       # NORALOS_HOME
+└── instances/
+    └── default/                                  # instance root (NORALOS_INSTANCE_ID)
+        ├── config.json                           # runtime config
+        ├── .env                                  # instance env file
+        ├── db/                                   # embedded PostgreSQL data
+        ├── data/
+        │   ├── storage/                          # local_disk uploads
+        │   └── backups/                          # automatic DB backups
+        ├── logs/
+        ├── secrets/
+        │   └── master.key                        # local_encrypted master key
+        ├── workspaces/                           # default agent workspaces
+        ├── projects/                             # project execution workspaces
+        ├── companies/                            # per-company adapter homes (e.g. codex-home)
+        └── codex-home/                           # per-instance codex home (when not company-scoped)
+```
+
+Default paths for the canonical install:
 
 - config: `~/.noralos/instances/default/config.json`
 - embedded db: `~/.noralos/instances/default/db`

@@ -8,6 +8,7 @@ import {
   asString,
   buildNoralosEnv,
   parseObject,
+  readNoralosIssueWorkModeFromContext,
   renderNoralosWakePrompt,
   stringifyNoralosWakePayload,
 } from "@noralos/adapter-utils/server-utils";
@@ -347,6 +348,8 @@ function buildNoralosEnvForWake(ctx: AdapterExecutionContext, wakePayload: WakeP
     noralosEnv.NORALOS_API_URL = noralosApiUrlOverride;
   }
   if (wakePayload.taskId) noralosEnv.NORALOS_TASK_ID = wakePayload.taskId;
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(ctx.context);
+  if (issueWorkMode) noralosEnv.NORALOS_ISSUE_WORK_MODE = issueWorkMode;
   if (wakePayload.wakeReason) noralosEnv.NORALOS_WAKE_REASON = wakePayload.wakeReason;
   if (wakePayload.wakeCommentId) noralosEnv.NORALOS_WAKE_COMMENT_ID = wakePayload.wakeCommentId;
   if (wakePayload.approvalId) noralosEnv.NORALOS_APPROVAL_ID = wakePayload.approvalId;

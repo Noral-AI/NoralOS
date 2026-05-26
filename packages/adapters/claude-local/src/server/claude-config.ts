@@ -3,8 +3,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { AdapterExecutionContext } from "@noralos/adapter-utils";
+import { resolvePaperclipInstanceRootForAdapter } from "@noralos/adapter-utils/server-utils";
 
-const DEFAULT_NORALOS_INSTANCE_ID = "default";
 const SEEDED_SHARED_FILES = [
   ".credentials.json",
   "credentials.json",
@@ -92,11 +92,14 @@ export function resolveManagedClaudeConfigSeedDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-  const noralosHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_NORALOS_INSTANCE_ID;
+  const instanceRoot = resolvePaperclipInstanceRootForAdapter({
+    homeDir: nonEmpty(env.NORALOS_HOME) ?? undefined,
+    instanceId: nonEmpty(env.NORALOS_INSTANCE_ID) ?? undefined,
+    env,
+  });
   return companyId
-    ? path.resolve(noralosHome, "instances", instanceId, "companies", companyId, "claude-config-seed")
-    : path.resolve(noralosHome, "instances", instanceId, "claude-config-seed");
+    ? path.resolve(instanceRoot, "companies", companyId, "claude-config-seed")
+    : path.resolve(instanceRoot, "claude-config-seed");
 }
 
 export async function prepareClaudeConfigSeed(

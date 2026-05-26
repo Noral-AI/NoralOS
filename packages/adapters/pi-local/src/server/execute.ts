@@ -5,19 +5,22 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-  adapterExecutionTargetNoralosApiUrl,
   adapterExecutionTargetRemoteCwd,
+  overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-  adapterExecutionTargetUsesNoralosBridge,
+  adapterExecutionTargetUsesPaperclipBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
   ensureAdapterExecutionTargetFile,
+  ensureAdapterExecutionTargetRuntimeCommandInstalled,
   prepareAdapterExecutionTargetRuntime,
   readAdapterExecutionTarget,
+  resolveAdapterExecutionTargetTimeoutSec,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
+  runAdapterExecutionTargetShellCommand,
   startAdapterExecutionTargetNoralosBridge,
 } from "@noralos/adapter-utils/execution-target";
 import {
@@ -32,7 +35,9 @@ import {
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   ensurePathInEnv,
+  refreshNoralosWorkspaceEnvForExecution,
   readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
   resolveNoralosDesiredSkillNames,
   removeMaintainerOnlySkillSymlinks,
   renderTemplate,
@@ -41,8 +46,10 @@ import {
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   runChildProcess,
 } from "@noralos/adapter-utils/server-utils";
+import { shellQuote } from "@noralos/adapter-utils/ssh";
 import { isPiUnknownSessionError, parsePiJsonl } from "./parse.js";
 import { ensurePiModelConfiguredAndAvailable } from "./models.js";
+import { SANDBOX_INSTALL_COMMAND } from "../index.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -143,6 +150,68 @@ function buildRemoteSessionPath(runtimeRootDir: string, agentId: string, timesta
   return path.posix.join(runtimeRootDir, "sessions", `${safeTimestamp}-${agentId}.jsonl`);
 }
 
+function normalizeExecutionCwd(candidate: string, remote: boolean): string {
+  return remote ? path.posix.normalize(candidate) : path.resolve(candidate);
+}
+
+function executionCwdsMatch(saved: string, current: string, remote: boolean): boolean {
+  return normalizeExecutionCwd(saved, remote) === normalizeExecutionCwd(current, remote);
+}
+
+function readSessionHeaderCwd(raw: string): string | null {
+  const headerLine = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+  if (!headerLine) return null;
+  try {
+    const parsed = JSON.parse(headerLine) as Record<string, unknown>;
+    if (parsed.type !== "session") return null;
+    const cwd = typeof parsed.cwd === "string" ? parsed.cwd.trim() : "";
+    return cwd.length > 0 ? cwd : null;
+  } catch {
+    return null;
+  }
+}
+
+async function readSavedSessionCwd(input: {
+  runId: string;
+  sessionPath: string;
+  executionTarget: ReturnType<typeof readAdapterExecutionTarget>;
+  cwd: string;
+  env: Record<string, string>;
+  timeoutSec: number;
+  graceSec: number;
+}): Promise<string | null> {
+  if (!input.sessionPath.trim()) return null;
+
+  if (!adapterExecutionTargetIsRemote(input.executionTarget)) {
+    try {
+      return readSessionHeaderCwd(await fs.readFile(input.sessionPath, "utf8"));
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    const sessionHeader = await runAdapterExecutionTargetShellCommand(
+      input.runId,
+      input.executionTarget,
+      `if [ -f ${shellQuote(input.sessionPath)} ]; then head -n 1 ${shellQuote(input.sessionPath)}; fi`,
+      {
+        cwd: input.cwd,
+        env: input.env,
+        timeoutSec: input.timeoutSec > 0 ? Math.min(input.timeoutSec, 15) : 15,
+        graceSec: input.graceSec,
+      },
+    );
+    if (sessionHeader.timedOut || (sessionHeader.exitCode ?? 0) !== 0) return null;
+    return readSessionHeaderCwd(sessionHeader.stdout);
+  } catch {
+    return null;
+  }
+}
+
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
   const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
   const executionTarget = readAdapterExecutionTarget({
@@ -179,7 +248,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const useConfiguredInsteadOfAgentHome = workspaceSource === "agent_home" && configuredCwd.length > 0;
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
   const cwd = effectiveWorkspaceCwd || configuredCwd || process.cwd();
-  const effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
+  let effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
 
   if (!executionTargetIsRemote) {
@@ -223,24 +292,31 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
     
   if (wakeTaskId) env.NORALOS_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.NORALOS_ISSUE_WORK_MODE = issueWorkMode;
   if (wakeReason) env.NORALOS_WAKE_REASON = wakeReason;
   if (wakeCommentId) env.NORALOS_WAKE_COMMENT_ID = wakeCommentId;
   if (approvalId) env.NORALOS_APPROVAL_ID = approvalId;
   if (approvalStatus) env.NORALOS_APPROVAL_STATUS = approvalStatus;
   if (linkedIssueIds.length > 0) env.NORALOS_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
   if (wakePayloadJson) env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  applyNoralosWorkspaceEnv(env, {
-    workspaceCwd,
+  refreshNoralosWorkspaceEnvForExecution({
+    env,
+    envConfig,
+    workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceId,
     workspaceRepoUrl,
     workspaceRepoRef,
+    workspaceHints,
     agentHome,
+    executionTargetIsRemote,
+    executionCwd: effectiveExecutionCwd,
   });
   if (workspaceHints.length > 0) env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
-  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
+  const targetNoralosApiUrl = executionTarget && executionTarget.kind === "remote" && executionTarget.transport === "sandbox" ? executionTarget.noralosApiUrl ?? null : null;
   if (targetNoralosApiUrl) env.NORALOS_API_URL = targetNoralosApiUrl;
 
   for (const [key, value] of Object.entries(envConfig)) {
@@ -278,7 +354,26 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       (entry): entry is [string, string] => typeof entry[1] === "string",
     ),
   );
-  await ensureAdapterExecutionTargetCommandResolvable(command, executionTarget, cwd, runtimeEnv);
+  const timeoutSec = resolveAdapterExecutionTargetTimeoutSec(
+    executionTarget,
+    asNumber(config.timeoutSec, 0),
+  );
+  const graceSec = asNumber(config.graceSec, 20);
+  await ensureAdapterExecutionTargetRuntimeCommandInstalled({
+    runId,
+    target: executionTarget,
+    installCommand: ctx.runtimeCommandSpec?.installCommand,
+    detectCommand: ctx.runtimeCommandSpec?.detectCommand,
+    cwd,
+    env: runtimeEnv,
+    timeoutSec,
+    graceSec,
+    onLog,
+  });
+  await ensureAdapterExecutionTargetCommandResolvable(command, executionTarget, cwd, runtimeEnv, {
+    installCommand: SANDBOX_INSTALL_COMMAND,
+    timeoutSec,
+  });
   const resolvedCommand = await resolveAdapterExecutionTargetCommandForLogs(command, executionTarget, cwd, runtimeEnv);
   let loggedEnv = buildInvocationEnvForLogs(env, {
     runtimeEnv,
@@ -295,8 +390,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     });
   }
 
-  const timeoutSec = asNumber(config.timeoutSec, 0);
-  const graceSec = asNumber(config.graceSec, 20);
   const extraArgs = (() => {
     const fromExtraArgs = asStringArray(config.extraArgs);
     if (fromExtraArgs.length > 0) return fromExtraArgs;
@@ -316,9 +409,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         `[paperclip] Syncing workspace and Pi runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
       );
       const preparedRemoteRuntime = await prepareAdapterExecutionTargetRuntime({
+        runId,
         target: executionTarget,
         adapterKey: "pi",
+        timeoutSec,
         workspaceLocalDir: cwd,
+        installCommand: SANDBOX_INSTALL_COMMAND,
+        detectCommand: command,
         assets: [
           {
             key: "skills",
@@ -328,6 +425,20 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         ],
       });
       restoreRemoteWorkspace = () => preparedRemoteRuntime.restoreWorkspace();
+      effectiveExecutionCwd = preparedRemoteRuntime.workspaceRemoteDir ?? effectiveExecutionCwd;
+      refreshNoralosWorkspaceEnvForExecution({
+        env,
+        envConfig,
+        workspaceCwd: effectiveWorkspaceCwd,
+        workspaceSource,
+        workspaceId,
+        workspaceRepoUrl,
+        workspaceRepoRef,
+        workspaceHints,
+        agentHome,
+        executionTargetIsRemote,
+        executionCwd: effectiveExecutionCwd,
+      });
       if (adapterExecutionTargetUsesManagedHome(executionTarget) && preparedRemoteRuntime.runtimeRootDir) {
         env.HOME = preparedRemoteRuntime.runtimeRootDir;
       }
@@ -341,12 +452,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       throw error;
     }
   }
-  if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
+  const runtimeExecutionTarget = overrideAdapterExecutionTargetRemoteCwd(executionTarget, effectiveExecutionCwd);
+  if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(runtimeExecutionTarget)) {
     noralosBridge = await startAdapterExecutionTargetNoralosBridge({
       runId,
-      target: executionTarget,
+      target: runtimeExecutionTarget,
       runtimeRootDir: remoteRuntimeRootDir,
       adapterKey: "pi",
+      timeoutSec,
       hostApiToken: env.NORALOS_API_KEY,
       onLog,
     });
@@ -368,10 +481,31 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const runtimeSessionId = asString(runtimeSessionParams.sessionId, runtime.sessionId ?? "");
   const runtimeSessionCwd = asString(runtimeSessionParams.cwd, "");
   const runtimeRemoteExecution = parseObject(runtimeSessionParams.remoteExecution);
+  const sessionTargetMatches = adapterExecutionTargetSessionMatches(runtimeRemoteExecution, runtimeExecutionTarget);
+  const sessionParamsCwdMatches =
+    runtimeSessionCwd.length === 0 ||
+    executionCwdsMatch(runtimeSessionCwd, effectiveExecutionCwd, executionTargetIsRemote);
+  const savedSessionCwd =
+    runtimeSessionId.length > 0
+      ? await readSavedSessionCwd({
+          runId,
+          sessionPath: runtimeSessionId,
+          executionTarget: runtimeExecutionTarget ?? null,
+          cwd,
+          env,
+          timeoutSec,
+          graceSec,
+        })
+      : null;
+  const sessionHeaderCwdMatches =
+    runtimeSessionId.length === 0 ||
+    (savedSessionCwd !== null &&
+      executionCwdsMatch(savedSessionCwd, effectiveExecutionCwd, executionTargetIsRemote));
   const canResumeSession =
     runtimeSessionId.length > 0 &&
-    (runtimeSessionCwd.length === 0 || path.resolve(runtimeSessionCwd) === path.resolve(effectiveExecutionCwd)) &&
-    adapterExecutionTargetSessionMatches(runtimeRemoteExecution, executionTarget);
+    sessionTargetMatches &&
+    sessionParamsCwdMatches &&
+    sessionHeaderCwdMatches;
   const sessionPath = canResumeSession
     ? runtimeSessionId
     : executionTargetIsRemote && remoteRuntimeRootDir
@@ -379,17 +513,21 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       : buildSessionPath(agent.id, new Date().toISOString());
 
   if (runtimeSessionId && !canResumeSession) {
+    const staleSessionCwdNote =
+      savedSessionCwd !== null && !sessionHeaderCwdMatches
+        ? ` Pi stored cwd "${savedSessionCwd}" in the session header, so Paperclip will start a fresh session for "${effectiveExecutionCwd}".`
+        : "";
     await onLog(
       "stdout",
       executionTargetIsRemote
-        ? `[paperclip] Pi session "${runtimeSessionId}" does not match the current remote execution identity and will not be resumed in "${effectiveExecutionCwd}". Starting a fresh remote session.\n`
-        : `[paperclip] Pi session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".\n`,
+        ? `[paperclip] Pi session "${runtimeSessionId}" does not match the current remote execution state and will not be resumed in "${effectiveExecutionCwd}".${staleSessionCwdNote} Starting a fresh remote session.\n`
+        : `[paperclip] Pi session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${effectiveExecutionCwd}".${staleSessionCwdNote}\n`,
     );
   }
 
   if (!canResumeSession) {
     if (executionTargetIsRemote) {
-      await ensureAdapterExecutionTargetFile(runId, executionTarget, sessionPath, {
+      await ensureAdapterExecutionTargetFile(runId, runtimeExecutionTarget, sessionPath, {
         cwd,
         env,
         timeoutSec: 15,
@@ -550,7 +688,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       }
     };
 
-    const proc = await runAdapterExecutionTargetProcess(runId, executionTarget, command, args, {
+    const proc = await runAdapterExecutionTargetProcess(runId, runtimeExecutionTarget, command, args, {
       cwd,
       env: executionTargetIsRemote ? env : runtimeEnv,
       timeoutSec,
@@ -599,7 +737,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           ...(workspaceRepoRef ? { repoRef: workspaceRepoRef } : {}),
           ...(executionTargetIsRemote
             ? {
-                remoteExecution: adapterExecutionTargetSessionIdentity(executionTarget),
+                remoteExecution: adapterExecutionTargetSessionIdentity(runtimeExecutionTarget),
               }
             : {}),
         }

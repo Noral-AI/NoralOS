@@ -1,13 +1,30 @@
 import os from "node:os";
 import path from "node:path";
+import {
+  expandHomePrefix,
+  resolveHomeAwarePath,
+  resolvePaperclipConfigPathForInstance,
+  resolvePaperclipHomeDir,
+  resolvePaperclipInstanceId,
+  resolvePaperclipInstanceRoot,
+} from "@noralos/shared/home-paths";
 
 const DEFAULT_INSTANCE_ID = "default";
 const INSTANCE_ID_RE = /^[a-zA-Z0-9_-]+$/;
 
+export {
+  expandHomePrefix,
+  resolveHomeAwarePath,
+  resolvePaperclipConfigPathForInstance,
+  resolvePaperclipHomeDir,
+  resolvePaperclipInstanceId,
+  resolvePaperclipInstanceRoot,
+};
+
 export function resolveNoralosHomeDir(): string {
   const envHome = process.env.NORALOS_HOME?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
-  return path.resolve(os.homedir(), ".paperclip");
+  return path.resolve(os.homedir(), ".noralos");
 }
 
 export function resolveNoralosInstanceId(override?: string): string {
@@ -55,12 +72,6 @@ export function resolveDefaultStorageDir(instanceId?: string): string {
 
 export function resolveDefaultBackupDir(instanceId?: string): string {
   return path.resolve(resolveNoralosInstanceRoot(instanceId), "data", "backups");
-}
-
-export function expandHomePrefix(value: string): string {
-  if (value === "~") return os.homedir();
-  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
-  return value;
 }
 
 export function describeLocalInstancePaths(instanceId?: string) {

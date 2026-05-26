@@ -107,6 +107,50 @@ describe("adapter session codecs", () => {
     });
     expect(geminiSessionCodec.getDisplayId?.(serialized ?? null)).toBe("gemini-session-1");
   });
+
+  it("preserves acpx session params required for compatibility checks", () => {
+    const parsed = acpxSessionCodec.deserialize({
+      sessionKey: "paperclip:company:agent:task:fingerprint",
+      runtimeSessionName: "runtime-session-1",
+      acpxRecordId: "record-1",
+      acpSessionId: "acp-session-1",
+      agentSessionId: "agent-session-1",
+      agent: "claude",
+      cwd: "/tmp/acpx",
+      mode: "persistent",
+      stateDir: "/tmp/acpx-state",
+      configFingerprint: "fingerprint",
+      workspaceId: "workspace-1",
+      repoUrl: "https://example.com/repo.git",
+      repoRef: "main",
+      remoteExecution: {
+        environmentId: "environment-1",
+        leaseId: "lease-1",
+      },
+    });
+
+    expect(parsed).toMatchObject({
+      sessionKey: "paperclip:company:agent:task:fingerprint",
+      runtimeSessionName: "runtime-session-1",
+      acpxRecordId: "record-1",
+      acpSessionId: "acp-session-1",
+      agentSessionId: "agent-session-1",
+      agent: "claude",
+      cwd: "/tmp/acpx",
+      mode: "persistent",
+      stateDir: "/tmp/acpx-state",
+      configFingerprint: "fingerprint",
+      workspaceId: "workspace-1",
+      repoUrl: "https://example.com/repo.git",
+      repoRef: "main",
+      remoteExecution: {
+        environmentId: "environment-1",
+        leaseId: "lease-1",
+      },
+    });
+    expect(acpxSessionCodec.serialize(parsed)).toEqual(parsed);
+    expect(acpxSessionCodec.getDisplayId?.(parsed)).toBe("runtime-session-1");
+  });
 });
 
 describe("codex resume recovery detection", () => {

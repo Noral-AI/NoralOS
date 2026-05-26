@@ -16,6 +16,8 @@ import { cn, relativeTime } from "../lib/utils";
 import { queryKeys } from "../lib/queryKeys";
 import { keepPreviousDataForSameQueryTail } from "../lib/query-placeholder-data";
 import { describeRunRetryState } from "../lib/runRetryState";
+import { readSourceResolvedWatchdogFold } from "../lib/source-resolved-watchdog-fold";
+import { SourceResolvedFoldBadge } from "./SourceResolvedFoldBadge";
 
 type IssueRunLedgerProps = {
   issueId: string;
@@ -311,6 +313,7 @@ function stopReasonLabel(run: RunForIssue) {
   if (timeoutFired || stopReason === "timeout") {
     return timeoutText ? `timeout (${timeoutText})` : "timeout";
   }
+  if (stopReason === "max_turns_exhausted" || stopReason === "turn_limit_exhausted") return "max turns exhausted";
   if (stopReason === "budget_paused") return "budget paused";
   if (stopReason === "cancelled") return "cancelled";
   if (stopReason === "paused") return "paused by board";

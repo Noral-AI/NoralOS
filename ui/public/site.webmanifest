@@ -5,7 +5,7 @@
   "description": "NoralOS — agent management OS for autonomous AI companies. Hire, deploy, and govern fleets of AI workers.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "browser",
   "orientation": "any",
   "theme_color": "#0A1F2E",
   "background_color": "#0A1F2E",

@@ -22,10 +22,13 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY packages/adapter-utils/package.json packages/adapter-utils/
 COPY packages/mcp-server/package.json packages/mcp-server/
+COPY packages/adapters/acpx-local/package.json packages/adapters/acpx-local/
 COPY packages/adapters/claude-local/package.json packages/adapters/claude-local/
 COPY packages/adapters/codex-local/package.json packages/adapters/codex-local/
+COPY packages/adapters/cursor-cloud/package.json packages/adapters/cursor-cloud/
 COPY packages/adapters/cursor-local/package.json packages/adapters/cursor-local/
 COPY packages/adapters/gemini-local/package.json packages/adapters/gemini-local/
+COPY packages/adapters/grok-local/package.json packages/adapters/grok-local/
 COPY packages/adapters/openclaw-gateway/package.json packages/adapters/openclaw-gateway/
 COPY packages/adapters/opencode-local/package.json packages/adapters/opencode-local/
 COPY packages/adapters/pi-local/package.json packages/adapters/pi-local/
@@ -64,6 +67,7 @@ COPY packages/plugins/noralai-slack/package.json packages/plugins/noralai-slack/
 # `server/src/services/auto-register-noralvoice.ts`.
 COPY packages/plugins/noralai-noralvoice/package.json packages/plugins/noralai-noralvoice/
 COPY patches/ patches/
+COPY scripts/link-plugin-dev-sdk.mjs scripts/
 
 RUN pnpm install --frozen-lockfile
 

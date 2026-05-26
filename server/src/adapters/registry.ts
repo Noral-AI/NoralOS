@@ -1,5 +1,5 @@
-import type { AdapterModelProfileDefinition, ServerAdapterModule } from "./types.js";
-import { getAdapterSessionManagement } from "@noralos/adapter-utils";
+import type { AdapterModel, AdapterModelProfileDefinition, AdapterRuntimeCommandSpec, ServerAdapterModule } from "./types.js";
+import { buildSandboxNpmInstallCommand, getAdapterSessionManagement } from "@noralos/adapter-utils";
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -86,24 +86,51 @@ import {
   agentConfigurationDoc as piAgentConfigurationDoc,
   modelProfiles as piModelProfiles,
 } from "@noralos/adapter-pi-local";
-import {
-  execute as hermesExecute,
-  testEnvironment as hermesTestEnvironment,
-  sessionCodec as hermesSessionCodec,
-  listSkills as hermesListSkills,
-  syncSkills as hermesSyncSkills,
-  detectModel as detectModelFromHermes,
-} from "hermes-paperclip-adapter/server";
-import {
-  agentConfigurationDoc as hermesAgentConfigurationDoc,
-  models as hermesModels,
-} from "hermes-paperclip-adapter";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
 import { BROOKLYN_ADAPTER_TYPE, wrapBrooklynAdapter } from "./brooklyn-secret-ref.js";
+
+function readConfiguredCommand(config: Record<string, unknown>, fallback: string): string {
+  const value = typeof config.command === "string" ? config.command.trim() : "";
+  return value.length > 0 ? value : fallback;
+}
+
+function hasPathSeparator(command: string): boolean {
+  return command.includes("/") || command.includes("\\");
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
+function buildNpmRuntimeCommandSpec(
+  config: Record<string, unknown>,
+  fallbackCommand: string,
+  packageName: string,
+): AdapterRuntimeCommandSpec {
+  const command = readConfiguredCommand(config, fallbackCommand);
+  const canSelfInstall = !hasPathSeparator(command) && command === fallbackCommand;
+  const installLine = buildSandboxNpmInstallCommand(packageName);
+  return {
+    command,
+    detectCommand: command,
+    installCommand: canSelfInstall
+      ? `if ! command -v ${shellQuote(command)} >/dev/null 2>&1; then ${installLine}; fi`
+      : null,
+  };
+}
+
+function buildCursorRuntimeCommandSpec(config: Record<string, unknown>): AdapterRuntimeCommandSpec {
+  const command = readConfiguredCommand(config, "agent");
+  return {
+    command,
+    detectCommand: command,
+    installCommand: null,
+  };
+}
 
 function normalizeHermesConfig<T extends { config?: unknown; agent?: unknown }>(ctx: T): T {
   const config =
@@ -136,6 +163,26 @@ function normalizeHermesConfig<T extends { config?: unknown; agent?: unknown }>(
   return ctx;
 }
 
+function dedupeAdapterModels(models: AdapterModel[]): AdapterModel[] {
+  const seen = new Set<string>();
+  const result: AdapterModel[] = [];
+  for (const model of models) {
+    const id = model.id.trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    result.push({ ...model, id });
+  }
+  return result;
+}
+
+function prefixAdapterModelLabels(models: AdapterModel[], provider: "Claude" | "Codex"): AdapterModel[] {
+  const prefix = `${provider}: `;
+  return models.map((model) => ({
+    ...model,
+    label: model.label.startsWith(prefix) ? model.label : `${prefix}${model.label}`,
+  }));
+}
+
 const claudeLocalAdapter: ServerAdapterModule = {
   type: "claude_local",
   execute: claudeExecute,
@@ -151,6 +198,8 @@ const claudeLocalAdapter: ServerAdapterModule = {
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: false,
+  getRuntimeCommandSpec: (config) =>
+    buildNpmRuntimeCommandSpec(config, "claude", "@anthropic-ai/claude-code"),
   agentConfigurationDoc: claudeAgentConfigurationDoc,
   getQuotaWindows: claudeGetQuotaWindows,
 };
@@ -171,6 +220,7 @@ const codexLocalAdapter: ServerAdapterModule = {
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: false,
+  getRuntimeCommandSpec: (config) => buildNpmRuntimeCommandSpec(config, "codex", "@openai/codex"),
   agentConfigurationDoc: codexAgentConfigurationDoc,
   getQuotaWindows: codexGetQuotaWindows,
 };
@@ -190,6 +240,7 @@ const cursorLocalAdapter: ServerAdapterModule = {
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: true,
+  getRuntimeCommandSpec: buildCursorRuntimeCommandSpec,
   agentConfigurationDoc: cursorAgentConfigurationDoc,
 };
 
@@ -207,6 +258,8 @@ const geminiLocalAdapter: ServerAdapterModule = {
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: true,
+  getRuntimeCommandSpec: (config) =>
+    buildNpmRuntimeCommandSpec(config, "gemini", "@google/gemini-cli"),
   agentConfigurationDoc: geminiAgentConfigurationDoc,
 };
 
@@ -236,6 +289,7 @@ const openCodeLocalAdapter: ServerAdapterModule = {
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: true,
+  getRuntimeCommandSpec: (config) => buildNpmRuntimeCommandSpec(config, "opencode", "opencode-ai"),
   agentConfigurationDoc: openCodeAgentConfigurationDoc,
 };
 
@@ -254,73 +308,9 @@ const piLocalAdapter: ServerAdapterModule = {
   supportsInstructionsBundle: true,
   instructionsPathKey: "instructionsFilePath",
   requiresMaterializedRuntimeSkills: true,
+  getRuntimeCommandSpec: (config) =>
+    buildNpmRuntimeCommandSpec(config, "pi", "@mariozechner/pi-coding-agent"),
   agentConfigurationDoc: piAgentConfigurationDoc,
-};
-
-// hermes-paperclip-adapter v0.2.0 predates the authToken field; cast is
-// intentional until hermes ships a matching AdapterExecutionContext type.
-const executeHermesLocal = hermesExecute as unknown as ServerAdapterModule["execute"];
-
-const hermesLocalAdapter: ServerAdapterModule = {
-  type: "hermes_local",
-  execute: async (ctx) => {
-    const normalizedCtx = normalizeHermesConfig(ctx);
-    if (!normalizedCtx.authToken) return executeHermesLocal(normalizedCtx);
-
-    const existingConfig = (normalizedCtx.agent.adapterConfig ?? {}) as Record<string, unknown>;
-    const existingEnv =
-      typeof existingConfig.env === "object" && existingConfig.env !== null && !Array.isArray(existingConfig.env)
-        ? (existingConfig.env as Record<string, string>)
-        : {};
-    const explicitApiKey =
-      typeof existingEnv.NORALOS_API_KEY === "string" && existingEnv.NORALOS_API_KEY.trim().length > 0;
-    const promptTemplate =
-      typeof existingConfig.promptTemplate === "string" && existingConfig.promptTemplate.trim().length > 0
-        ? existingConfig.promptTemplate
-        : "";
-    const authGuardPrompt = [
-      "NoralOS API safety rule:",
-      "Use Authorization: Bearer $NORALOS_API_KEY on every NoralOS API request.",
-      "Use X-NoralOS-Run-Id: $NORALOS_RUN_ID on every NoralOS API request that writes or mutates data, including comments and issue updates.",
-      "Never use a board, browser, or local-board session for NoralOS API writes.",
-    ].join("\n");
-
-    const patchedConfig: Record<string, unknown> = {
-      ...existingConfig,
-      env: {
-        ...existingEnv,
-        ...(!explicitApiKey ? { NORALOS_API_KEY: normalizedCtx.authToken } : {}),
-        NORALOS_RUN_ID: normalizedCtx.runId,
-      },
-    };
-
-    // Only inject the auth guard into promptTemplate when a custom template already exists.
-    // When no custom template is set, Hermes uses its built-in default heartbeat/task prompt —
-    // overwriting it with only the auth guard text would strip the assigned issue/workflow instructions.
-    if (promptTemplate) {
-      patchedConfig.promptTemplate = `${authGuardPrompt}\n\n${promptTemplate}`;
-    }
-
-    const patchedCtx = {
-      ...normalizedCtx,
-      agent: {
-        ...normalizedCtx.agent,
-        adapterConfig: patchedConfig,
-      },
-    };
-
-    return executeHermesLocal(patchedCtx);
-  },
-  testEnvironment: (ctx) => hermesTestEnvironment(normalizeHermesConfig(ctx) as never),
-  sessionCodec: hermesSessionCodec,
-  listSkills: hermesListSkills,
-  syncSkills: hermesSyncSkills,
-  models: hermesModels,
-  supportsLocalAgentJwt: true,
-  supportsInstructionsBundle: false,
-  requiresMaterializedRuntimeSkills: false,
-  agentConfigurationDoc: hermesAgentConfigurationDoc,
-  detectModel: () => detectModelFromHermes(),
 };
 
 const adaptersByType = new Map<string, ServerAdapterModule>();
@@ -343,7 +333,6 @@ function registerBuiltInAdapters() {
     cursorLocalAdapter,
     geminiLocalAdapter,
     openclawGatewayAdapter,
-    hermesLocalAdapter,
     processAdapter,
     httpAdapter,
   ]) {

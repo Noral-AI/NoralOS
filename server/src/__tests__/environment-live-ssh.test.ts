@@ -164,6 +164,7 @@ describeLiveSsh("live SSH environment smoke", () => {
       throw new Error(
         "Live SSH smoke test could not resolve SSH config from env vars or env-lab fixture. Set NORALOS_ENV_LIVE_SSH_NO_AUTO_FIXTURE=true to mark this suite skipped intentionally.",
       );
+      return;
     }
 
     const config = resolvedConfig;
@@ -171,7 +172,7 @@ describeLiveSsh("live SSH environment smoke", () => {
     const quotedRemoteWorkspacePath = JSON.stringify(config.remoteWorkspacePath);
     const result = await runSshCommand(
       config,
-      `sh -lc "cd ${quotedRemoteWorkspacePath} && which git && which tar && pwd"`,
+      `cd ${quotedRemoteWorkspacePath} && which git && which tar && pwd`,
       { timeoutMs: 30000, maxBuffer: 256 * 1024 },
     );
 

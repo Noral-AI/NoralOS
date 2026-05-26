@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "@/lib/router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -12,6 +12,11 @@ import {
   Users,
   Building2,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DndContext,
   PointerSensor,
@@ -40,14 +45,18 @@ import { SIDEBAR_SCROLL_RESET_STATE } from "../lib/navigation-scroll";
 import { queryKeys } from "../lib/queryKeys";
 import { cn, agentRouteRef, agentUrl } from "../lib/utils";
 import { useAgentOrder } from "../hooks/useAgentOrder";
+import {
+  AGENT_SORT_MODE_UPDATED_EVENT,
+  getAgentSortModeStorageKey,
+  readAgentSortMode,
+  type AgentSortModeUpdatedDetail,
+  type AgentSidebarSortMode,
+  writeAgentSortMode,
+} from "../lib/agent-order";
 import { AgentIcon } from "./AgentIconPicker";
 import { BudgetSidebarMarker } from "./BudgetSidebarMarker";
+import { SidebarSection, type SidebarSectionRadioChoice } from "./SidebarSection";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +67,41 @@ import {
 import type { Agent, Department } from "@noralos/shared";
 
 const UNASSIGNED_KEY = "__unassigned__";
+
+const AGENT_SORT_CHOICES: SidebarSectionRadioChoice[] = [
+  { value: "top", label: "Top" },
+  { value: "alphabetical", label: "Alphabetical" },
+  { value: "recent", label: "Recent" },
+];
+
+function agentTimestamp(agent: Agent, field: "lastHeartbeatAt" | "updatedAt" | "createdAt"): number {
+  const raw = agent[field];
+  if (!raw) return 0;
+  const time = new Date(raw).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+function sortAgents(agents: Agent[], sortMode: AgentSidebarSortMode): Agent[] {
+  if (sortMode === "top") return agents;
+  const sorted = [...agents];
+  if (sortMode === "alphabetical") {
+    sorted.sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }));
+    return sorted;
+  }
+  sorted.sort((left, right) => {
+    const heartbeatDiff = agentTimestamp(right, "lastHeartbeatAt") - agentTimestamp(left, "lastHeartbeatAt");
+    if (heartbeatDiff !== 0) return heartbeatDiff;
+
+    const updatedDiff = agentTimestamp(right, "updatedAt") - agentTimestamp(left, "updatedAt");
+    if (updatedDiff !== 0) return updatedDiff;
+
+    const createdDiff = agentTimestamp(right, "createdAt") - agentTimestamp(left, "createdAt");
+    return createdDiff !== 0
+      ? createdDiff
+      : left.name.localeCompare(right.name, undefined, { sensitivity: "base" });
+  });
+  return sorted;
+}
 
 function SidebarAgentItem({
   activeAgentId,
@@ -130,7 +174,7 @@ function SidebarAgentItem({
           if (isMobile) setSidebarOpen(false);
         }}
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 pr-8 text-[13px] font-medium transition-colors",
+          "flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 pointer-coarse:py-1 pr-8 text-[13px] font-medium transition-colors",
           isActive
             ? "bg-accent text-foreground"
             : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
@@ -404,11 +448,23 @@ export function SidebarAgents() {
     return (agents ?? []).filter((a: Agent) => a.status !== "terminated");
   }, [agents]);
   const currentUserId = session?.user?.id ?? session?.session?.userId ?? null;
+  const sortModeStorageKey = useMemo(() => {
+    if (!selectedCompanyId) return null;
+    return getAgentSortModeStorageKey(selectedCompanyId, currentUserId);
+  }, [currentUserId, selectedCompanyId]);
+  const [sortMode, setSortMode] = useState<AgentSidebarSortMode>(() => {
+    if (!sortModeStorageKey) return "top";
+    return readAgentSortMode(sortModeStorageKey);
+  });
   const { orderedAgents } = useAgentOrder({
     agents: visibleAgents,
     companyId: selectedCompanyId,
     userId: currentUserId,
   });
+  const sortedAgents = useMemo(
+    () => sortAgents(orderedAgents, sortMode),
+    [orderedAgents, sortMode],
+  );
 
   const groupedAgents = useMemo(() => {
     const byDepartment = new Map<string, Agent[]>();
@@ -428,6 +484,47 @@ export function SidebarAgents() {
   const agentMatch = location.pathname.match(/^\/(?:[^/]+\/)?agents\/([^/]+)(?:\/([^/]+))?/);
   const activeAgentId = agentMatch?.[1] ?? null;
   const activeTab = agentMatch?.[2] ?? null;
+
+  useEffect(() => {
+    if (!sortModeStorageKey) {
+      setSortMode("top");
+      return;
+    }
+    setSortMode(readAgentSortMode(sortModeStorageKey));
+  }, [sortModeStorageKey]);
+
+  useEffect(() => {
+    if (!sortModeStorageKey) return;
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== sortModeStorageKey) return;
+      setSortMode(readAgentSortMode(sortModeStorageKey));
+    };
+    const onCustomEvent = (event: Event) => {
+      const detail = (event as CustomEvent<AgentSortModeUpdatedDetail>).detail;
+      if (!detail || detail.storageKey !== sortModeStorageKey) return;
+      setSortMode(detail.sortMode);
+    };
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(AGENT_SORT_MODE_UPDATED_EVENT, onCustomEvent);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(AGENT_SORT_MODE_UPDATED_EVENT, onCustomEvent);
+    };
+  }, [sortModeStorageKey]);
+
+  const persistSortMode = useCallback(
+    (value: string) => {
+      const nextSortMode: AgentSidebarSortMode =
+        value === "alphabetical" || value === "recent" ? value : "top";
+      setSortMode(nextSortMode);
+      if (sortModeStorageKey) {
+        writeAgentSortMode(sortModeStorageKey, nextSortMode);
+      }
+    },
+    [sortModeStorageKey],
+  );
 
   const pauseResumeAgent = useMutation({
     mutationFn: ({ agent, action }: { agent: Agent; action: "pause" | "resume" }) =>

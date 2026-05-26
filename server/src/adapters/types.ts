@@ -30,5 +30,6 @@ export type {
   ConfigFieldOption,
   ConfigFieldSchema,
   AdapterConfigSchema,
+  AdapterRuntimeCommandSpec,
   ServerAdapterModule,
 } from "@noralos/adapter-utils";

@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DEFAULT_COMPANY_ATTACHMENT_MAX_BYTES,
   MAX_COMPANY_ATTACHMENT_MAX_BYTES,
@@ -7,11 +7,11 @@ import {
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { companiesApi } from "../api/companies";
-import { accessApi } from "../api/access";
 import { assetsApi } from "../api/assets";
+import { instanceSettingsApi } from "../api/instanceSettings";
 import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
-import { Settings, Check, Download, Upload } from "lucide-react";
+import { Settings, CloudUpload, Download, Upload } from "lucide-react";
 import { CompanyPatternIcon } from "../components/CompanyPatternIcon";
 import {
   Field,
@@ -37,6 +37,10 @@ export function CompanySettings() {
   } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
+  const { data: experimentalSettings } = useQuery({
+    queryKey: queryKeys.instance.experimentalSettings,
+    queryFn: () => instanceSettingsApi.getExperimental(),
+  });
   // General settings local state
   const [companyName, setCompanyName] = useState("");
   const [description, setDescription] = useState("");
@@ -65,6 +69,7 @@ export function CompanySettings() {
     Number.isInteger(attachmentMaxBytes)
     && attachmentMaxBytes >= BYTES_PER_MIB
     && attachmentMaxBytes <= MAX_COMPANY_ATTACHMENT_MAX_BYTES;
+  const cloudSyncEnabled = experimentalSettings?.enableCloudSync === true;
 
   const generalDirty =
     !!selectedCompany &&
@@ -92,59 +97,6 @@ export function CompanySettings() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
-    }
-  });
-
-  const inviteMutation = useMutation({
-    mutationFn: () =>
-      accessApi.createOpenClawInvitePrompt(selectedCompanyId!),
-    onSuccess: async (invite) => {
-      setInviteError(null);
-      const base = window.location.origin.replace(/\/+$/, "");
-      const onboardingTextLink =
-        invite.onboardingTextUrl ??
-        invite.onboardingTextPath ??
-        `/api/invites/${invite.token}/onboarding.txt`;
-      const absoluteUrl = onboardingTextLink.startsWith("http")
-        ? onboardingTextLink
-        : `${base}${onboardingTextLink}`;
-      setSnippetCopied(false);
-      setSnippetCopyDelightId(0);
-      let snippet: string;
-      try {
-        const manifest = await accessApi.getInviteOnboarding(invite.token);
-        snippet = buildAgentSnippet({
-          onboardingTextUrl: absoluteUrl,
-          connectionCandidates:
-            manifest.onboarding.connectivity?.connectionCandidates ?? null,
-          testResolutionUrl:
-            manifest.onboarding.connectivity?.testResolutionEndpoint?.url ??
-            null
-        });
-      } catch {
-        snippet = buildAgentSnippet({
-          onboardingTextUrl: absoluteUrl,
-          connectionCandidates: null,
-          testResolutionUrl: null
-        });
-      }
-      setInviteSnippet(snippet);
-      try {
-        await navigator.clipboard.writeText(snippet);
-        setSnippetCopied(true);
-        setSnippetCopyDelightId((prev) => prev + 1);
-        setTimeout(() => setSnippetCopied(false), 2000);
-      } catch {
-        /* clipboard may not be available */
-      }
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.sidebarBadges(selectedCompanyId!)
-      });
-    },
-    onError: (err) => {
-      setInviteError(
-        err instanceof Error ? err.message : "Failed to create invite"
-      );
     }
   });
 
@@ -463,84 +415,6 @@ export function CompanySettings() {
         </div>
       </div>
 
-      {/* Invites */}
-      <div className="space-y-4" data-testid="company-settings-invites-section">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Invites
-        </div>
-        <div className="space-y-3 rounded-md border border-border px-4 py-4">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">
-              Generate an OpenClaw agent invite snippet.
-            </span>
-            <HintIcon text="Creates a short-lived OpenClaw agent invite and renders a copy-ready prompt." />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              data-testid="company-settings-invites-generate-button"
-              size="sm"
-              onClick={() => inviteMutation.mutate()}
-              disabled={inviteMutation.isPending}
-            >
-              {inviteMutation.isPending
-                ? "Generating..."
-                : "Generate OpenClaw Invite Prompt"}
-            </Button>
-          </div>
-          {inviteError && (
-            <p className="text-sm text-destructive">{inviteError}</p>
-          )}
-          {inviteSnippet && (
-            <div
-              className="rounded-md border border-border bg-muted/30 p-2"
-              data-testid="company-settings-invites-snippet"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs text-muted-foreground">
-                  OpenClaw Invite Prompt
-                </div>
-                {snippetCopied && (
-                  <span
-                    key={snippetCopyDelightId}
-                    className="flex items-center gap-1 text-xs text-green-600 animate-pulse"
-                  >
-                    <Check className="h-3 w-3" />
-                    Copied
-                  </span>
-                )}
-              </div>
-              <div className="mt-1 space-y-1.5">
-                <textarea
-                  data-testid="company-settings-invites-snippet-textarea"
-                  className="h-[28rem] w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs outline-none"
-                  value={inviteSnippet}
-                  readOnly
-                />
-                <div className="flex justify-end">
-                  <Button
-                    data-testid="company-settings-invites-copy-button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(inviteSnippet);
-                        setSnippetCopied(true);
-                        setSnippetCopyDelightId((prev) => prev + 1);
-                        setTimeout(() => setSnippetCopied(false), 2000);
-                      } catch {
-                        /* clipboard may not be available */
-                      }
-                    }}
-                  >
-                    {snippetCopied ? "Copied snippet" : "Copy snippet"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Import / Export */}
       <div className="space-y-4">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -551,7 +425,15 @@ export function CompanySettings() {
             Import and export have moved to dedicated pages accessible from the{" "}
             <a href="/org" className="underline hover:text-foreground">Org Chart</a> header.
           </p>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {cloudSyncEnabled ? (
+              <Button size="sm" asChild>
+                <a href="/company/settings/cloud-upstream">
+                  <CloudUpload className="mr-1.5 h-3.5 w-3.5" />
+                  Send to Paperclip Cloud
+                </a>
+              </Button>
+            ) : null}
             <Button size="sm" variant="outline" asChild>
               <a href="/company/export">
                 <Download className="mr-1.5 h-3.5 w-3.5" />

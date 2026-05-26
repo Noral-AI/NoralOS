@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isEnabledAdapterType, listAdapterOptions } from "./metadata";
+import {
+  isEnabledAdapterType,
+  isValidAdapterType,
+  isVisualAdapterChoice,
+  listAdapterOptions,
+} from "./metadata";
 import type { UIAdapterModule } from "./types";
 
 const externalAdapter: UIAdapterModule = {
@@ -22,6 +27,7 @@ describe("adapter metadata", () => {
         label: "external_test",
         comingSoon: false,
         hidden: false,
+        experimental: false,
       },
     ]);
   });
@@ -30,4 +36,5 @@ describe("adapter metadata", () => {
     expect(isEnabledAdapterType("process")).toBe(false);
     expect(isEnabledAdapterType("http")).toBe(false);
   });
+
 });

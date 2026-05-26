@@ -1,11 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { listAdapterModels, listServerAdapters, refreshAdapterModels } from "../adapters/index.js";
 import { models as codexFallbackModels } from "@noralos/adapter-codex-local";
 import { models as cursorFallbackModels } from "@noralos/adapter-cursor-local";
 import { models as opencodeFallbackModels } from "@noralos/adapter-opencode-local";
 import { resetOpenCodeModelsCacheForTests } from "@noralos/adapter-opencode-local/server";
-import { listAdapterModels, refreshAdapterModels } from "../adapters/index.js";
+import { models as codexFallbackModels } from "@noralos/adapter-codex-local";
+import { models as cursorFallbackModels } from "@noralos/adapter-cursor-local";
+import { models as opencodeFallbackModels } from "@noralos/adapter-opencode-local";
+import { resetOpenCodeModelsCacheForTests } from "@noralos/adapter-opencode-local/server";
 import { resetCodexModelsCacheForTests } from "../adapters/codex-models.js";
 import { resetCursorModelsCacheForTests, setCursorModelsRunnerForTests } from "../adapters/cursor-models.js";
+
+vi.mock("acpx/runtime", () => ({
+  createAcpRuntime: vi.fn(),
+  createAgentRegistry: vi.fn(),
+  createRuntimeStore: vi.fn(),
+  isAcpRuntimeError: vi.fn(() => false),
+}));
 
 describe("adapter model listing", () => {
   beforeEach(() => {
@@ -21,6 +32,13 @@ describe("adapter model listing", () => {
   it("returns an empty list for unknown adapters", async () => {
     const models = await listAdapterModels("unknown_adapter");
     expect(models).toEqual([]);
+  });
+
+  it("uses provider-prefixed ACPX fallback model labels", () => {
+    const adapter = listServerAdapters().find((candidate) => candidate.type === "acpx_local");
+
+    expect(adapter?.models?.some((model) => model.label.startsWith("Claude: "))).toBe(true);
+    expect(adapter?.models?.some((model) => model.label.startsWith("Codex: "))).toBe(true);
   });
 
   it("returns codex fallback models when no OpenAI key is available", async () => {

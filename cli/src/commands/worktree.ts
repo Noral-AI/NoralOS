@@ -1059,7 +1059,6 @@ async function ensureEmbeddedPostgres(dataDir: string, preferredPort: number): P
       "Embedded PostgreSQL support requires dependency `embedded-postgres`. Reinstall dependencies and try again.",
     );
   }
-
   const postmasterPidFile = path.resolve(dataDir, "postmaster.pid");
   const runningPid = readRunningPostmasterPid(postmasterPidFile);
   if (runningPid) {
@@ -1385,7 +1384,12 @@ async function runWorktreeInit(opts: WorktreeInitOptions): Promise<void> {
   }
 
   if (opts.force) {
-    rmSync(paths.repoConfigDir, { recursive: true, force: true });
+    // Only remove the specific files we're about to rewrite, not the whole
+    // repoConfigDir — that directory can contain sibling state such as
+    // <repo>/.paperclip/worktrees/ holding every repo-managed worktree
+    // checkout, and a recursive rmSync here would nuke them all.
+    rmSync(paths.configPath, { force: true });
+    rmSync(paths.envPath, { force: true });
     rmSync(paths.instanceRoot, { recursive: true, force: true });
   }
 

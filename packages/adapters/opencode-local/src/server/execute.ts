@@ -5,17 +5,19 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller, type AdapterExecutionContext, type AdapterExecutionResult } from "@noralos/adapter-utils";
 import {
   adapterExecutionTargetIsRemote,
-  adapterExecutionTargetNoralosApiUrl,
   adapterExecutionTargetRemoteCwd,
+  overrideAdapterExecutionTargetRemoteCwd,
   adapterExecutionTargetSessionIdentity,
   adapterExecutionTargetSessionMatches,
   adapterExecutionTargetUsesManagedHome,
-  adapterExecutionTargetUsesNoralosBridge,
+  adapterExecutionTargetUsesPaperclipBridge,
   describeAdapterExecutionTarget,
   ensureAdapterExecutionTargetCommandResolvable,
+  ensureAdapterExecutionTargetRuntimeCommandInstalled,
   prepareAdapterExecutionTargetRuntime,
   readAdapterExecutionTarget,
   readAdapterExecutionTargetHomeDir,
+  resolveAdapterExecutionTargetTimeoutSec,
   resolveAdapterExecutionTargetCommandForLogs,
   runAdapterExecutionTargetProcess,
   runAdapterExecutionTargetShellCommand,
@@ -33,18 +35,25 @@ import {
   ensureAbsoluteDirectory,
   ensureNoralosSkillSymlink,
   ensurePathInEnv,
+  refreshNoralosWorkspaceEnvForExecution,
   renderTemplate,
   renderNoralosWakePrompt,
   stringifyNoralosWakePayload,
   DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE,
   runChildProcess,
   readNoralosRuntimeSkillEntries,
+  readNoralosIssueWorkModeFromContext,
   resolveNoralosDesiredSkillNames,
 } from "@noralos/adapter-utils/server-utils";
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
-import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
+import {
+  ensureOpenCodeModelConfiguredAndAvailable,
+  parseOpenCodeModelsOutput,
+  requireOpenCodeModelId,
+} from "./models.js";
 import { removeMaintainerOnlySkillSymlinks } from "@noralos/adapter-utils/server-utils";
 import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
+import { SANDBOX_INSTALL_COMMAND } from "../index.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,6 +75,69 @@ function parseModelProvider(model: string | null): string | null {
 
 function resolveOpenCodeBiller(env: Record<string, string>, provider: string | null): string {
   return inferOpenAiCompatibleBiller(env, null) ?? provider ?? "unknown";
+}
+
+const REMOTE_OPENCODE_MODELS_PROBE_DEFAULT_TIMEOUT_SEC = 20;
+const REMOTE_OPENCODE_MODELS_PROBE_SANDBOX_TIMEOUT_SEC = 120;
+
+async function ensureRemoteOpenCodeModelConfiguredAndAvailable(input: {
+  runId: string;
+  executionTarget: NonNullable<AdapterExecutionContext["executionTarget"]>;
+  command: string;
+  model: string;
+  cwd: string;
+  env: Record<string, string>;
+  timeoutSec: number;
+  graceSec: number;
+}) {
+  const model = requireOpenCodeModelId(input.model);
+  const defaultProbeTimeoutSec =
+    input.executionTarget.kind === "remote" && input.executionTarget.transport === "sandbox"
+      ? REMOTE_OPENCODE_MODELS_PROBE_SANDBOX_TIMEOUT_SEC
+      : REMOTE_OPENCODE_MODELS_PROBE_DEFAULT_TIMEOUT_SEC;
+  const probeTimeoutSec = input.timeoutSec > 0
+    ? Math.min(input.timeoutSec, defaultProbeTimeoutSec)
+    : defaultProbeTimeoutSec;
+  const probe = await runAdapterExecutionTargetProcess(
+    input.runId,
+    input.executionTarget,
+    input.command,
+    ["models"],
+    {
+      cwd: input.cwd,
+      env: input.env,
+      timeoutSec: probeTimeoutSec,
+      graceSec: input.graceSec,
+      onLog: async () => {},
+    },
+  );
+
+  if (probe.timedOut) {
+    throw new Error(`\`opencode models\` timed out on the remote execution target after ${probeTimeoutSec}s.`);
+  }
+
+  if ((probe.exitCode ?? 1) !== 0) {
+    const detail = firstNonEmptyLine(probe.stderr) || firstNonEmptyLine(probe.stdout);
+    throw new Error(
+      detail
+        ? `\`opencode models\` failed on the remote execution target: ${detail}`
+        : "`opencode models` failed on the remote execution target.",
+    );
+  }
+
+  const models = parseOpenCodeModelsOutput(probe.stdout);
+  if (models.length === 0) {
+    throw new Error(
+      "OpenCode returned no models on the remote execution target. Run `opencode models` there and verify provider auth.",
+    );
+  }
+
+  if (!models.some((entry) => entry.id === model)) {
+    const sample = models.slice(0, 12).map((entry) => entry.id).join(", ");
+    throw new Error(
+      `Configured OpenCode model is unavailable on the remote execution target: ${model}. Available models: ${sample}${models.length > 12 ? ", ..." : ""}`,
+    );
+  }
 }
 
 function claudeSkillsHome(): string {
@@ -155,6 +227,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const useConfiguredInsteadOfAgentHome = workspaceSource === "agent_home" && configuredCwd.length > 0;
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
   const cwd = effectiveWorkspaceCwd || configuredCwd || process.cwd();
+  let effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
   const openCodeSkillEntries = await readNoralosRuntimeSkillEntries(config, __moduleDir);
   const desiredOpenCodeSkillNames = resolveNoralosDesiredSkillNames(config, openCodeSkillEntries);
@@ -195,23 +268,30 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
   const wakePayloadJson = stringifyNoralosWakePayload(context.noralosWake);
+  const issueWorkMode = readNoralosIssueWorkModeFromContext(context);
   if (wakeTaskId) env.NORALOS_TASK_ID = wakeTaskId;
+  if (issueWorkMode) env.NORALOS_ISSUE_WORK_MODE = issueWorkMode;
   if (wakeReason) env.NORALOS_WAKE_REASON = wakeReason;
   if (wakeCommentId) env.NORALOS_WAKE_COMMENT_ID = wakeCommentId;
   if (approvalId) env.NORALOS_APPROVAL_ID = approvalId;
   if (approvalStatus) env.NORALOS_APPROVAL_STATUS = approvalStatus;
   if (linkedIssueIds.length > 0) env.NORALOS_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
   if (wakePayloadJson) env.NORALOS_WAKE_PAYLOAD_JSON = wakePayloadJson;
-  applyNoralosWorkspaceEnv(env, {
+  refreshNoralosWorkspaceEnvForExecution({
+    env,
+    envConfig,
     workspaceCwd: effectiveWorkspaceCwd,
     workspaceSource,
     workspaceId,
     workspaceRepoUrl,
     workspaceRepoRef,
+    workspaceHints,
     agentHome,
+    executionTargetIsRemote,
+    executionCwd: effectiveExecutionCwd,
   });
   if (workspaceHints.length > 0) env.NORALOS_WORKSPACES_JSON = JSON.stringify(workspaceHints);
-  const targetNoralosApiUrl = adapterExecutionTargetNoralosApiUrl(executionTarget);
+  const targetNoralosApiUrl = executionTarget && executionTarget.kind === "remote" && executionTarget.transport === "sandbox" ? executionTarget.noralosApiUrl ?? null : null;
   if (targetNoralosApiUrl) env.NORALOS_API_URL = targetNoralosApiUrl;
 
   for (const [key, value] of Object.entries(envConfig)) {
@@ -234,14 +314,32 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         (entry): entry is [string, string] => typeof entry[1] === "string",
       ),
     );
-    await ensureAdapterExecutionTargetCommandResolvable(command, executionTarget, cwd, runtimeEnv);
+    const timeoutSec = resolveAdapterExecutionTargetTimeoutSec(
+      executionTarget,
+      asNumber(config.timeoutSec, 0),
+    );
+    const graceSec = asNumber(config.graceSec, 20);
+    await ensureAdapterExecutionTargetRuntimeCommandInstalled({
+      runId,
+      target: executionTarget,
+      installCommand: ctx.runtimeCommandSpec?.installCommand,
+    detectCommand: ctx.runtimeCommandSpec?.detectCommand,
+      cwd,
+      env: runtimeEnv,
+      timeoutSec,
+      graceSec,
+      onLog,
+    });
+    await ensureAdapterExecutionTargetCommandResolvable(command, executionTarget, cwd, runtimeEnv, {
+      installCommand: SANDBOX_INSTALL_COMMAND,
+      timeoutSec,
+    });
     const resolvedCommand = await resolveAdapterExecutionTargetCommandForLogs(command, executionTarget, cwd, runtimeEnv);
     let loggedEnv = buildInvocationEnvForLogs(preparedRuntimeConfig.env, {
       runtimeEnv,
       includeRuntimeKeys: ["HOME"],
       resolvedCommand,
     });
-
     if (!executionTargetIsRemote) {
       await ensureOpenCodeModelConfiguredAndAvailable({
         model,
@@ -251,29 +349,30 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       });
     }
 
-    const timeoutSec = asNumber(config.timeoutSec, 0);
-    const graceSec = asNumber(config.graceSec, 20);
     const extraArgs = (() => {
       const fromExtraArgs = asStringArray(config.extraArgs);
       if (fromExtraArgs.length > 0) return fromExtraArgs;
       return asStringArray(config.args);
     })();
-    const effectiveExecutionCwd = adapterExecutionTargetRemoteCwd(executionTarget, cwd);
     let restoreRemoteWorkspace: (() => Promise<void>) | null = null;
     let localSkillsDir: string | null = null;
     let remoteRuntimeRootDir: string | null = null;
     let noralosBridge: Awaited<ReturnType<typeof startAdapterExecutionTargetNoralosBridge>> = null;
 
-    if (executionTargetIsRemote) {
+    if (executionTarget?.kind === "remote") {
       localSkillsDir = await buildOpenCodeSkillsDir(config);
       await onLog(
         "stdout",
         `[paperclip] Syncing workspace and OpenCode runtime assets to ${describeAdapterExecutionTarget(executionTarget)}.\n`,
       );
       const preparedExecutionTargetRuntime = await prepareAdapterExecutionTargetRuntime({
+        runId,
         target: executionTarget,
         adapterKey: "opencode",
+        timeoutSec,
         workspaceLocalDir: cwd,
+        installCommand: SANDBOX_INSTALL_COMMAND,
+        detectCommand: command,
         assets: [
           {
             key: "skills",
@@ -289,6 +388,20 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         ],
       });
       restoreRemoteWorkspace = () => preparedExecutionTargetRuntime.restoreWorkspace();
+      effectiveExecutionCwd = preparedExecutionTargetRuntime.workspaceRemoteDir ?? effectiveExecutionCwd;
+      refreshNoralosWorkspaceEnvForExecution({
+        env: preparedRuntimeConfig.env,
+        envConfig,
+        workspaceCwd: effectiveWorkspaceCwd,
+        workspaceSource,
+        workspaceId,
+        workspaceRepoUrl,
+        workspaceRepoRef,
+        workspaceHints,
+        agentHome,
+        executionTargetIsRemote,
+        executionCwd: effectiveExecutionCwd,
+      });
       remoteRuntimeRootDir = preparedExecutionTargetRuntime.runtimeRootDir;
       const managedHome = adapterExecutionTargetUsesManagedHome(executionTarget);
       if (managedHome && preparedExecutionTargetRuntime.runtimeRootDir) {
@@ -315,8 +428,42 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           { cwd, env: preparedRuntimeConfig.env, timeoutSec, graceSec, onLog },
         );
       }
+      await ensureRemoteOpenCodeModelConfiguredAndAvailable({
+        runId,
+        executionTarget,
+        command,
+        model,
+        cwd,
+        env: preparedRuntimeConfig.env,
+        timeoutSec,
+        graceSec,
+      });
     }
-    if (executionTargetIsRemote && adapterExecutionTargetUsesNoralosBridge(executionTarget)) {
+    const runtimeExecutionTarget = overrideAdapterExecutionTargetRemoteCwd(executionTarget, effectiveExecutionCwd);
+    if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(runtimeExecutionTarget)) {
+      noralosBridge = await startAdapterExecutionTargetNoralosBridge({
+        runId,
+        target: runtimeExecutionTarget,
+        runtimeRootDir: remoteRuntimeRootDir,
+        adapterKey: "opencode",
+        timeoutSec,
+        hostApiToken: preparedRuntimeConfig.env.PAPERCLIP_API_KEY,
+        onLog,
+      });
+      if (noralosBridge) {
+        Object.assign(preparedRuntimeConfig.env, noralosBridge.env);
+        loggedEnv = buildInvocationEnvForLogs(preparedRuntimeConfig.env, {
+          runtimeEnv: Object.fromEntries(
+            Object.entries(ensurePathInEnv({ ...process.env, ...preparedRuntimeConfig.env })).filter(
+              (entry): entry is [string, string] => typeof entry[1] === "string",
+            ),
+          ),
+          includeRuntimeKeys: ["HOME"],
+          resolvedCommand,
+        });
+      }
+    }
+    if (executionTargetIsRemote && adapterExecutionTargetUsesPaperclipBridge(executionTarget)) {
       noralosBridge = await startAdapterExecutionTargetNoralosBridge({
         runId,
         target: executionTarget,
@@ -346,7 +493,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     const canResumeSession =
       runtimeSessionId.length > 0 &&
       (runtimeSessionCwd.length === 0 || path.resolve(runtimeSessionCwd) === path.resolve(effectiveExecutionCwd)) &&
-      adapterExecutionTargetSessionMatches(runtimeRemoteExecution, executionTarget);
+      adapterExecutionTargetSessionMatches(runtimeRemoteExecution, runtimeExecutionTarget);
     const sessionId = canResumeSession ? runtimeSessionId : null;
     if (executionTargetIsRemote && runtimeSessionId && !canResumeSession) {
       await onLog(
@@ -456,7 +603,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         });
       }
 
-      const proc = await runAdapterExecutionTargetProcess(runId, executionTarget, command, args, {
+      const proc = await runAdapterExecutionTargetProcess(runId, runtimeExecutionTarget, command, args, {
         cwd,
         env: preparedRuntimeConfig.env,
         stdin: prompt,
@@ -502,7 +649,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
             ...(workspaceRepoRef ? { repoRef: workspaceRepoRef } : {}),
             ...(executionTargetIsRemote
               ? {
-                  remoteExecution: adapterExecutionTargetSessionIdentity(executionTarget),
+                  remoteExecution: adapterExecutionTargetSessionIdentity(runtimeExecutionTarget),
                 }
               : {}),
           } as Record<string, unknown>)

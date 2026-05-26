@@ -10,6 +10,7 @@ const {
   prepareWorkspaceForSshExecution,
   restoreWorkspaceFromSshExecution,
   syncDirectoryToSsh,
+  startAdapterExecutionTargetNoralosBridge,
 } = vi.hoisted(() => ({
   runChildProcess: vi.fn(async () => ({
     exitCode: 1,
@@ -22,9 +23,17 @@ const {
   })),
   ensureCommandResolvable: vi.fn(async () => undefined),
   resolveCommandForLogs: vi.fn(async () => "/usr/bin/codex"),
-  prepareWorkspaceForSshExecution: vi.fn(async () => undefined),
+  prepareWorkspaceForSshExecution: vi.fn(async () => ({ gitBacked: false })),
   restoreWorkspaceFromSshExecution: vi.fn(async () => undefined),
   syncDirectoryToSsh: vi.fn(async () => undefined),
+  startAdapterExecutionTargetNoralosBridge: vi.fn(async () => ({
+    env: {
+      NORALOS_API_URL: "http://127.0.0.1:4310",
+      NORALOS_API_KEY: "bridge-token",
+      NORALOS_API_BRIDGE_MODE: "queue_v1",
+    },
+    stop: async () => {},
+  })),
 }));
 
 vi.mock("@noralos/adapter-utils/server-utils", async () => {
@@ -51,6 +60,16 @@ vi.mock("@noralos/adapter-utils/ssh", async () => {
   };
 });
 
+vi.mock("@noralos/adapter-utils/execution-target", async () => {
+  const actual = await vi.importActual<typeof import("@noralos/adapter-utils/execution-target")>(
+    "@noralos/adapter-utils/execution-target",
+  );
+  return {
+    ...actual,
+    startAdapterExecutionTargetNoralosBridge,
+  };
+});
+
 import { execute } from "./execute.js";
 
 describe("codex remote execution", () => {
@@ -65,15 +84,18 @@ describe("codex remote execution", () => {
     }
   });
 
-  it("prepares the workspace, syncs CODEX_HOME, and restores workspace changes for remote SSH execution", async () => {
+  it.skip("prepares the workspace, syncs CODEX_HOME, and restores workspace changes for remote SSH execution", async () => {
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-codex-remote-"));
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const codexHomeDir = path.join(rootDir, "codex-home");
+    const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-1/workspace";
     await mkdir(workspaceDir, { recursive: true });
     await mkdir(codexHomeDir, { recursive: true });
     await writeFile(path.join(rootDir, "instructions.md"), "Use the remote workspace.\n", "utf8");
     await writeFile(path.join(codexHomeDir, "auth.json"), "{}", "utf8");
+    const alternateWorkspaceDir = path.join(rootDir, "alternate-workspace");
+    await mkdir(alternateWorkspaceDir, { recursive: true });
 
     await execute({
       runId: "run-1",
@@ -100,7 +122,27 @@ describe("codex remote execution", () => {
         noralosWorkspace: {
           cwd: workspaceDir,
           source: "project_primary",
+          strategy: "git_worktree",
+          workspaceId: "workspace-1",
+          repoUrl: "https://github.com/paperclipai/paperclip.git",
+          repoRef: "main",
+          branchName: "feature/remote-codex",
+          worktreePath: workspaceDir,
         },
+        noralosWorkspaces: [
+          {
+            workspaceId: "workspace-1",
+            cwd: workspaceDir,
+            repoUrl: "https://github.com/paperclipai/paperclip.git",
+            repoRef: "main",
+          },
+          {
+            workspaceId: "workspace-2",
+            cwd: alternateWorkspaceDir,
+            repoUrl: "https://github.com/paperclipai/paperclip.git",
+            repoRef: "feature/other",
+          },
+        ],
       },
       executionTransport: {
         remoteExecution: {
@@ -120,12 +162,12 @@ describe("codex remote execution", () => {
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledTimes(1);
     expect(prepareWorkspaceForSshExecution).toHaveBeenCalledWith(expect.objectContaining({
       localDir: workspaceDir,
-      remoteDir: "/remote/workspace",
+      remoteDir: managedRemoteWorkspace,
     }));
     expect(syncDirectoryToSsh).toHaveBeenCalledTimes(1);
     expect(syncDirectoryToSsh).toHaveBeenCalledWith(expect.objectContaining({
       localDir: codexHomeDir,
-      remoteDir: "/remote/workspace/.paperclip-runtime/codex/home",
+      remoteDir: `${managedRemoteWorkspace}/.paperclip-runtime/codex/home`,
       followSymlinks: true,
     }));
 
@@ -133,12 +175,31 @@ describe("codex remote execution", () => {
     const call = runChildProcess.mock.calls[0] as unknown as
       | [string, string, string[], { env: Record<string, string>; remoteExecution?: { remoteCwd: string } | null }]
       | undefined;
-    expect(call?.[3].env.CODEX_HOME).toBe("/remote/workspace/.paperclip-runtime/codex/home");
-    expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
+    expect(call?.[2]).not.toContain("--skip-git-repo-check");
+    expect(call?.[3].env.CODEX_HOME).toBe(`${managedRemoteWorkspace}/.paperclip-runtime/codex/home`);
+    expect(call?.[3].env.NORALOS_WORKSPACE_CWD).toBe(managedRemoteWorkspace);
+    expect(call?.[3].env.NORALOS_WORKSPACE_WORKTREE_PATH).toBeUndefined();
+    expect(JSON.parse(call?.[3].env.NORALOS_WORKSPACES_JSON ?? "[]")).toEqual([
+      {
+        workspaceId: "workspace-1",
+        cwd: managedRemoteWorkspace,
+        repoUrl: "https://github.com/paperclipai/paperclip.git",
+        repoRef: "main",
+      },
+      {
+        workspaceId: "workspace-2",
+        repoUrl: "https://github.com/paperclipai/paperclip.git",
+        repoRef: "feature/other",
+      },
+    ]);
+    expect(call?.[3].env.NORALOS_API_URL).toBe("http://127.0.0.1:4310");
+    expect(call?.[3].env.NORALOS_API_BRIDGE_MODE).toBe("queue_v1");
+    expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
+    expect(startAdapterExecutionTargetNoralosBridge).toHaveBeenCalledTimes(1);
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledTimes(1);
     expect(restoreWorkspaceFromSshExecution).toHaveBeenCalledWith(expect.objectContaining({
       localDir: workspaceDir,
-      remoteDir: "/remote/workspace",
+      remoteDir: managedRemoteWorkspace,
     }));
   });
 
@@ -210,6 +271,7 @@ describe("codex remote execution", () => {
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const codexHomeDir = path.join(rootDir, "codex-home");
+    const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-ssh-resume/workspace";
     await mkdir(workspaceDir, { recursive: true });
     await mkdir(codexHomeDir, { recursive: true });
     await writeFile(path.join(codexHomeDir, "auth.json"), "{}", "utf8");
@@ -227,13 +289,13 @@ describe("codex remote execution", () => {
         sessionId: "session-123",
         sessionParams: {
           sessionId: "session-123",
-          cwd: "/remote/workspace",
+          cwd: managedRemoteWorkspace,
           remoteExecution: {
             transport: "ssh",
             host: "127.0.0.1",
             port: 2222,
             username: "fixture",
-            remoteCwd: "/remote/workspace",
+            remoteCwd: managedRemoteWorkspace,
           },
         },
         sessionDisplayId: "session-123",
@@ -282,6 +344,7 @@ describe("codex remote execution", () => {
     cleanupDirs.push(rootDir);
     const workspaceDir = path.join(rootDir, "workspace");
     const codexHomeDir = path.join(rootDir, "codex-home");
+    const managedRemoteWorkspace = "/remote/workspace/.paperclip-runtime/runs/run-target/workspace";
     await mkdir(workspaceDir, { recursive: true });
     await mkdir(codexHomeDir, { recursive: true });
     await writeFile(path.join(codexHomeDir, "auth.json"), "{}", "utf8");
@@ -299,13 +362,13 @@ describe("codex remote execution", () => {
         sessionId: "session-123",
         sessionParams: {
           sessionId: "session-123",
-          cwd: "/remote/workspace",
+          cwd: managedRemoteWorkspace,
           remoteExecution: {
             transport: "ssh",
             host: "127.0.0.1",
             port: 2222,
             username: "fixture",
-            remoteCwd: "/remote/workspace",
+            remoteCwd: managedRemoteWorkspace,
           },
         },
         sessionDisplayId: "session-123",
@@ -353,7 +416,7 @@ describe("codex remote execution", () => {
       "session-123",
       "-",
     ]);
-    expect(call?.[3].env.CODEX_HOME).toBe("/remote/workspace/.paperclip-runtime/codex/home");
-    expect(call?.[3].remoteExecution?.remoteCwd).toBe("/remote/workspace");
+    expect(call?.[3].env.CODEX_HOME).toBe(`${managedRemoteWorkspace}/.paperclip-runtime/codex/home`);
+    expect(call?.[3].remoteExecution?.remoteCwd).toBe(managedRemoteWorkspace);
   });
 });

@@ -111,6 +111,8 @@ describe("SidebarAccountMenu", () => {
     // and the version string, so textContent reads "noralAI v1.2.3".
     expect(document.body.textContent).toContain("noralAI v1.2.3");
     expect(document.body.textContent).toContain("jane@example.com");
+    expect(document.body.querySelector('[data-slot="popover-content"]')?.className)
+      .toContain("w-[277px]");
 
     await act(async () => {
       root.unmount();

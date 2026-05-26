@@ -1,12 +1,13 @@
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { createHash, type Hash } from "node:crypto";
 import type { AdapterExecutionContext } from "@noralos/adapter-utils";
-import { ensureNoralosSkillSymlink, type NoralosSkillEntry } from "@noralos/adapter-utils/server-utils";
-
-const DEFAULT_NORALOS_INSTANCE_ID = "default";
+import {
+  ensureNoralosSkillSymlink,
+  resolvePaperclipInstanceRootForAdapter,
+  type NoralosSkillEntry,
+} from "@noralos/adapter-utils/server-utils";
 
 type SkillEntry = NoralosSkillEntry;
 
@@ -25,12 +26,13 @@ function resolveManagedClaudePromptCacheRoot(
   env: NodeJS.ProcessEnv,
   companyId: string,
 ): string {
-  const noralosHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_NORALOS_INSTANCE_ID;
+  const instanceRoot = resolvePaperclipInstanceRootForAdapter({
+    homeDir: nonEmpty(env.NORALOS_HOME) ?? undefined,
+    instanceId: nonEmpty(env.NORALOS_INSTANCE_ID) ?? undefined,
+    env,
+  });
   return path.resolve(
-    noralosHome,
-    "instances",
-    instanceId,
+    instanceRoot,
     "companies",
     companyId,
     "claude-prompt-cache",

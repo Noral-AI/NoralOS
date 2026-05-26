@@ -2,9 +2,9 @@ import { timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import type { Db } from "@noralos/db";
 import { and, count, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { readPersistedDevServerStatus, toDevServerHealthStatus, writeDevServerRestartRequest } from "../dev-server-status.js";
 import { heartbeatRuns, instanceUserRoles, invites } from "@noralos/db";
 import type { DeploymentExposure, DeploymentMode } from "@noralos/shared";
-import { readPersistedDevServerStatus, toDevServerHealthStatus } from "../dev-server-status.js";
 import { logger } from "../middleware/logger.js";
 import { instanceSettingsService } from "../services/instance-settings.js";
 import { serverVersion } from "../version.js";
@@ -43,6 +43,40 @@ export function healthRoutes(
   },
 ) {
   const router = Router();
+
+  router.post("/dev-server/restart", async (req, res) => {
+    const actorType = "actor" in req ? req.actor?.type : null;
+    if (opts.deploymentMode === "authenticated" && actorType !== "board") {
+      res.status(403).json({ error: "board_access_required" });
+      return;
+    }
+
+    const persistedDevServerStatus = readPersistedDevServerStatus();
+    if (!persistedDevServerStatus) {
+      res.status(404).json({ error: "dev_server_supervisor_unavailable" });
+      return;
+    }
+
+    const restartRequired =
+      persistedDevServerStatus.dirty ||
+      persistedDevServerStatus.changedPathCount > 0 ||
+      persistedDevServerStatus.pendingMigrations.length > 0;
+    if (!restartRequired) {
+      res.status(409).json({ error: "restart_not_required" });
+      return;
+    }
+
+    const written = writeDevServerRestartRequest({
+      requestedAt: new Date().toISOString(),
+      reason: "manual_restart_now",
+    });
+    if (!written) {
+      res.status(404).json({ error: "dev_server_supervisor_unavailable" });
+      return;
+    }
+
+    res.status(202).json({ status: "restart_requested" });
+  });
 
   router.get("/", async (req, res) => {
     const actorType = "actor" in req ? req.actor?.type : null;

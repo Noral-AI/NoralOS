@@ -98,6 +98,28 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+<<<<<<< v2026.525.0
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --chip-match-title-bg: oklch(0.97 0.02 265);
+  --chip-match-title-fg: oklch(0.4 0.13 265);
+  --chip-match-title-border: oklch(0.85 0.05 265);
+  --chip-match-comment-bg: oklch(0.97 0.02 145);
+  --chip-match-comment-fg: oklch(0.4 0.10 145);
+  --chip-match-comment-border: oklch(0.85 0.05 145);
+  --chip-match-document-bg: oklch(0.97 0.02 295);
+  --chip-match-document-fg: oklch(0.4 0.10 295);
+  --chip-match-document-border: oklch(0.85 0.05 295);
+  --chip-match-identifier-bg: var(--muted);
+  --chip-match-identifier-fg: var(--muted-foreground);
+  --chip-match-identifier-border: var(--border);
+=======
 
   --sidebar: var(--brand-paper);
   --sidebar-foreground: var(--brand-ink);
@@ -107,6 +129,7 @@
   --sidebar-accent-foreground: var(--brand-ink);
   --sidebar-border: var(--brand-rule);
   --sidebar-ring: var(--brand-signal);
+>>>>>>> master
 }
 
 .dark {
@@ -138,6 +161,28 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+<<<<<<< v2026.525.0
+  --sidebar: oklch(0.145 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+  --chip-match-title-bg: oklch(0.27 0.04 265 / 0.5);
+  --chip-match-title-fg: oklch(0.78 0.10 265);
+  --chip-match-title-border: oklch(0.4 0.06 265);
+  --chip-match-comment-bg: oklch(0.27 0.04 145 / 0.5);
+  --chip-match-comment-fg: oklch(0.78 0.08 145);
+  --chip-match-comment-border: oklch(0.4 0.05 145);
+  --chip-match-document-bg: oklch(0.27 0.04 295 / 0.5);
+  --chip-match-document-fg: oklch(0.78 0.08 295);
+  --chip-match-document-border: oklch(0.4 0.05 295);
+  --chip-match-identifier-bg: var(--muted);
+  --chip-match-identifier-fg: var(--muted-foreground);
+  --chip-match-identifier-border: var(--border);
+=======
 
   --sidebar: var(--brand-ink);
   --sidebar-foreground: var(--brand-cream);
@@ -147,6 +192,7 @@
   --sidebar-accent-foreground: var(--brand-cream);
   --sidebar-border: rgba(245, 241, 234, 0.10);
   --sidebar-ring: var(--brand-signal);
+>>>>>>> master
 }
 
 @layer base {
@@ -234,7 +280,18 @@
     min-height: 44px;
   }
 
-  [data-slot="toggle"] {
+  /* Small inline widgets keep their design size on touch devices —
+     forcing 44px here stretches checkboxes, chip menus, and icon buttons
+     that live inside dense rows (sidebar headers, issue rows, filter
+     popovers). The surrounding row provides the touch area. */
+  [data-slot="toggle"],
+  [data-slot="checkbox"],
+  [data-slot="icon-button"],
+  [data-size="xs"],
+  [data-size="icon-xs"],
+  [data-size="icon-sm"],
+  input[type="checkbox"],
+  input[type="radio"] {
     min-height: 0;
   }
 }
@@ -262,9 +319,16 @@
   background: oklch(0.5 0 0);
 }
 
-/* Auto-hide scrollbar: always reserves space, thumb visible only on hover */
+/* Auto-hide scrollbar: thin, stable gutter with the thumb visible only on hover */
+.scrollbar-auto-hide {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
 .scrollbar-auto-hide::-webkit-scrollbar {
   width: 8px !important;
+  height: 8px !important;
   background: transparent !important;
 }
 .scrollbar-auto-hide::-webkit-scrollbar-track {
@@ -274,18 +338,25 @@
   background: transparent !important;
 }
 /* Light mode scrollbar on hover */
+.scrollbar-auto-hide:hover {
+  scrollbar-color: oklch(0.7 0 0) transparent;
+}
 .scrollbar-auto-hide:hover::-webkit-scrollbar-track {
-  background: oklch(0.92 0 0) !important;
+  background: transparent !important;
 }
 .scrollbar-auto-hide:hover::-webkit-scrollbar-thumb {
   background: oklch(0.7 0 0) !important;
+  border-radius: 999px !important;
 }
 .scrollbar-auto-hide:hover::-webkit-scrollbar-thumb:hover {
   background: oklch(0.6 0 0) !important;
 }
 /* Dark mode scrollbar on hover */
+.dark .scrollbar-auto-hide:hover {
+  scrollbar-color: oklch(0.4 0 0) transparent;
+}
 .dark .scrollbar-auto-hide:hover::-webkit-scrollbar-track {
-  background: oklch(0.205 0 0) !important;
+  background: transparent !important;
 }
 .dark .scrollbar-auto-hide:hover::-webkit-scrollbar-thumb {
   background: oklch(0.4 0 0) !important;
@@ -743,18 +814,39 @@ a.paperclip-mention-chip[data-mention-kind="agent"]::before {
   background: none;
 }
 
+<<<<<<< v2026.525.0
+/* Actions for fenced and indented preformatted markdown blocks */
+=======
 /* Copy-to-clipboard button on fenced code blocks */
+>>>>>>> master
 .paperclip-markdown-codeblock {
   position: relative;
 }
 
+<<<<<<< v2026.525.0
+.paperclip-markdown-codeblock-actions {
+=======
 .paperclip-markdown-codeblock-copy {
+>>>>>>> master
   position: absolute;
   top: 0.4rem;
   right: 0.4rem;
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+<<<<<<< v2026.525.0
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.paperclip-markdown-codeblock-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 1.55rem;
+=======
+>>>>>>> master
   padding: 0.2rem 0.4rem;
   border-radius: calc(var(--radius) - 4px);
   border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
@@ -763,6 +855,18 @@ a.paperclip-mention-chip[data-mention-kind="agent"]::before {
   font-size: 0.7rem;
   line-height: 1;
   cursor: pointer;
+<<<<<<< v2026.525.0
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.paperclip-markdown-codeblock:hover .paperclip-markdown-codeblock-actions,
+.paperclip-markdown-codeblock-actions:focus-within,
+.paperclip-markdown-codeblock-actions[data-active] {
+  opacity: 1;
+}
+
+.paperclip-markdown-codeblock-action:hover {
+=======
   opacity: 0;
   transition: opacity 0.12s ease, background-color 0.12s ease, color 0.12s ease;
 }
@@ -774,10 +878,24 @@ a.paperclip-mention-chip[data-mention-kind="agent"]::before {
 }
 
 .paperclip-markdown-codeblock-copy:hover {
+>>>>>>> master
   background-color: var(--accent);
   color: var(--accent-foreground);
 }
 
+<<<<<<< v2026.525.0
+.paperclip-markdown-codeblock-action[data-active],
+.paperclip-markdown-codeblock-action[data-copied] {
+  border-color: color-mix(in oklab, var(--primary) 38%, transparent);
+  color: var(--primary);
+}
+
+.paperclip-markdown-codeblock-action[data-failed] {
+  color: var(--destructive);
+}
+
+.paperclip-markdown-codeblock-action-label {
+=======
 .paperclip-markdown-codeblock-copy[data-copied] {
   color: var(--primary);
 }
@@ -787,6 +905,7 @@ a.paperclip-mention-chip[data-mention-kind="agent"]::before {
 }
 
 .paperclip-markdown-codeblock-copy-label {
+>>>>>>> master
   font-weight: 500;
 }
 
@@ -822,7 +941,7 @@ a.paperclip-mention-chip[data-mention-kind="agent"]::before {
   margin-bottom: 0;
 }
 
-.paperclip-markdown :where(p, ul, ol, blockquote, pre, table) {
+.paperclip-markdown :where(p, ul, ol, blockquote, pre, .paperclip-markdown-table-scroll) {
   margin-top: 0.7rem;
   margin-bottom: 0.7rem;
 }
@@ -930,8 +1049,28 @@ a.paperclip-mention-chip[data-mention-kind="agent"]::before {
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
 }
 
-.paperclip-markdown table {
-  width: 100%;
+.paperclip-markdown-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.paperclip-markdown-table-scroll:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.paperclip-markdown-table-scroll table {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+}
+
+.paperclip-markdown-table-scroll :where(th, td) {
+  min-width: 8rem;
+  max-width: 18rem;
+  vertical-align: top;
 }
 
 .paperclip-markdown th {

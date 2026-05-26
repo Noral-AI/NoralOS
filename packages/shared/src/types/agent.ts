@@ -25,6 +25,16 @@ export interface AgentRuntimeConfig extends Record<string, unknown> {
   modelProfiles?: Partial<Record<ModelProfileKey, AgentModelProfileConfig>>;
 }
 
+export interface AgentModelProfileConfig {
+  enabled?: boolean;
+  label?: string;
+  adapterConfig: Record<string, unknown>;
+}
+
+export interface AgentRuntimeConfig extends Record<string, unknown> {
+  modelProfiles?: Partial<Record<ModelProfileKey, AgentModelProfileConfig>>;
+}
+
 export type AgentInstructionsBundleMode = "managed" | "external";
 
 export interface AgentInstructionsFileSummary {
@@ -59,7 +69,7 @@ export interface AgentInstructionsBundle {
 
 export interface AgentAccessState {
   canAssignTasks: boolean;
-  taskAssignSource: "explicit_grant" | "agent_creator" | "ceo_role" | "none";
+  taskAssignSource: "simple_default" | "explicit_grant" | "agent_creator" | "ceo_role" | "none";
   membership: CompanyMembership | null;
   grants: PrincipalPermissionGrant[];
 }

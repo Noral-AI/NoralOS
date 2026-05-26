@@ -34,6 +34,7 @@ export async function resolveEnvironmentExecutionTarget(input: {
 
   if (input.environment.driver === "sandbox") {
     if (
+      input.adapterType !== "acpx_local" &&
       input.adapterType !== "codex_local" &&
       input.adapterType !== "claude_local" &&
       input.adapterType !== "gemini_local" &&
@@ -45,6 +46,7 @@ export async function resolveEnvironmentExecutionTarget(input: {
     }
 
     const parsed = await resolveEnvironmentDriverConfigForRuntime(input.db, input.companyId, {
+      id: input.environment.id,
       driver: input.environment.driver as "sandbox",
       config: parseObject(input.environment.config),
     });
@@ -57,6 +59,10 @@ export async function resolveEnvironmentExecutionTarget(input: {
         ? input.leaseMetadata.remoteCwd.trim()
         : DEFAULT_SANDBOX_REMOTE_CWD;
     const timeoutMs = "timeoutMs" in parsed.config ? parsed.config.timeoutMs : null;
+    const shellCommand =
+      input.leaseMetadata?.shellCommand === "bash" || input.leaseMetadata?.shellCommand === "sh"
+        ? input.leaseMetadata.shellCommand
+        : null;
     const noralosApiUrl =
       typeof input.leaseMetadata?.noralosApiUrl === "string" && input.leaseMetadata.noralosApiUrl.trim().length > 0
         ? input.leaseMetadata.noralosApiUrl.trim()
@@ -66,6 +72,7 @@ export async function resolveEnvironmentExecutionTarget(input: {
       kind: "remote",
       transport: "sandbox",
       providerKey: parsed.config.provider,
+      shellCommand,
       remoteCwd,
       environmentId: input.environment.id ?? null,
       leaseId: input.leaseId ?? null,
@@ -106,6 +113,7 @@ export async function resolveEnvironmentExecutionTarget(input: {
   if (
     (
       input.adapterType !== "codex_local" &&
+      input.adapterType !== "acpx_local" &&
       input.adapterType !== "claude_local" &&
       input.adapterType !== "gemini_local" &&
       input.adapterType !== "opencode_local" &&
@@ -118,6 +126,7 @@ export async function resolveEnvironmentExecutionTarget(input: {
   }
 
   const parsed = await resolveEnvironmentDriverConfigForRuntime(input.db, input.companyId, {
+    id: input.environment.id,
     driver: input.environment.driver as "ssh",
     config: parseObject(input.environment.config),
   });

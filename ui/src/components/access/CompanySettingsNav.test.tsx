@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { act } from "react";
 import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompanySettingsNav, getCompanySettingsTab } from "./CompanySettingsNav";
 
@@ -40,6 +40,14 @@ vi.mock("@/components/PageTabBar", () => ({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
+async function act(callback: () => void | Promise<void>) {
+  let result: void | Promise<void> = undefined;
+  flushSync(() => {
+    result = callback();
+  });
+  await result;
+}
+
 describe("CompanySettingsNav", () => {
   let container: HTMLDivElement;
 
@@ -63,25 +71,27 @@ describe("CompanySettingsNav", () => {
     expect(getCompanySettingsTab("/company/settings/access")).toBe("access");
     expect(getCompanySettingsTab("/PAP/company/settings/access")).toBe("access");
     expect(getCompanySettingsTab("/company/settings/invites")).toBe("invites");
+    expect(getCompanySettingsTab("/PAP/company/settings/secrets")).toBe("secrets");
   });
 
   it("renders the active tab and navigates when a different tab is selected", async () => {
-    currentPathname = "/PAP/company/settings/access";
+    currentPathname = "/PAP/company/settings/members";
     const root = createRoot(container);
 
     await act(async () => {
       root.render(<CompanySettingsNav />);
     });
 
-    expect(container.textContent).toContain("access");
+    expect(container.textContent).toContain("members");
     expect(pageTabBarMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        value: "access",
+        value: "members",
         items: [
           { value: "general", label: "General" },
           { value: "environments", label: "Environments" },
           { value: "access", label: "Access" },
           { value: "invites", label: "Invites" },
+          { value: "secrets", label: "Secrets" },
         ],
       }),
     );

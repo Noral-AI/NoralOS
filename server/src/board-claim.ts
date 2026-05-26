@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import type { Db } from "@noralos/db";
+import { ensureHumanRoleDefaultGrants } from "./services/principal-access-compatibility.js";
 import { companies, companyMemberships, instanceUserRoles } from "@noralos/db";
+import type { Db } from "@noralos/db";
 import type { DeploymentMode } from "@noralos/shared";
 
 const LOCAL_BOARD_USER_ID = "local-board";
@@ -89,6 +90,7 @@ export async function claimBoardOwnership(
   const status = getChallengeStatus(opts.token, opts.code);
   if (status !== "available") return { status };
 
+  const claimedCompanyIds: string[] = [];
   await db.transaction(async (tx) => {
     const existingTargetAdmin = await tx
       .select({ id: instanceUserRoles.id })
@@ -108,6 +110,7 @@ export async function claimBoardOwnership(
 
     const allCompanies = await tx.select({ id: companies.id }).from(companies);
     for (const company of allCompanies) {
+      claimedCompanyIds.push(company.id);
       const existing = await tx
         .select({ id: companyMemberships.id, status: companyMemberships.status })
         .from(companyMemberships)
@@ -139,6 +142,15 @@ export async function claimBoardOwnership(
       }
     }
   });
+
+  for (const companyId of claimedCompanyIds) {
+    await ensureHumanRoleDefaultGrants(db, {
+      companyId,
+      principalId: opts.userId,
+      membershipRole: "owner",
+      grantedByUserId: opts.userId,
+    });
+  }
 
   if (activeChallenge && activeChallenge.token === opts.token) {
     activeChallenge.claimedAt = new Date();

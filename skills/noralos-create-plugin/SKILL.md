@@ -11,13 +11,23 @@ description: >
 
 Use this skill when the task is to create, scaffold, or document a NoralOS plugin.
 
-## 1. Ground rules
+## 1. Default: build the plugin OUTSIDE Paperclip core
 
-Read these first when needed:
+Plugins are their own packages. Unless the task **explicitly** asks for a bundled in-repo example, do not add plugin source under `packages/plugins/` in this repo.
+
+- Scaffold the plugin into a directory outside the Paperclip checkout (e.g. `~/dev/paperclip-plugins/<name>`).
+- Install it into the running Paperclip instance by local absolute path.
+- Edit code in the external package; let Paperclip pick up rebuilt output.
+
+Only edit Paperclip core itself when the user asks to surface a plugin as a bundled example (`server/src/routes/plugins.ts`, in-repo example lists, docs).
+
+## 2. Ground rules
+
+Reference docs when you need detail:
 
 1. `doc/plugins/PLUGIN_AUTHORING_GUIDE.md`
 2. `packages/plugins/sdk/README.md`
-3. `doc/plugins/PLUGIN_SPEC.md` only for future-looking context
+3. `doc/plugins/PLUGIN_SPEC.md` — future-looking context only
 
 Current runtime assumptions:
 
@@ -28,9 +38,9 @@ Current runtime assumptions:
 - no host-provided shared plugin UI component kit yet
 - `ctx.assets` is not supported in the current runtime
 
-## 2. Preferred workflow
+## 3. CLI-first scaffold workflow
 
-Use the scaffold package instead of hand-writing the boilerplate:
+Use `paperclipai plugin init`. Do not invoke the scaffold package node entrypoint by hand unless the CLI command is unavailable in the environment.
 
 ```bash
 pnpm --filter @noralos/create-noralos-plugin build
@@ -46,20 +56,40 @@ node packages/plugins/create-noralos-plugin/dist/index.js @acme/plugin-name \
   --sdk-path /absolute/path/to/noralos/packages/plugins/sdk
 ```
 
-Recommended target inside this repo:
+## 4. Local install + rebuild loop
 
-- `packages/plugins/examples/` for example plugins
-- another `packages/plugins/<name>/` folder if it is becoming a real package
+In the scaffolded plugin folder:
 
-## 3. After scaffolding
+```bash
+pnpm install
+pnpm dev            # esbuild --watch: rebuilds dist/manifest.js, dist/worker.js, dist/ui/
+paperclipai plugin install /absolute/path/to/my-plugin
+```
 
-Check and adjust:
+Notes:
 
-- `src/manifest.ts`
-- `src/worker.ts`
-- `src/ui/index.tsx`
-- `tests/plugin.spec.ts`
-- `package.json`
+- `paperclipai plugin install` auto-detects local paths (absolute, `./`, `../`, `~`, or an existing relative folder) and forwards `isLocalPath: true` to the server. Pass `--local` to force local mode if the heuristic is ambiguous.
+- Paths are resolved to absolute paths before being sent to the server.
+- The server watches built outputs (`dist/`) for local-path plugins and restarts the plugin worker on rebuild — you do not need to reinstall after every edit.
+- UI hot reload via the SDK dev server (`pnpm dev:ui`, port `4177`) is optional and template-dependent; only mention it if the template wires `devUiUrl` and you verified it works end to end.
+- `--version` only applies to npm package installs. Combining it with a local path is an error.
+
+After install, inspect with:
+
+```bash
+paperclipai plugin list
+paperclipai plugin inspect <plugin-key>
+```
+
+## 5. After scaffolding, sanity-check the package
+
+Open and confirm:
+
+- `src/manifest.ts` — declared capabilities and slots
+- `src/worker.ts` — worker entry
+- `src/ui/index.tsx` — UI entry (if applicable)
+- `tests/plugin.spec.ts` — placeholder test
+- `package.json` — `paperclipPlugin` block points at `dist/manifest.js`, `dist/worker.js`, `dist/ui/`
 
 Make sure the plugin:
 
@@ -70,32 +100,46 @@ Make sure the plugin:
 - uses `routePath` only on `page` slots
 - is installed into NoralOS from an absolute local path during development
 
-## 4. If the plugin should appear in the app
+## 6. Verification (run before declaring success)
 
-For bundled example/discoverable behavior, update the relevant host wiring:
-
-- bundled example list in `server/src/routes/plugins.ts`
-- any docs that list in-repo examples
-
-Only do this if the user wants the plugin surfaced as a bundled example.
-
-## 5. Verification
-
-Always run:
+From the plugin folder:
 
 ```bash
-pnpm --filter <plugin-package> typecheck
-pnpm --filter <plugin-package> test
-pnpm --filter <plugin-package> build
+pnpm typecheck
+pnpm test
+pnpm build
 ```
 
-If you changed SDK/host/plugin runtime code too, also run broader repo checks as appropriate.
+If the plugin is already running under `pnpm dev`, you can keep the watcher up and run `pnpm typecheck` and `pnpm test` in a separate shell.
 
-## 6. Documentation expectations
+If you changed Paperclip SDK/host/plugin runtime code in addition to the plugin, also run the relevant Paperclip workspace checks.
+
+## 7. Success checklist (report this back)
+
+When you finish a local plugin task, report:
+
+- **Scaffold path** — absolute path of the created plugin folder.
+- **Commands run** — the exact `paperclipai plugin init`, `pnpm install`, `pnpm dev`, `paperclipai plugin install <path>` invocations (and any verification commands).
+- **Install status** — output of `paperclipai plugin list` / `plugin inspect` (plugin key, version, status). Note if `status` is anything other than `ready` and include `lastError`.
+- **Tests / build result** — `pnpm typecheck`, `pnpm test`, `pnpm build` pass/fail with the failing output if any.
+- **Reload limitations** — call out anything that did not hot-reload (e.g. manifest changes required a reinstall, UI dev server was not wired, etc.).
+
+If any item is missing, mark it as such — do not silently skip.
+
+## 8. When NOT to edit Paperclip core
+
+Do not add the plugin under `packages/plugins/` or update bundled-example wiring unless the user explicitly asks for a bundled example. Local-path installs are the supported development model; npm packages are the production deployment path.
+
+If the user does ask for a bundled example, also update:
+
+- `server/src/routes/plugins.ts` example list
+- any docs that enumerate in-repo example plugins
+
+## 9. Documentation expectations
 
 When authoring or updating plugin docs:
 
 - distinguish current implementation from future spec ideas
 - be explicit about the trusted-code model
 - do not promise host UI components or asset APIs
-- prefer npm-package deployment guidance over repo-local workflows for production
+- prefer local-path development + npm-package deployment guidance over repo-local workflows

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -19,10 +20,11 @@ describe("home path resolution", () => {
     delete process.env.NORALOS_HOME;
     delete process.env.NORALOS_INSTANCE_ID;
 
+    const home = path.resolve(os.homedir(), ".noralos");
     const paths = describeLocalInstancePaths();
-    expect(paths.homeDir).toBe(path.resolve(os.homedir(), ".paperclip"));
+    expect(paths.homeDir).toBe(home);
     expect(paths.instanceId).toBe("default");
-    expect(paths.configPath).toBe(path.resolve(os.homedir(), ".paperclip", "instances", "default", "config.json"));
+    expect(paths.configPath).toBe(path.resolve(home, "instances", "default", "config.json"));
   });
 
   it("supports NORALOS_HOME and explicit instance ids", () => {

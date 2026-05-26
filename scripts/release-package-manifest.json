@@ -1,0 +1,107 @@
+[
+  {
+    "dir": "cli",
+    "name": "noralos-cli",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapter-utils",
+    "name": "@noralos/adapter-utils",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/claude-local",
+    "name": "@noralos/adapter-claude-local",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/codex-local",
+    "name": "@noralos/adapter-codex-local",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/cursor-local",
+    "name": "@noralos/adapter-cursor-local",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/gemini-local",
+    "name": "@noralos/adapter-gemini-local",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/openclaw-gateway",
+    "name": "@noralos/adapter-openclaw-gateway",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/opencode-local",
+    "name": "@noralos/adapter-opencode-local",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/adapters/pi-local",
+    "name": "@noralos/adapter-pi-local",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/db",
+    "name": "@noralos/db",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/mcp-server",
+    "name": "@noralos/mcp-server",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/plugins/create-noralos-plugin",
+    "name": "@noralos/create-noralos-plugin",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/plugins/sandbox-providers/cloudflare",
+    "name": "@paperclipai/plugin-cloudflare-sandbox",
+    "publishFromCi": false
+  },
+  {
+    "dir": "packages/plugins/sandbox-providers/daytona",
+    "name": "@paperclipai/plugin-daytona",
+    "publishFromCi": false
+  },
+  {
+    "dir": "packages/plugins/sandbox-providers/e2b",
+    "name": "@noralos/plugin-e2b",
+    "publishFromCi": false
+  },
+  {
+    "dir": "packages/plugins/sandbox-providers/exe-dev",
+    "name": "@paperclipai/plugin-exe-dev",
+    "publishFromCi": false
+  },
+  {
+    "dir": "packages/plugins/sandbox-providers/modal",
+    "name": "@paperclipai/plugin-modal",
+    "publishFromCi": false
+  },
+  {
+    "dir": "packages/plugins/sdk",
+    "name": "@noralos/plugin-sdk",
+    "publishFromCi": true
+  },
+  {
+    "dir": "packages/shared",
+    "name": "@noralos/shared",
+    "publishFromCi": true
+  },
+  {
+    "dir": "server",
+    "name": "@noralos/server",
+    "publishFromCi": true
+  },
+  {
+    "dir": "ui",
+    "name": "@noralos/ui",
+    "publishFromCi": true
+  }
+]

@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import {
+  expandHomePrefix,
+  resolveDefaultEmbeddedPostgresDir,
+  resolvePaperclipConfigPathForInstance,
+  resolvePaperclipEnvPathForConfig,
+} from "@noralos/shared/home-paths";
 
-const DEFAULT_INSTANCE_ID = "default";
 const CONFIG_BASENAME = "config.json";
-const ENV_BASENAME = ".env";
-const INSTANCE_ID_RE = /^[a-zA-Z0-9_-]+$/;
 
 type PartialConfig = {
   database?: {
@@ -35,39 +37,6 @@ export type ResolvedDatabaseTarget =
       envPath: string;
     };
 
-function expandHomePrefix(value: string): string {
-  if (value === "~") return os.homedir();
-  if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
-  return value;
-}
-
-function resolveNoralosHomeDir(): string {
-  const envHome = process.env.NORALOS_HOME?.trim();
-  if (envHome) return path.resolve(expandHomePrefix(envHome));
-  return path.resolve(os.homedir(), ".paperclip");
-}
-
-function resolveNoralosInstanceId(): string {
-  const raw = process.env.NORALOS_INSTANCE_ID?.trim() || DEFAULT_INSTANCE_ID;
-  if (!INSTANCE_ID_RE.test(raw)) {
-    throw new Error(`Invalid NORALOS_INSTANCE_ID '${raw}'.`);
-  }
-  return raw;
-}
-
-function resolveDefaultConfigPath(): string {
-  return path.resolve(
-    resolveNoralosHomeDir(),
-    "instances",
-    resolveNoralosInstanceId(),
-    CONFIG_BASENAME,
-  );
-}
-
-function resolveDefaultEmbeddedPostgresDir(): string {
-  return path.resolve(resolveNoralosHomeDir(), "instances", resolveNoralosInstanceId(), "db");
-}
-
 function resolveHomeAwarePath(value: string): string {
   return path.resolve(expandHomePrefix(value));
 }
@@ -89,11 +58,11 @@ function resolveNoralosConfigPath(): string {
   if (process.env.NORALOS_CONFIG?.trim()) {
     return path.resolve(process.env.NORALOS_CONFIG.trim());
   }
-  return findConfigFileFromAncestors(process.cwd()) ?? resolveDefaultConfigPath();
+  return findConfigFileFromAncestors(process.cwd()) ?? resolvePaperclipConfigPathForInstance();
 }
 
 function resolveNoralosEnvPath(configPath: string): string {
-  return path.resolve(path.dirname(configPath), ENV_BASENAME);
+  return resolvePaperclipEnvPathForConfig(configPath);
 }
 
 function parseEnvFile(contents: string): Record<string, string> {

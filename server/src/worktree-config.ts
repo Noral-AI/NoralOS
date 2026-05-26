@@ -115,6 +115,12 @@ function resolveWorktreeRuntimeContext(
   const configPath = resolveNoralosConfigPath(overrideConfigPath);
   const envPath = resolveNoralosEnvPath(configPath);
   const persistedEnv = readEnvEntries(envPath);
+  const persistedConfigPath = nonEmpty(persistedEnv.PAPERCLIP_CONFIG);
+  const persistedConfigLooksStale =
+    persistedConfigPath !== null &&
+    path.resolve(expandHomePrefix(persistedConfigPath)) !== path.resolve(configPath) &&
+    !fs.existsSync(resolveHomeAwarePath(persistedConfigPath));
+  const stablePersistedEnv = persistedConfigLooksStale ? {} : persistedEnv;
   const worktreeRoot = path.resolve(path.dirname(configPath), "..");
   const worktreeName =
     nonEmpty(persistedEnv.NORALOS_WORKTREE_NAME) ??
