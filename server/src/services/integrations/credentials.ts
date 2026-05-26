@@ -627,7 +627,8 @@ export function integrationCredentialService(db: Db) {
       if (!row || row.companyId !== companyId) throw notFound("Integration credential not found");
 
       // Refuse to disable a credential while it's still assigned. The
-      // admin must unassign first to avoid silently breaking voice-cascade.
+      // admin must unassign first to avoid silently breaking the plugin
+      // that consumes it.
       const liveAssignments = await db
         .select()
         .from(integrationCredentialAssignments)

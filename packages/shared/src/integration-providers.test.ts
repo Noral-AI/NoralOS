@@ -47,9 +47,14 @@ describe("INTEGRATION_PROVIDERS — noralai_brooklyn", () => {
     });
   });
 
-  it("does not regress the existing voice-cascade providers", () => {
+  it("keeps google_tts and elevenlabs registered as standalone TTS credentials", () => {
     expect(INTEGRATION_PROVIDERS["google_tts"]).toBeDefined();
     expect(INTEGRATION_PROVIDERS["elevenlabs"]).toBeDefined();
+  });
+
+  it("ships google_tts and elevenlabs with no assignable slots (voice-cascade retired in Phase 6 PR-3)", () => {
+    expect(INTEGRATION_PROVIDERS["google_tts"]!.assignableSlots).toEqual([]);
+    expect(INTEGRATION_PROVIDERS["elevenlabs"]!.assignableSlots).toEqual([]);
   });
 });
 
@@ -70,10 +75,9 @@ describe("ASSIGNMENT_TARGETS — noralai.brooklyn", () => {
     });
   });
 
-  it("does not regress the existing voice-cascade assignment target", () => {
+  it("no longer ships a voice-cascade assignment target (retired Phase 6 PR-3)", () => {
     const vc = ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralos.voice-cascade");
-    expect(vc).toBeDefined();
-    expect(vc!.slots.length).toBeGreaterThanOrEqual(2);
+    expect(vc).toBeUndefined();
   });
 });
 
@@ -234,7 +238,7 @@ describe("INTEGRATION_PROVIDERS — noralvoice", () => {
     }
   });
 
-  it("does not regress the existing providers (twilio + brooklyn + voice-cascade)", () => {
+  it("does not regress the existing providers (twilio + brooklyn + standalone TTS)", () => {
     expect(INTEGRATION_PROVIDERS["twilio"]).toBeDefined();
     expect(INTEGRATION_PROVIDERS["noralai_brooklyn"]).toBeDefined();
     expect(INTEGRATION_PROVIDERS["google_tts"]).toBeDefined();
@@ -259,8 +263,7 @@ describe("ASSIGNMENT_TARGETS — noralai.noralvoice", () => {
     });
   });
 
-  it("does not regress the noralai.brooklyn or voice-cascade assignment targets", () => {
+  it("does not regress the noralai.brooklyn assignment target", () => {
     expect(ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralai.brooklyn")).toBeDefined();
-    expect(ASSIGNMENT_TARGETS.find((t) => t.pluginKey === "noralos.voice-cascade")).toBeDefined();
   });
 });

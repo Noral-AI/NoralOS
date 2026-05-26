@@ -205,7 +205,7 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
     credentialType: "api_key",
     displayName: "Google Cloud TTS",
     description:
-      "Google Cloud Text-to-Speech voices. Used by voice-cascade for the conversational Conference Room agent voice.",
+      "Google Cloud Text-to-Speech voices. Stored as a NoralOS credential; no assignment target today (NoralVoice manages its own TTS catalog).",
     fields: [
       {
         key: "apiKey",
@@ -224,13 +224,7 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       okStatuses: [200],
       safeErrorPrefix: "Google Cloud TTS rejected the key",
     },
-    assignableSlots: [
-      {
-        pluginKey: "noralos.voice-cascade",
-        configPath: "googleTtsApiKeyRef",
-        label: "Voice Cascade — Google Cloud TTS",
-      },
-    ],
+    assignableSlots: [],
   },
   elevenlabs: {
     id: "elevenlabs",
@@ -238,7 +232,7 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
     credentialType: "api_key",
     displayName: "ElevenLabs",
     description:
-      "ElevenLabs voices. Used by voice-cascade for higher-fidelity conversational voice synthesis.",
+      "ElevenLabs voices. Stored as a NoralOS credential; no assignment target today (NoralVoice manages its own TTS catalog).",
     fields: [
       {
         key: "apiKey",
@@ -257,13 +251,7 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       okStatuses: [200],
       safeErrorPrefix: "ElevenLabs rejected the key",
     },
-    assignableSlots: [
-      {
-        pluginKey: "noralos.voice-cascade",
-        configPath: "elevenLabsApiKeyRef",
-        label: "Voice Cascade — ElevenLabs",
-      },
-    ],
+    assignableSlots: [],
   },
   // ── Brooklyn LLM (NORALAI) ──────────────────────────────────────
   // Phase 2 LLM provider. The credential is the API key for the
@@ -588,28 +576,12 @@ export const INTEGRATION_CATEGORY_LABELS: Record<IntegrationCategory, string> = 
   other: "Other",
 };
 
-/** Slots known to assignment UI in Phase 1. Extends to telephony etc. later. */
+/** Slots known to the assignment UI. Extended as new assignable plugins ship. */
 export const ASSIGNMENT_TARGETS: Array<{
   pluginKey: string;
   pluginDisplayName: string;
   slots: Array<{ configPath: string; label: string; expectsProvider: string }>;
 }> = [
-  {
-    pluginKey: "noralos.voice-cascade",
-    pluginDisplayName: "Voice Cascade",
-    slots: [
-      {
-        configPath: "googleTtsApiKeyRef",
-        label: "Google Cloud TTS",
-        expectsProvider: "google_tts",
-      },
-      {
-        configPath: "elevenLabsApiKeyRef",
-        label: "ElevenLabs",
-        expectsProvider: "elevenlabs",
-      },
-    ],
-  },
   {
     pluginKey: "noralai.brooklyn",
     pluginDisplayName: "Brooklyn LLM",
