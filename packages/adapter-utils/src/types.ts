@@ -2,7 +2,7 @@
 // Minimal adapter-facing interfaces (no drizzle dependency)
 // ---------------------------------------------------------------------------
 
-import type { SshRemoteExecutionSpec } from "./ssh.js";
+import type { SshRemoteExecutionSpec } from "./ssh-types.js";
 import type { AdapterExecutionTarget } from "./execution-target.js";
 
 export interface AdapterAgent {
