@@ -19,13 +19,8 @@ import {
   runAdapterExecutionTargetProcess,
   describeAdapterExecutionTarget,
   resolveAdapterExecutionTargetCwd,
-<<<<<<< v2026.525.0
-} from "@paperclipai/adapter-utils/execution-target";
-import { DEFAULT_GEMINI_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
-=======
 } from "@noralos/adapter-utils/execution-target";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
->>>>>>> master
+import { DEFAULT_GEMINI_LOCAL_MODEL, SANDBOX_INSTALL_COMMAND } from "../index.js";
 import { detectGeminiAuthRequired, detectGeminiQuotaExhausted, parseGeminiJsonl } from "./parse.js";
 import { firstNonEmptyLine } from "./utils.js";
 

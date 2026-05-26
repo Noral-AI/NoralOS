@@ -764,18 +764,15 @@ export const PLUGIN_CAPABILITIES = [
   "agents.pause",
   "agents.resume",
   "agents.invoke",
-<<<<<<< v2026.525.0
   "agents.managed",
   "access.members.write",
   "access.invites.write",
   "authorization.grants.write",
   "authorization.policies.write",
-=======
   // `agents.write` is broader than pause/resume/invoke — it permits a
   // plugin to *create* new agents (e.g. shipping an agent template like
   // the NoralVoice plugin's "Voice Director"). Gates `agents.create`.
   "agents.write",
->>>>>>> master
   "agent.sessions.create",
   "agent.sessions.list",
   "agent.sessions.send",

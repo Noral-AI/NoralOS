@@ -94,13 +94,8 @@ function resolveNoralosConfigPath(): string {
   return findConfigFileFromAncestors(process.cwd()) ?? resolvePaperclipConfigPathForInstance();
 }
 
-<<<<<<< v2026.525.0
-function resolvePaperclipEnvPath(configPath: string): string {
-  return resolvePaperclipEnvPathForConfig(configPath);
-=======
 function resolveNoralosEnvPath(configPath: string): string {
-  return path.resolve(path.dirname(configPath), ENV_BASENAME);
->>>>>>> master
+  return resolvePaperclipEnvPathForConfig(configPath);
 }
 
 function parseEnvFile(contents: string): Record<string, string> {

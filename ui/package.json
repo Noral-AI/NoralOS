@@ -34,20 +34,6 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@lexical/link": "0.35.0",
     "@mdxeditor/editor": "^3.52.4",
-<<<<<<< v2026.525.0
-    "@paperclipai/adapter-acpx-local": "workspace:*",
-    "@paperclipai/adapter-claude-local": "workspace:*",
-    "@paperclipai/adapter-codex-local": "workspace:*",
-    "@paperclipai/adapter-cursor-cloud": "workspace:*",
-    "@paperclipai/adapter-cursor-local": "workspace:*",
-    "@paperclipai/adapter-gemini-local": "workspace:*",
-    "@paperclipai/adapter-grok-local": "workspace:*",
-    "@paperclipai/adapter-openclaw-gateway": "workspace:*",
-    "@paperclipai/adapter-opencode-local": "workspace:*",
-    "@paperclipai/adapter-pi-local": "workspace:*",
-    "@paperclipai/adapter-utils": "workspace:*",
-    "@paperclipai/shared": "workspace:*",
-=======
     "@noralos/adapter-claude-local": "workspace:*",
     "@noralos/adapter-codex-local": "workspace:*",
     "@noralos/adapter-cursor-local": "workspace:*",
@@ -58,7 +44,6 @@
     "@noralos/adapter-utils": "workspace:*",
     "@noralos/shared": "workspace:*",
     "@noralos-plugins/noralai-brooklyn": "workspace:*",
->>>>>>> master
     "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-query": "^5.90.21",

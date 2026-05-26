@@ -32,22 +32,14 @@ export function resolveManagedCodexHomeDir(
   env: NodeJS.ProcessEnv,
   companyId?: string,
 ): string {
-<<<<<<< v2026.525.0
   const instanceRoot = resolvePaperclipInstanceRootForAdapter({
-    homeDir: nonEmpty(env.PAPERCLIP_HOME) ?? undefined,
-    instanceId: nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? undefined,
+    homeDir: nonEmpty(env.NORALOS_HOME) ?? undefined,
+    instanceId: nonEmpty(env.NORALOS_INSTANCE_ID) ?? undefined,
     env,
   });
   return companyId
     ? path.resolve(instanceRoot, "companies", companyId, "codex-home")
     : path.resolve(instanceRoot, "codex-home");
-=======
-  const noralosHome = nonEmpty(env.NORALOS_HOME) ?? path.resolve(os.homedir(), ".paperclip");
-  const instanceId = nonEmpty(env.NORALOS_INSTANCE_ID) ?? DEFAULT_NORALOS_INSTANCE_ID;
-  return companyId
-    ? path.resolve(noralosHome, "instances", instanceId, "companies", companyId, "codex-home")
-    : path.resolve(noralosHome, "instances", instanceId, "codex-home");
->>>>>>> master
 }
 
 async function ensureParentDir(target: string): Promise<void> {

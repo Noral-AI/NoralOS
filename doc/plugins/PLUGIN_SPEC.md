@@ -321,13 +321,9 @@ export interface NoralOSPluginManifestV1 {
   description: string;
   author: string;
   categories: Array<"connector" | "workspace" | "automation" | "ui">;
-<<<<<<< v2026.525.0
   minimumHostVersion?: string;
   /** @deprecated Use `minimumHostVersion` instead. Retained for backwards compatibility. */
-  minimumPaperclipVersion?: string;
-=======
   minimumNoralOSVersion?: string;
->>>>>>> master
   capabilities: string[];
   entrypoints: {
     worker: string;

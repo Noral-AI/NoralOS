@@ -204,13 +204,12 @@ pnpm noralos heartbeat run --agent-id <agent-id> [--api-base http://localhost:31
 
 ## Local Storage Defaults
 
-<<<<<<< v2026.525.0
-Local Paperclip data lives under the selected instance root. `PAPERCLIP_HOME` chooses the home directory and `PAPERCLIP_INSTANCE_ID` chooses the instance.
+Local NoralOS data lives under the selected instance root. `NORALOS_HOME` chooses the home directory and `NORALOS_INSTANCE_ID` chooses the instance.
 
 ```text
-~/.paperclip/                                     # PAPERCLIP_HOME
+~/.noralos/                                       # NORALOS_HOME
 └── instances/
-    └── default/                                  # instance root (PAPERCLIP_INSTANCE_ID)
+    └── default/                                  # instance root (NORALOS_INSTANCE_ID)
         ├── config.json                           # runtime config
         ├── .env                                  # instance env file
         ├── db/                                   # embedded PostgreSQL data
@@ -227,9 +226,6 @@ Local Paperclip data lives under the selected instance root. `PAPERCLIP_HOME` ch
 ```
 
 Default paths for the canonical install:
-=======
-Default local instance root is `~/.noralos/instances/default`:
->>>>>>> master
 
 - config: `~/.noralos/instances/default/config.json`
 - embedded db: `~/.noralos/instances/default/db`

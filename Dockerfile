@@ -34,11 +34,6 @@ COPY packages/adapters/opencode-local/package.json packages/adapters/opencode-lo
 COPY packages/adapters/pi-local/package.json packages/adapters/pi-local/
 COPY packages/plugins/sdk/package.json packages/plugins/sdk/
 COPY --parents packages/plugins/sandbox-providers/./*/package.json packages/plugins/sandbox-providers/
-<<<<<<< v2026.525.0
-COPY packages/plugins/paperclip-plugin-fake-sandbox/package.json packages/plugins/paperclip-plugin-fake-sandbox/
-COPY packages/plugins/plugin-llm-wiki/package.json packages/plugins/plugin-llm-wiki/
-COPY packages/plugins/plugin-workspace-diff/package.json packages/plugins/plugin-workspace-diff/
-=======
 COPY packages/plugins/noralos-plugin-fake-sandbox/package.json packages/plugins/noralos-plugin-fake-sandbox/
 COPY packages/plugins/voice-config/package.json packages/plugins/voice-config/
 COPY packages/plugins/voice-cascade/package.json packages/plugins/voice-cascade/
@@ -71,7 +66,6 @@ COPY packages/plugins/noralai-slack/package.json packages/plugins/noralai-slack/
 # Runtime auto-registers from the workspace path via
 # `server/src/services/auto-register-noralvoice.ts`.
 COPY packages/plugins/noralai-noralvoice/package.json packages/plugins/noralai-noralvoice/
->>>>>>> master
 COPY patches/ patches/
 COPY scripts/link-plugin-dev-sdk.mjs scripts/
 

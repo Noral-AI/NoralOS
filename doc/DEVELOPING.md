@@ -500,10 +500,9 @@ Authenticated deployments default strict mode on unless explicitly overridden.
 
 CLI configuration support:
 
-<<<<<<< v2026.525.0
-- `pnpm paperclipai onboard` writes a default `secrets` config section (`local_encrypted`, strict mode off, key file path set) and creates a local key file when needed.
-- `pnpm paperclipai configure --section secrets` lets you update provider/strict mode/key path and creates the local key file when needed.
-- `pnpm paperclipai doctor` validates secrets adapter configuration, can create a missing local key file with `--repair`, and reports missing AWS Secrets Manager bootstrap env when that provider is selected.
+- `pnpm noralos onboard` writes a default `secrets` config section (`local_encrypted`, strict mode off, key file path set) and creates a local key file when needed.
+- `pnpm noralos configure --section secrets` lets you update provider/strict mode/key path and creates the local key file when needed.
+- `pnpm noralos doctor` validates secrets adapter configuration, can create a missing local key file with `--repair`, and reports missing AWS Secrets Manager bootstrap env when that provider is selected.
 - Provider health is available at `GET /api/companies/:companyId/secret-providers/health` and reports local key permission warnings plus backup guidance.
 
 Per-company provider vaults are configured in the board UI under
@@ -511,11 +510,6 @@ Per-company provider vaults are configured in the board UI under
 `/api/companies/{companyId}/secret-provider-configs`. The CLI does not own
 vault lifecycle today. See `docs/deploy/secrets.md` (`Provider Vaults` section)
 for the operator model.
-=======
-- `pnpm noralos onboard` writes a default `secrets` config section (`local_encrypted`, strict mode off, key file path set) and creates a local key file when needed.
-- `pnpm noralos configure --section secrets` lets you update provider/strict mode/key path and creates the local key file when needed.
-- `pnpm noralos doctor` validates secrets adapter configuration and can create a missing local key file with `--repair`.
->>>>>>> master
 
 Migration helper for existing inline env secrets:
 

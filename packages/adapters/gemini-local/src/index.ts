@@ -1,11 +1,7 @@
-<<<<<<< v2026.525.0
 import {
   buildSandboxNpmInstallCommand,
   type AdapterModelProfileDefinition,
-} from "@paperclipai/adapter-utils";
-=======
-import type { AdapterModelProfileDefinition } from "@noralos/adapter-utils";
->>>>>>> master
+} from "@noralos/adapter-utils";
 
 export const type = "gemini_local";
 export const label = "Gemini CLI (local)";

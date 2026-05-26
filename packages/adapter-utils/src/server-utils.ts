@@ -884,11 +884,7 @@ export function buildInvocationEnvForLogs(
 
   const resolvedCommand = options.resolvedCommand?.trim();
   if (resolvedCommand) {
-<<<<<<< v2026.525.0
-    merged[options.resolvedCommandEnvKey ?? "PAPERCLIP_RESOLVED_COMMAND"] = redactCommandTextForLogs(resolvedCommand);
-=======
-    merged[options.resolvedCommandEnvKey ?? "NORALOS_RESOLVED_COMMAND"] = resolvedCommand;
->>>>>>> master
+    merged[options.resolvedCommandEnvKey ?? "NORALOS_RESOLVED_COMMAND"] = redactCommandTextForLogs(resolvedCommand);
   }
 
   return redactEnvForLogs(merged);
