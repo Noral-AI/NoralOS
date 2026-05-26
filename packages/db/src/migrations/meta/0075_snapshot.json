@@ -1,9 +1,5 @@
 {
-<<<<<<< v2026.525.0
-  "id": "fdc9cd8b-5423-4d64-b255-9bc1497fdd6a",
-=======
   "id": "9cb08fe5-824d-463b-93b3-407874fa818b",
->>>>>>> master
   "prevId": "12b3d91e-98ee-4a48-aecb-891f5bde6eda",
   "version": "7",
   "dialect": "postgresql",

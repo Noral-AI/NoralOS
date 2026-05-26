@@ -16,16 +16,9 @@ describe("home path resolution", () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-<<<<<<< v2026.525.0
-  it("defaults to ~/.paperclip and default instance", () => {
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), "paperclip-home-paths-"));
-    process.env.PAPERCLIP_HOME = home;
-    delete process.env.PAPERCLIP_INSTANCE_ID;
-=======
   it("defaults to ~/.noralos and default instance", () => {
     delete process.env.NORALOS_HOME;
     delete process.env.NORALOS_INSTANCE_ID;
->>>>>>> master
 
     const paths = describeLocalInstancePaths();
     expect(paths.homeDir).toBe(home);
@@ -42,11 +35,7 @@ describe("home path resolution", () => {
   });
 
   it("rejects invalid instance ids", () => {
-<<<<<<< v2026.525.0
-    expect(() => resolvePaperclipInstanceId("bad/id")).toThrow(/Invalid PAPERCLIP_INSTANCE_ID/);
-=======
     expect(() => resolveNoralosInstanceId("bad/id")).toThrow(/Invalid instance id/);
->>>>>>> master
   });
 
   it("expands ~ prefixes", () => {

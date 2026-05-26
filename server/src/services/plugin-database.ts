@@ -363,15 +363,7 @@ export function pluginDatabaseService(db: PluginDatabaseRootClient) {
     return plugin;
   }
 
-<<<<<<< v2026.525.0
-  async function ensureNamespaceWithClient(
-    client: PluginDatabaseClient,
-    pluginId: string,
-    manifest: PaperclipPluginManifestV1,
-  ) {
-=======
   async function ensureNamespace(pluginId: string, manifest: NoralosPluginManifestV1) {
->>>>>>> master
     if (!manifest.database) return null;
     const namespaceName = derivePluginDatabaseNamespace(
       manifest.id,
@@ -464,16 +456,7 @@ export function pluginDatabaseService(db: PluginDatabaseRootClient) {
   return {
     ensureNamespace,
 
-<<<<<<< v2026.525.0
-    async applyMigrations(
-      pluginId: string,
-      manifest: PaperclipPluginManifestV1,
-      packageRoot: string,
-      options: ApplyPluginMigrationsOptions = {},
-    ) {
-=======
     async applyMigrations(pluginId: string, manifest: NoralosPluginManifestV1, packageRoot: string) {
->>>>>>> master
       if (!manifest.database) return null;
       const namespace = await ensureNamespace(pluginId, manifest);
       if (!namespace) return null;

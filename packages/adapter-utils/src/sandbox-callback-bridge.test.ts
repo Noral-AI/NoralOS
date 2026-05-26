@@ -3,19 +3,12 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promis
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-<<<<<<< v2026.525.0
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { prepareCommandManagedRuntime } from "./command-managed-runtime.js";
 import {
   authorizeSandboxCallbackBridgeRequestWithRoutes,
   createCommandManagedSandboxCallbackBridgeQueueClient,
-=======
-import { afterEach, describe, expect, it } from "vitest";
-
-import { prepareCommandManagedRuntime } from "./command-managed-runtime.js";
-import {
->>>>>>> master
   createFileSystemSandboxCallbackBridgeQueueClient,
   createSandboxCallbackBridgeAsset,
   createSandboxCallbackBridgeToken,
@@ -47,7 +40,6 @@ describe("sandbox callback bridge", () => {
           ...process.env,
           ...input.env,
         };
-<<<<<<< v2026.525.0
         const command =
           input.command === "sh" ? "/bin/sh" : input.command === "bash" ? "/bin/bash" : input.command;
         const args = [...(input.args ?? [])];
@@ -57,15 +49,8 @@ describe("sandbox callback bridge", () => {
           (args[0] === "-c" || args[0] === "-lc") &&
           typeof args[1] === "string"
         ) {
-          env.PAPERCLIP_TEST_STDIN = input.stdin;
-          args[1] = `printf '%s' \"$PAPERCLIP_TEST_STDIN\" | (${args[1]})`;
-=======
-        const command = input.command === "sh" ? "/bin/sh" : input.command;
-        const args = [...(input.args ?? [])];
-        if (input.stdin != null && input.command === "sh" && args[0] === "-lc" && typeof args[1] === "string") {
           env.NORALOS_TEST_STDIN = input.stdin;
           args[1] = `printf '%s' \"$NORALOS_TEST_STDIN\" | (${args[1]})`;
->>>>>>> master
         }
         try {
           const result = await execFile(command, args, {

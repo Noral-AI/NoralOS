@@ -9,15 +9,10 @@ import {
   invites,
   issues as issuesTable,
   pluginLogs,
-<<<<<<< v2026.525.0
   principalPermissionGrants,
   projects as projectsTable,
-} from "@paperclipai/db";
-import { eq, and, like, desc, inArray, sql, isNull, isNotNull, gt, lte } from "drizzle-orm";
-=======
 } from "@noralos/db";
-import { eq, and, like, desc, inArray, sql } from "drizzle-orm";
->>>>>>> master
+import { eq, and, like, desc, inArray, sql, isNull, isNotNull, gt, lte } from "drizzle-orm";
 import type {
   HostServices,
   Company,
@@ -29,15 +24,10 @@ import type {
   IssueComment,
   PluginIssueAssigneeSummary,
   PluginIssueOrchestrationSummary,
-<<<<<<< v2026.525.0
   PluginExecutionWorkspaceMetadata,
-} from "@paperclipai/plugin-sdk";
-import type { CreateIssueThreadInteraction, InviteJoinType, IssueDocumentSummary, PermissionKey, PrincipalType } from "@paperclipai/shared";
-import { pluginOperationIssueOriginKind } from "@paperclipai/shared";
-=======
 } from "@noralos/plugin-sdk";
-import type { CreateIssueThreadInteraction, IssueDocumentSummary } from "@noralos/shared";
->>>>>>> master
+import type { CreateIssueThreadInteraction, InviteJoinType, IssueDocumentSummary, PermissionKey, PrincipalType } from "@noralos/shared";
+import { pluginOperationIssueOriginKind } from "@noralos/shared";
 import { companyService } from "./companies.js";
 import { agentService } from "./agents.js";
 import { projectService } from "./projects.js";

@@ -24,18 +24,13 @@ import {
   startEmbeddedPostgresTestDatabase,
 } from "./helpers/embedded-postgres.js";
 import { instanceSettingsService } from "../services/instance-settings.ts";
-<<<<<<< v2026.525.0
 import {
   clampIssueListLimit,
   deriveIssueCommentRunLogAttribution,
   ISSUE_LIST_MAX_LIMIT,
   issueService,
 } from "../services/issues.ts";
-import { buildProjectMentionHref, MAX_ISSUE_REQUEST_DEPTH } from "@paperclipai/shared";
-=======
-import { clampIssueListLimit, ISSUE_LIST_MAX_LIMIT, issueService } from "../services/issues.ts";
 import { buildProjectMentionHref, MAX_ISSUE_REQUEST_DEPTH } from "@noralos/shared";
->>>>>>> master
 
 const embeddedPostgresSupport = await getEmbeddedPostgresTestSupport();
 const describeEmbeddedPostgres = embeddedPostgresSupport.supported ? describe : describe.skip;
@@ -580,13 +575,8 @@ describeEmbeddedPostgres("issueService.list participantAgentId", () => {
 
     await db.insert(companies).values({
       id: companyId,
-<<<<<<< v2026.525.0
-      name: "Paperclip",
-      issuePrefix: "PC1A2",
-=======
       name: "NoralOS",
-      issuePrefix: "PAP",
->>>>>>> master
+      issuePrefix: "PC1A2",
       requireBoardApprovalForNewAgents: false,
     });
 

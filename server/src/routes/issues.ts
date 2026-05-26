@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import multer from "multer";
 import { z } from "zod";
-<<<<<<< v2026.525.0
 import { and, desc, eq, inArray, notInArray } from "drizzle-orm";
-import type { Db } from "@paperclipai/db";
+import type { Db } from "@noralos/db";
 import {
   activityLog,
   executionWorkspaces,
@@ -13,11 +12,7 @@ import {
   issueRelations,
   issues as issueRows,
   projectWorkspaces,
-} from "@paperclipai/db";
-=======
-import type { Db } from "@noralos/db";
-import { issueExecutionDecisions } from "@noralos/db";
->>>>>>> master
+} from "@noralos/db";
 import {
   addIssueCommentSchema,
   acceptIssueThreadInteractionSchema,
@@ -82,13 +77,8 @@ import {
   workProductService,
 } from "../services/index.js";
 import { logger } from "../middleware/logger.js";
-<<<<<<< v2026.525.0
 import { conflict, forbidden, HttpError, notFound, unauthorized, unprocessable } from "../errors.js";
 import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
-=======
-import { conflict, forbidden, HttpError, notFound, unauthorized } from "../errors.js";
-import { actorCanViewAllCompanyIssues, assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
->>>>>>> master
 import {
   assertNoAgentHostWorkspaceCommandMutation,
   collectIssueWorkspaceCommandPaths,

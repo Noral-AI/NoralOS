@@ -5,19 +5,6 @@ import {
   buildBetterAuthAdvancedOptions,
   deriveAuthCookiePrefix,
   deriveAuthTrustedOrigins,
-<<<<<<< v2026.525.0
-  shouldDisableSecureAuthCookies,
-} from "../auth/better-auth.js";
-
-const ORIGINAL_INSTANCE_ID = process.env.PAPERCLIP_INSTANCE_ID;
-const ORIGINAL_PUBLIC_URL = process.env.PAPERCLIP_PUBLIC_URL;
-
-afterEach(() => {
-  if (ORIGINAL_INSTANCE_ID === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
-  else process.env.PAPERCLIP_INSTANCE_ID = ORIGINAL_INSTANCE_ID;
-  if (ORIGINAL_PUBLIC_URL === undefined) delete process.env.PAPERCLIP_PUBLIC_URL;
-  else process.env.PAPERCLIP_PUBLIC_URL = ORIGINAL_PUBLIC_URL;
-=======
   resolveCrossSubDomainCookieDomain,
 } from "../auth/better-auth.js";
 
@@ -29,7 +16,6 @@ afterEach(() => {
   else process.env.NORALOS_INSTANCE_ID = ORIGINAL_INSTANCE_ID;
   if (ORIGINAL_COOKIE_DOMAIN === undefined) delete process.env.BETTER_AUTH_COOKIE_DOMAIN;
   else process.env.BETTER_AUTH_COOKIE_DOMAIN = ORIGINAL_COOKIE_DOMAIN;
->>>>>>> master
 });
 
 describe("Better Auth cookie scoping", () => {
@@ -46,13 +32,8 @@ describe("Better Auth cookie scoping", () => {
     expect(advanced).toEqual({
       cookiePrefix: "noralos-sat-worktree",
     });
-<<<<<<< v2026.525.0
-    expect(getCookies({ advanced } as BetterAuthOptions).sessionToken.name).toMatch(
-      /paperclip-sat-worktree\.session_token$/,
-=======
     expect(getCookies({ advanced } as BetterAuthOptions).sessionToken.name).toBe(
       "noralos-sat-worktree.session_token",
->>>>>>> master
     );
   });
 

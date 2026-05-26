@@ -44,12 +44,8 @@ describe("sandbox adapter execution targets", () => {
         onSpawn?: (meta: { pid: number; startedAt: string }) => Promise<void>;
       }) => {
         counter += 1;
-<<<<<<< v2026.525.0
         const command = input.command === "bash" ? "/bin/bash" : input.command;
         return runChildProcess(`sandbox-run-${counter}`, command, input.args ?? [], {
-=======
-        return runChildProcess(`sandbox-run-${counter}`, input.command, input.args ?? [], {
->>>>>>> master
           cwd: input.cwd ?? process.cwd(),
           env: input.env ?? {},
           stdin: input.stdin,
@@ -233,7 +229,6 @@ describe("sandbox adapter execution targets", () => {
     }));
   });
 
-<<<<<<< v2026.525.0
   it("strips inherited host identity env before sandbox execution", async () => {
     vi.stubEnv("PATH", "/host/bin:/usr/bin");
     vi.stubEnv("HOME", "/Users/local");
@@ -382,10 +377,7 @@ describe("sandbox adapter execution targets", () => {
     }));
   });
 
-  it("starts a localhost Paperclip bridge for sandbox targets in bridge mode", async () => {
-=======
   it("starts a localhost NoralOS bridge for sandbox targets in bridge mode", async () => {
->>>>>>> master
     const rootDir = await mkdtemp(path.join(os.tmpdir(), "paperclip-execution-target-bridge-"));
     cleanupDirs.push(rootDir);
     const remoteCwd = path.join(rootDir, "workspace");

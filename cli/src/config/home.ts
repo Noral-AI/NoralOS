@@ -11,30 +11,15 @@ import {
   resolvePaperclipHomeDir,
   resolvePaperclipInstanceId,
   resolvePaperclipInstanceRoot as resolveSharedPaperclipInstanceRoot,
-} from "@paperclipai/shared/home-paths";
+} from "@noralos/shared/home-paths";
 
-<<<<<<< v2026.525.0
-export {
-  expandHomePrefix,
-  resolveHomeAwarePath,
-  resolvePaperclipHomeDir,
-  resolvePaperclipInstanceId,
-};
-
-export function resolvePaperclipInstanceRoot(instanceId?: string): string {
-  return resolveSharedPaperclipInstanceRoot({ instanceId });
-}
-
-export function resolveDefaultConfigPath(instanceId?: string): string {
-  return resolvePaperclipConfigPathForInstance({ instanceId });
-=======
 const DEFAULT_INSTANCE_ID = "default";
 const INSTANCE_ID_RE = /^[a-zA-Z0-9_-]+$/;
 
 export function resolveNoralosHomeDir(): string {
   const envHome = process.env.NORALOS_HOME?.trim();
   if (envHome) return path.resolve(expandHomePrefix(envHome));
-  return path.resolve(os.homedir(), ".paperclip");
+  return path.resolve(os.homedir(), ".noralos");
 }
 
 export function resolveNoralosInstanceId(override?: string): string {
@@ -54,7 +39,6 @@ export function resolveNoralosInstanceRoot(instanceId?: string): string {
 
 export function resolveDefaultConfigPath(instanceId?: string): string {
   return path.resolve(resolveNoralosInstanceRoot(instanceId), "config.json");
->>>>>>> master
 }
 
 export function resolveDefaultContextPath(): string {
@@ -66,25 +50,6 @@ export function resolveDefaultCliAuthPath(): string {
 }
 
 export function resolveDefaultEmbeddedPostgresDir(instanceId?: string): string {
-<<<<<<< v2026.525.0
-  return resolveSharedDefaultEmbeddedPostgresDir({ instanceId });
-}
-
-export function resolveDefaultLogsDir(instanceId?: string): string {
-  return resolveSharedDefaultLogsDir({ instanceId });
-}
-
-export function resolveDefaultSecretsKeyFilePath(instanceId?: string): string {
-  return resolveSharedDefaultSecretsKeyFilePath({ instanceId });
-}
-
-export function resolveDefaultStorageDir(instanceId?: string): string {
-  return resolveSharedDefaultStorageDir({ instanceId });
-}
-
-export function resolveDefaultBackupDir(instanceId?: string): string {
-  return resolveSharedDefaultBackupDir({ instanceId });
-=======
   return path.resolve(resolveNoralosInstanceRoot(instanceId), "db");
 }
 
@@ -108,7 +73,6 @@ export function expandHomePrefix(value: string): string {
   if (value === "~") return os.homedir();
   if (value.startsWith("~/")) return path.resolve(os.homedir(), value.slice(2));
   return value;
->>>>>>> master
 }
 
 export function describeLocalInstancePaths(instanceId?: string) {

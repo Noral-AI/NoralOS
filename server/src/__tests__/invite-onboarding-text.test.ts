@@ -39,11 +39,7 @@ describe("buildInviteOnboardingTextDocument", () => {
       allowedHostnames: [],
     });
 
-<<<<<<< v2026.525.0
-    expect(text).toContain("Paperclip Agent Onboarding");
-=======
     expect(text).toContain("NoralOS OpenClaw Gateway Onboarding");
->>>>>>> master
     expect(text).toContain("/api/invites/token-123/accept");
     expect(text).toContain("/api/join-requests/{requestId}/claim-api-key");
     expect(text).toContain("/api/invites/token-123/onboarding.txt");
@@ -51,16 +47,6 @@ describe("buildInviteOnboardingTextDocument", () => {
     expect(text).toContain("Suggested NoralOS base URLs to try");
     expect(text).toContain("http://localhost:3100");
     expect(text).toContain("host.docker.internal");
-<<<<<<< v2026.525.0
-    expect(text).toContain("paperclipApiUrl");
-    expect(text).toContain('"adapterType": "openclaw_gateway"');
-    expect(text).toContain("headers.x-openclaw-token");
-    expect(text).toContain("Do NOT use /v1/responses or /hooks/*");
-    expect(text).toContain("set the first reachable candidate as agentDefaultsPayload.paperclipApiUrl");
-    expect(text).toContain("PAPERCLIP_API_KEY");
-    expect(text).toContain("Use your runtime's normal skill or instruction installation path.");
-    expect(text).toContain("Decide which Paperclip adapter type matches your runtime.");
-=======
     expect(text).toContain("noralosApiUrl");
     expect(text).toContain("adapterType \"openclaw_gateway\"");
     expect(text).toContain("headers.x-openclaw-token");
@@ -70,7 +56,6 @@ describe("buildInviteOnboardingTextDocument", () => {
     expect(text).toContain("NORALOS_API_KEY");
     expect(text).toContain("saved token field");
     expect(text).toContain("Gateway token unexpectedly short");
->>>>>>> master
   });
 
   it("includes loopback diagnostics for authenticated/private onboarding", () => {

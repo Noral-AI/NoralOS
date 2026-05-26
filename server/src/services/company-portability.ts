@@ -49,17 +49,10 @@ import {
   normalizeAgentUrlKey,
 } from "@noralos/shared";
 import {
-<<<<<<< v2026.525.0
-  readPaperclipSkillSyncPreference,
-  writePaperclipSkillSyncPreference,
-} from "@paperclipai/adapter-utils/server-utils";
-import { requireOpenCodeModelId } from "@paperclipai/adapter-opencode-local/server";
-=======
   readNoralosSkillSyncPreference,
   writeNoralosSkillSyncPreference,
 } from "@noralos/adapter-utils/server-utils";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "@noralos/adapter-opencode-local/server";
->>>>>>> master
 import { findServerAdapter } from "../adapters/index.js";
 import { forbidden, notFound, unprocessable } from "../errors.js";
 import { ghFetch, gitHubApiBase, resolveRawGitHubUrl } from "./github-fetch.js";
@@ -2906,14 +2899,7 @@ export function companyPortabilityService(db: Db, storage?: StorageService) {
     if (mode === "agent_safe" && IMPORT_FORBIDDEN_ADAPTER_TYPES.has(effectiveAdapterType)) {
       throw forbidden(`Adapter type "${effectiveAdapterType}" is not allowed in safe imports`);
     }
-<<<<<<< v2026.525.0
-    const nextAdapterConfig = writePaperclipSkillSyncPreference(
-      applyImportAdapterRunDefaults(effectiveAdapterType, adapterConfig),
-      desiredSkills,
-    );
-=======
     const nextAdapterConfig = writeNoralosSkillSyncPreference({ ...adapterConfig }, desiredSkills);
->>>>>>> master
     delete nextAdapterConfig.promptTemplate;
     delete nextAdapterConfig.bootstrapPromptTemplate;
     delete nextAdapterConfig.instructionsFilePath;
