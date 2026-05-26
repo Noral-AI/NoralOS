@@ -1,0 +1,89 @@
+{
+  "nodes": [
+    {
+      "id": "start-1",
+      "type": "startCall",
+      "position": { "x": 0, "y": 0 },
+      "data": {
+        "name": "Greeting",
+        "prompt": "You are a friendly callback scheduler. Your goal is to get the caller's name and the best time to call them back.",
+        "is_start": true,
+        "greeting": "Hi, thanks for reaching out. I'll schedule a callback for you in just a moment.",
+        "greeting_type": "text",
+        "wait_for_user_response": false,
+        "allow_interrupt": false,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-collect",
+      "type": "agentNode",
+      "position": { "x": 0, "y": 200 },
+      "data": {
+        "name": "Collect name and time",
+        "prompt": "Ask for the caller's name and the best time of day to call them back. Be conversational — don't fire both questions at once. If they offer the time first, that's fine; capture both before moving on.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Capture the caller's name and preferred callback time window.",
+        "extraction_variables": [
+          { "name": "name", "type": "string", "prompt": "Caller's name (first name fine)." },
+          { "name": "callback_window", "type": "string", "prompt": "Time of day or specific time, e.g. 'tomorrow morning' or '3pm Tuesday'." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "agent-confirm",
+      "type": "agentNode",
+      "position": { "x": 0, "y": 400 },
+      "data": {
+        "name": "Confirm callback",
+        "prompt": "Read back what you captured: 'So that's {name}, and we'll call you back {callback_window}, is that right?' If they correct anything, update and re-confirm. Only proceed once they say yes.",
+        "extraction_enabled": true,
+        "extraction_prompt": "Capture whether the caller confirmed the callback details.",
+        "extraction_variables": [
+          { "name": "confirmed", "type": "boolean", "prompt": "True if the caller confirmed; false otherwise." }
+        ],
+        "allow_interrupt": true,
+        "add_global_prompt": true
+      }
+    },
+    {
+      "id": "end-1",
+      "type": "endCall",
+      "position": { "x": 0, "y": 600 },
+      "data": {
+        "name": "Wrap up",
+        "prompt": "Thank the caller, confirm someone will reach out in their requested window, and wish them a good day.",
+        "is_end": true,
+        "allow_interrupt": false
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-start-collect",
+      "source": "start-1",
+      "target": "agent-collect",
+      "data": { "label": "After greeting", "condition": "always" }
+    },
+    {
+      "id": "e-collect-confirm",
+      "source": "agent-collect",
+      "target": "agent-confirm",
+      "data": { "label": "Once details captured", "condition": "name and callback_window have been captured" }
+    },
+    {
+      "id": "e-confirm-end",
+      "source": "agent-confirm",
+      "target": "end-1",
+      "data": { "label": "Caller confirmed", "condition": "confirmed is true" }
+    },
+    {
+      "id": "e-confirm-retry",
+      "source": "agent-confirm",
+      "target": "agent-collect",
+      "data": { "label": "Caller corrected something", "condition": "confirmed is false" }
+    }
+  ]
+}
