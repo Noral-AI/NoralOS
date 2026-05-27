@@ -1,8 +1,10 @@
 // Unit-level coverage for the assignment writer's most security-relevant
-// promises: it preserves every unrelated config field (especially
-// `ttsMode`) and only writes the named slot path. Each test mocks the
-// drizzle/registry boundary so we exercise the merge logic without
-// touching a real database.
+// promises: it preserves every unrelated config field and only writes
+// the named slot path. Each test mocks the drizzle/registry boundary so
+// we exercise the merge logic without touching a real database.
+//
+// Tests target `noralai.brooklyn`'s single `apiKeyRef` slot — voice-cascade
+// (the original two-slot fixture) was retired in Phase 6 PR-3.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { unprocessable } from "../errors.js";
@@ -117,24 +119,24 @@ afterEach(() => {
 });
 
 describe("integrationAssignmentService.assign — merge invariants", () => {
-  it("patches only the targeted slot and preserves ttsMode + every other field", async () => {
+  it("patches only the targeted slot and preserves every unrelated config field", async () => {
     mocks.credentialRow = {
       id: "cred-1",
       companyId: COMPANY,
-      secretId: "secret-google-1",
-      provider: "google_tts",
+      secretId: "secret-brooklyn-1",
+      provider: "noralai_brooklyn",
       status: "active",
     };
-    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralos.voice-cascade", manifestJson: {} };
-    // Seed the existing config the way voice-cascade is configured in
-    // production today — including ttsMode: dry_run plus other fields.
+    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralai.brooklyn", manifestJson: {} };
+    // Seed the existing config with several non-slot fields. The assign
+    // call must leave every one of these untouched.
     mocks.patchedConfig = {
       configJson: {
-        voiceConfigAgentTokenRef: "secret-agent-token",
-        ttsMode: "dry_run",
-        googleTtsDefaultLanguageCode: "en-US",
-        maxTextChars: 4000,
-        elevenLabsApiKeyRef: "secret-eleven-existing",
+        baseUrl: "https://api.runpod.ai/v2/abc/openai/v1",
+        upstreamModel: "Qwen/Qwen3-32B-FP8",
+        thinkingEffort: "auto",
+        maxTurns: 50,
+        retainedEnvVar: "value",
       },
     };
 
@@ -144,7 +146,7 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
       {
         credentialId: "cred-1",
         targetPluginId: PLUGIN_ID,
-        targetConfigPath: "googleTtsApiKeyRef",
+        targetConfigPath: "apiKeyRef",
       },
       QUENTIN_ACTOR,
     );
@@ -153,25 +155,23 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
     expect(mocks.patchCalls[0]?.pluginId).toBe(PLUGIN_ID);
     // The patch payload must contain ONLY the slot we changed.
     expect(mocks.patchCalls[0]?.configJson).toEqual({
-      googleTtsApiKeyRef: "secret-google-1",
+      apiKeyRef: "secret-brooklyn-1",
     });
     // After patch (registry shallow-merges), the resulting config must
     // retain every prior field verbatim.
     expect(mocks.patchedConfig?.configJson).toEqual({
-      voiceConfigAgentTokenRef: "secret-agent-token",
-      ttsMode: "dry_run",
-      googleTtsDefaultLanguageCode: "en-US",
-      maxTextChars: 4000,
-      elevenLabsApiKeyRef: "secret-eleven-existing",
-      googleTtsApiKeyRef: "secret-google-1",
+      baseUrl: "https://api.runpod.ai/v2/abc/openai/v1",
+      upstreamModel: "Qwen/Qwen3-32B-FP8",
+      thinkingEffort: "auto",
+      maxTurns: 50,
+      retainedEnvVar: "value",
+      apiKeyRef: "secret-brooklyn-1",
     });
-    // Specifically: ttsMode is unchanged.
-    expect(mocks.patchedConfig?.configJson.ttsMode).toBe("dry_run");
     // upsertConfig was NOT called for assign — only patchConfig is used.
     expect(mocks.upsertCalls).toHaveLength(0);
   });
 
-  it("rejects when slot expects google_tts but credential is elevenlabs", async () => {
+  it("rejects when slot expects noralai_brooklyn but credential is elevenlabs", async () => {
     mocks.credentialRow = {
       id: "cred-1",
       companyId: COMPANY,
@@ -179,7 +179,7 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
       provider: "elevenlabs",
       status: "active",
     };
-    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralos.voice-cascade", manifestJson: {} };
+    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralai.brooklyn", manifestJson: {} };
 
     const svc = integrationAssignmentService(makeMockDb());
     await expect(
@@ -188,11 +188,11 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
         {
           credentialId: "cred-1",
           targetPluginId: PLUGIN_ID,
-          targetConfigPath: "googleTtsApiKeyRef",
+          targetConfigPath: "apiKeyRef",
         },
         QUENTIN_ACTOR,
       ),
-    ).rejects.toThrow(/expects a google_tts credential/);
+    ).rejects.toThrow(/expects a noralai_brooklyn credential/);
 
     expect(mocks.patchCalls).toHaveLength(0);
   });
@@ -201,8 +201,8 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
     mocks.credentialRow = {
       id: "cred-1",
       companyId: COMPANY,
-      secretId: "secret-google-1",
-      provider: "google_tts",
+      secretId: "secret-1",
+      provider: "noralai_brooklyn",
       status: "active",
     };
     mocks.pluginRow = {
@@ -218,7 +218,7 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
         {
           credentialId: "cred-1",
           targetPluginId: PLUGIN_ID,
-          targetConfigPath: "googleTtsApiKeyRef",
+          targetConfigPath: "apiKeyRef",
         },
         QUENTIN_ACTOR,
       ),
@@ -230,11 +230,11 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
     mocks.credentialRow = {
       id: "cred-1",
       companyId: COMPANY,
-      secretId: "secret-google-1",
-      provider: "google_tts",
+      secretId: "secret-1",
+      provider: "noralai_brooklyn",
       status: "disabled",
     };
-    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralos.voice-cascade", manifestJson: {} };
+    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralai.brooklyn", manifestJson: {} };
 
     const svc = integrationAssignmentService(makeMockDb());
     await expect(
@@ -243,7 +243,7 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
         {
           credentialId: "cred-1",
           targetPluginId: PLUGIN_ID,
-          targetConfigPath: "googleTtsApiKeyRef",
+          targetConfigPath: "apiKeyRef",
         },
         QUENTIN_ACTOR,
       ),
@@ -256,10 +256,10 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
       id: "cred-1",
       companyId: COMPANY,
       secretId: "secret-1",
-      provider: "google_tts",
+      provider: "noralai_brooklyn",
       status: "active",
     };
-    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralos.voice-cascade", manifestJson: {} };
+    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralai.brooklyn", manifestJson: {} };
 
     const svc = integrationAssignmentService(makeMockDb());
     await expect(
@@ -276,16 +276,21 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
     expect(mocks.patchCalls).toHaveLength(0);
   });
 
-  it("never writes ttsMode in the patch payload", async () => {
+  it("never sneaks unrelated fields into the patch payload", async () => {
     mocks.credentialRow = {
       id: "cred-1",
       companyId: COMPANY,
       secretId: "secret-1",
-      provider: "elevenlabs",
+      provider: "noralai_brooklyn",
       status: "active",
     };
-    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralos.voice-cascade", manifestJson: {} };
-    mocks.patchedConfig = { configJson: { ttsMode: "dry_run" } };
+    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralai.brooklyn", manifestJson: {} };
+    // Seed existing config with arbitrary unrelated fields. The patch
+    // must not write them, even though the registry will merge them
+    // back into the resulting state.
+    mocks.patchedConfig = {
+      configJson: { baseUrl: "https://api.runpod.ai/v2/abc/openai/v1", thinkingEffort: "auto" },
+    };
 
     const svc = integrationAssignmentService(makeMockDb());
     await svc.assign(
@@ -293,14 +298,15 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
       {
         credentialId: "cred-1",
         targetPluginId: PLUGIN_ID,
-        targetConfigPath: "elevenLabsApiKeyRef",
+        targetConfigPath: "apiKeyRef",
       },
       QUENTIN_ACTOR,
     );
 
     for (const call of mocks.patchCalls) {
-      expect(Object.keys(call.configJson)).toEqual(["elevenLabsApiKeyRef"]);
-      expect(call.configJson).not.toHaveProperty("ttsMode");
+      expect(Object.keys(call.configJson)).toEqual(["apiKeyRef"]);
+      expect(call.configJson).not.toHaveProperty("baseUrl");
+      expect(call.configJson).not.toHaveProperty("thinkingEffort");
     }
   });
 
@@ -309,11 +315,11 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
       id: "cred-1",
       companyId: COMPANY,
       secretId: "secret-1",
-      provider: "google_tts",
+      provider: "noralai_brooklyn",
       status: "active",
     };
-    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralos.voice-cascade", manifestJson: {} };
-    mocks.patchedConfig = { configJson: { ttsMode: "dry_run" } };
+    mocks.pluginRow = { id: PLUGIN_ID, pluginKey: "noralai.brooklyn", manifestJson: {} };
+    mocks.patchedConfig = { configJson: { baseUrl: "https://api.runpod.ai/v2/abc/openai/v1" } };
 
     const isRunning = vi.fn().mockReturnValue(true);
     const call = vi.fn().mockResolvedValue(undefined);
@@ -328,7 +334,7 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
       {
         credentialId: "cred-1",
         targetPluginId: PLUGIN_ID,
-        targetConfigPath: "googleTtsApiKeyRef",
+        targetConfigPath: "apiKeyRef",
       },
       QUENTIN_ACTOR,
     );
@@ -337,7 +343,12 @@ describe("integrationAssignmentService.assign — merge invariants", () => {
     expect(call).toHaveBeenCalledWith(
       PLUGIN_ID,
       "configChanged",
-      { config: expect.objectContaining({ googleTtsApiKeyRef: "secret-1", ttsMode: "dry_run" }) },
+      {
+        config: expect.objectContaining({
+          apiKeyRef: "secret-1",
+          baseUrl: "https://api.runpod.ai/v2/abc/openai/v1",
+        }),
+      },
     );
     expect(restartWorker).not.toHaveBeenCalled();
   });

@@ -1,18 +1,19 @@
 // Credential → plugin slot assignment.
 //
-// Phase 1 only assigns to `voice-cascade` slots:
-//   - `googleTtsApiKeyRef` accepts a `google_tts` provider credential
-//   - `elevenLabsApiKeyRef` accepts an `elevenlabs` provider credential
+// Current ASSIGNMENT_TARGETS (see `packages/shared/src/integration-providers.ts`):
+//   - `noralai.brooklyn` → `apiKeyRef` (expects `noralai_brooklyn`)
+//   - `noralai.noralvoice` → `apiKeyRef` (expects `noralvoice`)
+//
+// Voice-cascade's google_tts + elevenlabs slots were retired in Phase 6 PR-3.
 //
 // The assignment writer:
-//   1. Validates the slot is allowed (allowlisted in INTEGRATION_PROVIDERS).
+//   1. Validates the slot is allowed (allowlisted in ASSIGNMENT_TARGETS).
 //   2. Validates the credential's provider matches the slot's expectation.
 //   3. Inside one transaction, replaces any existing assignment row for
 //      the same (plugin, configPath) and writes the credential's
 //      underlying secret-id into the plugin's `plugin_config.config_json`
 //      via `pluginRegistryService.patchConfig` (shallow merge) — so
-//      unrelated fields (`voiceConfigAgentTokenRef`, `ttsMode`,
-//      `googleTtsDefaultLanguageCode`, `maxTextChars`, …) are preserved
+//      every unrelated field on the plugin config is preserved
 //      verbatim.
 //   4. After the patch, calls the worker's `configChanged` RPC so the
 //      worker picks up the new ref live; if the worker hasn't
@@ -154,7 +155,7 @@ export function integrationAssignmentService(db: Db, deps: AssignmentServiceDeps
 
   /**
    * Validate that (pluginKey, configPath) is one of the allowlisted
-   * Phase-1 voice-cascade slots, and that the credential's provider
+   * ASSIGNMENT_TARGETS slots, and that the credential's provider
    * matches what the slot expects.
    */
   function validateSlot(
@@ -218,8 +219,8 @@ export function integrationAssignmentService(db: Db, deps: AssignmentServiceDeps
     },
 
     /**
-     * Returns the per-plugin "Assignment cards" the UI renders. For Phase 1
-     * this is a single card for voice-cascade with two slots. Each slot
+     * Returns the per-plugin "Assignment cards" the UI renders, one per
+     * entry in ASSIGNMENT_TARGETS. Each card lists its slots; each slot
      * carries the currently-assigned credential (if any) plus the
      * candidate credentials the admin can pick from.
      */
