@@ -1,23 +1,19 @@
 /**
  * `noralvoice:set_agent_voice` tool handler.
  *
- * Pushes a new TTS provider+voice into a NoralVoice workflow's settings
- * and mirrors the change to voice-config (legacy reader) so
- * voice-cascade / Conference Room don't go stale between this phase and
- * Phase 6.
+ * Pushes a new TTS provider+voice into a NoralVoice workflow's settings.
+ * Phase 6 PR-4b: the voice-config mirror write was removed — there's no
+ * legacy reader to keep in sync. NoralVoice is the sole source of truth
+ * for picker state; agents.surface_flags (PR-4a) is the source of truth
+ * for surface visibility.
  *
- * The handler is split into three side-effect islands so the worker can
+ * The handler is split into two side-effect islands so the worker can
  * wire them with the right context:
  *
  *   1. `resolveVoiceAgentUuid(agentId)` — read agents.voice_agent_uuid.
  *      Returns `{ uuid }` or `{ error: NO_VOICE_AGENT }`.
  *   2. `setWorkflowVoiceSettings(config, uuid, ...)` — PUT to NoralVoice
  *      (delegated to the SDK wrapper in noralvoice-client.ts).
- *   3. `mirrorToVoiceConfig(companyId, agentId, provider, voiceId)` —
- *      best-effort write to voice-config + stamp
- *      migrated_to_noralvoice_at. Failures here log but don't fail
- *      the tool — NoralVoice is the source of truth and a stale legacy
- *      reader is preferable to a phantom rollback.
  *
  * Tier: manager.
  */
@@ -43,7 +39,6 @@ export type SetAgentVoiceResult =
         voice_agent_uuid: string;
         provider: NoralVoiceTTSProvider;
         voiceId: string;
-        mirrored: boolean;
       };
     }
   | {
@@ -55,13 +50,6 @@ export type SetAgentVoiceResult =
 export interface SetAgentVoiceContext {
   /** Resolve the agent's linked NoralVoice workflow uuid (or null). */
   resolveVoiceAgentUuid: (agentId: string) => Promise<string | null>;
-  /** Best-effort mirror write to voice-config + stamp migrated_to_noralvoice_at. */
-  mirrorToVoiceConfig: (args: {
-    companyId: string;
-    agentId: string;
-    provider: NoralVoiceTTSProvider;
-    voiceId: string;
-  }) => Promise<{ mirrored: boolean }>;
   /** Companion CompanyId derived by the worker from the run-context. */
   companyId: string;
 }
@@ -87,29 +75,13 @@ export async function executeSetAgentVoice(
     voiceId: params.voiceId,
     voiceOptions: params.voiceOptions,
   });
-  // Best-effort mirror; never throw. The companyId comes from the
-  // tool run-context, not from the params, so a misbehaving caller
-  // can't write to another company's voice-config row.
-  let mirrored = false;
-  try {
-    const result = await ctx.mirrorToVoiceConfig({
-      companyId: ctx.companyId,
-      agentId: params.noralosAgentId,
-      provider: params.provider,
-      voiceId: params.voiceId,
-    });
-    mirrored = result.mirrored;
-  } catch {
-    mirrored = false;
-  }
   return {
     ok: true,
-    content: `Set NoralVoice agent ${uuid} to ${params.provider} / ${params.voiceId}${mirrored ? " (mirrored to voice-config)" : ""}.`,
+    content: `Set NoralVoice agent ${uuid} to ${params.provider} / ${params.voiceId}.`,
     data: {
       voice_agent_uuid: uuid,
       provider: params.provider,
       voiceId: params.voiceId,
-      mirrored,
     },
   };
 }
