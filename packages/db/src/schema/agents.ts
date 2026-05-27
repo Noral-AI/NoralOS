@@ -9,6 +9,7 @@ import {
   jsonb,
   index,
   varchar,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { companies } from "./companies.js";
 import { environments } from "./environments.js";
@@ -44,6 +45,18 @@ export const agents = pgTable(
     // settings on an Agent detail page. Phase 7 may promote to an enforced
     // cross-DB FK once schemas merge.
     voiceAgentUuid: varchar("voice_agent_uuid", { length: 36 }),
+    // Phase 6 PR-4: voice surface flags + tier/visibility overrides moved
+    // from the retired `voice-config` plugin's `agent_voice_config` table
+    // onto core agents. Keys: dashboard, slack, phone (Conference Room
+    // was removed in #105 — its flag is intentionally dropped). The
+    // `voice_enabled` concept is now derived: `voice_agent_uuid IS NOT NULL`.
+    surfaceFlags: jsonb("surface_flags")
+      .$type<{ dashboard: boolean; slack: boolean; phone: boolean }>()
+      .notNull()
+      .default(sql`'{"dashboard": true, "slack": false, "phone": false}'::jsonb`),
+    tierOverride: text("tier_override"),
+    visibilityOverride: text("visibility_override"),
+    ttsRepliesEnabled: boolean("tts_replies_enabled").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -659,6 +659,13 @@
       "when": 1778845977000,
       "tag": "0093_agents_voice_agent_uuid",
       "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1779839518443,
+      "tag": "0094_agents_voice_surface_flags",
+      "breakpoints": true
     }
   ]
 }
