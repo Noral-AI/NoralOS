@@ -2,22 +2,18 @@
  * VoiceSettingsTab — per-agent voice configuration surface mounted on
  * the Agent detail page as a plugin-provided tab.
  *
- * Two states:
+ * Two layers:
  *
- *   A. Agent has no `voice_agent_uuid` → CTA "Provision Voice Agent".
- *      Calls `POST /api/plugins/noralai.noralvoice/api/agents/:agentId/provision-voice`
- *      which wraps the `provision_voice_agent` tool. On 200 → refresh.
+ *   A. NoralVoice picker (provider + voice). Requires the agent to have a
+ *      `voice_agent_uuid` (provisioned via the CTA below). PUT lands on
+ *      NoralVoice; this plugin is the only writer.
  *
- *   B. Agent has a uuid → fetches `GET /agents/:agentId/voice-config`
- *      to load the current provider+voice, then renders:
- *        - Provider dropdown (six values from NoralVoice's TTS catalog)
- *        - Voice dropdown (populated by `list_voices` filtered by provider)
- *        - Save button → POSTs the same path with body { provider, voiceId }
- *      The preview button only shows when a voice carries a `previewUrl`
- *      from NoralVoice's catalog response.
+ *   B. Per-agent surface flags + tier/visibility overrides + tts_replies.
+ *      Stored on `public.agents` (PR-4a added the columns). Available
+ *      whether or not a voice agent is provisioned.
  *
- * Mirrors the styling and shadcn primitives used by the NoralVoicePage
- * (Phase 1B) so the tab looks at home next to other agent-detail tabs.
+ * Phase 6 PR-4b removed the legacy voice-config plugin; this tab is the
+ * only operator-facing surface for these settings.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -35,12 +31,25 @@ const PROVIDERS = [
 ] as const;
 type ProviderId = (typeof PROVIDERS)[number]["value"];
 
+interface SurfaceFlags {
+  dashboard: boolean;
+  slack: boolean;
+  phone: boolean;
+}
+
+type TierOverride = "exec" | "manager" | "worker" | null;
+type VisibilityOverride = "shown" | "hidden" | null;
+
 interface VoiceConfigResponse {
   voice_agent_uuid: string | null;
   workflow_name?: string;
   provider?: ProviderId | null;
   voice_id?: string | null;
   provider_options?: Record<string, unknown> | null;
+  surface_flags?: SurfaceFlags;
+  tier_override?: TierOverride;
+  visibility_override?: VisibilityOverride;
+  tts_replies_enabled?: boolean;
   error?: string;
 }
 
@@ -67,20 +76,19 @@ type LoadState =
 const cardClass = "rounded-lg border border-border/60 bg-card p-4 shadow-sm";
 const subduedClass = "text-sm text-muted-foreground";
 
-// `PluginPageProps` is the closest typed shape the SDK exposes today; an
-// agent-detail-tab slot receives the same `context` shape plus an agent
-// id. We narrow inline rather than depending on an SDK type that may
-// move in a follow-up.
 interface AgentDetailTabContext {
   companyId: string;
   companyPrefix?: string;
   agentId: string;
 }
 
+const DEFAULT_SURFACE_FLAGS: SurfaceFlags = {
+  dashboard: true,
+  slack: false,
+  phone: false,
+};
+
 export function VoiceSettingsTab({ context }: PluginPageProps) {
-  // The host populates `context.agentId` for tabs mounted on the agent
-  // detail page. If the host hasn't surfaced that yet (older SDK), bail
-  // with a soft message rather than throwing.
   const tabContext = context as unknown as AgentDetailTabContext;
   const { companyId, agentId } = tabContext;
 
@@ -94,15 +102,21 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveOk, setSaveOk] = useState<string | null>(null);
 
-  // Convenience URL builders — all plugin routes carry the companyId
-  // query param since they're board-scoped.
+  // Phase 6 PR-4b — per-agent surface state from public.agents columns.
+  const [surfaceFlags, setSurfaceFlags] = useState<SurfaceFlags>(DEFAULT_SURFACE_FLAGS);
+  const [tierOverride, setTierOverride] = useState<TierOverride>(null);
+  const [visibilityOverride, setVisibilityOverride] = useState<VisibilityOverride>(null);
+  const [ttsRepliesEnabled, setTtsRepliesEnabled] = useState(true);
+  const [savingSurface, setSavingSurface] = useState(false);
+  const [surfaceError, setSurfaceError] = useState<string | null>(null);
+  const [surfaceOk, setSurfaceOk] = useState<string | null>(null);
+
   const pluginBase = `/api/plugins/${encodeURIComponent(PLUGIN_ID)}/api`;
   const voiceConfigUrl = `${pluginBase}/agents/${encodeURIComponent(agentId ?? "")}/voice-config?companyId=${encodeURIComponent(companyId)}`;
   const provisionUrl = `${pluginBase}/agents/${encodeURIComponent(agentId ?? "")}/provision-voice?companyId=${encodeURIComponent(companyId)}`;
   const listVoicesUrl = (p: ProviderId) =>
     `${pluginBase}/voices?companyId=${encodeURIComponent(companyId)}&provider=${encodeURIComponent(p)}`;
 
-  // ── Load the current voice config ────────────────────────────────────
   function loadConfig() {
     if (!agentId || !companyId) {
       setState({ kind: "loading" });
@@ -115,28 +129,30 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
         const body = (await resp.json().catch(() => ({}))) as VoiceConfigResponse;
         if (cancelled) return;
         if (resp.status === 404 && body.voice_agent_uuid) {
-          // uuid recorded locally but NV doesn't recognise it.
           setState({
             kind: "error",
             message: "The linked NoralVoice workflow was not found. Re-provision below.",
           });
-          return;
-        }
-        if (!resp.ok) {
+          // Still load surface fields if present in the 404 body.
+        } else if (!resp.ok) {
           setState({ kind: "error", message: body.error ?? `HTTP ${resp.status}` });
           return;
-        }
-        if (!body.voice_agent_uuid) {
+        } else if (!body.voice_agent_uuid) {
           setState({ kind: "no-uuid" });
-          return;
+        } else {
+          setState({
+            kind: "ready",
+            voice_agent_uuid: body.voice_agent_uuid,
+            workflow_name: body.workflow_name,
+          });
+          if (body.provider) setProvider(body.provider);
+          if (body.voice_id) setVoiceId(body.voice_id);
         }
-        setState({
-          kind: "ready",
-          voice_agent_uuid: body.voice_agent_uuid,
-          workflow_name: body.workflow_name,
-        });
-        if (body.provider) setProvider(body.provider);
-        if (body.voice_id) setVoiceId(body.voice_id);
+        // Surface fields are always populated (always come from agents columns).
+        if (body.surface_flags) setSurfaceFlags({ ...DEFAULT_SURFACE_FLAGS, ...body.surface_flags });
+        if (body.tier_override !== undefined) setTierOverride(body.tier_override);
+        if (body.visibility_override !== undefined) setVisibilityOverride(body.visibility_override);
+        if (typeof body.tts_replies_enabled === "boolean") setTtsRepliesEnabled(body.tts_replies_enabled);
       })
       .catch(() => {
         if (!cancelled) {
@@ -156,7 +172,6 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId, companyId]);
 
-  // ── Load voices when the operator picks a provider ───────────────────
   useEffect(() => {
     if (state.kind !== "ready" || !provider) {
       setVoices([]);
@@ -173,12 +188,7 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
           return;
         }
         setVoices(body.voices ?? []);
-        // If the currently-selected voiceId doesn't match a voice in the
-        // new provider's catalog, drop it so the operator has to choose.
-        if (
-          voiceId &&
-          (body.voices ?? []).every((v) => v.voiceId !== voiceId)
-        ) {
+        if (voiceId && (body.voices ?? []).every((v) => v.voiceId !== voiceId)) {
           setVoiceId("");
         }
       })
@@ -216,7 +226,6 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
         setSaveError(body.error ?? `HTTP ${resp.status}`);
         return;
       }
-      // Refresh.
       loadConfig();
     } catch {
       setSaveError("Could not provision the NoralVoice workflow.");
@@ -225,7 +234,7 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
     }
   }
 
-  async function handleSave() {
+  async function handleSavePicker() {
     if (!agentId || !provider || !voiceId) return;
     setSaving(true);
     setSaveError(null);
@@ -250,13 +259,135 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
     }
   }
 
+  async function handleSaveSurface() {
+    if (!agentId) return;
+    setSavingSurface(true);
+    setSurfaceError(null);
+    setSurfaceOk(null);
+    try {
+      const resp = await fetch(voiceConfigUrl, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({
+          surfaceFlags,
+          tierOverride,
+          visibilityOverride,
+          ttsRepliesEnabled,
+        }),
+      });
+      if (!resp.ok) {
+        const body = (await resp.json().catch(() => ({}))) as { error?: string };
+        setSurfaceError(body.error ?? `HTTP ${resp.status}`);
+        return;
+      }
+      setSurfaceOk("Saved.");
+    } catch {
+      setSurfaceError("Could not save surface settings.");
+    } finally {
+      setSavingSurface(false);
+    }
+  }
+
+  function renderSurfaceCard() {
+    return (
+      <section className={cardClass}>
+        <h3 className="text-base font-medium">Surfaces &amp; overrides</h3>
+        <p className={subduedClass}>
+          Where this agent's voice plays and how the platform treats it. Stored on the agent record;
+          editable whether or not a voice workflow is provisioned.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium">Surface flags</span>
+            <div className="flex flex-wrap gap-4">
+              {(["dashboard", "slack", "phone"] as const).map((s) => (
+                <label key={s} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={surfaceFlags[s]}
+                    onChange={(e) =>
+                      setSurfaceFlags((prev) => ({ ...prev, [s]: e.target.checked }))
+                    }
+                  />
+                  <span className="capitalize">{s}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium" htmlFor="tier-override">
+                Tier override
+              </label>
+              <select
+                id="tier-override"
+                value={tierOverride ?? ""}
+                onChange={(e) => setTierOverride((e.target.value || null) as TierOverride)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+              >
+                <option value="">— default —</option>
+                <option value="exec">exec</option>
+                <option value="manager">manager</option>
+                <option value="worker">worker</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium" htmlFor="visibility-override">
+                Visibility override
+              </label>
+              <select
+                id="visibility-override"
+                value={visibilityOverride ?? ""}
+                onChange={(e) =>
+                  setVisibilityOverride((e.target.value || null) as VisibilityOverride)
+                }
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+              >
+                <option value="">— default —</option>
+                <option value="shown">shown</option>
+                <option value="hidden">hidden</option>
+              </select>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={ttsRepliesEnabled}
+              onChange={(e) => setTtsRepliesEnabled(e.target.checked)}
+            />
+            <span>TTS on agent replies</span>
+          </label>
+
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSaveSurface}
+              disabled={savingSurface}
+              className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            >
+              {savingSurface ? "Saving…" : "Save surfaces"}
+            </button>
+            {surfaceOk ? <p className={`${subduedClass} text-emerald-700`}>{surfaceOk}</p> : null}
+            {surfaceError ? <p className="text-sm text-destructive">{surfaceError}</p> : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <header className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold tracking-tight">Voice settings</h2>
         <p className={subduedClass}>
-          Manage this agent's NoralVoice workflow — pick a TTS provider and voice. NoralVoice is the
-          source of truth; the legacy voice-config plugin mirrors a copy for backward compatibility.
+          Manage this agent's NoralVoice workflow (provider + voice) and the surfaces where its voice
+          plays. NoralVoice is the source of truth for voice selection; agents.surface_flags is the
+          source of truth for surface visibility.
         </p>
       </header>
 
@@ -362,7 +493,7 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={handleSavePicker}
                 disabled={!provider || !voiceId || saving}
                 className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
               >
@@ -376,6 +507,8 @@ export function VoiceSettingsTab({ context }: PluginPageProps) {
           <p className="text-sm text-destructive">{state.message}</p>
         )}
       </section>
+
+      {renderSurfaceCard()}
     </div>
   );
 }

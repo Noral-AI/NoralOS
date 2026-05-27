@@ -93,12 +93,11 @@ describe("executeSetAgentVoice", () => {
     return {
       companyId: "company-A",
       resolveVoiceAgentUuid: vi.fn().mockResolvedValue("wf-uuid-1"),
-      mirrorToVoiceConfig: vi.fn().mockResolvedValue({ mirrored: true }),
       ...overrides,
     } as Parameters<typeof executeSetAgentVoice>[2];
   }
 
-  it("happy path: PUT lands, mirror runs, ok=true", async () => {
+  it("happy path: PUT lands, ok=true", async () => {
     // 1) getWorkflowByUuid: list workflows
     mockJson(200, [{ id: 7, workflow_uuid: "wf-uuid-1", name: "VD", status: "active" }]);
     // 2) getWorkflowById: detail
@@ -130,14 +129,7 @@ describe("executeSetAgentVoice", () => {
     if (r.ok) {
       expect(r.data.voice_agent_uuid).toBe("wf-uuid-1");
       expect(r.data.provider).toBe("elevenlabs");
-      expect(r.data.mirrored).toBe(true);
     }
-    expect(ctx.mirrorToVoiceConfig).toHaveBeenCalledWith({
-      companyId: "company-A",
-      agentId: "agent-A",
-      provider: "elevenlabs",
-      voiceId: "vNew",
-    });
   });
 
   it("merge preserves other model_overrides (llm/stt) on the PUT", async () => {
@@ -187,7 +179,6 @@ describe("executeSetAgentVoice", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe("NO_VOICE_AGENT");
     expect(globalThis.fetch).not.toHaveBeenCalled();
-    expect(ctx.mirrorToVoiceConfig).not.toHaveBeenCalled();
   });
 
   it("NV 4xx (workflow uuid not found in NV list) surfaces as HTTP_4XX", async () => {
@@ -216,21 +207,6 @@ describe("executeSetAgentVoice", () => {
     ).rejects.toMatchObject({ category: "HTTP_5XX" });
   });
 
-  it("mirror failure does NOT fail the tool — ok=true with mirrored=false", async () => {
-    mockJson(200, [{ id: 7, workflow_uuid: "wf-uuid-1" }]);
-    mockJson(200, { id: 7, workflow_uuid: "wf-uuid-1", workflow_configurations: {} });
-    mockJson(200, { id: 7, workflow_uuid: "wf-uuid-1", workflow_configurations: {} });
-    const ctx = makeCtx({
-      mirrorToVoiceConfig: vi.fn().mockRejectedValue(new Error("schema drift")),
-    });
-    const r = await executeSetAgentVoice(
-      baseConfig,
-      { noralosAgentId: "a1", provider: "elevenlabs", voiceId: "v" },
-      ctx,
-    );
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.data.mirrored).toBe(false);
-  });
 });
 
 // ============== provision_voice_agent =================================

@@ -21,7 +21,16 @@ export const PLUGIN_ID = "noralai.noralvoice";
 // publish_workflow). Closes the agent-authoring loop: agents that
 // produce a draft via create_workflow / save_workflow can now self-check
 // and promote to executable without operator intervention. Tool count: 32 → 34.
-export const PLUGIN_VERSION = "0.7.0";
+//
+// 0.8.0 — Phase 6 PR-4b: voice-config retirement. This plugin now owns
+// per-company voice defaults (`company_voice_defaults` in its own
+// namespaced schema, migrated from voice-config). The
+// /agents/:agentId/voice-config apiRoutes read/write the new
+// agents.surface_flags + tier_override + visibility_override +
+// tts_replies_enabled columns added in PR-4a (#138). The
+// voice-config-mirror in set_agent_voice is gone — there's no legacy
+// reader left to mirror to.
+export const PLUGIN_VERSION = "0.8.0";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";

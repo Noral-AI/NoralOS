@@ -140,7 +140,6 @@ import {
   VOICE_DIRECTOR_TEMPLATE_NAME,
   type VoiceDirectorOverrides,
 } from "./voice-director-template.js";
-import { mirrorToVoiceConfig } from "./voice-config-mirror.js";
 
 // ---------------------------------------------------------------------------
 // Module-scoped plugin context (set in `setup`, reused from webhook/api hooks)
@@ -866,10 +865,6 @@ const plugin = definePlugin({
         const result = await executeSetAgentVoice(config, params, {
           companyId,
           resolveVoiceAgentUuid: (agentId) => resolveVoiceAgentUuid(companyId, agentId),
-          mirrorToVoiceConfig: async (args) => {
-            if (!hostDb) return { mirrored: false };
-            return mirrorToVoiceConfig(hostDb, args);
-          },
         });
         if (!result.ok) {
           ctx.logger.info("NoralVoice set_agent_voice precondition failed", {
@@ -883,7 +878,6 @@ const plugin = definePlugin({
           companyId,
           agentId: params.noralosAgentId,
           provider: params.provider,
-          mirrored: result.data.mirrored,
         });
         return { content: result.content, data: result.data };
       },
@@ -2249,28 +2243,69 @@ const plugin = definePlugin({
       return (Array.isArray(rows) ? rows[0]?.voice_agent_uuid : null) ?? null;
     }
 
+    interface AgentVoiceRow {
+      voice_agent_uuid: string | null;
+      surface_flags: { dashboard?: boolean; slack?: boolean; phone?: boolean } | null;
+      tier_override: string | null;
+      visibility_override: string | null;
+      tts_replies_enabled: boolean;
+    }
+
+    async function lookupAgentVoiceRow(
+      companyId: string,
+      agentId: string,
+    ): Promise<AgentVoiceRow | null> {
+      if (!hostDb) return null;
+      const rows = (await hostDb(
+        `SELECT voice_agent_uuid, surface_flags, tier_override, visibility_override, tts_replies_enabled
+           FROM public.agents
+          WHERE id = $1::uuid AND company_id = $2::uuid
+          LIMIT 1`,
+        [agentId, companyId],
+      )) as Array<AgentVoiceRow> | null;
+      return (Array.isArray(rows) ? rows[0] : null) ?? null;
+    }
+
     if (input.routeKey === "get_agent_voice_config") {
       const agentId = input.params?.agentId as string | undefined;
       const companyId = (input as unknown as { companyId?: string }).companyId;
       if (!agentId || !companyId) {
         return { status: 400, body: { error: "agentId path param and companyId query are required" } };
       }
-      const uuid = await lookupVoiceAgentUuidForAgent(companyId, agentId);
-      if (!uuid) {
-        return { status: 200, body: { voice_agent_uuid: null } };
+      // Phase 6 PR-4b: include surface_flags + tier/visibility overrides +
+      // tts_replies_enabled from agents columns alongside the NoralVoice
+      // workflow picker state.
+      const row = await lookupAgentVoiceRow(companyId, agentId);
+      if (!row) {
+        return { status: 404, body: { error: "agent not found" } };
+      }
+      const surfaceFlags = {
+        dashboard: row.surface_flags?.dashboard ?? true,
+        slack: row.surface_flags?.slack ?? false,
+        phone: row.surface_flags?.phone ?? false,
+      };
+      const agentFields = {
+        surface_flags: surfaceFlags,
+        tier_override: row.tier_override,
+        visibility_override: row.visibility_override,
+        tts_replies_enabled: row.tts_replies_enabled,
+      };
+      if (!row.voice_agent_uuid) {
+        return { status: 200, body: { voice_agent_uuid: null, ...agentFields } };
       }
       const config = await resolveClientConfig(ctx, null);
       if ("error" in config) return { status: 400, body: { error: config.error } };
       try {
-        const workflow = await getWorkflowByUuid(config, uuid);
+        const workflow = await getWorkflowByUuid(config, row.voice_agent_uuid);
         if (!workflow) {
           // Stored uuid but NV doesn't recognise it — likely deleted from
           // the NV side. Surface as 404 so the UI can prompt re-provisioning.
           return {
             status: 404,
             body: {
-              voice_agent_uuid: uuid,
+              voice_agent_uuid: row.voice_agent_uuid,
               error: "voice agent not found in NoralVoice",
+              ...agentFields,
             },
           };
         }
@@ -2278,11 +2313,12 @@ const plugin = definePlugin({
         return {
           status: 200,
           body: {
-            voice_agent_uuid: uuid,
+            voice_agent_uuid: row.voice_agent_uuid,
             workflow_name: workflow.name,
             provider: voice.provider,
             voice_id: voice.voiceId,
             provider_options: voice.providerOptions ?? null,
+            ...agentFields,
           },
         };
       } catch (err) {
@@ -2375,43 +2411,147 @@ const plugin = definePlugin({
         input.body && typeof input.body === "object"
           ? (input.body as Record<string, unknown>)
           : {};
-      const provider = body.provider;
-      const voiceId = body.voiceId;
-      const voiceOptions =
-        body.voiceOptions && typeof body.voiceOptions === "object" && !Array.isArray(body.voiceOptions)
-          ? (body.voiceOptions as Record<string, unknown>)
-          : undefined;
-      if (
-        typeof provider !== "string" ||
-        !["elevenlabs", "deepgram", "sarvam", "cartesia", "dograh", "rime"].includes(provider)
-      ) {
-        return { status: 400, body: { error: "provider must be one of the six supported TTS providers" } };
+      // Phase 6 PR-4b: the route now accepts two independent slices in one
+      // request. Either or both may be present:
+      //   - voice picker:  { provider, voiceId, voiceOptions? }   → NoralVoice
+      //   - agent surface: { surfaceFlags?, tierOverride?, visibilityOverride?, ttsRepliesEnabled? }
+      //                                                          → public.agents columns
+      const hasPickerInput =
+        body.provider !== undefined || body.voiceId !== undefined || body.voiceOptions !== undefined;
+      const hasAgentInput =
+        body.surfaceFlags !== undefined ||
+        body.tierOverride !== undefined ||
+        body.visibilityOverride !== undefined ||
+        body.ttsRepliesEnabled !== undefined;
+      if (!hasPickerInput && !hasAgentInput) {
+        return { status: 400, body: { error: "request body must include voice picker fields and/or surface/override fields" } };
       }
-      if (typeof voiceId !== "string" || voiceId.length === 0) {
-        return { status: 400, body: { error: "voiceId is required" } };
-      }
-      const config = await resolveClientConfig(ctx, null);
-      if ("error" in config) return { status: 400, body: { error: config.error } };
       if (!hostDb) return { status: 500, body: { error: "Host DB unavailable" } };
 
-      const result = await executeSetAgentVoice(
-        config,
-        {
-          noralosAgentId: agentId,
-          provider: provider as NoralVoiceTTSProvider,
-          voiceId,
-          voiceOptions,
-        },
-        {
-          companyId,
-          resolveVoiceAgentUuid: async (id) => lookupVoiceAgentUuidForAgent(companyId, id),
-          mirrorToVoiceConfig: async (args) => mirrorToVoiceConfig(hostDb, args),
-        },
-      );
-      if (!result.ok) {
-        return { status: 409, body: { error: result.message, code: result.error } };
+      // ── Validate + apply agent surface fields ────────────────────────
+      if (hasAgentInput) {
+        const sets: string[] = [];
+        const args: unknown[] = [];
+        let argIdx = 1;
+        if (body.surfaceFlags !== undefined) {
+          const sf = body.surfaceFlags;
+          if (!sf || typeof sf !== "object" || Array.isArray(sf)) {
+            return { status: 400, body: { error: "surfaceFlags must be an object" } };
+          }
+          const sfObj = sf as Record<string, unknown>;
+          const allowedKeys = ["dashboard", "slack", "phone"];
+          for (const k of Object.keys(sfObj)) {
+            if (!allowedKeys.includes(k)) {
+              return { status: 400, body: { error: `unknown surface flag: ${k}` } };
+            }
+            if (typeof sfObj[k] !== "boolean") {
+              return { status: 400, body: { error: `surfaceFlags.${k} must be a boolean` } };
+            }
+          }
+          sets.push(`surface_flags = surface_flags || $${argIdx}::jsonb`);
+          args.push(JSON.stringify(sfObj));
+          argIdx += 1;
+        }
+        if (body.tierOverride !== undefined) {
+          const t = body.tierOverride;
+          if (t !== null && (typeof t !== "string" || !["exec", "manager", "worker"].includes(t))) {
+            return { status: 400, body: { error: "tierOverride must be null or one of: exec, manager, worker" } };
+          }
+          sets.push(`tier_override = $${argIdx}`);
+          args.push(t);
+          argIdx += 1;
+        }
+        if (body.visibilityOverride !== undefined) {
+          const v = body.visibilityOverride;
+          if (v !== null && (typeof v !== "string" || !["shown", "hidden"].includes(v))) {
+            return { status: 400, body: { error: "visibilityOverride must be null or one of: shown, hidden" } };
+          }
+          sets.push(`visibility_override = $${argIdx}`);
+          args.push(v);
+          argIdx += 1;
+        }
+        if (body.ttsRepliesEnabled !== undefined) {
+          if (typeof body.ttsRepliesEnabled !== "boolean") {
+            return { status: 400, body: { error: "ttsRepliesEnabled must be a boolean" } };
+          }
+          sets.push(`tts_replies_enabled = $${argIdx}`);
+          args.push(body.ttsRepliesEnabled);
+          argIdx += 1;
+        }
+        if (sets.length > 0) {
+          sets.push(`updated_at = now()`);
+          args.push(agentId, companyId);
+          await hostDb(
+            `UPDATE public.agents SET ${sets.join(", ")}
+               WHERE id = $${argIdx}::uuid AND company_id = $${argIdx + 1}::uuid`,
+            args,
+          );
+        }
       }
-      return { status: 200, body: result.data };
+
+      // ── Push voice picker to NoralVoice (if provided) ────────────────
+      let pickerResult: { provider: NoralVoiceTTSProvider; voiceId: string; voice_agent_uuid: string } | null = null;
+      if (hasPickerInput) {
+        const provider = body.provider;
+        const voiceId = body.voiceId;
+        const voiceOptions =
+          body.voiceOptions && typeof body.voiceOptions === "object" && !Array.isArray(body.voiceOptions)
+            ? (body.voiceOptions as Record<string, unknown>)
+            : undefined;
+        if (
+          typeof provider !== "string" ||
+          !["elevenlabs", "deepgram", "sarvam", "cartesia", "dograh", "rime"].includes(provider)
+        ) {
+          return { status: 400, body: { error: "provider must be one of the six supported TTS providers" } };
+        }
+        if (typeof voiceId !== "string" || voiceId.length === 0) {
+          return { status: 400, body: { error: "voiceId is required when updating the voice picker" } };
+        }
+        const config = await resolveClientConfig(ctx, null);
+        if ("error" in config) return { status: 400, body: { error: config.error } };
+
+        const result = await executeSetAgentVoice(
+          config,
+          {
+            noralosAgentId: agentId,
+            provider: provider as NoralVoiceTTSProvider,
+            voiceId,
+            voiceOptions,
+          },
+          {
+            companyId,
+            resolveVoiceAgentUuid: async (id) => lookupVoiceAgentUuidForAgent(companyId, id),
+          },
+        );
+        if (!result.ok) {
+          return { status: 409, body: { error: result.message, code: result.error } };
+        }
+        pickerResult = {
+          provider: result.data.provider,
+          voiceId: result.data.voiceId,
+          voice_agent_uuid: result.data.voice_agent_uuid,
+        };
+      }
+
+      // Return the freshly-updated row so the UI doesn't have to re-fetch.
+      const updated = await lookupAgentVoiceRow(companyId, agentId);
+      return {
+        status: 200,
+        body: {
+          voice_agent_uuid: updated?.voice_agent_uuid ?? null,
+          surface_flags: {
+            dashboard: updated?.surface_flags?.dashboard ?? true,
+            slack: updated?.surface_flags?.slack ?? false,
+            phone: updated?.surface_flags?.phone ?? false,
+          },
+          tier_override: updated?.tier_override ?? null,
+          visibility_override: updated?.visibility_override ?? null,
+          tts_replies_enabled: updated?.tts_replies_enabled ?? true,
+          ...(pickerResult
+            ? { provider: pickerResult.provider, voice_id: pickerResult.voiceId }
+            : {}),
+        },
+      };
     }
 
     // ── Phase 4 PR-A: browse surfaces ────────────────────────────────

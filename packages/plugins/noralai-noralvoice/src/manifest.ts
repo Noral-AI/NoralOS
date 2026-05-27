@@ -98,11 +98,24 @@ export const manifest: NoralosPluginManifestV1 = {
     "ui.sidebar.register",
     "ui.page.register",
     "ui.detailTab.register",
+    // Phase 6 PR-4b: this plugin now owns per-company voice defaults
+    // (previously voice-config's `company_voice_defaults` table). The
+    // schema is provisioned via the plugin's own migrations dir; the
+    // worker reads/writes the namespaced table via the host DB helper.
+    "database.namespace.read",
+    "database.namespace.write",
+    "database.namespace.migrate",
   ],
 
   entrypoints: {
     worker: "./dist/worker.js",
     ui: "./dist/ui",
+  },
+
+  database: {
+    namespaceSlug: "noralvoice",
+    migrationsDir: "./migrations",
+    coreReadTables: ["agents", "companies"],
   },
 
   ui: {

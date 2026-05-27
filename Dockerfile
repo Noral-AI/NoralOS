@@ -32,10 +32,11 @@ COPY packages/adapters/pi-local/package.json packages/adapters/pi-local/
 COPY packages/plugins/sdk/package.json packages/plugins/sdk/
 COPY --parents packages/plugins/sandbox-providers/./*/package.json packages/plugins/sandbox-providers/
 COPY packages/plugins/noralos-plugin-fake-sandbox/package.json packages/plugins/noralos-plugin-fake-sandbox/
-COPY packages/plugins/voice-config/package.json packages/plugins/voice-config/
-# Phase 6 (re-scoped): conference-room-bridge removed (#105). voice-cascade
-# retired in Phase 6 PR-3 — TTS is now served by the noralai.noralvoice plugin.
-# voice-config still here pending Phase 6 PR-4 (agents.surface_flags migration).
+# Phase 6 (re-scoped, fully completed): conference-room-bridge removed in #105.
+# voice-cascade retired in Phase 6 PR-3 — TTS now served by the
+# noralai.noralvoice plugin. voice-config retired in Phase 6 PR-4 —
+# surface flags + tier/visibility overrides moved to public.agents columns
+# and company defaults moved to noralai.noralvoice's own schema.
 # noralai-brooklyn is an external adapter plugin. The package.json is
 # COPYd here so `pnpm install --frozen-lockfile` succeeds; the rest of
 # the package (`src/`) lands via the broader `COPY . .` in the build
@@ -75,9 +76,8 @@ COPY . .
 RUN pnpm --filter @noralos/ui build
 RUN pnpm --filter @noralos/plugin-sdk build
 RUN pnpm --filter @noralos/server build
-RUN pnpm --filter @noralos-plugins/voice-config build
-# Phase 6 (re-scoped): conference-room-bridge build removed (#105).
-# voice-cascade build removed in Phase 6 PR-3.
+# Phase 6 (re-scoped, fully completed): conference-room-bridge build removed in #105,
+# voice-cascade build removed in PR-3, voice-config build removed in PR-4b.
 # noralai-noralsign builds tsc output (manifest, worker, REST client) plus
 # the React UI bundle (esbuild → dist/ui/index.js). Without this step
 # `ensureNoralSignRegistered` finds the workspace path but no manifest file
@@ -93,8 +93,8 @@ RUN pnpm --filter @noralos-plugins/noralai-slack build
 # file and aborts auto-registration on first boot.
 RUN pnpm --filter @noralos-plugins/noralai-noralvoice build
 RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
-RUN test -f packages/plugins/voice-config/dist/worker.js || (echo "ERROR: voice-config build output missing" && exit 1)
-# Phase 6 (re-scoped): conference-room-bridge + voice-cascade verifications removed.
+# Phase 6 (re-scoped, fully completed): conference-room-bridge, voice-cascade,
+# and voice-config build verifications all removed.
 RUN test -f packages/plugins/noralai-noralsign/dist/worker.js || (echo "ERROR: noralai-noralsign build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-noralsign/dist/manifest.js || (echo "ERROR: noralai-noralsign manifest build output missing" && exit 1)
 RUN test -f packages/plugins/noralai-noralsign/dist/ui/index.js || (echo "ERROR: noralai-noralsign UI bundle missing" && exit 1)
