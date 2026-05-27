@@ -204,7 +204,15 @@ Phase 6 collapses to 5 independent PRs gated by the NV TTS endpoint shipping fir
 
 **DoD:** `voice-cascade` + `voice-config` both `status='uninstalled'` in prod; Dashboard agent-voice autoplay works end-to-end via NV; standalone NoralVoice smoke passes.
 
-**Combined Phase 6 win (incl. #105):** ≥ -6400 LOC.
+**Status (2026-05-26):** ✅ COMPLETE. Shipped via:
+- [#137](https://github.com/Noral-AI/NoralOS/pull/137) — voice-cascade retirement (PR-3), −2066 LOC
+- [#138](https://github.com/Noral-AI/NoralOS/pull/138) — agents.surface_flags columns + plugin uninstalls (PR-4a), +107/−1
+- [#139](https://github.com/Noral-AI/NoralOS/pull/139) — voice-config plugin retirement (PR-4b), −2483 LOC
+- [#140](https://github.com/Noral-AI/NoralOS/pull/140) — fix-forward: noralvoice plugin migration passes SQL validator (`PLUGIN_VERSION 0.8.0 → 0.8.1`)
+
+Prod state verified: both plugins `status='uninstalled'`; all agents carry `surface_flags`; `noralai.noralvoice` ready at 0.8.1 with the new `plugin_noralvoice_8b794bc53d.company_voice_defaults` table provisioned; public health 200.
+
+**Combined Phase 6 win (incl. #105):** −10,400 LOC (verified end-to-end).
 
 ---
 
