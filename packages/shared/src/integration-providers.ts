@@ -174,6 +174,17 @@ export interface IntegrationTestSpec {
    * HTTP Basic over a key id + key secret pair.
    */
   basicAuth?: { userField: string; passField: string };
+  /**
+   * Optional fallback probes, tried in order only if the primary probe does
+   * NOT return an ok status. The credential passes if the primary OR any
+   * fallback probe returns an ok status. Use this for a single operator-facing
+   * credential that may be valid against more than one upstream backend (e.g.
+   * the NoralAI provider accepts a key for either its default backend or a
+   * DeepSeek-backed agent). Each fallback is a self-contained probe, but the
+   * caller-facing failure message always comes from the PRIMARY spec — a
+   * fallback's upstream identity never leaks into operator-visible output.
+   */
+  fallbackProbes?: IntegrationTestSpec[];
 }
 
 export interface IntegrationProvider {
@@ -262,7 +273,10 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
   // The test probe targets RunPod's REST API (the same key authorizes
   // both the management API and the per-endpoint OpenAI-compatible
   // chat completions). 200 = key is valid. Other statuses surface
-  // through the safeErrorPrefix.
+  // through the safeErrorPrefix. A DeepSeek fallback probe (see
+  // `fallbackProbes` below) lets a DeepSeek API key validate under the
+  // same NoralAI credential — DeepSeek is supported as an upstream backend
+  // behind the NoralAI brand, not as a separately-branded provider.
   noralai_brooklyn: {
     id: "noralai_brooklyn",
     category: "llm",
@@ -287,6 +301,25 @@ export const INTEGRATION_PROVIDERS: Record<string, IntegrationProvider> = {
       headers: { Authorization: "Bearer {{apiKey}}" },
       okStatuses: [200],
       safeErrorPrefix: "Brooklyn LLM provider rejected the key",
+      // A NoralAI credential may be a key for the default RunPod-backed
+      // endpoint OR a DeepSeek API key (used when an agent points its
+      // baseUrl at https://api.deepseek.com). Try the default probe first,
+      // then fall back to DeepSeek's auth-gated balance endpoint so a valid
+      // DeepSeek key validates too. On failure the operator still sees the
+      // primary "Brooklyn LLM provider rejected the key" message — DeepSeek
+      // is never named in operator-visible output.
+      fallbackProbes: [
+        {
+          kind: "http",
+          method: "GET",
+          url: "https://api.deepseek.com/user/balance",
+          headers: { Authorization: "Bearer {{apiKey}}" },
+          okStatuses: [200],
+          // Operator-facing prefix is unused for a fallback: the primary
+          // probe's prefix is what surfaces on failure. Kept for shape.
+          safeErrorPrefix: "DeepSeek rejected the key",
+        },
+      ],
     },
     assignableSlots: [
       {

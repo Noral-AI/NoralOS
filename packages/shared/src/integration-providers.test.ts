@@ -37,6 +37,28 @@ describe("INTEGRATION_PROVIDERS — noralai_brooklyn", () => {
     expect(p.test.safeErrorPrefix).toContain("Brooklyn");
   });
 
+  it("declares a DeepSeek fallback probe so a DeepSeek key validates under the NoralAI brand", () => {
+    const p = INTEGRATION_PROVIDERS["noralai_brooklyn"]!;
+    // Primary probe stays the RunPod-backed default (asserted above).
+    expect(p.test.url).toBe("https://rest.runpod.io/v1/endpoints");
+    const fallbacks = p.test.fallbackProbes ?? [];
+    expect(fallbacks).toHaveLength(1);
+    const deepseek = fallbacks[0]!;
+    expect(deepseek.kind).toBe("http");
+    expect(deepseek.method).toBe("GET");
+    expect(deepseek.url).toBe("https://api.deepseek.com/user/balance");
+    expect(deepseek.headers?.Authorization).toBe("Bearer {{apiKey}}");
+    expect(deepseek.okStatuses).toContain(200);
+  });
+
+  it("keeps the operator-facing failure prefix brand-pure (no DeepSeek mention)", () => {
+    // The primary prefix is the only thing that surfaces to operators on a
+    // failed test; it must not name the fallback upstream.
+    const p = INTEGRATION_PROVIDERS["noralai_brooklyn"]!;
+    expect(p.test.safeErrorPrefix).toContain("Brooklyn");
+    expect(p.test.safeErrorPrefix).not.toMatch(/deepseek/i);
+  });
+
   it("exposes exactly one assignable slot, pointing at the noralai.brooklyn plugin's apiKeyRef path", () => {
     const p = INTEGRATION_PROVIDERS["noralai_brooklyn"]!;
     expect(p.assignableSlots).toHaveLength(1);

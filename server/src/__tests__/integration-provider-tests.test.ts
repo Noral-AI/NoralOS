@@ -140,3 +140,61 @@ describe("runProviderTest — DTO never includes the plaintext", () => {
     expect(serialised).not.toContain(apiKey);
   });
 });
+
+describe("runProviderTest — noralai_brooklyn multi-probe (DeepSeek fallback)", () => {
+  const fetchMock = vi.fn();
+  const originalFetch = globalThis.fetch;
+  beforeEach(() => {
+    fetchMock.mockReset();
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+  });
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("passes on the primary RunPod probe without firing the DeepSeek fallback", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("", { status: 200 }));
+    const result = await runProviderTest("noralai_brooklyn", { apiKey: "runpod-key" });
+    expect(result.ok).toBe(true);
+    expect(result.statusCode).toBe(200);
+    expect(result.safeMessage).toBe("Provider accepted the credential.");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0] as string).toBe(
+      "https://rest.runpod.io/v1/endpoints",
+    );
+  });
+
+  it("falls back to DeepSeek when the primary probe rejects the key", async () => {
+    // Primary (RunPod) 401, fallback (DeepSeek) 200 → overall pass.
+    fetchMock
+      .mockResolvedValueOnce(new Response("runpod says no", { status: 401 }))
+      .mockResolvedValueOnce(new Response("", { status: 200 }));
+    const apiKey = "sk-deepseek-UNIQUE-TOKEN";
+    const result = await runProviderTest("noralai_brooklyn", { apiKey });
+    expect(result.ok).toBe(true);
+    expect(result.statusCode).toBe(200);
+    expect(result.safeMessage).toBe("Provider accepted the credential.");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    // The DeepSeek probe carries the key in the Authorization header, never the URL.
+    const [dsUrl, dsInit] = fetchMock.mock.calls[1] ?? [];
+    expect(dsUrl as string).toBe("https://api.deepseek.com/user/balance");
+    expect(dsUrl as string).not.toContain(apiKey);
+    const headers = (dsInit as RequestInit | undefined)?.headers as Record<string, string>;
+    expect(headers.Authorization).toBe(`Bearer ${apiKey}`);
+  });
+
+  it("reports the PRIMARY failure (no DeepSeek mention, no key leak) when both probes reject", async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response("runpod body", { status: 401 }))
+      .mockResolvedValueOnce(new Response("deepseek body", { status: 401 }));
+    const apiKey = "TOTALLY-INVALID-SECRET";
+    const result = await runProviderTest("noralai_brooklyn", { apiKey });
+    expect(result.ok).toBe(false);
+    expect(result.statusCode).toBe(401);
+    expect(result.safeMessage).toBe("Brooklyn LLM provider rejected the key (HTTP 401).");
+    expect(result.safeMessage).not.toMatch(/deepseek/i);
+    expect(JSON.stringify(result)).not.toContain(apiKey);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});

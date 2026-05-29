@@ -16,9 +16,9 @@ const BROOKLYN_PROVIDER_ID = "noralai_brooklyn";
 const SECRET_REF_PREFIX = "company-secret:";
 
 const baseUrlHint =
-  'OpenAI-compatible chat endpoint for this agent. Example: "https://api.runpod.ai/v2/<endpoint-id>/openai/v1". Required.';
+  'OpenAI-compatible chat endpoint for this agent. Examples: "https://api.runpod.ai/v2/<endpoint-id>/openai/v1" (NoralAI default) or "https://api.deepseek.com" (DeepSeek). Required.';
 const upstreamModelHint =
-  'Optional override for the technical model id sent in the request body. Leave blank to use the deployment default (currently "Qwen/Qwen3-32B-FP8").';
+  'Optional override for the technical model id sent in the request body. Leave blank to use the deployment default (currently "Qwen/Qwen3-32B-FP8"). For a DeepSeek-backed agent use "deepseek-v4-flash" or "deepseek-v4-pro".';
 const apiKeyRefHint =
   "Pick a NoralAI credential added under Settings → Integrations. The reference is resolved to a plaintext key server-side at execute time and never exposed to the browser.";
 
