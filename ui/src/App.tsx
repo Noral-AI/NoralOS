@@ -35,6 +35,7 @@ import { CloudUpstreamUxLab } from "./pages/CloudUpstreamUxLab";
 import { CompanySettingsPluginPage } from "./pages/CompanySettingsPluginPage";
 import { CompanyAccess, CompanyAccessLegacyRoute } from "./pages/CompanyAccess";
 import { CompanyIntegrations } from "./pages/CompanyIntegrations";
+import { CompanyLlmBackend } from "./pages/CompanyLlmBackend";
 import { CompanyInvites } from "./pages/CompanyInvites";
 import { CompanySkills } from "./pages/CompanySkills";
 import { Secrets } from "./pages/Secrets";
@@ -77,6 +78,7 @@ function boardRoutes() {
       <Route path="company/settings/members" element={<CompanyAccess />} />
       <Route path="company/settings/access" element={<CompanyAccessLegacyRoute />} />
       <Route path="company/settings/integrations" element={<CompanyIntegrations />} />
+      <Route path="company/settings/llm-backend" element={<CompanyLlmBackend />} />
       <Route path="company/settings/invites" element={<CompanyInvites />} />
       <Route path="company/export/*" element={<CompanyExport />} />
       <Route path="company/import" element={<CompanyImport />} />

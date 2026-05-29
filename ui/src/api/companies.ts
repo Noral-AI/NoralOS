@@ -1,5 +1,6 @@
 import type {
   Company,
+  CompanyLlmBackendSettings,
   CompanyPortabilityExportRequest,
   CompanyPortabilityExportPreviewResult,
   CompanyPortabilityExportResult,
@@ -8,10 +9,23 @@ import type {
   CompanyPortabilityPreviewRequest,
   CompanyPortabilityPreviewResult,
   UpdateCompanyBranding,
+  UpdateCompanyLlmBackend,
 } from "@noralos/shared";
 import { api } from "./client";
 
 export type CompanyStats = Record<string, { agentCount: number; issueCount: number }>;
+
+export interface LlmBackendCredentialOption {
+  id: string;
+  displayName: string;
+  status: string;
+  maskedSuffix: string;
+}
+
+export interface CompanyLlmBackendResponse {
+  settings: CompanyLlmBackendSettings;
+  credentials: LlmBackendCredentialOption[];
+}
 
 export const companiesApi = {
   list: () => api.get<Company[]>("/companies"),
@@ -42,6 +56,13 @@ export const companiesApi = {
   ) => api.patch<Company>(`/companies/${companyId}`, data),
   updateBranding: (companyId: string, data: UpdateCompanyBranding) =>
     api.patch<Company>(`/companies/${companyId}/branding`, data),
+  getLlmBackend: (companyId: string) =>
+    api.get<CompanyLlmBackendResponse>(`/companies/${companyId}/llm-backend`),
+  updateLlmBackend: (companyId: string, data: UpdateCompanyLlmBackend) =>
+    api.patch<{ settings: CompanyLlmBackendSettings }>(
+      `/companies/${companyId}/llm-backend`,
+      data,
+    ),
   archive: (companyId: string) => api.post<Company>(`/companies/${companyId}/archive`, {}),
   remove: (companyId: string) => api.delete<{ ok: true }>(`/companies/${companyId}`),
   exportBundle: (
