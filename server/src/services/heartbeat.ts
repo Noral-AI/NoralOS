@@ -28,6 +28,7 @@ import {
   agentWakeupRequests,
   activityLog,
   approvals,
+  companies,
   companySkills as companySkillsTable,
   documentRevisions,
   issueDocuments,
@@ -66,6 +67,8 @@ import { getTelemetryClient } from "../telemetry.js";
 import { companySkillService } from "./company-skills.js";
 import { budgetService, type BudgetEnforcementScope } from "./budgets.js";
 import { secretService } from "./secrets.js";
+import { integrationCredentialService } from "./integrations/credentials.js";
+import { resolveEffectiveAdapterType, buildDeepseekOverrideConfig } from "./llm-backend-override.js";
 import { resolveDefaultAgentWorkspaceDir, resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 import {
   buildHeartbeatRunIssueComment,
@@ -2431,6 +2434,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
 
   const runLogStore = getRunLogStore();
   const secretsSvc = secretService(db);
+  const integrationCredentials = integrationCredentialService(db);
   const companySkills = companySkillService(db);
   const issuesSvc = issueService(db);
   const treeControlSvc = issueTreeControlService(db);
@@ -6964,10 +6968,27 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       return;
     }
 
+    // Company-level "LLM backend" switch. When a company is set to `deepseek_v4`,
+    // every agent runs on `opencode_local` + DeepSeek V4 for THIS run only — an
+    // execution-time override that never touches `agents.adapter_type` /
+    // `agents.adapter_config`, so flipping back to `native` is lossless. We thread
+    // `effectiveAdapterType` (not `agent.adapterType`) through every run-scoped
+    // adapter-identity decision below — session codec/load/save, environment
+    // realization, adapter resolution, the local-agent JWT, and runtime-service
+    // persistence — so DeepSeek sessions (opencode_local rows) and Claude sessions
+    // (claude_local rows) stay segregated and survive round-trips untouched.
+    const companyLlmBackend = await db
+      .select({ llmBackendSettings: companies.llmBackendSettings })
+      .from(companies)
+      .where(eq(companies.id, agent.companyId))
+      .then((rows) => rows[0]?.llmBackendSettings ?? null);
+    const useDeepseekBackend = companyLlmBackend?.mode === "deepseek_v4";
+    const effectiveAdapterType = resolveEffectiveAdapterType(companyLlmBackend, agent.adapterType);
+
     const runtime = await ensureRuntimeState(agent);
     const context = parseObject(run.contextSnapshot);
     const taskKey = deriveTaskKeyWithHeartbeatFallback(context, null);
-    const sessionCodec = getAdapterSessionCodec(agent.adapterType);
+    const sessionCodec = getAdapterSessionCodec(effectiveAdapterType);
     const issueId = readNonEmptyString(context.issueId);
     let issueContext = issueId ? await getIssueExecutionContext(agent.companyId, issueId) : null;
     const issueDependencyReadiness = issueId
@@ -7043,7 +7064,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       isolatedWorkspacesEnabled,
     );
     const taskSession = taskKey
-      ? await getTaskSession(agent.companyId, agent.id, agent.adapterType, taskKey)
+      ? await getTaskSession(agent.companyId, agent.id, effectiveAdapterType, taskKey)
       : null;
     const resetTaskSession = shouldResetTaskSessionForWake(context);
     const sessionResetReason = describeSessionResetReason(context);
@@ -7471,7 +7492,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       companyId: agent.companyId,
       selectedEnvironmentId: persistedEnvironmentId,
       defaultEnvironmentId: defaultEnvironment.id,
-      adapterType: agent.adapterType,
+      adapterType: effectiveAdapterType,
       issueId: issueId ?? null,
       heartbeatRunId: run.id,
       agentId: agent.id,
@@ -7486,7 +7507,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
     const realizationResult = await envOrchestrator.realizeForRun({
       environment: selectedEnvironment,
       lease: activeEnvironmentLease.lease,
-      adapterType: agent.adapterType,
+      adapterType: effectiveAdapterType,
       companyId: agent.companyId,
       issueId: issueId ?? null,
       heartbeatRunId: run.id,
@@ -7848,9 +7869,41 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         });
       };
 
-      const adapter = getServerAdapter(agent.adapterType);
+      // Build the effective adapter config for THIS run. For the DeepSeek backend
+      // we forge a fresh opencode_local config (model / command / skip-permissions +
+      // the DeepSeek key) and carry ONLY adapter-agnostic runtime fields from the
+      // agent's resolved config — never a claude-specific field (esp. `command`).
+      // The DeepSeek key is resolved to plaintext just-in-time and lives only on
+      // this in-memory config; it is never written to the agent row or run snapshot.
+      let effectiveConfig: Record<string, unknown> = runtimeConfig;
+      if (useDeepseekBackend) {
+        const credentialId = companyLlmBackend?.credentialId;
+        if (!credentialId) {
+          throw new Error(
+            "Company LLM backend is set to DeepSeek V4 but no API credential is configured. " +
+              "Pick a NoralAI/DeepSeek credential in Company Settings → LLM Backend.",
+          );
+        }
+        let deepseekApiKey: string;
+        try {
+          deepseekApiKey = await integrationCredentials.resolvePlaintext(agent.companyId, credentialId);
+        } catch (err) {
+          throw new Error(
+            `Company LLM backend is set to DeepSeek V4 but its API credential could not be resolved: ${
+              err instanceof Error ? err.message : "unknown error"
+            }`,
+          );
+        }
+        effectiveConfig = buildDeepseekOverrideConfig({
+          runtimeConfig: runtimeConfig as Record<string, unknown>,
+          model: companyLlmBackend?.model,
+          deepseekApiKey,
+        });
+      }
+
+      const adapter = getServerAdapter(effectiveAdapterType);
       const authToken = adapter.supportsLocalAgentJwt
-        ? createLocalAgentJwt(agent.id, agent.companyId, agent.adapterType, run.id)
+        ? createLocalAgentJwt(agent.id, agent.companyId, effectiveAdapterType, run.id)
         : null;
       if (adapter.supportsLocalAgentJwt && !authToken) {
         logger.warn(
@@ -7858,7 +7911,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
             companyId: agent.companyId,
             agentId: agent.id,
             runId: run.id,
-            adapterType: agent.adapterType,
+            adapterType: effectiveAdapterType,
           },
           "local agent jwt secret missing or invalid; running without injected NORALOS_API_KEY",
         );
@@ -7867,9 +7920,9 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
         runId: run.id,
         agent,
         runtime: runtimeForAdapter,
-        config: runtimeConfig,
+        config: effectiveConfig,
         context,
-        runtimeCommandSpec: adapter.getRuntimeCommandSpec?.(runtimeConfig) ?? null,
+        runtimeCommandSpec: adapter.getRuntimeCommandSpec?.(effectiveConfig) ?? null,
         executionTarget,
         executionTransport: remoteExecution
           ? { remoteExecution: remoteExecution as unknown as Record<string, unknown> }
@@ -7891,7 +7944,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       const adapterManagedRuntimeServices = adapterResult.runtimeServices
         ? await persistAdapterManagedRuntimeServices({
             db,
-            adapterType: agent.adapterType,
+            adapterType: effectiveAdapterType,
             runId: run.id,
             agent: {
               id: agent.id,
@@ -8143,13 +8196,13 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           if (adapterResult.clearSession || (!nextSessionState.params && !nextSessionState.displayId)) {
             await clearTaskSessions(agent.companyId, agent.id, {
               taskKey,
-              adapterType: agent.adapterType,
+              adapterType: effectiveAdapterType,
             });
           } else {
             await upsertTaskSession({
               companyId: agent.companyId,
               agentId: agent.id,
-              adapterType: agent.adapterType,
+              adapterType: effectiveAdapterType,
               taskKey,
               sessionParamsJson: nextSessionState.params,
               sessionDisplayId: nextSessionState.displayId,
@@ -8227,7 +8280,7 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
           await upsertTaskSession({
             companyId: agent.companyId,
             agentId: agent.id,
-            adapterType: agent.adapterType,
+            adapterType: effectiveAdapterType,
             taskKey,
             sessionParamsJson: previousSessionParams,
             sessionDisplayId: previousSessionDisplayId,

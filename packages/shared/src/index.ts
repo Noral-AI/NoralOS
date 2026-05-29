@@ -260,6 +260,8 @@ export {
 
 export type {
   Company,
+  CompanyLlmBackendMode,
+  CompanyLlmBackendSettings,
   Environment,
   EnvironmentLease,
   EnvironmentProbeResult,
@@ -770,6 +772,11 @@ export {
   createCompanySchema,
   updateCompanySchema,
   updateCompanyBrandingSchema,
+  updateCompanyLlmBackendSchema,
+  COMPANY_LLM_BACKEND_MODES,
+  DEEPSEEK_OPENCODE_PROVIDER,
+  DEFAULT_DEEPSEEK_OPENCODE_MODEL,
+  DEEPSEEK_OPENCODE_MODELS,
   feedbackTargetTypeSchema,
   feedbackTraceStatusSchema,
   feedbackVoteValueSchema,
@@ -777,6 +784,7 @@ export {
   type CreateCompany,
   type UpdateCompany,
   type UpdateCompanyBranding,
+  type UpdateCompanyLlmBackend,
   type UpsertIssueFeedbackVote,
   environmentDriverSchema,
   environmentStatusSchema,

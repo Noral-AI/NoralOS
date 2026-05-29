@@ -1,4 +1,4 @@
-export type { Company } from "./company.js";
+export type { Company, CompanyLlmBackendMode, CompanyLlmBackendSettings } from "./company.js";
 export type {
   Environment,
   EnvironmentLease,

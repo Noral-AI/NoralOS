@@ -22,9 +22,15 @@ export {
   createCompanySchema,
   updateCompanySchema,
   updateCompanyBrandingSchema,
+  updateCompanyLlmBackendSchema,
+  COMPANY_LLM_BACKEND_MODES,
+  DEEPSEEK_OPENCODE_PROVIDER,
+  DEFAULT_DEEPSEEK_OPENCODE_MODEL,
+  DEEPSEEK_OPENCODE_MODELS,
   type CreateCompany,
   type UpdateCompany,
   type UpdateCompanyBranding,
+  type UpdateCompanyLlmBackend,
 } from "./company.js";
 export {
   environmentDriverSchema,

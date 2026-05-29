@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Router, type Request } from "express";
 import type { Db } from "@noralos/db";
+import type { CompanyLlmBackendSettings } from "@noralos/shared";
 import {
   DEFAULT_FEEDBACK_DATA_SHARING_TERMS_VERSION,
   companyPortabilityExportSchema,
@@ -11,8 +12,10 @@ import {
   feedbackTraceStatusSchema,
   feedbackVoteValueSchema,
   updateCompanyBrandingSchema,
+  updateCompanyLlmBackendSchema,
   updateCompanySchema,
 } from "@noralos/shared";
+import { integrationCredentialService } from "../services/integrations/credentials.js";
 import { badRequest, forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -36,6 +39,7 @@ export function companyRoutes(db: Db, storage?: StorageService) {
   const access = accessService(db);
   const budgets = budgetService(db);
   const feedback = feedbackService(db);
+  const integrationCredentials = integrationCredentialService(db);
   const importJobs = new Map<string, ImportJobRecord>();
   const importJobTerminalRetentionMs = 5 * 60 * 1000;
 
@@ -74,6 +78,25 @@ export function companyRoutes(db: Db, storage?: StorageService) {
     }
     if (actorAgent.role !== "ceo") {
       throw forbidden("Only CEO agents can update company branding");
+    }
+  }
+
+  // The company-wide LLM backend switch governs how ALL of a company's agents
+  // execute (cost + capability), so it is restricted to board users (operators)
+  // and executive (C-suite) agents.
+  const LLM_BACKEND_AGENT_ROLES = new Set(["ceo", "cto", "cfo", "cmo"]);
+
+  async function assertCanManageLlmBackend(req: Request, companyId: string) {
+    assertCompanyAccess(req, companyId);
+    if (req.actor.type === "board") return;
+    if (!req.actor.agentId) throw forbidden("Agent authentication required");
+
+    const actorAgent = await agents.getById(req.actor.agentId);
+    if (!actorAgent || actorAgent.companyId !== companyId) {
+      throw forbidden("Agent key cannot access another company");
+    }
+    if (!LLM_BACKEND_AGENT_ROLES.has(actorAgent.role)) {
+      throw forbidden("Only executive (C-suite) agents or board users may change the LLM backend");
     }
   }
 
@@ -406,6 +429,85 @@ export function companyRoutes(db: Db, storage?: StorageService) {
       details: req.body,
     });
     res.json(company);
+  });
+
+  // Company-wide "LLM backend" switch. Returns the current setting plus the
+  // candidate NoralAI/DeepSeek credentials the operator can point it at.
+  router.get("/:companyId/llm-backend", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    await assertCanManageLlmBackend(req, companyId);
+    const company = await svc.getById(companyId);
+    if (!company) {
+      res.status(404).json({ error: "Company not found" });
+      return;
+    }
+    const credentials = (await integrationCredentials.list(companyId))
+      .filter((credential) => credential.provider === "noralai_brooklyn")
+      .map((credential) => ({
+        id: credential.id,
+        displayName: credential.displayName,
+        status: credential.status,
+        maskedSuffix: credential.maskedSuffix,
+      }));
+    res.json({
+      settings: company.llmBackendSettings ?? { mode: "native" },
+      credentials,
+    });
+  });
+
+  router.patch("/:companyId/llm-backend", async (req, res) => {
+    const companyId = req.params.companyId as string;
+    await assertCanManageLlmBackend(req, companyId);
+    const existingCompany = await svc.getById(companyId);
+    if (!existingCompany) {
+      res.status(404).json({ error: "Company not found" });
+      return;
+    }
+    const body = updateCompanyLlmBackendSchema.parse(req.body);
+
+    // When targeting DeepSeek, the referenced credential must be a
+    // noralai_brooklyn credential that belongs to this company — otherwise the
+    // heartbeat would fail every run trying to resolve a missing/foreign key.
+    if (body.mode === "deepseek_v4") {
+      const credential = (await integrationCredentials.list(companyId)).find(
+        (entry) => entry.id === body.credentialId,
+      );
+      if (!credential || credential.provider !== "noralai_brooklyn") {
+        throw badRequest(
+          "credentialId must reference a NoralAI (noralai_brooklyn) integration credential for this company",
+        );
+      }
+    }
+
+    const actor = getActorInfo(req);
+    const next: CompanyLlmBackendSettings = {
+      mode: body.mode,
+      ...(body.model ? { model: body.model } : {}),
+      ...(body.credentialId ? { credentialId: body.credentialId } : {}),
+      updatedAt: new Date().toISOString(),
+      updatedByUserId: req.actor.type === "board" ? (req.actor.userId ?? null) : null,
+    };
+    const company = await svc.update(companyId, { llmBackendSettings: next });
+    if (!company) {
+      res.status(404).json({ error: "Company not found" });
+      return;
+    }
+    await logActivity(db, {
+      companyId,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      agentId: actor.agentId,
+      runId: actor.runId,
+      action: "company.llm_backend_updated",
+      entityType: "company",
+      entityId: companyId,
+      details: {
+        mode: next.mode,
+        model: next.model ?? null,
+        credentialId: next.credentialId ?? null,
+      },
+    });
+    res.json({ settings: company.llmBackendSettings ?? next });
   });
 
   router.post("/:companyId/archive", async (req, res) => {

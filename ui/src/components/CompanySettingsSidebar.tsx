@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, CloudUpload, KeyRound, MailPlus, MonitorCog, Plug, Puzzle, Settings, Shield, SlidersHorizontal, Users } from "lucide-react";
+import { ChevronLeft, CloudUpload, Cpu, KeyRound, MailPlus, MonitorCog, Plug, Puzzle, Settings, Shield, SlidersHorizontal, Users } from "lucide-react";
 import { sidebarBadgesApi } from "@/api/sidebarBadges";
 import { instanceSettingsApi } from "@/api/instanceSettings";
 import { ApiError } from "@/api/client";
@@ -84,6 +84,12 @@ export function CompanySettingsSidebar() {
             to="/company/settings/integrations"
             label="Integrations"
             icon={Plug}
+            end
+          />
+          <SidebarNavItem
+            to="/company/settings/llm-backend"
+            label="LLM Backend"
+            icon={Cpu}
             end
           />
           <SidebarNavItem

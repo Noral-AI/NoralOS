@@ -57,3 +57,53 @@ export const updateCompanyBrandingSchema = z
   );
 
 export type UpdateCompanyBranding = z.infer<typeof updateCompanyBrandingSchema>;
+
+/**
+ * Company-wide "LLM backend" switch.
+ *
+ *   - `native`      → each agent runs on its own stored adapter (e.g. claude_local).
+ *   - `deepseek_v4` → every agent is forced onto `opencode_local` + DeepSeek V4
+ *                     at EXECUTION time (heartbeat override). The agent rows are
+ *                     never mutated, so flipping back to `native` is lossless.
+ *
+ * `model` is the OpenCode model id (provider/model form) used when running on
+ * DeepSeek; `credentialId` references the company's `noralai_brooklyn`
+ * integration credential that holds the DeepSeek API key. The key is resolved
+ * to plaintext just-in-time per run and injected as `DEEPSEEK_API_KEY`.
+ */
+export const COMPANY_LLM_BACKEND_MODES = ["native", "deepseek_v4"] as const;
+
+/** Provider key for the OpenCode provider config that resolves DeepSeek models. */
+export const DEEPSEEK_OPENCODE_PROVIDER = "deepseek";
+
+/** Default OpenCode model id when a company switches to the DeepSeek backend. */
+export const DEFAULT_DEEPSEEK_OPENCODE_MODEL = "deepseek/deepseek-v4-pro";
+
+/** Operator-selectable DeepSeek models (OpenCode `provider/model` ids). */
+export const DEEPSEEK_OPENCODE_MODELS = [
+  { id: "deepseek/deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+  { id: "deepseek/deepseek-v4-flash", label: "DeepSeek V4 Flash (cheaper)" },
+] as const;
+
+const deepseekOpenCodeModelSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .regex(
+    /^deepseek\/[\w.-]+$/i,
+    "Model must be an OpenCode DeepSeek model id, e.g. deepseek/deepseek-v4-pro",
+  );
+
+export const updateCompanyLlmBackendSchema = z
+  .object({
+    mode: z.enum(COMPANY_LLM_BACKEND_MODES),
+    model: deepseekOpenCodeModelSchema.optional(),
+    credentialId: z.string().uuid().optional(),
+  })
+  .strict()
+  .refine((value) => value.mode !== "deepseek_v4" || Boolean(value.credentialId), {
+    message: "credentialId is required when mode is deepseek_v4",
+    path: ["credentialId"],
+  });
+
+export type UpdateCompanyLlmBackend = z.infer<typeof updateCompanyLlmBackendSchema>;
