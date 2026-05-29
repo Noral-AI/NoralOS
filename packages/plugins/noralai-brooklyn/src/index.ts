@@ -51,6 +51,18 @@ Core fields:
   the Integration Credentials system. Format
   "company-secret:<credential-id>"; resolved at execute time.
 
+Supported upstream backends (configured per-agent via baseUrl + upstreamModel):
+- NoralAI default (RunPod-hosted): use the OpenAI-compatible endpoint
+  provided by NORALAI operations as baseUrl; leave upstreamModel blank to use
+  DEFAULT_UPSTREAM_MODEL_ID.
+- DeepSeek: set baseUrl to "https://api.deepseek.com" and upstreamModel to
+  "deepseek-v4-flash" (fast / low-cost) or "deepseek-v4-pro" (stronger). The
+  legacy ids "deepseek-chat" / "deepseek-reasoner" still resolve today but
+  DeepSeek has them slated for deprecation on 2026-07-24. Store the DeepSeek
+  API key as a NoralAI credential under Settings → Integrations; the
+  credential test validates DeepSeek keys. Reasoning models return only the
+  final answer to NoralOS (the separate reasoning trace is not captured).
+
 Operational fields:
 - temperature (number, optional): 0..2, defaults to provider default.
 - maxTokens (number, optional): cap on completion tokens.

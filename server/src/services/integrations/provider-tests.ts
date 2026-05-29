@@ -12,8 +12,12 @@
 //      never logged.
 //   3. The result returned to the caller is `{ ok, statusCode, safeMessage }`
 //      — a hand-curated message string, not the provider body.
-//   4. Tests have a hard 10-second timeout to prevent hanging the
-//      admin's request thread on a slow provider.
+//   4. Tests have a hard 10-second timeout PER PROBE to prevent hanging the
+//      admin's request thread on a slow provider. A provider may declare
+//      fallback probes (tried only when the primary probe fails); each is
+//      bounded by the same 10s timeout and the same no-body-leak rules, and
+//      the operator-facing failure message always comes from the PRIMARY
+//      probe so a fallback's upstream identity never leaks.
 //
 // Phase 1 supports `google_tts` and `elevenlabs` only.
 
@@ -84,8 +88,62 @@ function buildRequest(
 }
 
 /**
+ * The result of firing one probe. No response body is ever captured here —
+ * the socket is drained into a junk variable and discarded. `config_error`
+ * is a registry/caller problem (e.g. a placeholder field is missing) and is
+ * detected before any network call fires.
+ */
+type ProbeOutcome =
+  | { kind: "ok"; statusCode: number }
+  | { kind: "bad_status"; statusCode: number }
+  | { kind: "config_error"; message: string }
+  | { kind: "timeout" }
+  | { kind: "network" };
+
+/**
+ * Fire a single probe. Builds the request, applies the per-probe timeout,
+ * drains the body without surfacing it, and classifies the outcome. Never
+ * returns the response body or the plaintext fields.
+ */
+async function attemptProbe(
+  spec: IntegrationTestSpec,
+  fields: Record<string, string>,
+): Promise<ProbeOutcome> {
+  const built = buildRequest(spec, fields);
+  if ("error" in built) {
+    return { kind: "config_error", message: built.error };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(built.url, {
+      method: built.method,
+      headers: built.headers,
+      signal: controller.signal,
+    });
+    // Drain the socket without surfacing the body.
+    await res.text().catch(() => "");
+    return spec.okStatuses.includes(res.status)
+      ? { kind: "ok", statusCode: res.status }
+      : { kind: "bad_status", statusCode: res.status };
+  } catch (err) {
+    const aborted = (err as Error)?.name === "AbortError";
+    return aborted ? { kind: "timeout" } : { kind: "network" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * Run the provider-specific test for a credential. The plaintext value is
  * accepted only here, used immediately, and discarded.
+ *
+ * A provider declares one primary `test` probe and may declare ordered
+ * `fallbackProbes`. The credential passes if the primary OR any fallback
+ * returns an ok status. When nothing validates, the operator-facing message
+ * always reflects the PRIMARY probe — a fallback's upstream identity (e.g.
+ * the DeepSeek backend behind the NoralAI brand) never leaks.
  */
 export async function runProviderTest(
   providerId: string,
@@ -100,39 +158,60 @@ export async function runProviderTest(
       safeMessage: `Unknown provider: ${providerId}`,
     };
   }
-  const built = buildRequest(provider.test, fields);
-  if ("error" in built) {
-    return { ok: false, statusCode: 0, safeMessage: built.error };
+
+  const primary = provider.test;
+
+  // Primary probe first. A config error (e.g. a missing placeholder field)
+  // is a registry/caller problem; it short-circuits before any network call
+  // and before any fallback, preserving the existing "missing field" /
+  // "no url" behavior.
+  const primaryOutcome = await attemptProbe(primary, fields);
+  if (primaryOutcome.kind === "config_error") {
+    return { ok: false, statusCode: 0, safeMessage: primaryOutcome.message };
+  }
+  if (primaryOutcome.kind === "ok") {
+    return {
+      ok: true,
+      statusCode: primaryOutcome.statusCode,
+      safeMessage: "Provider accepted the credential.",
+    };
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TEST_TIMEOUT_MS);
-  try {
-    const res = await fetch(built.url, {
-      method: built.method,
-      headers: built.headers,
-      signal: controller.signal,
-    });
-    // Drain the socket without surfacing the body.
-    await res.text().catch(() => "");
-    const ok = provider.test.okStatuses.includes(res.status);
+  // Primary did not pass. Try fallback probes in order; the credential
+  // passes if any returns an ok status. A fallback's own config errors,
+  // timeouts, and network failures are skipped silently — only an ok
+  // result matters here.
+  for (const fallback of primary.fallbackProbes ?? []) {
+    const outcome = await attemptProbe(fallback, fields);
+    if (outcome.kind === "ok") {
+      return {
+        ok: true,
+        statusCode: outcome.statusCode,
+        safeMessage: "Provider accepted the credential.",
+      };
+    }
+  }
+
+  // Nothing validated. Surface the PRIMARY probe's failure verbatim so the
+  // message wording matches the previous single-probe behavior exactly and
+  // no fallback upstream is named.
+  if (primaryOutcome.kind === "bad_status") {
     return {
-      ok,
-      statusCode: res.status,
-      safeMessage: ok
-        ? "Provider accepted the credential."
-        : `${provider.test.safeErrorPrefix} (HTTP ${res.status}).`,
+      ok: false,
+      statusCode: primaryOutcome.statusCode,
+      safeMessage: `${primary.safeErrorPrefix} (HTTP ${primaryOutcome.statusCode}).`,
     };
-  } catch (err) {
-    const aborted = (err as Error)?.name === "AbortError";
+  }
+  if (primaryOutcome.kind === "timeout") {
     return {
       ok: false,
       statusCode: 0,
-      safeMessage: aborted
-        ? `${provider.test.safeErrorPrefix}: request timed out after ${TEST_TIMEOUT_MS / 1000}s.`
-        : `${provider.test.safeErrorPrefix}: network error.`,
+      safeMessage: `${primary.safeErrorPrefix}: request timed out after ${TEST_TIMEOUT_MS / 1000}s.`,
     };
-  } finally {
-    clearTimeout(timer);
   }
+  return {
+    ok: false,
+    statusCode: 0,
+    safeMessage: `${primary.safeErrorPrefix}: network error.`,
+  };
 }
