@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, uuid, text, timestamp, integer, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { agents } from "./agents.js";
 import { companySecrets } from "./company_secrets.js";
@@ -24,5 +25,13 @@ export const companySecretVersions = pgTable(
     valueHashIdx: index("company_secret_versions_value_sha256_idx").on(table.valueSha256),
     fingerprintIdx: index("company_secret_versions_fingerprint_idx").on(table.fingerprintSha256),
     secretVersionUq: uniqueIndex("company_secret_versions_secret_version_uq").on(table.secretId, table.version),
+    // Invariant: at most one `current` version per secret. The runtime write
+    // paths (create/rotate/import) already maintain this, but a partial unique
+    // index makes the bad state (which migration 0082's `DEFAULT 'current'`
+    // backfill produced) impossible to reach again — it was the root cause of
+    // a drifted `latest_version` that silently broke secret resolution.
+    oneCurrentPerSecretUq: uniqueIndex("company_secret_versions_one_current_per_secret_uq")
+      .on(table.secretId)
+      .where(sql`${table.status} = 'current'`),
   }),
 );
