@@ -127,6 +127,77 @@ describeEmbeddedPostgres("secretService", () => {
     ).rejects.toThrow(/already exists/i);
   });
 
+  it("keeps exactly one current version and an aligned latest_version across create + rotate", async () => {
+    const companyId = await seedCompany();
+    const svc = secretService(db);
+
+    // create → version 1 is the sole "current", latest_version = 1
+    const secret = await svc.create(companyId, {
+      name: `invariant-${randomUUID()}`,
+      provider: "local_encrypted",
+      value: "v1",
+    });
+    {
+      const versions = await db
+        .select()
+        .from(companySecretVersions)
+        .where(eq(companySecretVersions.secretId, secret.id));
+      const current = versions.filter((v) => v.status === "current");
+      expect(current).toHaveLength(1);
+      expect(current[0].version).toBe(1);
+      const row = await db
+        .select()
+        .from(companySecrets)
+        .where(eq(companySecrets.id, secret.id))
+        .then((rows) => rows[0]);
+      expect(row.latestVersion).toBe(1);
+    }
+
+    // rotate → version 2 becomes the sole "current", latest_version = 2,
+    // and the prior current (v1) is demoted to "previous" in one transaction.
+    await svc.rotate(secret.id, { value: "v2" });
+    {
+      const versions = await db
+        .select()
+        .from(companySecretVersions)
+        .where(eq(companySecretVersions.secretId, secret.id));
+      const current = versions.filter((v) => v.status === "current");
+      expect(current).toHaveLength(1);
+      expect(current[0].version).toBe(2);
+      expect(versions.find((v) => v.version === 1)?.status).toBe("previous");
+      const row = await db
+        .select()
+        .from(companySecrets)
+        .where(eq(companySecrets.id, secret.id))
+        .then((rows) => rows[0]);
+      expect(row.latestVersion).toBe(2);
+    }
+  });
+
+  it("rejects a second current version per secret at the database level", async () => {
+    const companyId = await seedCompany();
+    const svc = secretService(db);
+    const secret = await svc.create(companyId, {
+      name: `guard-${randomUUID()}`,
+      provider: "local_encrypted",
+      value: "v1",
+    });
+
+    // The partial unique index company_secret_versions_one_current_per_secret_uq
+    // must reject a direct attempt to mark a second version "current" — this is
+    // the guard that makes the drifted-pointer bug unreachable.
+    await expect(
+      db.insert(companySecretVersions).values({
+        secretId: secret.id,
+        version: 2,
+        material: { scheme: "test" },
+        valueSha256: "0".repeat(64),
+        fingerprintSha256: "0".repeat(64),
+        status: "current",
+      }),
+    ).rejects.toThrow();
+  });
+
   it("reports reference counts and resolves binding target labels", async () => {
     const companyId = await seedCompany();
     const svc = secretService(db);
