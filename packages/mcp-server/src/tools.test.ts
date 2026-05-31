@@ -93,7 +93,7 @@ describe("paperclip MCP tools", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const tool = getTool("paperclipCreateIssue");
+    const tool = getTool("noralosCreateIssue");
     await tool.execute({
       title: "Assigned follow-up",
       assigneeAgentId: "22222222-2222-2222-2222-222222222222",

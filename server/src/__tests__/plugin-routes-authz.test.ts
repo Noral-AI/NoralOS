@@ -615,6 +615,123 @@ describe.sequential("plugin tool and bridge authz", () => {
     );
   });
 
+  it("allows an agent actor to list plugin tools", async () => {
+    const listToolsForAgent = vi.fn(() => [
+      {
+        name: "paperclip.example:search",
+        displayName: "Search",
+        description: "d",
+        parametersSchema: {},
+        pluginId: pluginId,
+      },
+    ]);
+    const { app } = await createApp(agentActor(), {}, {
+      toolDeps: {
+        toolDispatcher: { listToolsForAgent, getTool: vi.fn(), executeTool: vi.fn() },
+      },
+    });
+
+    const res = await request(app).get("/api/plugins/tools");
+
+    expect(res.status).toBe(200);
+    expect(listToolsForAgent).toHaveBeenCalled();
+    expect(res.body).toHaveLength(1);
+  });
+
+  it("allows an agent actor to execute a tool for its own company", async () => {
+    const executeTool = vi.fn().mockResolvedValue({ content: "ok" });
+    const { app } = await createApp(agentActor(), {}, {
+      db: createSelectQueueDb([
+        [{ companyId: companyA }], // agent
+        [{ companyId: companyA, agentId: agentA }], // run
+        [{ companyId: companyA }], // project
+        [], // resolveTriggeringUser → no user
+      ]),
+      toolDeps: {
+        toolDispatcher: {
+          listToolsForAgent: vi.fn(),
+          getTool: vi.fn(() => ({ name: "paperclip.example:search" })),
+          executeTool,
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/plugins/tools/execute")
+      .send({
+        tool: "paperclip.example:search",
+        parameters: {},
+        runContext: { agentId: agentA, runId: runA, companyId: companyA, projectId: projectA },
+      });
+
+    expect(res.status).toBe(200);
+    expect(executeTool).toHaveBeenCalled();
+  });
+
+  it("resolves runContext.projectId from the run's issue when omitted", async () => {
+    const issueX = "88888888-8888-4888-8888-888888888888";
+    const executeTool = vi.fn().mockResolvedValue({ content: "ok" });
+    const { app } = await createApp(agentActor(), {}, {
+      db: createSelectQueueDb([
+        [{ issueId: issueX }], // resolveRunProjectId → run.issueId
+        [{ projectId: projectA }], // resolveRunProjectId → issue.projectId
+        [{ companyId: companyA }], // agent
+        [{ companyId: companyA, agentId: agentA }], // run
+        [{ companyId: companyA }], // project
+        [], // resolveTriggeringUser
+      ]),
+      toolDeps: {
+        toolDispatcher: {
+          listToolsForAgent: vi.fn(),
+          getTool: vi.fn(() => ({ name: "paperclip.example:search" })),
+          executeTool,
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/plugins/tools/execute")
+      .send({
+        tool: "paperclip.example:search",
+        parameters: {},
+        runContext: { agentId: agentA, runId: runA, companyId: companyA }, // no projectId
+      });
+
+    expect(res.status).toBe(200);
+    expect(executeTool).toHaveBeenCalledWith(
+      "paperclip.example:search",
+      {},
+      expect.objectContaining({ projectId: projectA }),
+    );
+  });
+
+  it("rejects execution when projectId is omitted and the run has no linked issue", async () => {
+    const executeTool = vi.fn();
+    const { app } = await createApp(agentActor(), {}, {
+      db: createSelectQueueDb([
+        [{ issueId: null }], // resolveRunProjectId → run has no issueId
+      ]),
+      toolDeps: {
+        toolDispatcher: {
+          listToolsForAgent: vi.fn(),
+          getTool: vi.fn(() => ({ name: "paperclip.example:search" })),
+          executeTool,
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/plugins/tools/execute")
+      .send({
+        tool: "paperclip.example:search",
+        parameters: {},
+        runContext: { agentId: agentA, runId: runA, companyId: companyA },
+      });
+
+    expect(res.status).toBe(400);
+    expect(executeTool).not.toHaveBeenCalled();
+  });
+
   it("enriches runContext with triggering user when the run was wakened by a human", async () => {
     const executeTool = vi.fn().mockResolvedValue({ content: "ok" });
     const { app } = await createApp(boardActor(), {}, {

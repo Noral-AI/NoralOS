@@ -76,6 +76,12 @@ COPY . .
 RUN pnpm --filter @noralos/ui build
 RUN pnpm --filter @noralos/plugin-sdk build
 RUN pnpm --filter @noralos/server build
+# @noralos/mcp-server is the stdio MCP bridge the opencode_local adapter wires
+# into each agent run so host plugin tools (noralvoice:*, etc.) are bound for
+# the agent. It is NOT a server dependency, so it must be built explicitly —
+# otherwise its dist/ is empty and runtime-config silently skips MCP injection.
+RUN pnpm --filter @noralos/mcp-server build
+RUN test -f packages/mcp-server/dist/stdio.js || (echo "ERROR: mcp-server build output missing" && exit 1)
 # Phase 6 (re-scoped, fully completed): conference-room-bridge build removed in #105,
 # voice-cascade build removed in PR-3, voice-config build removed in PR-4b.
 # noralai-noralsign builds tsc output (manifest, worker, REST client) plus

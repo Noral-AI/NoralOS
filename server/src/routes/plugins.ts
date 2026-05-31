@@ -24,7 +24,7 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { Db } from "@noralos/db";
 import {
   agents,
@@ -32,6 +32,7 @@ import {
   authUsers,
   companies,
   heartbeatRuns,
+  issues,
   pluginLogs,
   pluginWebhookDeliveries,
   projects,
@@ -63,6 +64,7 @@ import {
   assertAuthenticated,
   assertBoard,
   assertBoardOrgAccess,
+  assertBoardOrgOrAgent,
   assertCompanyAccess,
   assertInstanceAdmin,
   getActorInfo,
@@ -646,6 +648,32 @@ export function pluginRoutes(
   }
 
   /**
+   * Resolve the project a run belongs to from its wakeup context
+   * (`heartbeat_runs.contextSnapshot ->> 'issueId'` → `issues.projectId`),
+   * scoped to the company. Used to fill `runContext.projectId` when an agent
+   * caller (e.g. the plugin-tools MCP bridge) omits it. Returns null when the
+   * run has no linked issue or the issue has no project.
+   */
+  async function resolveRunProjectId(runId: string, companyId: string): Promise<string | null> {
+    const [run] = await db
+      .select({
+        issueId: sql<string | null>`${heartbeatRuns.contextSnapshot} ->> 'issueId'`,
+      })
+      .from(heartbeatRuns)
+      .where(eq(heartbeatRuns.id, runId))
+      .limit(1);
+    const issueId = typeof run?.issueId === "string" ? run.issueId.trim() : "";
+    if (!issueId) return null;
+
+    const [issue] = await db
+      .select({ projectId: issues.projectId })
+      .from(issues)
+      .where(and(eq(issues.id, issueId), eq(issues.companyId, companyId)))
+      .limit(1);
+    return issue?.projectId ?? null;
+  }
+
+  /**
    * Server-resolves the human who triggered the given run, when known.
    *
    * Chain: heartbeat_runs.wakeup_request_id → agent_wakeup_requests
@@ -815,7 +843,7 @@ export function pluginRoutes(
    * Errors: 501 if tool dispatcher is not configured
    */
   router.get("/plugins/tools", async (req, res) => {
-    assertBoardOrgAccess(req);
+    assertBoardOrgOrAgent(req);
 
     if (!toolDeps) {
       res.status(501).json({ error: "Plugin tool dispatch is not enabled" });
@@ -849,7 +877,7 @@ export function pluginRoutes(
    * - 502 if the plugin worker is unavailable or the RPC call fails
    */
   router.post("/plugins/tools/execute", async (req, res) => {
-    assertBoardOrgAccess(req);
+    assertBoardOrgOrAgent(req);
 
     if (!toolDeps) {
       res.status(501).json({ error: "Plugin tool dispatch is not enabled" });
@@ -875,15 +903,35 @@ export function pluginRoutes(
       return;
     }
 
-    if (!runContext.agentId || !runContext.runId || !runContext.companyId || !runContext.projectId) {
+    if (!runContext.agentId || !runContext.runId || !runContext.companyId) {
       res.status(400).json({
-        error: '"runContext" must include agentId, runId, companyId, and projectId',
+        error: '"runContext" must include agentId, runId, and companyId',
       });
       return;
     }
 
     assertCompanyAccess(req, runContext.companyId);
-    const scopeError = await validateToolRunContextScope(runContext);
+
+    // `projectId` is optional from agent callers (e.g. the plugin-tools MCP
+    // bridge cannot know it). Resolve it from the run's current issue when
+    // omitted so the plugin's ToolRunContext stays fully populated.
+    let projectId =
+      typeof runContext.projectId === "string" && runContext.projectId.trim().length > 0
+        ? runContext.projectId
+        : "";
+    if (!projectId) {
+      const resolved = await resolveRunProjectId(runContext.runId, runContext.companyId);
+      if (!resolved) {
+        res.status(400).json({
+          error: 'Could not resolve "runContext.projectId" from the run; provide it explicitly',
+        });
+        return;
+      }
+      projectId = resolved;
+    }
+    const scopedRunContext: ToolRunContext = { ...runContext, projectId };
+
+    const scopeError = await validateToolRunContextScope(scopedRunContext);
     if (scopeError) {
       res.status(403).json({ error: scopeError });
       return;
@@ -900,9 +948,9 @@ export function pluginRoutes(
     // Plugins read this from ToolRunContext to forward delegated identity
     // (e.g. noralai.noralvoice creating workflows owned by the human user).
     // Resolved server-side so callers cannot spoof the assertion.
-    const triggeredBy = await resolveTriggeringUser(runContext.runId);
+    const triggeredBy = await resolveTriggeringUser(scopedRunContext.runId);
     const enrichedContext: ToolRunContext = {
-      ...runContext,
+      ...scopedRunContext,
       triggeredByUserId: triggeredBy?.userId ?? null,
       triggeredByUserEmail: triggeredBy?.userEmail ?? null,
     };

@@ -31,6 +31,20 @@ export function assertBoardOrgAccess(req: Request) {
   throw forbidden("Company membership or instance admin access required");
 }
 
+/**
+ * Like {@link assertBoardOrgAccess}, but also admits agent actors. An agent
+ * run-JWT (`req.actor.type === "agent"`) is already scoped to a single company;
+ * routes that accept agents enforce that scope downstream (e.g.
+ * `assertCompanyAccess` + run-context validation). Used by the agent-facing
+ * plugin-tool routes so an agent can discover and invoke its own plugin tools.
+ */
+export function assertBoardOrgOrAgent(req: Request) {
+  if (req.actor.type === "agent") {
+    return;
+  }
+  assertBoardOrgAccess(req);
+}
+
 export function assertInstanceAdmin(req: Request) {
   assertBoard(req);
   if (req.actor.source === "local_implicit" || req.actor.isInstanceAdmin) {

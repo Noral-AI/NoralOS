@@ -25,6 +25,8 @@ export class NoralosApiError extends Error {
 export interface JsonRequestOptions {
   body?: unknown;
   includeRunId?: boolean;
+  /** Abort the request after this many milliseconds (best-effort). */
+  timeoutMs?: number;
 }
 
 function isWriteMethod(method: string): boolean {
@@ -96,6 +98,10 @@ export class NoralosApiClient {
       method,
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal:
+        typeof options.timeoutMs === "number" && options.timeoutMs > 0
+          ? AbortSignal.timeout(options.timeoutMs)
+          : undefined,
     });
     const parsedBody = await parseResponseBody(response);
 
@@ -110,5 +116,33 @@ export class NoralosApiClient {
     }
 
     return parsedBody as T;
+  }
+
+  /**
+   * List the host plugin tools available to this agent
+   * (`GET /api/plugins/tools` → `AgentToolDescriptor[]`). Returns an empty
+   * array if the host responds with a non-array body.
+   */
+  async listPluginTools(): Promise<Array<Record<string, unknown>>> {
+    // Bounded: this gates MCP-server startup, so a slow/unreachable host must
+    // not wedge the agent run — on timeout we register zero plugin tools.
+    const body = await this.requestJson<unknown>("GET", "/plugins/tools", { timeoutMs: 8000 });
+    return Array.isArray(body) ? (body as Array<Record<string, unknown>>) : [];
+  }
+
+  /**
+   * Execute a host plugin tool by its fully namespaced name
+   * (`POST /api/plugins/tools/execute`). `projectId` is omitted from the run
+   * context — the route resolves it server-side from `runId`.
+   */
+  async executePluginTool(
+    tool: string,
+    parameters: Record<string, unknown>,
+    runContext: { agentId: string; runId: string; companyId: string },
+  ): Promise<unknown> {
+    return this.requestJson<unknown>("POST", "/plugins/tools/execute", {
+      body: { tool, parameters, runContext },
+      includeRunId: true,
+    });
   }
 }
