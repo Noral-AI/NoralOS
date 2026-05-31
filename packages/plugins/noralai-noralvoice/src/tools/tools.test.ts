@@ -89,7 +89,7 @@ describe("executeListWorkflows", () => {
 
 describe("executeRunCall", () => {
   it("happy path: extracts run id + status, builds the right URL + body", async () => {
-    mockJson(200, { id: 42, state: "queued", created_at: "2026-05-15T01:00:00Z" });
+    mockJson(200, { workflow_run_id: 42, status: "queued", workflow_run_name: "WR-API-1234" });
     const result = await executeRunCall(baseConfig, {
       workflowUuid: "wf-abc",
       toNumber: "+15555550100",
@@ -98,10 +98,10 @@ describe("executeRunCall", () => {
     expect(result.data.runId).toBe("42");
     expect(result.data.status).toBe("queued");
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[0]).toBe("https://voice.noral.ai/api/v1/workflow/wf-abc/run");
+    expect(call[0]).toBe("https://voice.noral.ai/api/v1/public/agent/wf-abc");
     expect(call[1].method).toBe("POST");
     const sentBody = JSON.parse(call[1].body as string);
-    expect(sentBody.to_number).toBe("+15555550100");
+    expect(sentBody.phone_number).toBe("+15555550100");
     expect(sentBody.initial_context.customer).toBe("Acme");
   });
 

@@ -189,7 +189,7 @@ describe("executeAddWorkflowTool", () => {
     });
     expect(result.data.tool_uuid).toBe("tool-uuid-1");
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[0]).toContain("/api/v1/tool/");
+    expect(call[0]).toContain("/api/v1/tools/");
     expect(call[1]?.method).toBe("POST");
   });
 });
@@ -207,7 +207,7 @@ describe("executeUpdateWorkflowTool", () => {
     });
     expect(result.data.name).toBe("lookup_customer_v2");
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[0]).toContain("/api/v1/tool/tool-uuid-1");
+    expect(call[0]).toContain("/api/v1/tools/tool-uuid-1");
     expect(call[1]?.method).toBe("PUT");
   });
 });
@@ -219,7 +219,7 @@ describe("executeDeleteWorkflowTool", () => {
     expect(result.data.status).toBe("archived");
     expect(result.data.tool_uuid).toBe("tool-uuid-1");
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[0]).toContain("/api/v1/tool/tool-uuid-1");
+    expect(call[0]).toContain("/api/v1/tools/tool-uuid-1");
     expect(call[1]?.method).toBe("DELETE");
   });
 });

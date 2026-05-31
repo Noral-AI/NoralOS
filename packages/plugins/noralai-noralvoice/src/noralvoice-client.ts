@@ -189,8 +189,8 @@ export async function listWorkflows(
   const params = new URLSearchParams();
   if (options.limit !== undefined) params.set("limit", String(options.limit));
   const path = params.toString()
-    ? `/api/v1/workflow/?${params.toString()}`
-    : "/api/v1/workflow/";
+    ? `/api/v1/workflow/fetch?${params.toString()}`
+    : "/api/v1/workflow/fetch";
   const body = await request<unknown>(config, "GET", path);
   if (!Array.isArray(body)) return [];
   return body.map((r) => toWorkflowSummary(r as Record<string, unknown>));
@@ -204,22 +204,34 @@ export async function runCall(
     variables?: Record<string, string | number | boolean>;
   },
 ): Promise<{ runId: string; status: string; startedAt?: string }> {
+  // NoralVoice removed `POST /workflow/{uuid}/run`; outbound-call placement is
+  // now the agent-trigger endpoint `POST /public/agent/{uuid}` (X-API-Key auth).
+  // `workflowUuid` is the agent's `voice_agent_uuid` (an agent-trigger path).
+  // A *connected* call additionally needs the workflow to expose an ACTIVE
+  // agent trigger for this uuid and live outbound telephony on the org — both
+  // NoralVoice-side prerequisites tracked separately.
   const body = await request<Record<string, unknown>>(
     config,
     "POST",
-    `/api/v1/workflow/${encodeURIComponent(params.workflowUuid)}/run`,
+    `/api/v1/public/agent/${encodeURIComponent(params.workflowUuid)}`,
     {
-      to_number: params.toNumber,
+      phone_number: params.toNumber,
       initial_context: params.variables ?? {},
     },
   );
   return {
-    runId: String(body.id ?? body.run_id ?? ""),
-    status: String(body.state ?? body.status ?? "queued"),
+    runId: String(body.workflow_run_id ?? body.id ?? body.run_id ?? ""),
+    status: String(body.status ?? body.state ?? "queued"),
     startedAt: typeof body.created_at === "string" ? body.created_at : undefined,
   };
 }
 
+/**
+ * NOTE: NoralVoice removed the standalone `GET /workflow-run/{id}` route; run
+ * records are now fetched workflow-scoped via `getWorkflowRun(workflowId,
+ * runId)` (`GET /workflow/{id}/runs/{run_id}`). This by-id-only helper 4xxes
+ * until the `get_run` tool is reworked to carry the workflow id.
+ */
 export async function getRun(
   config: NoralVoiceClientConfig,
   runId: string,
@@ -369,7 +381,7 @@ function toWorkflowDetail(record: Record<string, unknown>): WorkflowDetail {
   };
 }
 
-/** GET /api/v1/workflow/{workflow_id}. The integer id is required by NV here. */
+/** GET /api/v1/workflow/fetch/{workflow_id}. The integer id is required by NV here. */
 export async function getWorkflowById(
   config: NoralVoiceClientConfig,
   workflowId: number,
@@ -377,7 +389,7 @@ export async function getWorkflowById(
   const body = await request<Record<string, unknown>>(
     config,
     "GET",
-    `/api/v1/workflow/${workflowId}`,
+    `/api/v1/workflow/fetch/${workflowId}`,
   );
   return toWorkflowDetail(body);
 }
@@ -395,7 +407,7 @@ export async function getWorkflowByUuid(
   // /workflow/ accepts no uuid filter today, so we list + filter. The
   // typical NV org has ≤ low double digits of workflows; if that grows
   // we'll need an indexed endpoint.
-  const all = await request<unknown>(config, "GET", "/api/v1/workflow/");
+  const all = await request<unknown>(config, "GET", "/api/v1/workflow/fetch");
   if (!Array.isArray(all)) return null;
   const hit = all.find(
     (r) =>
@@ -539,7 +551,7 @@ export async function setWorkflowVoiceSettings(
 }
 
 /**
- * GET /api/v1/configurations/voices/{provider}. The endpoint requires a
+ * GET /api/v1/user/configurations/voices/{provider}. The endpoint requires a
  * specific provider; iterating across all 6 happens client-side when
  * the caller doesn't pass a filter.
  */
@@ -550,7 +562,7 @@ export async function listVoicesForProvider(
   const body = await request<Record<string, unknown>>(
     config,
     "GET",
-    `/api/v1/configurations/voices/${encodeURIComponent(provider)}`,
+    `/api/v1/user/configurations/voices/${encodeURIComponent(provider)}`,
   );
   const arr = body.voices;
   if (!Array.isArray(arr)) return [];
@@ -725,6 +737,11 @@ export async function listRecordings(
   };
 }
 
+/**
+ * NOTE: NoralVoice no longer exposes `/workflow-recordings/{id}/download-url`
+ * (the recordings router has upload-url/list/delete/transcribe only). This
+ * helper 4xxes until a replacement download route is added NV-side.
+ */
 export async function getRecordingDownloadUrl(
   config: NoralVoiceClientConfig,
   recordingId: number,
@@ -1050,7 +1067,7 @@ export async function createEmbedExchangeToken(
 
 // ---- Phase 6 PR-2: NV TTS synthesize wrapper ------------------------------
 //
-// Calls NoralVoice's POST /api/v1/public/embed/synthesize with the plugin's
+// Calls NoralVoice's POST /api/v1/embed/synthesize with the plugin's
 // apiKey via X-API-Key header (the dual-auth path landed in NoralVoice PR
 // #10). The route returns a pre-signed audio URL the browser plays.
 //
@@ -1117,7 +1134,7 @@ export async function synthesizeAudio(
   let response: Response;
   try {
     response = await fetch(
-      joinUrl(config.baseUrl, "/api/v1/public/embed/synthesize"),
+      joinUrl(config.baseUrl, "/api/v1/embed/synthesize"),
       {
         method: "POST",
         headers: buildHeaders(config),
@@ -1740,7 +1757,7 @@ function toWorkflowTool(r: Record<string, unknown>): WorkflowToolRecord {
 }
 
 /**
- * POST /api/v1/tool/
+ * POST /api/v1/tools/
  */
 export async function addWorkflowTool(
   config: NoralVoiceClientConfig,
@@ -1753,7 +1770,7 @@ export async function addWorkflowTool(
   const body = await request<Record<string, unknown>>(
     config,
     "POST",
-    "/api/v1/tool/",
+    "/api/v1/tools/",
     {
       name: params.name,
       description: params.description,
@@ -1764,7 +1781,7 @@ export async function addWorkflowTool(
 }
 
 /**
- * PUT /api/v1/tool/{tool_uuid}
+ * PUT /api/v1/tools/{tool_uuid}
  */
 export async function updateWorkflowTool(
   config: NoralVoiceClientConfig,
@@ -1778,7 +1795,7 @@ export async function updateWorkflowTool(
   const body = await request<Record<string, unknown>>(
     config,
     "PUT",
-    `/api/v1/tool/${encodeURIComponent(params.toolUuid)}`,
+    `/api/v1/tools/${encodeURIComponent(params.toolUuid)}`,
     {
       name: params.name,
       description: params.description,
@@ -1789,7 +1806,7 @@ export async function updateWorkflowTool(
 }
 
 /**
- * DELETE /api/v1/tool/{tool_uuid}
+ * DELETE /api/v1/tools/{tool_uuid}
  */
 export async function deleteWorkflowTool(
   config: NoralVoiceClientConfig,
@@ -1798,7 +1815,7 @@ export async function deleteWorkflowTool(
   const body = await request<Record<string, unknown>>(
     config,
     "DELETE",
-    `/api/v1/tool/${encodeURIComponent(toolUuid)}`,
+    `/api/v1/tools/${encodeURIComponent(toolUuid)}`,
   );
   return {
     status: "archived",
@@ -1976,6 +1993,9 @@ function toRunDetail(r: Record<string, unknown>): RunDetail {
 
 /**
  * GET /api/v1/workflow-run/{run_id}.
+ * NOTE: NoralVoice removed this standalone run-by-id route; this helper 4xxes
+ * until `get_run_detail` is reworked to fetch workflow-scoped via
+ * `getWorkflowRun(workflowId, runId)`.
  * Returns the full run record (used by the `get_run_detail` agent tool).
  */
 export async function getRunDetail(
@@ -2033,7 +2053,7 @@ export interface DailyReport {
 }
 
 /**
- * GET /api/v1/reports/daily — daily activity summary.
+ * GET /api/v1/organizations/reports/daily — daily activity summary.
  * `date` is ISO-8601 (YYYY-MM-DD); defaults server-side to today when omitted.
  */
 export async function getDailyReport(
@@ -2043,8 +2063,8 @@ export async function getDailyReport(
   const params = new URLSearchParams();
   if (options.date) params.set("date", options.date);
   const path = params.toString()
-    ? `/api/v1/reports/daily?${params}`
-    : "/api/v1/reports/daily";
+    ? `/api/v1/organizations/reports/daily?${params}`
+    : "/api/v1/organizations/reports/daily";
   const body = await request<Record<string, unknown>>(config, "GET", path);
   return {
     date: String(body.date ?? options.date ?? ""),
