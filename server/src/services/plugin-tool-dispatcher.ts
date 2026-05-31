@@ -150,12 +150,18 @@ export interface PluginToolDispatcher {
    * This is called automatically when a plugin transitions to `ready`.
    * Can also be called manually for testing or recovery scenarios.
    *
-   * @param pluginId - The plugin's unique identifier
+   * @param pluginId - The plugin's namespace key (e.g. "noralai.noralvoice")
    * @param manifest - The plugin manifest containing tool declarations
+   * @param pluginDbId - The plugin's DB UUID, used for the worker-availability
+   *   check at execute time (the worker manager is keyed by UUID, not the
+   *   namespace key). Falls back to `pluginId` when omitted — so callers that
+   *   have the UUID MUST pass it, or `executeTool` will report the worker as
+   *   "not running" and return 502.
    */
   registerPluginTools(
     pluginId: string,
     manifest: NoralosPluginManifestV1,
+    pluginDbId?: string,
   ): void;
 
   /**
@@ -429,8 +435,9 @@ export function createPluginToolDispatcher(
     registerPluginTools(
       pluginId: string,
       manifest: NoralosPluginManifestV1,
+      pluginDbId?: string,
     ): void {
-      registry.registerPlugin(pluginId, manifest);
+      registry.registerPlugin(pluginId, manifest, pluginDbId);
     },
 
     unregisterPluginTools(pluginId: string): void {
