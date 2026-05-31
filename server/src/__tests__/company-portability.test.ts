@@ -563,7 +563,6 @@ describe("company portability", () => {
   });
 
   it("exports default sidebar order into the NoralOS extension and manifest", async () => {
-  it("exports default sidebar order into the NoralOS extension and manifest", async () => {
     const portability = companyPortabilityService({} as any);
 
     projectSvc.list.mockResolvedValue([
