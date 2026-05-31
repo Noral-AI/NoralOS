@@ -4,19 +4,29 @@
  * Creates a fresh NoralVoice workflow for a NoralOS agent and writes the
  * minted **agent-trigger path** back to `agents.voice_agent_uuid`.
  *
- * Why the trigger path and not the workflow_uuid: NoralVoice places an
- * outbound call via `POST /api/v1/public/agent/<path>`, where `<path>` is
- * resolved as an *agent trigger* (`get_agent_trigger_by_path`), NOT a
- * workflow_uuid. NoralVoice mints an ACTIVE agent trigger automatically for
- * every `type:"trigger"` node in the definition at create time (and stores
- * the first definition as a published V1, so it is immediately dialable —
- * no separate publish step). So we provision a definition that carries a
- * trigger node with a UUID we choose, and persist *that* UUID as the agent's
- * dial target. `run_call` then dials it directly.
+ * Starting graph depends on `template`:
+ *   - omitted / "blank" / "conversational" → a minimal dialable conversational
+ *     starter (greet → converse → wrap-up).
+ *   - a registered seed-template slug (see `src/templates/`) → that template's
+ *     validated definition, cloned. The agent then customises it through
+ *     `apply_workflow_parameters`; it never authors a raw graph here.
+ *   Unknown slugs are rejected with the list of available templates.
+ *
+ * Dialability (the critical invariant): NoralVoice places an outbound call via
+ * `POST /api/v1/public/agent/<path>`, where `<path>` is resolved as an *agent
+ * trigger* (`get_agent_trigger_by_path`), NOT a workflow_uuid. NoralVoice mints
+ * an ACTIVE agent trigger for every `type:"trigger"` node at create time (and
+ * stores the first definition as a published V1 → immediately dialable, no
+ * publish step). So whichever starting graph we use, we **inject a standalone
+ * `trigger` node** carrying a UUID we choose, and persist *that* UUID as
+ * `voice_agent_uuid`. The trigger is intentionally NOT edge-connected: NV's
+ * runtime validator requires the is_start node to have zero incoming edges, so
+ * wiring trigger→start dead-airs the call. `run_call` then dials the stored
+ * trigger path directly.
  *
  * Refuses if the agent already has a `voice_agent_uuid` — provisioning is
- * one-shot per agent. Use the NoralVoice editor to clone if multiple voice
- * agents are needed; this tool stays predictable.
+ * one-shot per agent. Use `apply_workflow_parameters` / the NoralVoice editor
+ * to customise; this tool stays predictable.
  *
  * Tier: manager.
  */
@@ -24,11 +34,19 @@
 import { randomUUID } from "node:crypto";
 
 import { type NoralVoiceClientConfig, createWorkflow } from "../noralvoice-client.js";
+import { getTemplate, templateSlugs } from "../templates/index.js";
+
+/** Starter values that map to the minimal conversational graph. */
+const MINIMAL_TEMPLATE_ALIASES = new Set(["blank", "conversational"]);
 
 export interface ProvisionVoiceAgentParams {
   noralosAgentId: string;
   displayName?: string;
-  template?: "blank" | "conversational";
+  /**
+   * "blank"/"conversational" (or omitted) → minimal dialable starter; any
+   * other value is treated as a registered seed-template slug.
+   */
+  template?: string;
 }
 
 export type ProvisionVoiceAgentResult =
@@ -38,12 +56,19 @@ export type ProvisionVoiceAgentResult =
       data: {
         voice_agent_uuid: string;
         workflow_name: string;
+        workflow_id: number;
       };
     }
   | {
       ok: false;
       error: "ALREADY_PROVISIONED";
       voice_agent_uuid: string;
+      message: string;
+    }
+  | {
+      ok: false;
+      error: "UNKNOWN_TEMPLATE";
+      availableTemplates: string[];
       message: string;
     };
 
@@ -61,28 +86,29 @@ export interface ProvisionVoiceAgentContext {
 }
 
 /**
- * A minimal, dialable outbound workflow: a standalone API `trigger` node (the
- * launch handle) alongside a greet → converse → wrap-up flow
- * (`startCall` → `agentNode` → `endCall`). The trigger is intentionally NOT
- * edge-connected to the flow — NoralVoice's runtime graph validator requires
- * the is_start node (startCall) to have zero incoming edges, and the run
- * begins at is_start when the trigger fires. The trigger node carries the
- * `trigger_path` we choose so we know the dial target without reading it back;
- * NoralVoice preserves a supplied, non-empty `trigger_path` verbatim and mints
- * an ACTIVE agent trigger for it on create. Verified end-to-end with a live
- * call (`validate` returns is_valid; the pipeline runs and the agent speaks).
+ * A standalone API `trigger` node — the launch handle. Intentionally has NO
+ * edges: NoralVoice's runtime validator rejects an is_start node with incoming
+ * edges, so the trigger never points into the flow; the run begins at the
+ * is_start node when the trigger fires.
  */
-export function buildTriggerWorkflowDefinition(
-  triggerPath: string,
-): Record<string, unknown> {
+function triggerNode(triggerPath: string): Record<string, unknown> {
+  return {
+    id: "trigger",
+    type: "trigger",
+    position: { x: -360, y: -160 },
+    data: { name: "API Trigger", enabled: true, trigger_path: triggerPath },
+  };
+}
+
+/**
+ * Minimal dialable conversational workflow: a standalone trigger + a
+ * greet → converse → wrap-up flow. Shapes match the validated graph proven by
+ * a live call (NOR-820).
+ */
+function minimalDialableDefinition(triggerPath: string): Record<string, unknown> {
   return {
     nodes: [
-      {
-        id: "trigger",
-        type: "trigger",
-        position: { x: -320, y: 0 },
-        data: { name: "API Trigger", enabled: true, trigger_path: triggerPath },
-      },
+      triggerNode(triggerPath),
       {
         id: "start",
         type: "startCall",
@@ -120,12 +146,6 @@ export function buildTriggerWorkflowDefinition(
         },
       },
     ],
-    // NB: the trigger node is a standalone launch handle — intentionally NOT
-    // edge-connected to the flow. NoralVoice's graph validator requires the
-    // is_start node (startCall) to have zero incoming edges (max_incoming=0),
-    // and the run begins at is_start when the trigger fires. Wiring trigger→start
-    // passes create-time checks but fails at runtime ("Start Call cannot have
-    // incoming edges"), dead-airing the call.
     edges: [
       {
         id: "start-agent",
@@ -143,6 +163,25 @@ export function buildTriggerWorkflowDefinition(
   };
 }
 
+/**
+ * Deep-clone a seed template's definition and inject a standalone trigger node
+ * (unless one is already present) so the provisioned workflow is dialable. The
+ * template constant is never mutated.
+ */
+function cloneWithInjectedTrigger(
+  definition: Record<string, unknown>,
+  triggerPath: string,
+): Record<string, unknown> {
+  const def = JSON.parse(JSON.stringify(definition)) as Record<string, unknown>;
+  const nodes = Array.isArray(def.nodes) ? (def.nodes as Record<string, unknown>[]) : [];
+  if (!nodes.some((n) => n && typeof n === "object" && n.type === "trigger")) {
+    nodes.unshift(triggerNode(triggerPath));
+  }
+  def.nodes = nodes;
+  if (!Array.isArray(def.edges)) def.edges = [];
+  return def;
+}
+
 export async function executeProvisionVoiceAgent(
   config: NoralVoiceClientConfig,
   params: ProvisionVoiceAgentParams,
@@ -154,8 +193,40 @@ export async function executeProvisionVoiceAgent(
       ok: false,
       error: "ALREADY_PROVISIONED",
       voice_agent_uuid: existing,
-      message: `Agent already has voice_agent_uuid=${existing}. Use the NoralVoice editor to modify the workflow.`,
+      message: `Agent already has voice_agent_uuid=${existing}. Use apply_workflow_parameters or the NoralVoice editor to modify the workflow.`,
     };
+  }
+
+  // The dial target is an agent-trigger path. Choose it here, embed it in a
+  // standalone trigger node, and persist it — NoralVoice mints the ACTIVE
+  // trigger for this exact path on create.
+  const triggerPath = randomUUID();
+
+  // Resolve the starting graph (template clone or minimal), always trigger-bearing.
+  let definition: Record<string, unknown>;
+  let templateLabel: string;
+  const requested = params.template;
+  if (requested !== undefined && !MINIMAL_TEMPLATE_ALIASES.has(requested)) {
+    const template = getTemplate(requested);
+    if (!template) {
+      const available = templateSlugs();
+      return {
+        ok: false,
+        error: "UNKNOWN_TEMPLATE",
+        availableTemplates: available,
+        message: `Unknown template "${requested}". Available templates: ${
+          available.length ? available.join(", ") : "(none registered)"
+        }.`,
+      };
+    }
+    definition = cloneWithInjectedTrigger(
+      template.definition as unknown as Record<string, unknown>,
+      triggerPath,
+    );
+    templateLabel = template.slug;
+  } else {
+    definition = minimalDialableDefinition(triggerPath);
+    templateLabel = "conversational";
   }
 
   const agentName = await ctx.resolveAgentName(params.noralosAgentId);
@@ -163,14 +234,7 @@ export async function executeProvisionVoiceAgent(
     params.displayName ??
     (agentName ? `${agentName} voice` : `Voice agent ${params.noralosAgentId}`);
 
-  // The dial target is an agent-trigger path. Choose it here, embed it in a
-  // trigger node, and persist it — NoralVoice mints the ACTIVE trigger for
-  // this exact path on create.
-  const triggerPath = randomUUID();
-  const created = await createWorkflow(config, {
-    name: workflowName,
-    definition: buildTriggerWorkflowDefinition(triggerPath),
-  });
+  const created = await createWorkflow(config, { name: workflowName, definition });
   if (!created.id) {
     // Defensive: creation should always return the new workflow id.
     throw new Error(
@@ -181,10 +245,11 @@ export async function executeProvisionVoiceAgent(
 
   return {
     ok: true,
-    content: `Provisioned NoralVoice voice agent "${workflowName}" (workflow id ${created.id}, dial trigger ${triggerPath}) for agent ${params.noralosAgentId}.`,
+    content: `Provisioned NoralVoice voice agent "${workflowName}" (workflow id ${created.id}, template ${templateLabel}, dial trigger ${triggerPath}) for agent ${params.noralosAgentId}.`,
     data: {
       voice_agent_uuid: triggerPath,
       workflow_name: workflowName,
+      workflow_id: created.id,
     },
   };
 }

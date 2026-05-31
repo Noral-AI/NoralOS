@@ -1909,6 +1909,16 @@ export function createTestHarness(options: TestHarnessOptions): TestHarness {
         }
         return { runId: randomUUID() };
       },
+      // NORALOS: in-memory mirror of the agents.setVoiceAgentUuid host method
+      async setVoiceAgentUuid(agentId, companyId, uuid) {
+        requireCapability(manifest, capabilitySet, "agents.write");
+        const cid = requireCompanyId(companyId);
+        const agent = agents.get(agentId);
+        if (!isInCompany(agent, cid)) throw new Error(`Agent not found: ${agentId}`);
+        const updated: Agent = { ...agent!, voiceAgentUuid: uuid, updatedAt: new Date() };
+        agents.set(agentId, updated);
+        return updated;
+      },
       managed: {
         async get(agentKey, companyId) {
           requireCapability(manifest, capabilitySet, "agents.managed");

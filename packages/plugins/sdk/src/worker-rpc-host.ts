@@ -1036,6 +1036,11 @@ export function startWorkerRpcHost(options: WorkerRpcHostOptions): WorkerRpcHost
           return callHost("agents.invoke", { agentId, companyId, prompt: opts.prompt, reason: opts.reason });
         },
 
+        // NORALOS: write agents.voice_agent_uuid via the capability-gated host bridge
+        async setVoiceAgentUuid(agentId: string, companyId: string, uuid: string) {
+          return callHost("agents.setVoiceAgentUuid", { agentId, companyId, uuid });
+        },
+
         managed: {
           async get(agentKey: string, companyId: string) {
             return callHost("agents.managed.get", { agentKey, companyId });

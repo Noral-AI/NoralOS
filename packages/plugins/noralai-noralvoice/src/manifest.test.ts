@@ -74,7 +74,7 @@ describe("noralai-noralvoice manifest", () => {
     expect(route.companyResolution).toEqual({ from: "query", key: "companyId" });
   });
 
-  it("declares all 34 agent tools across phases 1B, 3, 7-read, 7-PR-J telephony, 9C, 9D, and 10A", () => {
+  it("declares all 35 agent tools across phases 1B, 3, 7-read, 7-PR-J telephony, 9C, 9D, 10A, and 11", () => {
     // Phase 1B starters (list_workflows, run_call, get_run) +
     // Phase 3 voice-config (list_voices, set_agent_voice, provision_voice_agent) +
     // Phase 7 read tools (list_runs, list_campaigns, get_campaign, search_kb) +
@@ -88,8 +88,9 @@ describe("noralai-noralvoice manifest", () => {
     // Phase 9D Tier-3 writes (pause_campaign, resume_campaign, redial_campaign,
     // create_persistent_embed_token, get_persistent_embed_token,
     // revoke_persistent_embed_token) +
-    // Phase 10A workflow lifecycle (validate_workflow, publish_workflow).
-    expect(manifest.tools).toHaveLength(34);
+    // Phase 10A workflow lifecycle (validate_workflow, publish_workflow) +
+    // Phase 11 seed-template builder (apply_workflow_parameters).
+    expect(manifest.tools).toHaveLength(35);
     const names = manifest.tools!.map((t) => t.name);
     expect(names).toEqual(expect.arrayContaining(EXPECTED_TOOLS));
     expect(names).toEqual(
@@ -143,6 +144,8 @@ describe("noralai-noralvoice manifest", () => {
     expect(names).toEqual(
       expect.arrayContaining(["validate_workflow", "publish_workflow"]),
     );
+    // Phase 11 — seed-template builder (fill named parameters on a clone)
+    expect(names).toEqual(expect.arrayContaining(["apply_workflow_parameters"]));
   });
 
   it("run_call parametersSchema enforces E.164 + requires workflowUuid+toNumber", () => {

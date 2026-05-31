@@ -37,7 +37,16 @@ export const PLUGIN_ID = "noralai.noralvoice";
 // reference. Reworked to a single CREATE TABLE with no backfill from
 // voice-config; historical defaults can be re-applied via a one-shot
 // host script if needed.
-export const PLUGIN_VERSION = "0.8.1";
+//
+// 0.9.0 — Phase 11: seed-template builder. Adds the seed-template registry
+// (src/templates/) and a new manager-tier tool, apply_workflow_parameters,
+// that fills a template's named fillPoints onto a provisioned workflow.
+// provision_voice_agent now clones a registered template definition when
+// `template` is a slug. The Voice Director agent template is rewired from
+// the 3-tool inventory/run/review set to the 17-tool clone-and-fill builder
+// (create_workflow / delete_workflow_tool deliberately excluded). Manifest
+// tool count: 34 → 35.
+export const PLUGIN_VERSION = "0.9.0";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";

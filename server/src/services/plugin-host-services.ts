@@ -2206,6 +2206,16 @@ export function buildHostServices(
         await ensurePluginAvailableForCompany(companyId);
         return managedAgents.reset(params.agentKey, companyId);
       },
+      // NORALOS: focused setter for agents.voice_agent_uuid (Voice Director
+      // provisioning). Capability-gated (agents.write) at the SDK host-client
+      // factory; company-scoped here via requireInCompany.
+      async setVoiceAgentUuid(params) {
+        const companyId = ensureCompanyId(params.companyId);
+        await ensurePluginAvailableForCompany(companyId);
+        const agent = await agents.getById(params.agentId);
+        requireInCompany("Agent", agent, companyId);
+        return (await agents.setVoiceAgentUuid(params.agentId, params.uuid)) as Agent | null;
+      },
     },
 
     goals: {

@@ -70,6 +70,7 @@ import { executeListWorkflows } from "./tools/list_workflows.js";
 import {
   ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
   ADD_WORKFLOW_TOOL_TOOL_NAME,
+  APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
   CREATE_CAMPAIGN_TOOL_NAME,
   CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
@@ -102,6 +103,7 @@ import {
   VALIDATE_WORKFLOW_TOOL_NAME,
 } from "./tools/registry.js";
 import { executeAddWorkflowTool } from "./tools/add_workflow_tool.js";
+import { executeApplyWorkflowParameters } from "./tools/apply_workflow_parameters.js";
 import { executeCreateCampaign } from "./tools/create_campaign.js";
 import { executeCreatePersistentEmbedToken } from "./tools/create_persistent_embed_token.js";
 import { executeCreateWorkflow } from "./tools/create_workflow.js";
@@ -662,6 +664,9 @@ const plugin = definePlugin({
               agentId: runCtx.agentId,
               category,
               httpStatus,
+              // Surface the raw cause for "unknown" failures so they are never
+              // masked again (the agent still only sees `safe`).
+              detail: err instanceof Error ? (err.stack ?? err.message) : String(err),
             });
             return { error: safe };
           }
@@ -767,42 +772,25 @@ const plugin = definePlugin({
       async (params, config) => executeListVoices(config, params),
     );
 
-    // Per-company DB query helper for the voice-config mirror write.
-    // The plugin SDK exposes `ctx.host.queryHostDb` for plugins with
-    // the appropriate capability declared in their manifest; we cast
-    // through here because the SDK types are wider than the plumbing
-    // we exercise.
-    type HostQuery = (sql: string, params: unknown[]) => Promise<unknown>;
-    const hostDb = (
-      ctx as unknown as { host?: { queryHostDb?: HostQuery } }
-    ).host?.queryHostDb;
-
-    // Tier-3 side-effect context builders. Each closure captures the
-    // worker `ctx` so the tools themselves stay SDK-free.
+    // Tier-3 side-effect context builders. Each closure captures the worker
+    // `ctx` so the tools themselves stay SDK-free. These resolve and persist
+    // `agents.voice_agent_uuid` (and the agent name) through the
+    // capability-gated `ctx.agents` host bridge — NOT a raw host DB query,
+    // which the SDK does not actually expose. (NORALOS)
     async function resolveVoiceAgentUuid(
       companyId: string,
       agentId: string,
     ): Promise<string | null> {
-      if (!hostDb) return null;
-      const rows = (await hostDb(
-        `SELECT voice_agent_uuid FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
-        [agentId, companyId],
-      )) as Array<{ voice_agent_uuid: string | null }> | null;
-      const row = Array.isArray(rows) ? rows[0] : null;
-      return row?.voice_agent_uuid ?? null;
+      const agent = await ctx.agents.get(agentId, companyId);
+      return agent?.voiceAgentUuid ?? null;
     }
 
     async function resolveAgentName(
       companyId: string,
       agentId: string,
     ): Promise<string | null> {
-      if (!hostDb) return null;
-      const rows = (await hostDb(
-        `SELECT name FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
-        [agentId, companyId],
-      )) as Array<{ name: string | null }> | null;
-      const row = Array.isArray(rows) ? rows[0] : null;
-      return row?.name ?? null;
+      const agent = await ctx.agents.get(agentId, companyId);
+      return agent?.name ?? null;
     }
 
     async function writeVoiceAgentUuid(
@@ -810,15 +798,10 @@ const plugin = definePlugin({
       agentId: string,
       uuid: string,
     ): Promise<void> {
-      if (!hostDb) {
-        throw new Error(
-          "NoralVoice plugin: ctx.host.queryHostDb unavailable; cannot write voice_agent_uuid.",
-        );
-      }
-      await hostDb(
-        `UPDATE public.agents SET voice_agent_uuid = $1, updated_at = now() WHERE id = $2::uuid AND company_id = $3::uuid`,
-        [uuid, agentId, companyId],
-      );
+      // NORALOS: persist via the capability-gated agents host service
+      // (agents.write). Replaces a phantom ctx.host.queryHostDb write that
+      // always threw because the SDK never actually provided queryHostDb.
+      await ctx.agents.setVoiceAgentUuid(agentId, companyId, uuid);
     }
 
     // ---- Phase 3: set_agent_voice ----------------------------------------
@@ -884,7 +867,7 @@ const plugin = definePlugin({
     );
 
     // ---- Phase 3: provision_voice_agent ----------------------------------
-    registerTool<{ noralosAgentId: string; displayName?: string; template?: "blank" | "conversational" }>(
+    registerTool<{ noralosAgentId: string; displayName?: string; template?: string }>(
       PROVISION_VOICE_AGENT_TOOL_NAME,
       (raw) => {
         const agentId = isNonEmptyString(raw.noralosAgentId) ? raw.noralosAgentId : "";
@@ -910,12 +893,16 @@ const plugin = definePlugin({
           }
           displayName = raw.displayName;
         }
-        let template: "blank" | "conversational" | undefined;
+        // `template` is "blank"/"conversational" (minimal starter) or a
+        // seed-template slug. Slug resolution lives in the handler, which
+        // owns the registry and rejects unknown slugs; here we only ensure
+        // a non-empty string when provided.
+        let template: string | undefined;
         if (raw.template !== undefined) {
-          if (raw.template !== "blank" && raw.template !== "conversational") {
+          if (!isNonEmptyString(raw.template)) {
             return {
               ok: false,
-              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.template must be 'blank' or 'conversational'.`,
+              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.template must be a non-empty string.`,
             };
           }
           template = raw.template;
@@ -935,10 +922,13 @@ const plugin = definePlugin({
             agentId: params.noralosAgentId,
             error: result.error,
           });
-          return {
-            error: result.message,
-            data: { code: result.error, voice_agent_uuid: result.voice_agent_uuid },
-          };
+          const data: Record<string, unknown> = { code: result.error };
+          if (result.error === "ALREADY_PROVISIONED") {
+            data.voice_agent_uuid = result.voice_agent_uuid;
+          } else {
+            data.available_templates = result.availableTemplates;
+          }
+          return { error: result.message, data };
         }
         ctx.logger.info("NoralVoice provision_voice_agent ok", {
           companyId,
@@ -1400,6 +1390,82 @@ const plugin = definePlugin({
           versionNumber: result.data.version_number,
         });
         return result;
+      },
+    );
+
+    // ---- apply_workflow_parameters (Phase 11, write) --------------------
+    registerTool<{
+      workflowId: number;
+      templateSlug: string;
+      parameters: Record<string, unknown>;
+    }>(
+      APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.workflowId must be a positive integer.`,
+          };
+        }
+        if (!isNonEmptyString(raw.templateSlug)) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.templateSlug is required.`,
+          };
+        }
+        if (
+          !raw.parameters ||
+          typeof raw.parameters !== "object" ||
+          Array.isArray(raw.parameters)
+        ) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.parameters is required and must be an object.`,
+          };
+        }
+        if (Object.keys(raw.parameters).length === 0) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.parameters must include at least one key.`,
+          };
+        }
+        return {
+          ok: true,
+          value: {
+            workflowId: raw.workflowId,
+            templateSlug: raw.templateSlug,
+            parameters: raw.parameters as Record<string, unknown>,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeApplyWorkflowParameters(config, params);
+        if (!result.ok) {
+          ctx.logger.info("NoralVoice apply_workflow_parameters rejected", {
+            companyId: runCtx.companyId,
+            agentId: runCtx.agentId,
+            workflowId: params.workflowId,
+            error: result.error,
+          });
+          const data: Record<string, unknown> = { code: result.error };
+          if (result.error === "UNKNOWN_TEMPLATE") {
+            data.available_templates = result.availableTemplates;
+          } else {
+            data.allowed = result.allowed;
+          }
+          return { error: result.message, data };
+        }
+        ctx.logger.info("NoralVoice apply_workflow_parameters ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+          applied: result.data.applied,
+        });
+        return { content: result.content, data: result.data };
       },
     );
 
@@ -2370,7 +2436,13 @@ const plugin = definePlugin({
       if (!result.ok) {
         return {
           status: result.error === "ALREADY_PROVISIONED" ? 409 : 400,
-          body: { error: result.message, code: result.error, voice_agent_uuid: result.voice_agent_uuid },
+          body: {
+            error: result.message,
+            code: result.error,
+            ...(result.error === "ALREADY_PROVISIONED"
+              ? { voice_agent_uuid: result.voice_agent_uuid }
+              : { available_templates: result.availableTemplates }),
+          },
         };
       }
       return { status: 200, body: result.data };

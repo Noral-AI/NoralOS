@@ -44,6 +44,7 @@ import {
 import {
   ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
   ADD_WORKFLOW_TOOL_TOOL_NAME,
+  APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
   CREATE_CAMPAIGN_TOOL_NAME,
   CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
@@ -547,7 +548,7 @@ export const manifest: NoralosPluginManifestV1 = {
       name: PROVISION_VOICE_AGENT_TOOL_NAME,
       displayName: "Provision a NoralVoice workflow for a NoralOS agent",
       description:
-        "Create a new minimal NoralVoice workflow for an agent that doesn't yet have one and write the resulting workflow_uuid back to `agents.voice_agent_uuid`. One-shot per agent — refuses with ALREADY_PROVISIONED if a uuid is already set. Manager tier or above.",
+        "Create a new NoralVoice workflow for an agent that doesn't yet have one and write the resulting workflow_uuid back to `agents.voice_agent_uuid`. Pass a seed-template slug (e.g. `outbound_lead_qualifier`) to clone a validated starter graph you can then customise with apply_workflow_parameters; omit it (or pass `conversational`) for a minimal single-node starter. One-shot per agent — refuses with ALREADY_PROVISIONED if a uuid is already set. Manager tier or above.",
       parametersSchema: {
         type: "object",
         additionalProperties: false,
@@ -566,9 +567,39 @@ export const manifest: NoralosPluginManifestV1 = {
           },
           template: {
             type: "string",
-            enum: ["blank", "conversational"],
             description:
-              "Starter template. Both options resolve to a single-Agent-node minimal graph today; the distinction is reserved for a follow-up release that ships richer starters.",
+              "Starter for the workflow. `blank`/`conversational` (or omitted) → a minimal single-Agent-node graph. Any other value is treated as a registered seed-template slug (e.g. `outbound_lead_qualifier`); unknown slugs are rejected with the list of available templates.",
+          },
+        },
+      },
+    },
+    {
+      name: APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
+      displayName: "Fill a voice workflow's template parameters",
+      description:
+        "Customise a workflow that was provisioned from a seed template by setting the template's named parameters (e.g. openingLine, agentSystemPrompt). Resolves each parameter to a path inside the workflow definition and saves it; rejects any key the template does not declare. Use this instead of editing the raw graph; voice, caller id, and telephony are set with their own tools. After applying, run validate_workflow then publish_workflow. Manager tier or above.",
+      parametersSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["workflowId", "templateSlug", "parameters"],
+        properties: {
+          workflowId: {
+            type: "integer",
+            minimum: 1,
+            description:
+              "NoralVoice workflow id (the numeric `workflow_id` returned by provision_voice_agent).",
+          },
+          templateSlug: {
+            type: "string",
+            description:
+              "The seed-template slug the workflow was provisioned from (e.g. `outbound_lead_qualifier`). Determines which parameter names are allowed.",
+          },
+          parameters: {
+            type: "object",
+            description:
+              "Map of the template's named parameters to their values. Only keys the template declares are accepted; unknown keys are rejected with the allowed set.",
+            additionalProperties: true,
+            minProperties: 1,
           },
         },
       },

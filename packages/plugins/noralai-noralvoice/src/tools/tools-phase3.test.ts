@@ -286,9 +286,10 @@ describe("executeProvisionVoiceAgent", () => {
     });
     const r = await executeProvisionVoiceAgent(baseConfig, { noralosAgentId: "a" }, ctx);
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.error).toBe("ALREADY_PROVISIONED");
+    if (!r.ok && r.error === "ALREADY_PROVISIONED") {
       expect(r.voice_agent_uuid).toBe("existing-uuid");
+    } else {
+      throw new Error("expected ALREADY_PROVISIONED");
     }
     expect(globalThis.fetch).not.toHaveBeenCalled();
     expect(ctx.writeVoiceAgentUuid).not.toHaveBeenCalled();

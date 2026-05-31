@@ -104,6 +104,10 @@ export interface Agent {
   permissions: AgentPermissions;
   lastHeartbeatAt: Date | null;
   metadata: Record<string, unknown> | null;
+  // NORALOS: the NoralVoice agent-trigger path this agent dials from (the
+  // provisioned workflow's standalone trigger node path). Null when the agent
+  // has no provisioned voice workflow; voice is enabled iff this is set.
+  voiceAgentUuid?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

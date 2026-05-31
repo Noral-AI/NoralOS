@@ -443,6 +443,52 @@ const MINIMAL_CONVERSATIONAL_DEFINITION: Record<string, unknown> = {
   edges: [],
 };
 
+/** Full workflow incl. the ReactFlow graph — the read half of the
+ *  read-modify-write that `apply_workflow_parameters` performs. */
+export interface WorkflowDefinitionDetail {
+  id: number;
+  workflowUuid: string;
+  name: string;
+  status?: string;
+  /** The ReactFlow `{ nodes, edges }` graph (draft if one exists, else published). */
+  workflowDefinition: Record<string, unknown>;
+  workflowConfigurations: Record<string, unknown>;
+}
+
+/**
+ * GET /api/v1/workflow/fetch/{workflow_id}.
+ *
+ * Unlike `getWorkflowById` (which drops the graph), this preserves
+ * `workflow_definition`. Returns the draft definition if one exists,
+ * otherwise the published version.
+ */
+export async function getWorkflowDefinition(
+  config: NoralVoiceClientConfig,
+  workflowId: number,
+): Promise<WorkflowDefinitionDetail> {
+  const body = await request<Record<string, unknown>>(
+    config,
+    "GET",
+    `/api/v1/workflow/fetch/${workflowId}`,
+  );
+  const def =
+    body.workflow_definition && typeof body.workflow_definition === "object"
+      ? (body.workflow_definition as Record<string, unknown>)
+      : { nodes: [], edges: [] };
+  const cfg =
+    body.workflow_configurations && typeof body.workflow_configurations === "object"
+      ? (body.workflow_configurations as Record<string, unknown>)
+      : {};
+  return {
+    id: Number(body.id ?? workflowId),
+    workflowUuid: String(body.workflow_uuid ?? ""),
+    name: String(body.name ?? ""),
+    status: typeof body.status === "string" ? body.status : undefined,
+    workflowDefinition: def,
+    workflowConfigurations: cfg,
+  };
+}
+
 export async function createWorkflow(
   config: NoralVoiceClientConfig,
   params: { name: string; definition?: Record<string, unknown> },

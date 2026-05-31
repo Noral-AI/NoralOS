@@ -1217,6 +1217,12 @@ export interface WorkerToHostMethods {
     params: { agentId: string; companyId: string; prompt: string; reason?: string },
     result: { runId: string },
   ];
+  // NORALOS: focused setter for agents.voice_agent_uuid (Voice Director
+  // provisioning writes the minted NoralVoice agent-trigger path here).
+  "agents.setVoiceAgentUuid": [
+    params: { agentId: string; companyId: string; uuid: string },
+    result: Agent | null,
+  ];
   "agents.managed.get": [
     params: { agentKey: string; companyId: string },
     result: PluginManagedAgentResolution,
