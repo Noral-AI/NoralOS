@@ -23,6 +23,7 @@ function makeCompany(overrides: Partial<Company>): Company {
     brandColor: null,
     logoAssetId: null,
     logoUrl: null,
+    llmBackendSettings: { mode: "native" },
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
