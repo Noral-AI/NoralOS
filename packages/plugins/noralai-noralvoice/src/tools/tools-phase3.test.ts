@@ -52,7 +52,7 @@ describe("executeListVoices", () => {
     expect(r.data.voices[0]).toMatchObject({ provider: "elevenlabs", voiceId: "v1", name: "Rachel" });
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(call[0]).toBe(
-      "https://voice.noral.ai/api/v1/configurations/voices/elevenlabs",
+      "https://voice.noral.ai/api/v1/user/configurations/voices/elevenlabs",
     );
   });
 
