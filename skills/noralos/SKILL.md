@@ -23,6 +23,16 @@ Manual local CLI mode (outside heartbeat runs): use `paperclipai agent local-cli
 
 **Run audit trail:** You MUST include `-H 'X-NoralOS-Run-Id: $NORALOS_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
 
+## Plugin tools (noralvoice, noralsign, slack, …)
+
+Installed plugins contribute namespaced agent tools (e.g. `noralai.noralvoice:run_call`, `noralai.noralvoice:list_workflows`). When your runtime exposes them as **bound tools**, call them directly with the documented parameters — always prefer that path.
+
+If a plugin tool you need is not bound in your runtime, drive it over the API:
+- **Discover:** `GET /api/plugins/tools` → `[{ name, description, parametersSchema }]` (names are namespaced).
+- **Invoke:** `POST /api/plugins/tools/execute` with body `{ "tool": "<namespaced name>", "parameters": { … }, "runContext": { "agentId": "$NORALOS_AGENT_ID", "runId": "$NORALOS_RUN_ID", "companyId": "$NORALOS_COMPANY_ID" } }`. `projectId` is resolved server-side from your run. Send the `Authorization: Bearer $NORALOS_API_KEY` and `X-NoralOS-Run-Id: $NORALOS_RUN_ID` headers.
+
+Tier gate: high-stakes tools (e.g. `run_call`) require manager tier or above; worker-tier agents get a clean delegate-to-the-owner error.
+
 ## The Heartbeat Procedure
 
 Follow these steps every time you wake up:

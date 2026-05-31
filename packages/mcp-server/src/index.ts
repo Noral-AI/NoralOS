@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { NoralosApiClient } from "./client.js";
 import { readConfigFromEnv, type NoralosMcpConfig } from "./config.js";
+import { registerPluginTools } from "./plugin-tools.js";
 import { createToolDefinitions } from "./tools.js";
 
 export function createNoralosMcpServer(config: NoralosMcpConfig = readConfigFromEnv()) {
@@ -20,11 +21,15 @@ export function createNoralosMcpServer(config: NoralosMcpConfig = readConfigFrom
     server,
     tools,
     client,
+    config,
   };
 }
 
 export async function runServer(config: NoralosMcpConfig = readConfigFromEnv()) {
-  const { server } = createNoralosMcpServer(config);
+  const { server, client } = createNoralosMcpServer(config);
+  // Dynamically expose this agent's host plugin tools (noralvoice:*, etc.) as
+  // bound MCP tools. No-op when no agent run context is present.
+  await registerPluginTools(server, client, config);
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
