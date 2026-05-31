@@ -939,14 +939,10 @@ const plugin = definePlugin({
       },
     );
 
-    // ---- Phase 7: list_runs --------------------------------------------------
-    registerTool<{ workflowUuid: string; limit?: number; cursor?: string | null }>(
+    // ---- Phase 7: list_runs (org-scoped) ------------------------------------
+    registerTool<{ limit?: number; cursor?: string | null }>(
       LIST_RUNS_TOOL_NAME,
       (raw) => {
-        const workflowUuid = isNonEmptyString(raw.workflowUuid) ? raw.workflowUuid : "";
-        if (!workflowUuid) {
-          return { ok: false, error: `${LIST_RUNS_TOOL_NAME}.workflowUuid is required.` };
-        }
         let limit: number | undefined;
         if (raw.limit !== undefined) {
           if (typeof raw.limit !== "number" || !Number.isInteger(raw.limit) || raw.limit < 1 || raw.limit > 100) {
@@ -955,7 +951,7 @@ const plugin = definePlugin({
           limit = raw.limit;
         }
         const cursor = isNonEmptyString(raw.cursor) ? raw.cursor : null;
-        return { ok: true, value: { workflowUuid, limit, cursor } };
+        return { ok: true, value: { limit, cursor } };
       },
       async (params, config, runCtx) => {
         const result = await executeListRuns(config, params);

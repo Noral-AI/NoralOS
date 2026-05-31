@@ -123,14 +123,21 @@ describe("executeRunCall", () => {
 // -------- get_run -----------------------------------------------------------
 
 describe("executeGetRun", () => {
-  it("happy path: maps state + transcript/recording URLs + extracted variables", async () => {
+  it("happy path: resolves by id via org usage history, maps state + URLs + variables", async () => {
     mockJson(200, {
-      id: 7,
-      state: "completed",
-      transcript_url: "https://voice.noral.ai/transcripts/7.txt",
-      recording_url: "https://voice.noral.ai/recordings/7.wav",
-      gathered_context: { extracted_variables: { qualified: true } },
-      cost_info: { total_cost_usd: 0.12 },
+      runs: [
+        {
+          id: 7,
+          state: "completed",
+          transcript_url: "https://voice.noral.ai/transcripts/7.txt",
+          recording_url: "https://voice.noral.ai/recordings/7.wav",
+          gathered_context: { extracted_variables: { qualified: true } },
+          cost_info: { total_cost_usd: 0.12 },
+        },
+      ],
+      page: 1,
+      total_pages: 1,
+      total_count: 1,
     });
     const result = await executeGetRun(baseConfig, { runId: "7" });
     expect(result.data.run.runId).toBe("7");
@@ -138,6 +145,8 @@ describe("executeGetRun", () => {
     expect(result.data.run.transcriptUrl).toContain("/transcripts/7.txt");
     expect(result.data.run.recordingUrl).toContain("/recordings/7.wav");
     expect(result.content).toContain("transcript ready");
+    const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toContain("/api/v1/organizations/usage/runs");
   });
 
   it("5xx surfaces cleanly", async () => {

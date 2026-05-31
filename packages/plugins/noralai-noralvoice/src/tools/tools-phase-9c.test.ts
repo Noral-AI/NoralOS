@@ -227,21 +227,43 @@ describe("executeDeleteWorkflowTool", () => {
 // ── Tier 2 read tools ──────────────────────────────────────────────────────
 
 describe("executeGetRunDetail", () => {
-  it("happy path: calls GET /workflow-run/{id} and returns full run record", async () => {
+  it("resolves a run by id via the org usage history and returns the full record", async () => {
     mockJson(200, {
-      id: "run-42",
-      state: "completed",
-      workflow_uuid: "wf-uuid-5",
-      transcript_url: "https://cdn.example.com/t.json",
-      gathered_context: { customer_name: "Acme" },
+      runs: [
+        {
+          id: 42,
+          workflow_id: 46,
+          state: "completed",
+          call_type: "outbound",
+          disposition: "user_qualified",
+          called_number: "+12677450589",
+          call_duration_seconds: 75,
+          transcript_url: "https://cdn.example.com/t.json",
+          gathered_context: { customer_name: "Acme" },
+        },
+      ],
+      page: 1,
+      total_pages: 1,
+      total_count: 1,
     });
-    const result = await executeGetRunDetail(baseConfig, { runId: "run-42" });
-    expect(result.data.id).toBe("run-42");
+    const result = await executeGetRunDetail(baseConfig, { runId: "42" });
+    expect(result.data.id).toBe("42");
     expect(result.data.state).toBe("completed");
+    expect(result.data.disposition).toBe("user_qualified");
+    expect(result.data.toNumber).toBe("+12677450589");
+    expect(result.data.durationSec).toBe(75);
     expect(result.data.gatheredContext).toMatchObject({ customer_name: "Acme" });
     const call = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[0]).toContain("/api/v1/workflow-run/run-42");
+    expect(call[0]).toContain("/api/v1/organizations/usage/runs");
     expect(call[1]?.method).toBe("GET");
+  });
+
+  it("throws a 404-category error when the run id is absent from the history", async () => {
+    mockJson(200, { runs: [{ id: 99 }], page: 1, total_pages: 1, total_count: 1 });
+    await expect(executeGetRunDetail(baseConfig, { runId: "42" })).rejects.toMatchObject({
+      category: "HTTP_4XX",
+      httpStatus: 404,
+    });
   });
 });
 
