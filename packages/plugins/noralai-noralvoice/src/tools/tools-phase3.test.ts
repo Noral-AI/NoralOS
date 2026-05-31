@@ -221,28 +221,52 @@ describe("executeProvisionVoiceAgent", () => {
     } as Parameters<typeof executeProvisionVoiceAgent>[2];
   }
 
-  it("happy path: creates workflow, writes uuid back, returns ok+uuid", async () => {
+  it("happy path: provisions a trigger-bearing workflow, persists the trigger path", async () => {
     mockJson(200, {
       id: 42,
       workflow_uuid: "wf-new-uuid",
       name: "Outbound Sales Bot voice",
-      status: "draft",
+      status: "active",
     });
     const ctx = makeCtx();
     const r = await executeProvisionVoiceAgent(baseConfig, { noralosAgentId: "agent-A" }, ctx);
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.data.voice_agent_uuid).toBe("wf-new-uuid");
-      expect(r.data.workflow_name).toBe("Outbound Sales Bot voice");
-    }
-    expect(ctx.writeVoiceAgentUuid).toHaveBeenCalledWith("agent-A", "wf-new-uuid");
+
+    // The POSTed definition carries an API trigger node; its trigger_path is
+    // the dial target NoralVoice mints an ACTIVE trigger for, and the value we
+    // persist as voice_agent_uuid — NOT the response's workflow_uuid.
     const postCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(postCall[0]).toBe("https://voice.noral.ai/api/v1/workflow/create/definition");
     const body = JSON.parse(postCall[1].body as string);
     expect(body.name).toBe("Outbound Sales Bot voice");
-    // Default minimal definition: at least one agentNode in the graph.
-    expect(body.workflow_definition.nodes).toBeDefined();
-    expect(body.workflow_definition.nodes.length).toBeGreaterThan(0);
+    const triggerNode = body.workflow_definition.nodes.find(
+      (n: { type?: string }) => n.type === "trigger",
+    );
+    expect(triggerNode).toBeDefined();
+    const triggerPath = triggerNode.data.trigger_path as string;
+    expect(typeof triggerPath).toBe("string");
+    expect(triggerPath.length).toBeGreaterThan(0);
+
+    // Regression guard: the is_start node (startCall) must have NO incoming
+    // edge — NoralVoice's runtime validator rejects "Start Call cannot have
+    // incoming edges" and dead-airs the call. The trigger is a standalone
+    // launch handle, not wired into the flow.
+    const startNode = body.workflow_definition.nodes.find(
+      (n: { data?: { is_start?: boolean } }) => n.data?.is_start,
+    );
+    expect(startNode).toBeDefined();
+    expect(
+      body.workflow_definition.edges.some(
+        (e: { target?: string }) => e.target === startNode.id,
+      ),
+    ).toBe(false);
+
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data.voice_agent_uuid).toBe(triggerPath);
+      expect(r.data.voice_agent_uuid).not.toBe("wf-new-uuid");
+      expect(r.data.workflow_name).toBe("Outbound Sales Bot voice");
+    }
+    expect(ctx.writeVoiceAgentUuid).toHaveBeenCalledWith("agent-A", triggerPath);
   });
 
   it("displayName override wins over derived agent-name", async () => {
@@ -284,14 +308,13 @@ describe("executeProvisionVoiceAgent", () => {
     ).rejects.toMatchObject({ category: "HTTP_5XX" });
   });
 
-  it("NV returns no workflow_uuid → throws (defensive guard)", async () => {
-    // Phase 0 D2 enforced workflow_uuid NOT NULL; if a future regression
-    // returns null, fail loudly rather than silently writing an empty
-    // string into agents.voice_agent_uuid.
-    mockJson(200, { id: 42, workflow_uuid: "", name: "x" });
+  it("NV returns no workflow id → throws (defensive guard)", async () => {
+    // We persist the trigger path we generated, but still require NV to have
+    // actually created the workflow (a numeric id) before writing it back.
+    mockJson(200, { workflow_uuid: "wf-x", name: "x" });
     await expect(
       executeProvisionVoiceAgent(baseConfig, { noralosAgentId: "a" }, makeCtx()),
-    ).rejects.toThrow(/no workflow_uuid/i);
+    ).rejects.toThrow(/workflow id/i);
   });
 
   it("transport error surfaces as UNREACHABLE", async () => {
