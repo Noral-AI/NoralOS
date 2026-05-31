@@ -453,6 +453,21 @@ export function agentService(db: Db) {
 
     update: updateAgent,
 
+    /**
+     * Set (or clear) an agent's `voice_agent_uuid` — the NoralVoice agent-trigger
+     * path the agent dials from. Focused setter so the plugin host can expose a
+     * narrow, capability-gated write instead of a general agent update.
+     */
+    setVoiceAgentUuid: async (id: string, voiceAgentUuid: string | null) => {
+      const updated = await db
+        .update(agents)
+        .set({ voiceAgentUuid, updatedAt: new Date() })
+        .where(eq(agents.id, id))
+        .returning()
+        .then((rows) => rows[0] ?? null);
+      return updated ? normalizeAgentRow(updated) : null;
+    },
+
     pause: async (id: string, reason: "manual" | "budget" | "system" = "manual") => {
       const existing = await getById(id);
       if (!existing) return null;

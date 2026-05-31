@@ -70,6 +70,7 @@ import { executeListWorkflows } from "./tools/list_workflows.js";
 import {
   ADD_TELEPHONY_CREDENTIAL_TOOL_NAME,
   ADD_WORKFLOW_TOOL_TOOL_NAME,
+  APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
   ASSIGN_PHONE_NUMBER_TOOL_NAME,
   CREATE_CAMPAIGN_TOOL_NAME,
   CREATE_PERSISTENT_EMBED_TOKEN_TOOL_NAME,
@@ -102,6 +103,7 @@ import {
   VALIDATE_WORKFLOW_TOOL_NAME,
 } from "./tools/registry.js";
 import { executeAddWorkflowTool } from "./tools/add_workflow_tool.js";
+import { executeApplyWorkflowParameters } from "./tools/apply_workflow_parameters.js";
 import { executeCreateCampaign } from "./tools/create_campaign.js";
 import { executeCreatePersistentEmbedToken } from "./tools/create_persistent_embed_token.js";
 import { executeCreateWorkflow } from "./tools/create_workflow.js";
@@ -662,6 +664,9 @@ const plugin = definePlugin({
               agentId: runCtx.agentId,
               category,
               httpStatus,
+              // Surface the raw cause for "unknown" failures so they are never
+              // masked again (the agent still only sees `safe`).
+              detail: err instanceof Error ? (err.stack ?? err.message) : String(err),
             });
             return { error: safe };
           }
@@ -884,7 +889,7 @@ const plugin = definePlugin({
     );
 
     // ---- Phase 3: provision_voice_agent ----------------------------------
-    registerTool<{ noralosAgentId: string; displayName?: string; template?: "blank" | "conversational" }>(
+    registerTool<{ noralosAgentId: string; displayName?: string; template?: string }>(
       PROVISION_VOICE_AGENT_TOOL_NAME,
       (raw) => {
         const agentId = isNonEmptyString(raw.noralosAgentId) ? raw.noralosAgentId : "";
@@ -910,12 +915,16 @@ const plugin = definePlugin({
           }
           displayName = raw.displayName;
         }
-        let template: "blank" | "conversational" | undefined;
+        // `template` is "blank"/"conversational" (minimal starter) or a
+        // seed-template slug. Slug resolution lives in the handler, which
+        // owns the registry and rejects unknown slugs; here we only ensure
+        // a non-empty string when provided.
+        let template: string | undefined;
         if (raw.template !== undefined) {
-          if (raw.template !== "blank" && raw.template !== "conversational") {
+          if (!isNonEmptyString(raw.template)) {
             return {
               ok: false,
-              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.template must be 'blank' or 'conversational'.`,
+              error: `${PROVISION_VOICE_AGENT_TOOL_NAME}.template must be a non-empty string.`,
             };
           }
           template = raw.template;
@@ -935,10 +944,13 @@ const plugin = definePlugin({
             agentId: params.noralosAgentId,
             error: result.error,
           });
-          return {
-            error: result.message,
-            data: { code: result.error, voice_agent_uuid: result.voice_agent_uuid },
-          };
+          const data: Record<string, unknown> = { code: result.error };
+          if (result.error === "ALREADY_PROVISIONED") {
+            data.voice_agent_uuid = result.voice_agent_uuid;
+          } else {
+            data.available_templates = result.availableTemplates;
+          }
+          return { error: result.message, data };
         }
         ctx.logger.info("NoralVoice provision_voice_agent ok", {
           companyId,
@@ -1400,6 +1412,82 @@ const plugin = definePlugin({
           versionNumber: result.data.version_number,
         });
         return result;
+      },
+    );
+
+    // ---- apply_workflow_parameters (Phase 11, write) --------------------
+    registerTool<{
+      workflowId: number;
+      templateSlug: string;
+      parameters: Record<string, unknown>;
+    }>(
+      APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
+      (raw) => {
+        if (
+          typeof raw.workflowId !== "number" ||
+          !Number.isInteger(raw.workflowId) ||
+          raw.workflowId < 1
+        ) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.workflowId must be a positive integer.`,
+          };
+        }
+        if (!isNonEmptyString(raw.templateSlug)) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.templateSlug is required.`,
+          };
+        }
+        if (
+          !raw.parameters ||
+          typeof raw.parameters !== "object" ||
+          Array.isArray(raw.parameters)
+        ) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.parameters is required and must be an object.`,
+          };
+        }
+        if (Object.keys(raw.parameters).length === 0) {
+          return {
+            ok: false,
+            error: `${APPLY_WORKFLOW_PARAMETERS_TOOL_NAME}.parameters must include at least one key.`,
+          };
+        }
+        return {
+          ok: true,
+          value: {
+            workflowId: raw.workflowId,
+            templateSlug: raw.templateSlug,
+            parameters: raw.parameters as Record<string, unknown>,
+          },
+        };
+      },
+      async (params, config, runCtx) => {
+        const result = await executeApplyWorkflowParameters(config, params);
+        if (!result.ok) {
+          ctx.logger.info("NoralVoice apply_workflow_parameters rejected", {
+            companyId: runCtx.companyId,
+            agentId: runCtx.agentId,
+            workflowId: params.workflowId,
+            error: result.error,
+          });
+          const data: Record<string, unknown> = { code: result.error };
+          if (result.error === "UNKNOWN_TEMPLATE") {
+            data.available_templates = result.availableTemplates;
+          } else {
+            data.allowed = result.allowed;
+          }
+          return { error: result.message, data };
+        }
+        ctx.logger.info("NoralVoice apply_workflow_parameters ok", {
+          companyId: runCtx.companyId,
+          agentId: runCtx.agentId,
+          workflowId: params.workflowId,
+          applied: result.data.applied,
+        });
+        return { content: result.content, data: result.data };
       },
     );
 
@@ -2370,7 +2458,13 @@ const plugin = definePlugin({
       if (!result.ok) {
         return {
           status: result.error === "ALREADY_PROVISIONED" ? 409 : 400,
-          body: { error: result.message, code: result.error, voice_agent_uuid: result.voice_agent_uuid },
+          body: {
+            error: result.message,
+            code: result.error,
+            ...(result.error === "ALREADY_PROVISIONED"
+              ? { voice_agent_uuid: result.voice_agent_uuid }
+              : { available_templates: result.availableTemplates }),
+          },
         };
       }
       return { status: 200, body: result.data };

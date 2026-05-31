@@ -77,6 +77,12 @@ export const REVOKE_PERSISTENT_EMBED_TOKEN_TOOL_NAME = "revoke_persistent_embed_
 export const VALIDATE_WORKFLOW_TOOL_NAME = "validate_workflow";
 export const PUBLISH_WORKFLOW_TOOL_NAME = "publish_workflow";
 
+// Phase 11 — seed-template builder. `apply_workflow_parameters` fills the
+// named parameters a seed template exposes (see src/templates/) onto a
+// provisioned workflow, so an agent customises a validated starter graph
+// rather than authoring raw nodes/edges. Write tool → manager-tier.
+export const APPLY_WORKFLOW_PARAMETERS_TOOL_NAME = "apply_workflow_parameters";
+
 export const ALL_TOOL_NAMES = [
   LIST_WORKFLOWS_TOOL_NAME,
   RUN_CALL_TOOL_NAME,
@@ -115,6 +121,8 @@ export const ALL_TOOL_NAMES = [
   // Phase 10A
   VALIDATE_WORKFLOW_TOOL_NAME,
   PUBLISH_WORKFLOW_TOOL_NAME,
+  // Phase 11
+  APPLY_WORKFLOW_PARAMETERS_TOOL_NAME,
 ] as const;
 
 /**
@@ -173,4 +181,6 @@ export const TOOL_MIN_TIER_V3: Record<string, AgentTier> = {
   // to executable, gating the runtime, so it requires manager tier.
   [VALIDATE_WORKFLOW_TOOL_NAME]: "worker",
   [PUBLISH_WORKFLOW_TOOL_NAME]: "manager",
+  // Phase 11 — mutates a workflow definition, so manager-tier.
+  [APPLY_WORKFLOW_PARAMETERS_TOOL_NAME]: "manager",
 };
