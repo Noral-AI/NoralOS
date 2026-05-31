@@ -421,6 +421,26 @@ function StatusBadge({ credential }: { credential: IntegrationCredentialDto }) {
   if (credential.lastTestStatus === "failed") {
     return <span className="text-rose-700 dark:text-rose-300">Test failed</span>;
   }
+  // Resolution health: an assigned credential with material that has never
+  // resolved is a likely-invalid key — surface it before the softer states.
+  if (
+    credential.hasMaterial &&
+    credential.assignments.length > 0 &&
+    credential.lastResolvedAt === null
+  ) {
+    return (
+      <span className="text-amber-700 dark:text-amber-300">
+        Never verified — key may be invalid
+      </span>
+    );
+  }
+  if (credential.lastResolvedAt !== null) {
+    return (
+      <span className="text-emerald-700 dark:text-emerald-300">
+        Verified · {new Date(credential.lastResolvedAt).toLocaleDateString()}
+      </span>
+    );
+  }
   if (credential.lastTestStatus === "ok") {
     return <span className="text-emerald-700 dark:text-emerald-300">Tested · OK</span>;
   }

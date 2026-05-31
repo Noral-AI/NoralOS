@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, notInArray, desc } from "drizzle-orm";
+import { and, eq, getTableColumns, isNotNull, notInArray, desc } from "drizzle-orm";
 import type { Db } from "@noralos/db";
 import {
   companySecrets,
@@ -73,6 +73,11 @@ interface CredentialRow {
   updatedByUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * Joined from `company_secrets.last_resolved_at` for the linked `secretId`.
+   * Only populated by `list()`; other loaders leave it undefined (treated as null).
+   */
+  lastResolvedAt?: Date | null;
 }
 
 interface AssignmentRow {
@@ -113,6 +118,7 @@ function buildCredentialDto(
     rotationNotes: row.rotationNotes,
     metadata: (row.metadata ?? {}) as Record<string, unknown>,
     hasMaterial: row.secretId !== null,
+    lastResolvedAt: row.lastResolvedAt ? row.lastResolvedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     createdByUserId: row.createdByUserId,
@@ -236,8 +242,12 @@ export function integrationCredentialService(db: Db) {
     list: async (companyId: string): Promise<IntegrationCredentialDto[]> => {
       const [rows, assignments] = await Promise.all([
         db
-          .select()
+          .select({
+            ...getTableColumns(integrationCredentials),
+            lastResolvedAt: companySecrets.lastResolvedAt,
+          })
           .from(integrationCredentials)
+          .leftJoin(companySecrets, eq(integrationCredentials.secretId, companySecrets.id))
           .where(eq(integrationCredentials.companyId, companyId))
           .orderBy(desc(integrationCredentials.createdAt)),
         loadAssignmentsForCompany(companyId),

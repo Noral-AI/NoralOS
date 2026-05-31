@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, ne, notInArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, like, ne, notInArray, sql } from "drizzle-orm";
 import type { Db } from "@noralos/db";
 import {
   agents,
@@ -331,6 +331,21 @@ export function secretService(db: Db) {
       .then((rows) => rows[0] ?? null);
   }
 
+  async function getCurrentSecretVersion(secretId: string) {
+    return db
+      .select()
+      .from(companySecretVersions)
+      .where(
+        and(
+          eq(companySecretVersions.secretId, secretId),
+          eq(companySecretVersions.status, "current"),
+          isNull(companySecretVersions.revokedAt),
+        ),
+      )
+      .orderBy(desc(companySecretVersions.version))
+      .then((rows) => rows[0] ?? null);
+  }
+
   async function getBinding(input: {
     companyId: string;
     secretId: string;
@@ -555,7 +570,7 @@ export function secretService(db: Db) {
     const secret = await getById(secretId);
     if (!secret) throw notFound("Secret not found");
     if (secret.companyId !== companyId) throw unprocessable("Secret must belong to same company");
-    const resolvedVersion = version === "latest" ? secret.latestVersion : version;
+    let resolvedVersion = version === "latest" ? secret.latestVersion : version;
     const providerId = secret.provider as SecretProvider;
     const configPath = context?.configPath ?? null;
     try {
@@ -566,7 +581,32 @@ export function secretService(db: Db) {
         throw unprocessable("Secret is not active", { code: "secret_inactive" });
       }
       await assertBindingContext(companyId, secret.id, context);
-      const versionRow = await getSecretVersion(secret.id, resolvedVersion);
+      let versionRow = await getSecretVersion(secret.id, resolvedVersion);
+      // Self-heal a drifted `latest_version` pointer: when resolving "latest"
+      // and the pointed-at version is missing or no longer usable (disabled /
+      // destroyed / revoked), fall back to the genuine `current` version. Only
+      // applies to "latest" — an explicit numeric request stays strict.
+      if (
+        version === "latest" &&
+        (!versionRow ||
+          versionRow.status === "disabled" ||
+          versionRow.status === "destroyed" ||
+          versionRow.revokedAt)
+      ) {
+        const currentVersion = await getCurrentSecretVersion(secret.id);
+        if (currentVersion) {
+          logger.warn(
+            {
+              secretId: secret.id,
+              staleLatestVersion: secret.latestVersion,
+              healedVersion: currentVersion.version,
+            },
+            "Self-healed drifted latest_version pointer; resolving genuine current version",
+          );
+          versionRow = currentVersion;
+          resolvedVersion = currentVersion.version;
+        }
+      }
       if (!versionRow) throw new HttpError(404, "Secret version not found", { code: "version_missing" });
       if (versionRow.status === "disabled" || versionRow.status === "destroyed" || versionRow.revokedAt) {
         throw unprocessable("Secret version is not active", { code: "version_inactive" });

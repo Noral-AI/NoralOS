@@ -661,6 +661,11 @@ export interface IntegrationCredentialDto {
   metadata: Record<string, unknown>;
   /** True when an encrypted secret version exists. */
   hasMaterial: boolean;
+  /**
+   * When the linked secret last resolved successfully (`company_secrets.last_resolved_at`),
+   * as an ISO string. `null` if it has never resolved or has no material.
+   */
+  lastResolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
   createdByUserId: string | null;
