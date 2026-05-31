@@ -61,12 +61,16 @@ export interface ProvisionVoiceAgentContext {
 }
 
 /**
- * A minimal, dialable outbound workflow: an API `trigger` node feeding a
- * greet → converse → wrap-up flow. Node/edge shapes mirror the validated
- * `outbound_lead_qualifier` seed template; the trigger node carries the
- * `trigger_path` we choose so we know the dial target without reading it
- * back. NoralVoice preserves a supplied, non-empty `trigger_path` verbatim
- * (verified) and mints an ACTIVE agent trigger for it on create.
+ * A minimal, dialable outbound workflow: a standalone API `trigger` node (the
+ * launch handle) alongside a greet → converse → wrap-up flow
+ * (`startCall` → `agentNode` → `endCall`). The trigger is intentionally NOT
+ * edge-connected to the flow — NoralVoice's runtime graph validator requires
+ * the is_start node (startCall) to have zero incoming edges, and the run
+ * begins at is_start when the trigger fires. The trigger node carries the
+ * `trigger_path` we choose so we know the dial target without reading it back;
+ * NoralVoice preserves a supplied, non-empty `trigger_path` verbatim and mints
+ * an ACTIVE agent trigger for it on create. Verified end-to-end with a live
+ * call (`validate` returns is_valid; the pipeline runs and the agent speaks).
  */
 export function buildTriggerWorkflowDefinition(
   triggerPath: string,
@@ -116,13 +120,13 @@ export function buildTriggerWorkflowDefinition(
         },
       },
     ],
+    // NB: the trigger node is a standalone launch handle — intentionally NOT
+    // edge-connected to the flow. NoralVoice's graph validator requires the
+    // is_start node (startCall) to have zero incoming edges (max_incoming=0),
+    // and the run begins at is_start when the trigger fires. Wiring trigger→start
+    // passes create-time checks but fails at runtime ("Start Call cannot have
+    // incoming edges"), dead-airing the call.
     edges: [
-      {
-        id: "trigger-start",
-        source: "trigger",
-        target: "start",
-        data: { label: "Launch", condition: "The trigger fired." },
-      },
       {
         id: "start-agent",
         source: "start",

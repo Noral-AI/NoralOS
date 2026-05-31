@@ -246,6 +246,20 @@ describe("executeProvisionVoiceAgent", () => {
     expect(typeof triggerPath).toBe("string");
     expect(triggerPath.length).toBeGreaterThan(0);
 
+    // Regression guard: the is_start node (startCall) must have NO incoming
+    // edge — NoralVoice's runtime validator rejects "Start Call cannot have
+    // incoming edges" and dead-airs the call. The trigger is a standalone
+    // launch handle, not wired into the flow.
+    const startNode = body.workflow_definition.nodes.find(
+      (n: { data?: { is_start?: boolean } }) => n.data?.is_start,
+    );
+    expect(startNode).toBeDefined();
+    expect(
+      body.workflow_definition.edges.some(
+        (e: { target?: string }) => e.target === startNode.id,
+      ),
+    ).toBe(false);
+
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.data.voice_agent_uuid).toBe(triggerPath);
