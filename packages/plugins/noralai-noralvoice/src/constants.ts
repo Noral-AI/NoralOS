@@ -46,7 +46,13 @@ export const PLUGIN_ID = "noralai.noralvoice";
 // the 3-tool inventory/run/review set to the 17-tool clone-and-fill builder
 // (create_workflow / delete_workflow_tool deliberately excluded). Manifest
 // tool count: 34 → 35.
-export const PLUGIN_VERSION = "0.9.0";
+//
+// 0.9.1: run-status read-back fix. get_run / get_run_detail / list_runs now
+// resolve a run from just its id via NoralVoice's org-scoped
+// `GET /organizations/usage/runs` (the standalone `/workflow-run/{id}` route
+// was removed, and the workflow-scoped routes need a workflow id the agent
+// doesn't hold). list_runs no longer requires a workflowUuid.
+export const PLUGIN_VERSION = "0.9.1";
 
 /** Phase 1B starter tools. Each namespaced to `noralai.noralvoice:<name>` at the host. */
 export const LIST_WORKFLOWS_TOOL_NAME = "list_workflows";

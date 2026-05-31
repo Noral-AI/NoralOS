@@ -50,12 +50,42 @@ export interface WorkflowSummary {
 export interface RunSummary {
   runId: string;
   status: string;
+  /** NoralVoice call outcome (e.g. "user_qualified", "no_answer"), when set. */
+  disposition?: string | null;
   startedAt?: string;
   endedAt?: string | null;
   transcriptUrl?: string | null;
   recordingUrl?: string | null;
   extractedVariables?: Record<string, unknown>;
   costInfo?: Record<string, unknown>;
+}
+
+// A run record can arrive in two shapes: the workflow-scoped run record
+// (`is_completed`, `cost_info`) or the org-scoped usage-history record
+// (`disposition`, `call_duration_seconds`, `called_number`). These helpers
+// normalise across both so the run mappers stay source-agnostic.
+function deriveRunState(r: Record<string, unknown>): string {
+  if (typeof r.state === "string" && r.state) return r.state;
+  if (typeof r.status === "string" && r.status) return r.status;
+  if (typeof r.is_completed === "boolean") return r.is_completed ? "completed" : "in_progress";
+  // A usage-history record carries a disposition only once the run has ended.
+  if (typeof r.disposition === "string" && r.disposition) return "completed";
+  return "";
+}
+
+function deriveRunCompleted(r: Record<string, unknown>): boolean {
+  if (typeof r.is_completed === "boolean") return r.is_completed;
+  return typeof r.disposition === "string" && r.disposition.length > 0;
+}
+
+function deriveCostInfo(r: Record<string, unknown>): Record<string, unknown> | null {
+  if (r.cost_info && typeof r.cost_info === "object") return r.cost_info as Record<string, unknown>;
+  // Usage-history records expose flat usage fields instead of a cost_info bag.
+  const synthesized: Record<string, unknown> = {};
+  if (typeof r.call_duration_seconds === "number") synthesized.call_duration_seconds = r.call_duration_seconds;
+  if (typeof r.charge_usd === "number") synthesized.charge_usd = r.charge_usd;
+  if (typeof r.token_usage === "number") synthesized.token_usage = r.token_usage;
+  return Object.keys(synthesized).length > 0 ? synthesized : null;
 }
 
 export type NoralVoiceErrorCategory =
@@ -163,7 +193,8 @@ function toWorkflowSummary(record: Record<string, unknown>): WorkflowSummary {
 function toRunSummary(record: Record<string, unknown>): RunSummary {
   return {
     runId: String(record.id ?? record.run_id ?? ""),
-    status: String(record.state ?? record.status ?? ""),
+    status: deriveRunState(record),
+    disposition: typeof record.disposition === "string" ? record.disposition : null,
     startedAt:
       typeof record.created_at === "string" ? record.created_at : undefined,
     endedAt: null,
@@ -175,10 +206,7 @@ function toRunSummary(record: Record<string, unknown>): RunSummary {
       record.gathered_context && typeof record.gathered_context === "object"
         ? (record.gathered_context as Record<string, unknown>)
         : {},
-    costInfo:
-      record.cost_info && typeof record.cost_info === "object"
-        ? (record.cost_info as Record<string, unknown>)
-        : {},
+    costInfo: deriveCostInfo(record) ?? {},
   };
 }
 
@@ -226,22 +254,103 @@ export async function runCall(
   };
 }
 
+// ---- Run-status read-back (org-scoped) -------------------------------------
+//
+// NoralVoice removed the standalone `GET /workflow-run/{id}` route, and the
+// per-workflow routes (`GET /workflow/{id}/runs/{run_id}`) need a numeric
+// workflow id the agent doesn't hold after dialing an agent-trigger (it has
+// only the run id `run_call` returned and the trigger path). The org-scoped
+// usage history (`GET /organizations/usage/runs`) lists every run for the org
+// — reverse-chronological, with each run's `workflow_id`, transcript/recording
+// URLs, disposition, duration and gathered context — so a run resolves by id
+// alone. See memory: project-noralvoice-uuid-serialization-fix.
+const ORG_RUNS_PATH = "/api/v1/organizations/usage/runs";
+const ORG_RUNS_SCAN_PAGE_SIZE = 100;
+const ORG_RUNS_SCAN_MAX_PAGES = 10;
+
+async function fetchOrgRunsPage(
+  config: NoralVoiceClientConfig,
+  page: number,
+  limit: number,
+): Promise<{
+  runs: Record<string, unknown>[];
+  page: number;
+  totalPages: number;
+  totalCount: number;
+}> {
+  const body = await request<{
+    runs?: unknown[];
+    page?: number;
+    total_pages?: number;
+    total_count?: number;
+  }>(config, "GET", `${ORG_RUNS_PATH}?page=${page}&limit=${limit}`);
+  const runs = Array.isArray(body.runs) ? (body.runs as Record<string, unknown>[]) : [];
+  return {
+    runs,
+    page: Number(body.page ?? page),
+    totalPages: Number(body.total_pages ?? (runs.length < limit ? page : page + 1)),
+    totalCount: Number(body.total_count ?? runs.length),
+  };
+}
+
 /**
- * NOTE: NoralVoice removed the standalone `GET /workflow-run/{id}` route; run
- * records are now fetched workflow-scoped via `getWorkflowRun(workflowId,
- * runId)` (`GET /workflow/{id}/runs/{run_id}`). This by-id-only helper 4xxes
- * until the `get_run` tool is reworked to carry the workflow id.
+ * Locate a single org run by its NoralVoice run id by scanning the
+ * (reverse-chronological) usage history. A just-placed run is on page 1, so
+ * this resolves in one request for the common case; older ids page through up
+ * to ORG_RUNS_SCAN_MAX_PAGES before giving up.
+ */
+async function findOrgRunById(
+  config: NoralVoiceClientConfig,
+  runId: string,
+): Promise<Record<string, unknown> | null> {
+  const target = String(runId);
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const result = await fetchOrgRunsPage(config, page, ORG_RUNS_SCAN_PAGE_SIZE);
+    const match = result.runs.find((r) => String(r.id ?? r.run_id ?? "") === target);
+    if (match) return match;
+    totalPages = result.totalPages;
+    page += 1;
+  } while (page <= totalPages && page <= ORG_RUNS_SCAN_MAX_PAGES);
+  return null;
+}
+
+/**
+ * List runs org-wide (most recent first), page-based. Exposed to the
+ * `list_runs` agent tool, which holds a run id / trigger path but not a numeric
+ * workflow id. `cursor` encodes the next page number.
+ */
+export async function listOrgRuns(
+  config: NoralVoiceClientConfig,
+  options: { limit?: number; cursor?: string | null } = {},
+): Promise<PagedResult<RunListItem>> {
+  const limit = Math.max(1, Math.min(100, options.limit ?? 25));
+  const page =
+    options.cursor && /^\d+$/.test(options.cursor) ? Number.parseInt(options.cursor, 10) : 1;
+  const result = await fetchOrgRunsPage(config, page, limit);
+  const items = result.runs.map((r) => toRunListItem(r));
+  return {
+    items,
+    total: result.totalCount,
+    nextCursor: result.page < result.totalPages ? String(result.page + 1) : null,
+  };
+}
+
+/**
+ * Get a run summary by id. Resolves org-scoped (see findOrgRunById) since the
+ * caller has only a run id. Throws a 404-category client error when no such
+ * run exists for the org.
  */
 export async function getRun(
   config: NoralVoiceClientConfig,
   runId: string,
 ): Promise<RunSummary> {
-  const body = await request<Record<string, unknown>>(
-    config,
-    "GET",
-    `/api/v1/workflow-run/${encodeURIComponent(runId)}`,
-  );
-  return toRunSummary(body);
+  const record = await findOrgRunById(config, runId);
+  if (!record) {
+    throw new NoralVoiceClientError(`NoralVoice run ${runId} not found.`, "HTTP_4XX", 404);
+  }
+  return toRunSummary(record);
 }
 
 /**
@@ -659,6 +768,8 @@ export interface RunListItem {
   state: string;
   isCompleted: boolean;
   callType?: string;
+  /** NoralVoice call outcome (e.g. "user_qualified"), when set. */
+  disposition?: string | null;
   createdAt?: string;
   transcriptUrl?: string | null;
   recordingUrl?: string | null;
@@ -675,15 +786,14 @@ function toRunListItem(r: Record<string, unknown>): RunListItem {
   return {
     id: Number(r.id ?? 0),
     name: String(r.name ?? ""),
-    state: String(r.state ?? r.status ?? ""),
-    isCompleted: Boolean(r.is_completed),
+    state: deriveRunState(r),
+    isCompleted: deriveRunCompleted(r),
     callType: typeof r.call_type === "string" ? r.call_type : undefined,
+    disposition: typeof r.disposition === "string" ? r.disposition : null,
     createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
     transcriptUrl: typeof r.transcript_url === "string" ? r.transcript_url : null,
     recordingUrl: typeof r.recording_url === "string" ? r.recording_url : null,
-    costInfo: r.cost_info && typeof r.cost_info === "object"
-      ? (r.cost_info as Record<string, unknown>)
-      : null,
+    costInfo: deriveCostInfo(r),
   };
 }
 
@@ -2001,6 +2111,8 @@ export interface RunDetail {
   workflowUuid?: string;
   state: string;
   callType?: string;
+  /** NoralVoice call outcome (e.g. "user_qualified"), when set. */
+  disposition?: string | null;
   toNumber?: string;
   fromNumber?: string;
   createdAt?: string;
@@ -2013,47 +2125,61 @@ export interface RunDetail {
 }
 
 function toRunDetail(r: Record<string, unknown>): RunDetail {
+  const durationSec =
+    typeof r.duration_sec === "number"
+      ? r.duration_sec
+      : typeof r.call_duration_seconds === "number"
+        ? r.call_duration_seconds
+        : undefined;
   return {
     id: String(r.id ?? r.run_id ?? ""),
     workflowId: typeof r.workflow_id === "number" ? r.workflow_id : undefined,
     workflowUuid: typeof r.workflow_uuid === "string" ? r.workflow_uuid : undefined,
-    state: String(r.state ?? r.status ?? ""),
+    state: deriveRunState(r),
     callType: typeof r.call_type === "string" ? r.call_type : undefined,
-    toNumber: typeof r.to_number === "string" ? r.to_number : undefined,
-    fromNumber: typeof r.from_number === "string" ? r.from_number : undefined,
+    disposition: typeof r.disposition === "string" ? r.disposition : null,
+    // Usage-history records expose called_/caller_number; workflow-scoped
+    // records use to_/from_number.
+    toNumber:
+      typeof r.to_number === "string"
+        ? r.to_number
+        : typeof r.called_number === "string"
+          ? r.called_number
+          : undefined,
+    fromNumber:
+      typeof r.from_number === "string"
+        ? r.from_number
+        : typeof r.caller_number === "string"
+          ? r.caller_number
+          : undefined,
     createdAt: typeof r.created_at === "string" ? r.created_at : undefined,
     endedAt: typeof r.ended_at === "string" ? r.ended_at : null,
-    durationSec: typeof r.duration_sec === "number" ? r.duration_sec : undefined,
+    durationSec,
     transcriptUrl: typeof r.transcript_url === "string" ? r.transcript_url : null,
     recordingUrl: typeof r.recording_url === "string" ? r.recording_url : null,
     gatheredContext:
       r.gathered_context && typeof r.gathered_context === "object"
         ? (r.gathered_context as Record<string, unknown>)
         : null,
-    costInfo:
-      r.cost_info && typeof r.cost_info === "object"
-        ? (r.cost_info as Record<string, unknown>)
-        : null,
+    costInfo: deriveCostInfo(r),
   };
 }
 
 /**
- * GET /api/v1/workflow-run/{run_id}.
- * NOTE: NoralVoice removed this standalone run-by-id route; this helper 4xxes
- * until `get_run_detail` is reworked to fetch workflow-scoped via
- * `getWorkflowRun(workflowId, runId)`.
- * Returns the full run record (used by the `get_run_detail` agent tool).
+ * Get the full run record by id (used by the `get_run_detail` agent tool).
+ * Resolves org-scoped via the usage history (see findOrgRunById) — the
+ * standalone `GET /workflow-run/{id}` route was removed and the agent has no
+ * workflow id. Throws a 404-category client error when the run is not found.
  */
 export async function getRunDetail(
   config: NoralVoiceClientConfig,
   runId: string,
 ): Promise<RunDetail> {
-  const body = await request<Record<string, unknown>>(
-    config,
-    "GET",
-    `/api/v1/workflow-run/${encodeURIComponent(runId)}`,
-  );
-  return toRunDetail(body);
+  const record = await findOrgRunById(config, runId);
+  if (!record) {
+    throw new NoralVoiceClientError(`NoralVoice run ${runId} not found.`, "HTTP_4XX", 404);
+  }
+  return toRunDetail(record);
 }
 
 // ---- listKbDocumentsFiltered (status-aware, for agent tool) ----------------

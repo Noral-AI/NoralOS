@@ -607,20 +607,13 @@ export const manifest: NoralosPluginManifestV1 = {
     // ---- Phase 7 — promoted read tools ----
     {
       name: LIST_RUNS_TOOL_NAME,
-      displayName: "List a workflow's recent runs",
+      displayName: "List recent voice runs",
       description:
-        "List runs (one per call attempt) for a NoralVoice workflow. Use to answer 'how many calls did workflow X make this week?' or to find a specific run. Read-only — admits any tier. Paginated via opaque cursor.",
+        "List this organization's recent voice runs (one per call attempt), most recent first — across all workflows. Use to find a just-placed call or answer 'how many calls happened recently?'. Each item includes the run id (pass to `get_run`/`get_run_detail`), state, disposition, call type, and transcript/recording URLs. Read-only — admits any tier. Paginated via opaque cursor.",
       parametersSchema: {
         type: "object",
         additionalProperties: false,
-        required: ["workflowUuid"],
         properties: {
-          workflowUuid: {
-            type: "string",
-            description: "NoralVoice workflow UUID (from `list_workflows`).",
-            minLength: 1,
-            maxLength: 64,
-          },
           limit: {
             type: "integer",
             description: "Max runs to return (1..100, default 25).",
