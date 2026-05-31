@@ -1514,6 +1514,12 @@ export interface PluginAgentsClient {
   resume(agentId: string, companyId: string): Promise<Agent>;
   /** Invoke (wake up) an agent with a prompt payload. Throws if paused, terminated, pending_approval, or not found. Requires `agents.invoke`. */
   invoke(agentId: string, companyId: string, opts: { prompt: string; reason?: string }): Promise<{ runId: string }>;
+  /**
+   * NORALOS: Set (or clear) an agent's `voice_agent_uuid` — the NoralVoice
+   * agent-trigger path it dials from. Requires `agents.write`. Returns the
+   * updated agent, or null if the agent no longer exists.
+   */
+  setVoiceAgentUuid(agentId: string, companyId: string, uuid: string): Promise<Agent | null>;
   /** Resolve and reconcile manifest-declared plugin-managed agents by stable key. Requires `agents.managed`. */
   managed: {
     get(agentKey: string, companyId: string): Promise<PluginManagedAgentResolution>;

@@ -772,42 +772,25 @@ const plugin = definePlugin({
       async (params, config) => executeListVoices(config, params),
     );
 
-    // Per-company DB query helper for the voice-config mirror write.
-    // The plugin SDK exposes `ctx.host.queryHostDb` for plugins with
-    // the appropriate capability declared in their manifest; we cast
-    // through here because the SDK types are wider than the plumbing
-    // we exercise.
-    type HostQuery = (sql: string, params: unknown[]) => Promise<unknown>;
-    const hostDb = (
-      ctx as unknown as { host?: { queryHostDb?: HostQuery } }
-    ).host?.queryHostDb;
-
-    // Tier-3 side-effect context builders. Each closure captures the
-    // worker `ctx` so the tools themselves stay SDK-free.
+    // Tier-3 side-effect context builders. Each closure captures the worker
+    // `ctx` so the tools themselves stay SDK-free. These resolve and persist
+    // `agents.voice_agent_uuid` (and the agent name) through the
+    // capability-gated `ctx.agents` host bridge — NOT a raw host DB query,
+    // which the SDK does not actually expose. (NORALOS)
     async function resolveVoiceAgentUuid(
       companyId: string,
       agentId: string,
     ): Promise<string | null> {
-      if (!hostDb) return null;
-      const rows = (await hostDb(
-        `SELECT voice_agent_uuid FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
-        [agentId, companyId],
-      )) as Array<{ voice_agent_uuid: string | null }> | null;
-      const row = Array.isArray(rows) ? rows[0] : null;
-      return row?.voice_agent_uuid ?? null;
+      const agent = await ctx.agents.get(agentId, companyId);
+      return agent?.voiceAgentUuid ?? null;
     }
 
     async function resolveAgentName(
       companyId: string,
       agentId: string,
     ): Promise<string | null> {
-      if (!hostDb) return null;
-      const rows = (await hostDb(
-        `SELECT name FROM public.agents WHERE id = $1::uuid AND company_id = $2::uuid LIMIT 1`,
-        [agentId, companyId],
-      )) as Array<{ name: string | null }> | null;
-      const row = Array.isArray(rows) ? rows[0] : null;
-      return row?.name ?? null;
+      const agent = await ctx.agents.get(agentId, companyId);
+      return agent?.name ?? null;
     }
 
     async function writeVoiceAgentUuid(
@@ -815,15 +798,10 @@ const plugin = definePlugin({
       agentId: string,
       uuid: string,
     ): Promise<void> {
-      if (!hostDb) {
-        throw new Error(
-          "NoralVoice plugin: ctx.host.queryHostDb unavailable; cannot write voice_agent_uuid.",
-        );
-      }
-      await hostDb(
-        `UPDATE public.agents SET voice_agent_uuid = $1, updated_at = now() WHERE id = $2::uuid AND company_id = $3::uuid`,
-        [uuid, agentId, companyId],
-      );
+      // NORALOS: persist via the capability-gated agents host service
+      // (agents.write). Replaces a phantom ctx.host.queryHostDb write that
+      // always threw because the SDK never actually provided queryHostDb.
+      await ctx.agents.setVoiceAgentUuid(agentId, companyId, uuid);
     }
 
     // ---- Phase 3: set_agent_voice ----------------------------------------
