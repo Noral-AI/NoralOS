@@ -7878,21 +7878,30 @@ export function heartbeatService(db: Db, options: HeartbeatServiceOptions = {}) 
       let effectiveConfig: Record<string, unknown> = runtimeConfig;
       if (useDeepseekBackend) {
         const credentialId = companyLlmBackend?.credentialId;
-        if (!credentialId) {
-          throw new Error(
-            "Company LLM backend is set to DeepSeek V4 but no API credential is configured. " +
-              "Pick a NoralAI/DeepSeek credential in Company Settings → LLM Backend.",
-          );
-        }
         let deepseekApiKey: string;
-        try {
-          deepseekApiKey = await integrationCredentials.resolvePlaintext(agent.companyId, credentialId);
-        } catch (err) {
-          throw new Error(
-            `Company LLM backend is set to DeepSeek V4 but its API credential could not be resolved: ${
-              err instanceof Error ? err.message : "unknown error"
-            }`,
-          );
+        if (credentialId) {
+          try {
+            deepseekApiKey = await integrationCredentials.resolvePlaintext(agent.companyId, credentialId);
+          } catch (err) {
+            throw new Error(
+              `Company LLM backend is set to DeepSeek V4 but its API credential could not be resolved: ${
+                err instanceof Error ? err.message : "unknown error"
+              }`,
+            );
+          }
+        } else {
+          // Platform fallback: companies without their own DeepSeek credential use the
+          // deployment-wide DEEPSEEK_API_KEY, so a single key serves every company
+          // (current and future) with no per-company credential setup. opencode reads
+          // the same key via {env:DEEPSEEK_API_KEY} (~/.config/opencode/opencode.jsonc).
+          const platformKey = process.env.DEEPSEEK_API_KEY?.trim();
+          if (!platformKey) {
+            throw new Error(
+              "Company LLM backend is set to DeepSeek V4 but no per-company API credential is " +
+                "configured and no platform DEEPSEEK_API_KEY is set on the server.",
+            );
+          }
+          deepseekApiKey = platformKey;
         }
         effectiveConfig = buildDeepseekOverrideConfig({
           runtimeConfig: runtimeConfig as Record<string, unknown>,
