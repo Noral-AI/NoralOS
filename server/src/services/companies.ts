@@ -157,7 +157,15 @@ export function companyService(db: Db) {
       try {
         const rows = await db
           .insert(companies)
-          .values({ ...data, issuePrefix: candidate })
+          .values({
+            ...data,
+            issuePrefix: candidate,
+            // New companies default to the DeepSeek V4 backend so a single platform
+            // DEEPSEEK_API_KEY serves every company (no per-company credential needed).
+            // An explicit llmBackendSettings on `data` still wins.
+            llmBackendSettings:
+              data.llmBackendSettings ?? { mode: "deepseek_v4", model: "deepseek/deepseek-v4-pro" },
+          })
           .returning();
         return rows[0];
       } catch (error) {
