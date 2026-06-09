@@ -53,8 +53,15 @@ export function buildBetterAuthAdvancedOptions(input: {
    */
   crossSubDomainCookieDomain?: string;
 }) {
+  const basePrefix = deriveAuthCookiePrefix();
   const advanced: Record<string, unknown> = {
-    cookiePrefix: deriveAuthCookiePrefix(),
+    // When cookies widen to the parent domain they must also be RENAMED:
+    // a `.noral.ai` session cookie that shares its name with a stale
+    // host-only cookie gets shadowed (the browser sends both; the older
+    // host-only one sorts first), which broke Chrome sign-in when SSO
+    // cookies first shipped (disabled on the VPS 2026-05-29). With a
+    // distinct `-sso` prefix the legacy cookies are simply ignored.
+    cookiePrefix: input.crossSubDomainCookieDomain ? `${basePrefix}-sso` : basePrefix,
   };
   if (input.disableSecureCookies) {
     advanced.useSecureCookies = false;
@@ -197,7 +204,13 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
       requireEmailVerification: false,
       disableSignUp: config.authDisableSignUp,
     },
-    advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies }),
+    // crossSubDomainCookieDomain re-wired 2026-06-09: the #133 paperclip
+    // sync dropped this pass-through (same incident class as #151), leaving
+    // BETTER_AUTH_COOKIE_DOMAIN silently ignored.
+    advanced: buildBetterAuthAdvancedOptions({
+      disableSecureCookies,
+      crossSubDomainCookieDomain: resolveCrossSubDomainCookieDomain(),
+    }),
   };
 
   if (googleEnabled) {

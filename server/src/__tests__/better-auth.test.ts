@@ -3,9 +3,11 @@ import type { BetterAuthOptions } from "better-auth";
 import { getCookies } from "better-auth/cookies";
 import {
   buildBetterAuthAdvancedOptions,
+  createBetterAuthInstance,
   deriveAuthCookiePrefix,
   deriveAuthTrustedOrigins,
   resolveCrossSubDomainCookieDomain,
+  shouldDisableSecureAuthCookies,
 } from "../auth/better-auth.js";
 
 const ORIGINAL_INSTANCE_ID = process.env.NORALOS_INSTANCE_ID;
@@ -46,7 +48,7 @@ describe("Better Auth cookie scoping", () => {
     });
     expect(getCookies({
       advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies: true }),
-    } as BetterAuthOptions).sessionToken.name).toBe("paperclip-pap-worktree.session_token");
+    } as BetterAuthOptions).sessionToken.name).toBe("noralos-pap-worktree.session_token");
   });
 
   it("disables secure cookies for authenticated private auto-origin dev servers", () => {
@@ -195,17 +197,27 @@ describe("Better Auth cross-subdomain cookie domain (SSO)", () => {
     });
   });
 
-  it("preserves cookie prefix and useSecureCookies when cross-subdomain is also set", () => {
+  it("renames the cookie prefix when cross-subdomain is set (legacy host-only cookies must not shadow)", () => {
+    // Same-name host-only + domain cookies coexist in the browser and the
+    // stale host-only one sorts first — that shadowing broke Chrome
+    // sign-in when SSO cookies first shipped (VPS disabled 2026-05-29).
+    // The `-sso` suffix makes the domain cookies a distinct name.
     process.env.NORALOS_INSTANCE_ID = "test-inst";
     const advanced = buildBetterAuthAdvancedOptions({
       disableSecureCookies: true,
       crossSubDomainCookieDomain: ".noral.ai",
     });
     expect(advanced).toEqual({
-      cookiePrefix: "noralos-test-inst",
+      cookiePrefix: "noralos-test-inst-sso",
       useSecureCookies: false,
       crossSubDomainCookies: { enabled: true, domain: ".noral.ai" },
     });
+  });
+
+  it("keeps the unsuffixed cookie prefix when cross-subdomain is off", () => {
+    process.env.NORALOS_INSTANCE_ID = "test-inst";
+    const advanced = buildBetterAuthAdvancedOptions({ disableSecureCookies: false });
+    expect(advanced).toEqual({ cookiePrefix: "noralos-test-inst" });
   });
 
   it("Better Auth cookie computation accepts the cross-subdomain config without errors", () => {
@@ -217,5 +229,31 @@ describe("Better Auth cross-subdomain cookie domain (SSO)", () => {
     // it shouldn't throw on our config shape.
     const cookies = getCookies({ advanced } as BetterAuthOptions);
     expect(cookies.sessionToken.name).toMatch(/session_token$/);
+  });
+
+  it("createBetterAuthInstance honours BETTER_AUTH_COOKIE_DOMAIN end-to-end", () => {
+    // Regression guard: the #133 paperclip sync dropped the
+    // crossSubDomainCookieDomain pass-through at the instance call site,
+    // silently turning BETTER_AUTH_COOKIE_DOMAIN into a no-op. Assert on
+    // the constructed instance, not just the options builder.
+    process.env.NORALOS_INSTANCE_ID = "wired-inst";
+    process.env.BETTER_AUTH_COOKIE_DOMAIN = ".noral.ai";
+    process.env.BETTER_AUTH_SECRET = "test-secret-test-secret-test-secret";
+
+    try {
+      const auth = createBetterAuthInstance({} as never, {
+        deploymentMode: "authenticated",
+        deploymentExposure: "public",
+        authBaseUrlMode: "explicit",
+        authPublicBaseUrl: "https://agent.example.test",
+        authDisableSignUp: true,
+      } as never, ["https://agent.example.test"]);
+
+      const cookies = getCookies(auth.options as BetterAuthOptions);
+      expect(cookies.sessionToken.name).toContain("noralos-wired-inst-sso.session_token");
+      expect(cookies.sessionToken.attributes).toMatchObject({ domain: ".noral.ai" });
+    } finally {
+      delete process.env.BETTER_AUTH_SECRET;
+    }
   });
 });

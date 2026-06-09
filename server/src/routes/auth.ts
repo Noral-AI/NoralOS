@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import type { Db } from "@noralos/db";
@@ -34,8 +35,37 @@ async function loadCurrentUserProfile(db: Db, userId: string) {
   });
 }
 
+function constantTimeStringEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+}
+
 export function authRoutes(db: Db) {
   const router = Router();
+
+  // Cross-product SSO validation (see cross-product-sso-design.md). A
+  // sibling *.noral.ai product (voice, dumbo, …) forwards the browser's
+  // cookies server-side; we answer with the session's user identity, or
+  // 401. Browser-originated cross-origin calls can't read the response (no
+  // CORS is configured), and when NORAL_SSO_VALIDATE_SECRET is set the
+  // caller must also present it in x-noral-sso-secret.
+  router.get("/session/validate", async (req, res) => {
+    const requiredSecret = process.env.NORAL_SSO_VALIDATE_SECRET?.trim();
+    if (requiredSecret) {
+      const presented = req.header("x-noral-sso-secret") ?? "";
+      if (!constantTimeStringEqual(presented, requiredSecret)) {
+        throw unauthorized("Invalid internal caller credential");
+      }
+    }
+
+    if (req.actor.type !== "board" || !req.actor.userId || req.actor.source !== "session") {
+      throw unauthorized("No valid session");
+    }
+
+    const user = await loadCurrentUserProfile(db, req.actor.userId);
+    res.json({ user: { id: user.id, email: user.email, name: user.name } });
+  });
 
   router.get("/get-session", async (req, res) => {
     if (req.actor.type !== "board" || !req.actor.userId) {
