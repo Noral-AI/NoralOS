@@ -96,6 +96,14 @@ services:
       NORALOS_DEPLOYMENT_EXPOSURE: "public"
       NORALOS_PUBLIC_URL: "${NORALOS_PUBLIC_URL:?NORALOS_PUBLIC_URL must be set}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
+      # Cross-product SSO (cross-product-sso-design.md). Setting the cookie
+      # domain to ".noral.ai" shares the session cookie with sibling
+      # products (dumbo, voice); it also renames the cookie (-sso prefix
+      # suffix), so enabling/disabling forces one re-login. The validate
+      # secret gates GET /api/auth/session/validate to internal callers
+      # that present x-noral-sso-secret. Both optional; unset = no SSO.
+      BETTER_AUTH_COOKIE_DOMAIN: "${BETTER_AUTH_COOKIE_DOMAIN:-}"
+      NORAL_SSO_VALIDATE_SECRET: "${NORAL_SSO_VALIDATE_SECRET:-}"
       # OAuth token for the Claude Code CLI bundled into the server image.
       # Required for every agent run that uses the claude-local adapter —
       # missing means runs fail immediately with `claude_auth_required`.
