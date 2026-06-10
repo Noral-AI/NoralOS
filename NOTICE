@@ -11,3 +11,16 @@ Per the MIT License terms, attribution to the upstream copyright holder
 is preserved here and in LICENSE. This NOTICE file may be updated to
 reflect ongoing modifications and additional contributors to NoralOS, but
 the upstream attribution above must not be removed.
+
+Bundled third-party components (container image):
+
+- OpenCode (https://github.com/anomalyco/opencode) — MIT License,
+  Copyright (c) 2025 opencode. Bundled in the NoralOS container image as
+  the default agent execution engine (see
+  docs/audit/execution-layer-strategy.md, decision D1). The full MIT
+  license text is available in the linked repository's LICENSE file.
+
+The image also installs @anthropic-ai/claude-code and @openai/codex under
+their own proprietary licenses for internal/BYO use; they are not
+redistributed under this project's license and must be excluded from
+customer-distributed images (strategy doc D2).

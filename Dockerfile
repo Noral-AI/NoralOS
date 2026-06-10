@@ -121,7 +121,12 @@ ARG GIT_SHA=""
 ARG BUILD_TIME=""
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+# Harness versions are pinned to prod-verified releases; bump only with an eval
+# pass (pnpm evals:smoke) per docs/audit/execution-layer-strategy.md (D1).
+# opencode-ai is the bundled default engine (MIT, see NOTICE); claude-code and
+# codex are dogfood/BYO only and must be excluded from customer-distributed
+# images (strategy doc D2).
+RUN npm install --global --omit=dev @anthropic-ai/claude-code@2.1.170 @openai/codex@0.139.0 opencode-ai@1.16.2 \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
