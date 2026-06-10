@@ -133,10 +133,14 @@ export function buildAuthorizeUrl(input: BuildAuthorizeUrlInput): string {
   const dataCenter = input.fields["dataCenter"];
   const dataCenterTld = dataCenter ? ZOHO_DATA_CENTER_TLD[dataCenter] : undefined;
 
+  // RFC 6749 says scopes are space-separated; Zoho historically required
+  // commas, so we default to comma for back-compat and let standards-
+  // compliant providers (Google, etc.) override via `scopeSeparator`.
+  const scopeSeparator = oauth.scopeSeparator ?? ",";
   const vars: Record<string, string | undefined> = {
     clientId: encodeURIComponent(input.clientId),
     redirectUri: encodeURIComponent(input.redirectUri),
-    scopes: encodeURIComponent(oauth.scopes.join(",")),
+    scopes: encodeURIComponent(oauth.scopes.join(scopeSeparator)),
     state: encodeURIComponent(input.state),
     dataCenterTld,
     ...Object.fromEntries(

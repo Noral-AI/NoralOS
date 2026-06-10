@@ -1,0 +1,32 @@
+{
+  "name": "@noralos-plugins/noralai-google-sheets",
+  "version": "0.1.0",
+  "description": "NoralAI Google Sheets integration. Wraps the Google Sheets v4 REST API and a Drive v3 spreadsheet-discovery helper behind a NoralOS-branded plugin surface using OAuth 2.0 (refresh-token) credentials from the company's integration_credentials row. Exposes agent tools for listing spreadsheets, reading ranges, appending rows, and updating ranges so NoralOS agents can read context from and append activity to operator-owned spreadsheets.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "noralosPlugin": {
+    "manifest": "./dist/manifest.js",
+    "worker": "./dist/worker.js"
+  },
+  "scripts": {
+    "prebuild": "pnpm --filter @noralos/plugin-sdk ensure-build-deps",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "pnpm --filter @noralos/plugin-sdk ensure-build-deps && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noralos/plugin-sdk": "workspace:*",
+    "@noralos/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.0.0"
+  }
+}
