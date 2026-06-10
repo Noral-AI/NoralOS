@@ -57,6 +57,7 @@ The script (5 steps): `docker compose pull` → `docker compose up -d` → wait 
 
 - `.github/workflows/docker.yml` builds + pushes `ghcr.io/noral-ai/noralos:latest` (and a `sha-<8>` tag).
 - Both the api server and the plugins are built into one image. Plugin builds happen inside the Dockerfile via `pnpm --filter <pluginPackageName> build`.
+- **Harness bumps are eval-gated.** The Dockerfile pins the global harness installs (`opencode-ai`, `@anthropic-ai/claude-code`, `@openai/codex`) to prod-verified versions. PRs touching the Dockerfile, `server/src/onboarding-assets/`, or `evals/` trigger the `eval_gate` job in `pr.yml`, which needs the `OPENROUTER_API_KEY` repo secret and runs the promptfoo suite. Manual equivalent before a deploy: `pnpm evals:smoke`. Rationale: `docs/audit/execution-layer-strategy.md` (D1).
 
 ## Plugin gotchas (silent prod failures)
 

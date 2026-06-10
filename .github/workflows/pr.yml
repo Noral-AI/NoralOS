@@ -308,3 +308,49 @@ jobs:
             tests/e2e/playwright-report/
             tests/e2e/test-results/
           retention-days: 14
+
+  eval_gate:
+    name: Eval gate (harness + instruction changes)
+    needs: [policy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect harness pin / instruction-bundle changes
+        id: gate
+        run: |
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}")"
+          printf 'Changed files:\n%s\n' "$changed"
+          # Gated surfaces: image harness pins, agent instruction bundles, and
+          # the eval suite itself. See docs/audit/execution-layer-strategy.md,
+          # next-action 2: harness/prompt changes ship only with an eval pass.
+          if printf '%s\n' "$changed" | grep -qE '^(Dockerfile$|server/src/onboarding-assets/|evals/)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No gated paths changed; skipping eval run."
+          fi
+
+      - name: Require eval credentials
+        if: steps.gate.outputs.run == 'true' && env.OPENROUTER_API_KEY == ''
+        run: |
+          echo "::error::This PR changes harness pins, agent instruction bundles, or the eval suite. The eval gate needs the OPENROUTER_API_KEY repo secret (see evals/README.md). Add the secret and re-run, or run the suite locally (pnpm evals:smoke) and merge under the repo's unstable-merge convention."
+          exit 1
+
+      - name: Setup Node.js
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run promptfoo eval suite
+        if: steps.gate.outputs.run == 'true'
+        working-directory: evals/promptfoo
+        run: npx promptfoo@0.103.3 eval
